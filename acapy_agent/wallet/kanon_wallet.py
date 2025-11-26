@@ -8,7 +8,7 @@ from typing import List, Optional, Sequence, Tuple, cast
 
 from aries_askar import AskarError, AskarErrorCode, Entry, Key, KeyAlg, SeedMethod
 
-from ..database_manager.dbstore import DBStoreError
+from ..database_manager.dbstore import DBStoreError, DBStoreSession
 from ..kanon.didcomm.v1 import pack_message, unpack_message
 from ..kanon.profile_anon_kanon import KanonAnonCredsProfileSession
 from ..ledger.base import BaseLedger
@@ -262,8 +262,19 @@ class KanonWallet(BaseWallet):
         seed: Optional[str] = None,
         did: Optional[str] = None,
         metadata: Optional[dict] = None,
+        session: Optional[DBStoreSession] = None,
     ) -> DIDInfo:
-        """Create and store a new local DID."""
+        """Create and store a new local DID.
+
+        Args:
+            method: The DID method to use
+            key_type: The key type to use
+            seed: Optional seed for key generation
+            did: Optional DID to use
+            metadata: Optional metadata to associate with the DID
+            session: Optional existing session to reuse (avoids nested session creation)
+
+        """
         LOGGER.debug(
             "create_local_did: method=%s, key_type=%s, seed=%s, did=%s, metadata=%s",
             method,
@@ -306,60 +317,76 @@ class KanonWallet(BaseWallet):
                 raise WalletError("Error inserting key") from err
             LOGGER.debug("Key already exists, proceeding")
 
-        async with self._session.store.session() as session:
-            try:
-                LOGGER.debug(LOG_FETCH_DID, did)
-                item = await _call_store(
-                    session, "fetch", CATEGORY_DID, did, for_update=True
+        if session is None:
+            async with self._session.store.session() as session:
+                return await self._create_local_did_impl(
+                    did, verkey, metadata, method, key_type, session
                 )
-                if item:
-                    did_info = item.value_json
-                    LOGGER.debug("Existing DID info: %s", did_info)
-                    if did_info.get("verkey") != verkey:
-                        LOGGER.error("DID %s already present with different verkey", did)
-                        raise WalletDuplicateError("DID already present in wallet")
-                    if did_info.get("metadata") != metadata:
-                        LOGGER.debug("Updating metadata for existing DID")
-                        did_info["metadata"] = metadata
-                        await _call_store(
-                            session,
-                            "replace",
-                            CATEGORY_DID,
-                            did,
-                            value_json=did_info,
-                            tags=item.tags,
-                        )
-                        LOGGER.debug("Metadata updated")
-                else:
-                    value_json = {
-                        "did": did,
-                        "method": method.method_name,
-                        "verkey": verkey,
-                        "verkey_type": key_type.key_type,
-                        "metadata": metadata,
-                    }
-                    tags = {
-                        "method": method.method_name,
-                        "verkey": verkey,
-                        "verkey_type": key_type.key_type,
-                    }
-                    if INVITATION_REUSE_KEY in metadata:
-                        tags[INVITATION_REUSE_KEY] = "true"
-                    LOGGER.debug(
-                        "Inserting new DID with value: %s, tags: %s", value_json, tags
-                    )
+        return await self._create_local_did_impl(
+            did, verkey, metadata, method, key_type, session
+        )
+
+    async def _create_local_did_impl(
+        self,
+        did: str,
+        verkey: str,
+        metadata: dict,
+        method: DIDMethod,
+        key_type: KeyType,
+        session: DBStoreSession,
+    ) -> DIDInfo:
+        """Internal implementation of create_local_did."""
+        try:
+            LOGGER.debug(LOG_FETCH_DID, did)
+            item = await _call_store(session, "fetch", CATEGORY_DID, did, for_update=True)
+            if item:
+                did_info = item.value_json
+                LOGGER.debug("Existing DID info: %s", did_info)
+                if did_info.get("verkey") != verkey:
+                    LOGGER.error("DID %s already present with different verkey", did)
+                    raise WalletDuplicateError("DID already present in wallet")
+                if did_info.get("metadata") != metadata:
+                    LOGGER.debug("Updating metadata for existing DID")
+                    did_info["metadata"] = metadata
                     await _call_store(
                         session,
-                        "insert",
+                        "replace",
                         CATEGORY_DID,
                         did,
-                        value_json=value_json,
-                        tags=tags,
+                        value_json=did_info,
+                        tags=item.tags,
                     )
-                    LOGGER.debug("New DID inserted")
-            except DBStoreError as err:
-                LOGGER.error("DBStoreError in create_local_did: %s", err)
-                raise WalletError("Error when creating local DID") from err
+                    LOGGER.debug("Metadata updated")
+            else:
+                value_json = {
+                    "did": did,
+                    "method": method.method_name,
+                    "verkey": verkey,
+                    "verkey_type": key_type.key_type,
+                    "metadata": metadata,
+                }
+                tags = {
+                    "method": method.method_name,
+                    "verkey": verkey,
+                    "verkey_type": key_type.key_type,
+                }
+                if INVITATION_REUSE_KEY in metadata:
+                    tags[INVITATION_REUSE_KEY] = "true"
+                LOGGER.debug(
+                    "Inserting new DID with value: %s, tags: %s", value_json, tags
+                )
+                await _call_store(
+                    session,
+                    "insert",
+                    CATEGORY_DID,
+                    did,
+                    value_json=value_json,
+                    tags=tags,
+                )
+                LOGGER.debug("New DID inserted")
+        except DBStoreError as err:
+            LOGGER.error("DBStoreError in create_local_did: %s", err)
+            raise WalletError("Error when creating local DID") from err
 
         result = DIDInfo(
             did=did, verkey=verkey, metadata=metadata, method=method, key_type=key_type
@@ -367,148 +394,247 @@ class KanonWallet(BaseWallet):
         LOGGER.debug("create_local_did completed with result: %s", result)
         return result
 
-    async def store_did(self, did_info: DIDInfo) -> DIDInfo:
-        """Store a DID in the wallet."""
+    async def store_did(
+        self,
+        did_info: DIDInfo,
+        session: Optional[DBStoreSession] = None,
+    ) -> DIDInfo:
+        """Store a DID in the wallet.
+
+        Args:
+            did_info: The DID info to store
+            session: Optional existing session to reuse (avoids nested session creation)
+
+        """
         LOGGER.debug("Entering store_did with did_info: %s", did_info)
-        async with self._session.store.session() as session:
-            try:
-                LOGGER.debug("Checking if DID %s exists", did_info.did)
-                item = await session.fetch(CATEGORY_DID, did_info.did, for_update=True)
-                if item:
-                    LOGGER.error("DID %s already present", did_info.did)
-                    raise WalletDuplicateError("DID already present in wallet")
-                else:
-                    value_json = {
-                        "did": did_info.did,
-                        "method": did_info.method.method_name,
-                        "verkey": did_info.verkey,
-                        "verkey_type": did_info.key_type.key_type,
-                        "metadata": did_info.metadata,
-                    }
-                    tags = {
-                        "method": did_info.method.method_name,
-                        "verkey": did_info.verkey,
-                        "verkey_type": did_info.key_type.key_type,
-                    }
-                    if INVITATION_REUSE_KEY in did_info.metadata:
-                        tags[INVITATION_REUSE_KEY] = "true"
-                    LOGGER.debug(
-                        "Inserting DID with value: %s, tags: %s", value_json, tags
-                    )
-                    await session.insert(
-                        CATEGORY_DID,
-                        did_info.did,
-                        value_json=value_json,
-                        tags=tags,
-                    )
-                    LOGGER.debug("DID stored successfully")
-            except DBStoreError as err:
-                LOGGER.error("DBStoreError in store_did: %s", err)
-                raise WalletError("Error when storing DID") from err
+        if session is None:
+            async with self._session.store.session() as session:
+                return await self._store_did_impl(did_info, session)
+        return await self._store_did_impl(did_info, session)
+
+    async def _store_did_impl(
+        self, did_info: DIDInfo, session: DBStoreSession
+    ) -> DIDInfo:
+        """Internal implementation of store_did."""
+        try:
+            LOGGER.debug("Checking if DID %s exists", did_info.did)
+            item = await session.fetch(CATEGORY_DID, did_info.did, for_update=True)
+            if item:
+                LOGGER.error("DID %s already present", did_info.did)
+                raise WalletDuplicateError("DID already present in wallet")
+            else:
+                value_json = {
+                    "did": did_info.did,
+                    "method": did_info.method.method_name,
+                    "verkey": did_info.verkey,
+                    "verkey_type": did_info.key_type.key_type,
+                    "metadata": did_info.metadata,
+                }
+                tags = {
+                    "method": did_info.method.method_name,
+                    "verkey": did_info.verkey,
+                    "verkey_type": did_info.key_type.key_type,
+                }
+                if INVITATION_REUSE_KEY in did_info.metadata:
+                    tags[INVITATION_REUSE_KEY] = "true"
+                LOGGER.debug("Inserting DID with value: %s, tags: %s", value_json, tags)
+                await session.insert(
+                    CATEGORY_DID,
+                    did_info.did,
+                    value_json=value_json,
+                    tags=tags,
+                )
+                LOGGER.debug("DID stored successfully")
+        except DBStoreError as err:
+            LOGGER.error("DBStoreError in store_did: %s", err)
+            raise WalletError("Error when storing DID") from err
 
         LOGGER.debug("store_did completed with result: %s", did_info)
         return did_info
 
-    async def get_local_dids(self) -> Sequence[DIDInfo]:
-        """Get list of defined local DIDs."""
+    async def get_local_dids(
+        self,
+        session: Optional[DBStoreSession] = None,
+    ) -> Sequence[DIDInfo]:
+        """Get list of defined local DIDs.
+
+        Args:
+            session: Optional existing session to reuse (avoids nested session creation)
+
+        """
         LOGGER.debug("Entering get_local_dids")
+        if session is None:
+            async with self._session.store.session() as session:
+                return await self._get_local_dids_impl(session)
+        return await self._get_local_dids_impl(session)
+
+    async def _get_local_dids_impl(self, session: DBStoreSession) -> Sequence[DIDInfo]:
+        """Internal implementation of get_local_dids."""
         ret = []
-        async with self._session.store.session() as session:
-            try:
-                LOGGER.debug("Fetching all DIDs")
-                rows = await _call_store(session, "fetch_all", CATEGORY_DID)
-                for item in rows:
-                    did_info = self._load_did_entry(item)
-                    ret.append(did_info)
-                    LOGGER.debug("Loaded DID: %s", did_info.did)
-                LOGGER.debug("Fetched %d DIDs", len(ret))
-            except DBStoreError as err:
-                LOGGER.error("DBStoreError in get_local_dids: %s", err)
-                raise WalletError("Error fetching local DIDs") from err
+        try:
+            LOGGER.debug("Fetching all DIDs")
+            rows = await _call_store(session, "fetch_all", CATEGORY_DID)
+            for item in rows:
+                did_info = self._load_did_entry(item)
+                ret.append(did_info)
+                LOGGER.debug("Loaded DID: %s", did_info.did)
+            LOGGER.debug("Fetched %d DIDs", len(ret))
+        except DBStoreError as err:
+            LOGGER.error("DBStoreError in get_local_dids: %s", err)
+            raise WalletError("Error fetching local DIDs") from err
         LOGGER.debug("get_local_dids completed with %d results", len(ret))
         return ret
 
-    async def get_local_did(self, did: str) -> DIDInfo:
-        """Find info for a local DID."""
+    async def get_local_did(
+        self,
+        did: str,
+        session: Optional[DBStoreSession] = None,
+    ) -> DIDInfo:
+        """Find info for a local DID.
+
+        Args:
+            did: The DID to look up
+            session: Optional existing session to reuse (avoids nested session creation)
+
+        """
         LOGGER.debug("Entering get_local_did with did: %s", did)
         if not did:
             LOGGER.error("No DID provided")
             raise WalletNotFoundError("No identifier provided")
-        async with self._session.store.session() as session:
-            try:
-                LOGGER.debug(LOG_FETCH_DID, did)
-                did_entry = await _call_store(session, "fetch", CATEGORY_DID, did)
-            except DBStoreError as err:
-                LOGGER.error("DBStoreError in get_local_did: %s", err)
-                raise WalletError("Error when fetching local DID") from err
-            if not did_entry:
-                LOGGER.error(LOG_DID_NOT_FOUND, did)
-                raise WalletNotFoundError("Unknown DID: {}".format(did))
-            result = self._load_did_entry(did_entry)
-            LOGGER.debug("get_local_did completed with result: %s", result)
-            return result
+        if session is None:
+            async with self._session.store.session() as session:
+                return await self._get_local_did_impl(did, session)
+        return await self._get_local_did_impl(did, session)
 
-    async def get_local_did_for_verkey(self, verkey: str) -> DIDInfo:
-        """Resolve a local DID from a verkey."""
+    async def _get_local_did_impl(self, did: str, session: DBStoreSession) -> DIDInfo:
+        """Internal implementation of get_local_did."""
+        try:
+            LOGGER.debug(LOG_FETCH_DID, did)
+            did_entry = await _call_store(session, "fetch", CATEGORY_DID, did)
+        except DBStoreError as err:
+            LOGGER.error("DBStoreError in get_local_did: %s", err)
+            raise WalletError("Error when fetching local DID") from err
+        if not did_entry:
+            LOGGER.error(LOG_DID_NOT_FOUND, did)
+            raise WalletNotFoundError("Unknown DID: {}".format(did))
+        result = self._load_did_entry(did_entry)
+        LOGGER.debug("get_local_did completed with result: %s", result)
+        return result
+
+    async def get_local_did_for_verkey(
+        self,
+        verkey: str,
+        session: Optional[DBStoreSession] = None,
+    ) -> DIDInfo:
+        """Resolve a local DID from a verkey.
+
+        Args:
+            verkey: The verification key to look up
+            session: Optional existing session to reuse (avoids nested session creation)
+
+        """
         LOGGER.debug("Entering get_local_did_for_verkey with verkey: %s", verkey)
-        async with self._session.store.session() as session:
-            try:
-                LOGGER.debug("Fetching DIDs for verkey: %s", verkey)
-                dids = await _call_store(
-                    session, "fetch_all", CATEGORY_DID, {"verkey": verkey}
-                )
-            except DBStoreError as err:
-                LOGGER.error("DBStoreError in get_local_did_for_verkey: %s", err)
-                raise WalletError("Error when fetching local DID for verkey") from err
-            if dids:
-                ret_did = dids[0]
-                ret_did_info = ret_did.value_json
-                LOGGER.debug("Found DID info: %s", ret_did_info)
-                if len(dids) > 1 and ret_did_info["did"].startswith("did:peer:4"):
-                    LOGGER.debug("Multiple DIDs found, checking for shorter did:peer:4")
-                    other_did = dids[1]  # Assume only 2
-                    other_did_info = other_did.value_json
-                    if len(other_did_info["did"]) < len(ret_did_info["did"]):
-                        ret_did = other_did
-                        ret_did_info = other_did.value_json
-                        LOGGER.debug("Selected shorter DID: %s", ret_did_info["did"])
-                result = self._load_did_entry(ret_did)
-                LOGGER.debug("get_local_did_for_verkey completed with result: %s", result)
-                return result
-            LOGGER.error("No DID found for verkey: %s", verkey)
-            raise WalletNotFoundError("No DID defined for verkey: {}".format(verkey))
+        if session is None:
+            async with self._session.store.session() as session:
+                return await self._get_local_did_for_verkey_impl(verkey, session)
+        return await self._get_local_did_for_verkey_impl(verkey, session)
 
-    async def replace_local_did_metadata(self, did: str, metadata: dict):
-        """Replace metadata for a local DID."""
+    async def _get_local_did_for_verkey_impl(
+        self, verkey: str, session: DBStoreSession
+    ) -> DIDInfo:
+        """Internal implementation of get_local_did_for_verkey."""
+        try:
+            LOGGER.debug("Fetching DIDs for verkey: %s", verkey)
+            dids = await _call_store(
+                session, "fetch_all", CATEGORY_DID, {"verkey": verkey}
+            )
+        except DBStoreError as err:
+            LOGGER.error("DBStoreError in get_local_did_for_verkey: %s", err)
+            raise WalletError("Error when fetching local DID for verkey") from err
+        if dids:
+            ret_did = dids[0]
+            ret_did_info = ret_did.value_json
+            LOGGER.debug("Found DID info: %s", ret_did_info)
+            if len(dids) > 1 and ret_did_info["did"].startswith("did:peer:4"):
+                LOGGER.debug("Multiple DIDs found, checking for shorter did:peer:4")
+                other_did = dids[1]  # Assume only 2
+                other_did_info = other_did.value_json
+                if len(other_did_info["did"]) < len(ret_did_info["did"]):
+                    ret_did = other_did
+                    ret_did_info = other_did.value_json
+                    LOGGER.debug("Selected shorter DID: %s", ret_did_info["did"])
+            result = self._load_did_entry(ret_did)
+            LOGGER.debug("get_local_did_for_verkey completed with result: %s", result)
+            return result
+        LOGGER.error("No DID found for verkey: %s", verkey)
+        raise WalletNotFoundError("No DID defined for verkey: {}".format(verkey))
+
+    async def replace_local_did_metadata(
+        self,
+        did: str,
+        metadata: dict,
+        session: Optional[DBStoreSession] = None,
+    ):
+        """Replace metadata for a local DID.
+
+        Args:
+            did: The DID to update
+            metadata: The new metadata
+            session: Optional existing session to reuse (avoids nested session creation)
+
+        """
         LOGGER.debug(
             "Entering replace_local_did_metadata with did: %s, metadata: %s",
             did,
             metadata,
         )
-        async with self._session.store.session() as session:
-            try:
-                LOGGER.debug(LOG_FETCH_DID, did)
-                item = await session.fetch(CATEGORY_DID, did, for_update=True)
-                if not item:
-                    LOGGER.error(LOG_DID_NOT_FOUND, did)
-                    raise WalletNotFoundError("Unknown DID: {}".format(did)) from None
-                entry_val = item.value_json
-                LOGGER.debug("Current DID value: %s", entry_val)
-                if entry_val["metadata"] != metadata:
-                    LOGGER.debug("Updating metadata")
-                    entry_val["metadata"] = metadata
-                    await session.replace(
-                        CATEGORY_DID, did, value_json=entry_val, tags=item.tags
-                    )
-                    LOGGER.debug("Metadata replaced successfully")
-            except DBStoreError as err:
-                LOGGER.error("DBStoreError in replace_local_did_metadata: %s", err)
-                raise WalletError("Error updating DID metadata") from err
+        if session is None:
+            async with self._session.store.session() as session:
+                return await self._replace_local_did_metadata_impl(did, metadata, session)
+        return await self._replace_local_did_metadata_impl(did, metadata, session)
+
+    async def _replace_local_did_metadata_impl(
+        self, did: str, metadata: dict, session: DBStoreSession
+    ):
+        """Internal implementation of replace_local_did_metadata."""
+        try:
+            LOGGER.debug(LOG_FETCH_DID, did)
+            item = await session.fetch(CATEGORY_DID, did, for_update=True)
+            if not item:
+                LOGGER.error(LOG_DID_NOT_FOUND, did)
+                raise WalletNotFoundError("Unknown DID: {}".format(did)) from None
+            entry_val = item.value_json
+            LOGGER.debug("Current DID value: %s", entry_val)
+            if entry_val["metadata"] != metadata:
+                LOGGER.debug("Updating metadata")
+                entry_val["metadata"] = metadata
+                await session.replace(
+                    CATEGORY_DID, did, value_json=entry_val, tags=item.tags
+                )
+                LOGGER.debug("Metadata replaced successfully")
+        except DBStoreError as err:
+            LOGGER.error("DBStoreError in replace_local_did_metadata: %s", err)
+            raise WalletError("Error updating DID metadata") from err
         LOGGER.debug("replace_local_did_metadata completed")
 
-    async def get_public_did(self) -> DIDInfo:
-        """Retrieve the public DID."""
+    async def get_public_did(
+        self,
+        session: Optional[DBStoreSession] = None,
+    ) -> DIDInfo:
+        """Retrieve the public DID.
+
+        Args:
+            session: Optional existing session to reuse (avoids nested session creation)
+
+        """
         LOGGER.debug("Entering get_public_did")
+        if session is None:
+            async with self._session.store.session() as session:
+                return await self._get_public_did_impl(session)
+        return await self._get_public_did_impl(session)
+
+    async def _get_public_did_impl(self, session: DBStoreSession) -> DIDInfo:
+        """Internal implementation of get_public_did."""
         public_did = None
         public_info = None
         public_item = None
@@ -516,12 +642,12 @@ class KanonWallet(BaseWallet):
         try:
             LOGGER.debug("Fetching public DID record")
             public_item = await storage.get_record(
-                CATEGORY_CONFIG, RECORD_NAME_PUBLIC_DID
+                CATEGORY_CONFIG, RECORD_NAME_PUBLIC_DID, session=session
             )
             LOGGER.debug("Public DID record found")
         except StorageNotFoundError:
             LOGGER.debug("Public DID record not found, populating")
-            dids = await self.get_local_dids()
+            dids = await self.get_local_dids(session=session)
             for info in dids:
                 if info.metadata.get("public"):
                     public_did = info.did
@@ -535,20 +661,21 @@ class KanonWallet(BaseWallet):
                         type=CATEGORY_CONFIG,
                         id=RECORD_NAME_PUBLIC_DID,
                         value=json.dumps({"did": public_did}),
-                    )
+                    ),
+                    session=session,
                 )
                 LOGGER.debug("Public DID record added")
             except StorageDuplicateError:
                 LOGGER.debug("Public DID record already exists, fetching")
                 public_item = await storage.get_record(
-                    CATEGORY_CONFIG, RECORD_NAME_PUBLIC_DID
+                    CATEGORY_CONFIG, RECORD_NAME_PUBLIC_DID, session=session
                 )
         if public_item:
             public_did = json.loads(public_item.value)["did"]
             LOGGER.debug("Public DID from record: %s", public_did)
             if public_did:
                 try:
-                    public_info = await self.get_local_did(public_did)
+                    public_info = await self.get_local_did(public_did, session=session)
                     LOGGER.debug("Fetched public DID info: %s", public_info)
                 except WalletNotFoundError:
                     LOGGER.warning("Public DID not found in local DIDs: %s", public_did)
@@ -556,73 +683,93 @@ class KanonWallet(BaseWallet):
         LOGGER.debug("get_public_did completed with result: %s", public_info)
         return public_info
 
-    async def set_public_did(self, did: str | DIDInfo) -> DIDInfo:
-        """Assign the public DID."""
+    async def set_public_did(
+        self,
+        did: str | DIDInfo,
+        session: Optional[DBStoreSession] = None,
+    ) -> DIDInfo:
+        """Assign the public DID.
+
+        Args:
+            did: The DID or DIDInfo to set as public
+            session: Optional existing session to reuse (avoids nested session creation)
+
+        """
         LOGGER.debug("Entering set_public_did with did: %s", did)
-        async with self._session.store.session() as session:
-            if isinstance(did, str):
-                try:
-                    LOGGER.debug("Fetching DID entry for: %s", did)
-                    item = await _call_store(
-                        session, "fetch", CATEGORY_DID, did, for_update=True
-                    )
-                except DBStoreError as err:
-                    LOGGER.error("DBStoreError in set_public_did: %s", err)
-                    raise WalletError("Error when fetching local DID") from err
-                if not item:
-                    LOGGER.error("DID not found: %s", did)
-                    raise WalletNotFoundError("Unknown DID: {}".format(did))
-                info = self._load_did_entry(item)
-                LOGGER.debug("Loaded DID info: %s", info)
-            else:
-                info = did
-                item = None
-                LOGGER.debug("Using provided DIDInfo: %s", info)
+        if session is None:
+            async with self._session.store.session() as session:
+                return await self._set_public_did_impl(did, session)
+        return await self._set_public_did_impl(did, session)
 
-            public = await self.get_public_did()
-            LOGGER.debug("Current public DID: %s", public)
-            if not public or public.did != info.did:
-                storage = KanonStorage(self._session)
-                if not info.metadata.get("posted"):
-                    metadata = {**info.metadata, "posted": True}
-                    LOGGER.debug("Updating metadata with posted=True: %s", metadata)
-                    if item:
-                        entry_val = item.value_json
-                        entry_val["metadata"] = metadata
-                        try:
-                            LOGGER.debug("Replacing DID entry")
-                            await _call_store(
-                                session,
-                                "replace",
-                                CATEGORY_DID,
-                                did,
-                                value_json=entry_val,
-                                tags=item.tags,
-                            )
-                            LOGGER.debug("DID entry replaced")
-                        except DBStoreError as err:
-                            LOGGER.error("DBStoreError in set_public_did: %s", err)
-                            raise WalletError("Error updating DID metadata") from err
-                    else:
-                        LOGGER.debug("Replacing metadata via replace_local_did_metadata")
-                        await self.replace_local_did_metadata(info.did, metadata)
-                    info = info._replace(metadata=metadata)
-                LOGGER.debug("Updating public DID record to: %s", info.did)
-                await storage.update_record(
-                    StorageRecord(
-                        type=CATEGORY_CONFIG,
-                        id=RECORD_NAME_PUBLIC_DID,
-                        value="{}",
-                    ),
-                    value=json.dumps({"did": info.did}),
-                    tags={},
-                    session=session,
+    async def _set_public_did_impl(
+        self, did: str | DIDInfo, session: DBStoreSession
+    ) -> DIDInfo:
+        """Internal implementation of set_public_did."""
+        if isinstance(did, str):
+            try:
+                LOGGER.debug("Fetching DID entry for: %s", did)
+                item = await _call_store(
+                    session, "fetch", CATEGORY_DID, did, for_update=True
                 )
-                LOGGER.debug("Public DID set")
-                public = info
+            except DBStoreError as err:
+                LOGGER.error("DBStoreError in set_public_did: %s", err)
+                raise WalletError("Error when fetching local DID") from err
+            if not item:
+                LOGGER.error("DID not found: %s", did)
+                raise WalletNotFoundError("Unknown DID: {}".format(did))
+            info = self._load_did_entry(item)
+            LOGGER.debug("Loaded DID info: %s", info)
+        else:
+            info = did
+            item = None
+            LOGGER.debug("Using provided DIDInfo: %s", info)
 
-            LOGGER.debug("set_public_did completed with result: %s", public)
-            return public
+        public = await self.get_public_did(session=session)
+        LOGGER.debug("Current public DID: %s", public)
+        if not public or public.did != info.did:
+            storage = KanonStorage(self._session)
+            if not info.metadata.get("posted"):
+                metadata = {**info.metadata, "posted": True}
+                LOGGER.debug("Updating metadata with posted=True: %s", metadata)
+                if item:
+                    entry_val = item.value_json
+                    entry_val["metadata"] = metadata
+                    try:
+                        LOGGER.debug("Replacing DID entry")
+                        await _call_store(
+                            session,
+                            "replace",
+                            CATEGORY_DID,
+                            did,
+                            value_json=entry_val,
+                            tags=item.tags,
+                        )
+                        LOGGER.debug("DID entry replaced")
+                    except DBStoreError as err:
+                        LOGGER.error("DBStoreError in set_public_did: %s", err)
+                        raise WalletError("Error updating DID metadata") from err
+                else:
+                    LOGGER.debug("Replacing metadata via replace_local_did_metadata")
+                    await self.replace_local_did_metadata(
+                        info.did, metadata, session=session
+                    )
+                info = info._replace(metadata=metadata)
+            LOGGER.debug("Updating public DID record to: %s", info.did)
+            await storage.update_record(
+                StorageRecord(
+                    type=CATEGORY_CONFIG,
+                    id=RECORD_NAME_PUBLIC_DID,
+                    value="{}",
+                ),
+                value=json.dumps({"did": info.did}),
+                tags={},
+                session=session,
+            )
+            LOGGER.debug("Public DID set")
+            public = info
+
+        LOGGER.debug("set_public_did completed with result: %s", public)
+        return public
 
     async def set_did_endpoint(
         self,
@@ -633,13 +780,63 @@ class KanonWallet(BaseWallet):
         write_ledger: bool = True,
         endorser_did: Optional[str] = None,
         routing_keys: Optional[List[str]] = None,
+        session: Optional[DBStoreSession] = None,
     ):
-        """Update the endpoint for a DID."""
+        """Update the endpoint for a DID.
+
+        Args:
+            did: The DID to update
+            endpoint: The new endpoint
+            ledger: The ledger to update
+            endpoint_type: The type of endpoint
+            write_ledger: Whether to write to ledger
+            endorser_did: Optional endorser DID
+            routing_keys: Optional routing keys
+            session: Optional existing session to reuse (avoids nested session creation)
+
+        """
         LOGGER.debug(
             "Entering set_did_endpoint with did: %s, endpoint: %s", did, endpoint
         )
+
+        # Create session if not provided for consistency across all operations
+        if session is None:
+            async with self._session.store.session() as session:
+                return await self._set_did_endpoint_impl(
+                    did,
+                    endpoint,
+                    ledger,
+                    endpoint_type,
+                    write_ledger,
+                    endorser_did,
+                    routing_keys,
+                    session,
+                )
+        return await self._set_did_endpoint_impl(
+            did,
+            endpoint,
+            ledger,
+            endpoint_type,
+            write_ledger,
+            endorser_did,
+            routing_keys,
+            session,
+        )
+
+    async def _set_did_endpoint_impl(
+        self,
+        did: str,
+        endpoint: str,
+        ledger: BaseLedger,
+        endpoint_type: Optional[EndpointType],
+        write_ledger: bool,
+        endorser_did: Optional[str],
+        routing_keys: Optional[List[str]],
+        session: DBStoreSession,
+    ):
+        """Internal implementation of set_did_endpoint."""
         LOGGER.debug("Fetching DID info for: %s", did)
-        did_info = await self.get_local_did(did)
+        did_info = await self.get_local_did(did, session=session)
         if did_info.method not in (SOV, INDY):
             LOGGER.error("Invalid DID method: %s", did_info.method)
             raise WalletError(
@@ -653,7 +850,7 @@ class KanonWallet(BaseWallet):
             metadata[endpoint_type.indy] = endpoint
             LOGGER.debug("Updated metadata with endpoint: %s", endpoint)
 
-        wallet_public_didinfo = await self.get_public_did()
+        wallet_public_didinfo = await self.get_public_did(session=session)
         LOGGER.debug("Public DID info: %s", wallet_public_didinfo)
         if (
             wallet_public_didinfo and wallet_public_didinfo.did == did
@@ -680,13 +877,23 @@ class KanonWallet(BaseWallet):
                         return attrib_def
 
         LOGGER.debug("Replacing local DID metadata")
-        await self.replace_local_did_metadata(did, metadata)
+        await self.replace_local_did_metadata(did, metadata, session=session)
         LOGGER.debug("set_did_endpoint completed")
 
     async def rotate_did_keypair_start(
-        self, did: str, next_seed: Optional[str] = None
+        self,
+        did: str,
+        next_seed: Optional[str] = None,
+        session: Optional[DBStoreSession] = None,
     ) -> str:
-        """Begin key rotation for DID."""
+        """Begin key rotation for DID.
+
+        Args:
+            did: The DID to rotate
+            next_seed: Optional seed for the new key
+            session: Optional existing session to reuse (avoids nested session creation)
+
+        """
         LOGGER.debug(
             "Entering rotate_did_keypair_start with did: %s, next_seed: %s",
             did,
@@ -718,75 +925,97 @@ class KanonWallet(BaseWallet):
                 ) from err
             LOGGER.debug("Key already exists, proceeding")
 
-        async with self._session.store.session() as session:
-            try:
-                LOGGER.debug(LOG_FETCH_DID, did)
-                item = await _call_store(
-                    session, "fetch", CATEGORY_DID, did, for_update=True
-                )
-                if not item:
-                    LOGGER.error(LOG_DID_NOT_FOUND, did)
-                    raise WalletNotFoundError("Unknown DID: {}".format(did)) from None
-                entry_val = item.value_json
-                metadata = entry_val.get("metadata", {})
-                metadata["next_verkey"] = verkey
-                entry_val["metadata"] = metadata
-                LOGGER.debug("Updating DID with next_verkey: %s", verkey)
-                await _call_store(
-                    session,
-                    "replace",
-                    CATEGORY_DID,
-                    did,
-                    value_json=entry_val,
-                    tags=item.tags,
-                )
-                LOGGER.debug("DID updated")
-            except DBStoreError as err:
-                LOGGER.error("DBStoreError in rotate_did_keypair_start: %s", err)
-                raise WalletError("Error updating DID metadata") from err
+        if session is None:
+            async with self._session.store.session() as session:
+                return await self._rotate_did_keypair_start_impl(did, verkey, session)
+        return await self._rotate_did_keypair_start_impl(did, verkey, session)
+
+    async def _rotate_did_keypair_start_impl(
+        self, did: str, verkey: str, session: DBStoreSession
+    ) -> str:
+        """Internal implementation of rotate_did_keypair_start."""
+        try:
+            LOGGER.debug(LOG_FETCH_DID, did)
+            item = await _call_store(session, "fetch", CATEGORY_DID, did, for_update=True)
+            if not item:
+                LOGGER.error(LOG_DID_NOT_FOUND, did)
+                raise WalletNotFoundError("Unknown DID: {}".format(did)) from None
+            entry_val = item.value_json
+            metadata = entry_val.get("metadata", {})
+            metadata["next_verkey"] = verkey
+            entry_val["metadata"] = metadata
+            LOGGER.debug("Updating DID with next_verkey: %s", verkey)
+            await _call_store(
+                session,
+                "replace",
+                CATEGORY_DID,
+                did,
+                value_json=entry_val,
+                tags=item.tags,
+            )
+            LOGGER.debug("DID updated")
+        except DBStoreError as err:
+            LOGGER.error("DBStoreError in rotate_did_keypair_start: %s", err)
+            raise WalletError("Error updating DID metadata") from err
 
         LOGGER.debug("rotate_did_keypair_start completed with verkey: %s", verkey)
         return verkey
 
-    async def rotate_did_keypair_apply(self, did: str) -> DIDInfo:
-        """Apply temporary keypair as main for DID."""
+    async def rotate_did_keypair_apply(
+        self,
+        did: str,
+        session: Optional[DBStoreSession] = None,
+    ) -> DIDInfo:
+        """Apply temporary keypair as main for DID.
+
+        Args:
+            did: The DID to apply key rotation for
+            session: Optional existing session to reuse (avoids nested session creation)
+
+        """
         LOGGER.debug("Entering rotate_did_keypair_apply with did: %s", did)
-        async with self._session.store.session() as session:
-            try:
-                LOGGER.debug(LOG_FETCH_DID, did)
-                item = await _call_store(
-                    session, "fetch", CATEGORY_DID, did, for_update=True
-                )
-                if not item:
-                    LOGGER.error(LOG_DID_NOT_FOUND, did)
-                    raise WalletNotFoundError("Unknown DID: {}".format(did)) from None
-                entry_val = item.value_json
-                metadata = entry_val.get("metadata", {})
-                next_verkey = metadata.get("next_verkey")
-                if not next_verkey:
-                    LOGGER.error("No next_verkey found for DID: %s", did)
-                    raise WalletError("Cannot rotate DID key: no next key established")
-                LOGGER.debug("Applying next_verkey: %s", next_verkey)
-                del metadata["next_verkey"]
+        if session is None:
+            async with self._session.store.session() as session:
+                return await self._rotate_did_keypair_apply_impl(did, session)
+        return await self._rotate_did_keypair_apply_impl(did, session)
 
-                # Preserve the method and key_type from the stored DID entry
-                method_name = entry_val.get("method")
-                key_type_name = entry_val.get("verkey_type", "ed25519")
+    async def _rotate_did_keypair_apply_impl(
+        self, did: str, session: DBStoreSession
+    ) -> DIDInfo:
+        """Internal implementation of rotate_did_keypair_apply."""
+        try:
+            LOGGER.debug(LOG_FETCH_DID, did)
+            item = await _call_store(session, "fetch", CATEGORY_DID, did, for_update=True)
+            if not item:
+                LOGGER.error(LOG_DID_NOT_FOUND, did)
+                raise WalletNotFoundError("Unknown DID: {}".format(did)) from None
+            entry_val = item.value_json
+            metadata = entry_val.get("metadata", {})
+            next_verkey = metadata.get("next_verkey")
+            if not next_verkey:
+                LOGGER.error("No next_verkey found for DID: %s", did)
+                raise WalletError("Cannot rotate DID key: no next key established")
+            LOGGER.debug("Applying next_verkey: %s", next_verkey)
+            del metadata["next_verkey"]
 
-                entry_val["verkey"] = next_verkey
-                item.tags["verkey"] = next_verkey
-                await _call_store(
-                    session,
-                    "replace",
-                    CATEGORY_DID,
-                    did,
-                    value_json=entry_val,
-                    tags=item.tags,
-                )
-                LOGGER.debug("Key rotation applied")
-            except DBStoreError as err:
-                LOGGER.error("DBStoreError in rotate_did_keypair_apply: %s", err)
-                raise WalletError("Error updating DID metadata") from err
+            # Preserve the method and key_type from the stored DID entry
+            method_name = entry_val.get("method")
+            key_type_name = entry_val.get("verkey_type", "ed25519")
+
+            entry_val["verkey"] = next_verkey
+            item.tags["verkey"] = next_verkey
+            await _call_store(
+                session,
+                "replace",
+                CATEGORY_DID,
+                did,
+                value_json=entry_val,
+                tags=item.tags,
+            )
+            LOGGER.debug("Key rotation applied")
+        except DBStoreError as err:
+            LOGGER.error("DBStoreError in rotate_did_keypair_apply: %s", err)
+            raise WalletError("Error updating DID metadata") from err
 
         # Convert method and key_type strings to their respective objects
         did_methods: DIDMethods = self._session.inject(DIDMethods)

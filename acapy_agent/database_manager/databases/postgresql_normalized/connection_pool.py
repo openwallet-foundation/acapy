@@ -81,9 +81,11 @@ class PostgresConnectionPool:
             async with asyncio.timeout(60.0):
                 conn = await self.pool.getconn()
             # Rollback any existing transaction to ensure clean state
+            # This ensures the connection is in IDLE state before returning
             await conn.rollback()
-            # Ensure client encoding is set to UTF-8
-            await conn.execute("SET client_encoding = 'UTF8'")
+            # Note: UTF-8 encoding is already set at pool creation via kwargs
+            # (options: -c client_encoding=UTF8), so no need to SET it here.
+            # Executing SET here would start an implicit transaction and add latency.
             conn_id = self.connection_count
             self.connection_ids[id(conn)] = conn_id
             self.connection_count += 1
@@ -115,14 +117,13 @@ class PostgresConnectionPool:
             # Roll back any open transactions to ensure clean state
             await conn.rollback()
             await self.pool.putconn(conn)
-            conn_id = self.connection_ids.get(id(conn), -1)
+            conn_id = self.connection_ids.pop(id(conn), -1)
             LOGGER.debug(
                 "Connection ID=%d returned to pool. Pool size: %d/%d",
                 conn_id,
                 self.pool.get_stats().get("pool_available", 0),
                 self.max_size,
             )
-            del self.connection_ids[id(conn)]
         except Exception as e:
             LOGGER.error("Failed to return connection to pool: %s", str(e))
             raise DatabaseError(
