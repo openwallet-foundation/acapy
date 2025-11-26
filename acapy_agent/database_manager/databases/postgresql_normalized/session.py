@@ -46,7 +46,7 @@ class PostgresSession(AbstractDatabaseSession):
         self.is_txn = is_txn
         self.release_number = release_number
         self.conn = None
-        self.profile_id = profile_id 
+        self.profile_id = profile_id
         self.schema_context = database.schema_context
 
     def _process_value(
