@@ -265,8 +265,11 @@ class KanonAnonCredsProfileSession(ProfileSession):
     async def _setup(self):
         self._acquire_start = time.perf_counter()
         try:
-            self._dbstore_handle = await asyncio.wait_for(self._dbstore_opener, 60)
-            self._askar_handle = await asyncio.wait_for(self._askar_opener, 60)
+            # Open both sessions in parallel for better performance
+            self._dbstore_handle, self._askar_handle = await asyncio.gather(
+                asyncio.wait_for(self._dbstore_opener, 60),
+                asyncio.wait_for(self._askar_opener, 60),
+            )
         except asyncio.TimeoutError:
             LOGGER.error("Timeout waiting for store session")
             raise
