@@ -4,9 +4,7 @@ from unittest import IsolatedAsyncioTestCase
 import requests
 
 from ...messaging.decorators.trace_decorator import TRACE_MESSAGE_TARGET, TraceDecorator
-from ...protocols.issue_credential.v1_0.models.credential_exchange import (
-    V10CredentialExchange,
-)
+from ...protocols.issue_credential.v2_0.models.cred_ex_record import V20CredExRecord
 from ...protocols.out_of_band.v1_0.messages.invitation import InvitationMessage
 from ...protocols.trustping.v1_0.messages.ping import Ping
 from ...transport.inbound.message import InboundMessage
@@ -26,9 +24,9 @@ class TestTracing(IsolatedAsyncioTestCase):
         invi._trace = TraceDecorator(target="message")
         assert test_module.tracing_enabled({}, invi)
 
-        cred_ex_rec = V10CredentialExchange()
+        cred_ex_rec = V20CredExRecord()
         assert not test_module.tracing_enabled({}, cred_ex_rec)
-        cred_ex_rec = V10CredentialExchange(trace=True)
+        cred_ex_rec = V20CredExRecord(trace=True)
         assert test_module.tracing_enabled({}, cred_ex_rec)
 
         dict_message = {"no": "trace"}
@@ -124,7 +122,7 @@ class TestTracing(IsolatedAsyncioTestCase):
         test_module.trace_event(context, {"~thread": {"thid": "1234"}})
         test_module.trace_event(context, {"thread_id": "1234"})
         test_module.trace_event(context, {"@id": "12345"})
-        test_module.trace_event(context, V10CredentialExchange())
+        test_module.trace_event(context, V20CredExRecord())
         test_module.trace_event(context, [])
 
     async def test_post_event(self):
