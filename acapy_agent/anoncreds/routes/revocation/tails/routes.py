@@ -41,6 +41,8 @@ async def get_tails_file(request: web.BaseRequest) -> web.FileResponse:
 
     # Get the rev_reg_def again since we need it for the tails_location
     rev_reg_def = await revocation.get_created_revocation_registry_definition(rev_reg_id)
+    if rev_reg_def is None:
+        raise web.HTTPNotFound(reason=f"Rev reg def with id {rev_reg_id} not found")
 
     tails_local_path = rev_reg_def.value.tails_location
     return web.FileResponse(path=tails_local_path, status=200)
