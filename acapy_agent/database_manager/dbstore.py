@@ -100,6 +100,7 @@ class Scan(AsyncIterator):
                 return await anext(self._generator)  # noqa: F821
             except StopAsyncIteration:
                 LOGGER.error("StopAsyncIteration in __anext__")
+                await self.aclose()
                 raise
         else:
             # Handle sync generators using the executor
@@ -112,6 +113,7 @@ class Scan(AsyncIterator):
             loop = asyncio.get_running_loop()
             result = await loop.run_in_executor(self._executor, get_next)
             if result is None:
+                await self.aclose()
                 raise StopAsyncIteration
             return result
 
@@ -213,6 +215,7 @@ class ScanKeyset(AsyncIterator):
                 return await anext(self._generator)  # noqa: F821
             except StopAsyncIteration:
                 LOGGER.error("StopAsyncIteration in __anext__")
+                await self.aclose()
                 raise
         else:
             # Handle sync generators using the executor
@@ -225,12 +228,30 @@ class ScanKeyset(AsyncIterator):
             loop = asyncio.get_running_loop()
             result = await loop.run_in_executor(self._executor, get_next)
             if result is None:
+                await self.aclose()
                 raise StopAsyncIteration
             return result
 
     def __del__(self) -> None:
         """Clean up resources."""
         self._executor.shutdown(wait=False)
+
+    async def aclose(self) -> None:
+        """Close the underlying generator and release resources."""
+        try:
+            if self._generator:
+                if self._is_async:
+                    agen_aclose = getattr(self._generator, "aclose", None)
+                    if agen_aclose:
+                        await agen_aclose()
+                else:
+                    loop = asyncio.get_running_loop()
+                    await loop.run_in_executor(
+                        self._executor,
+                        lambda: getattr(self._generator, "close", lambda: None)(),
+                    )
+        finally:
+            self._executor.shutdown(wait=False)
 
     async def aclose(self) -> None:
         """Close the underlying generator and release resources."""
