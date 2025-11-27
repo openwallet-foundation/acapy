@@ -122,23 +122,6 @@ class Scan(AsyncIterator):
         # Shut down the executor to clean up resources
         self._executor.shutdown(wait=False)
 
-    async def aclose(self) -> None:
-        """Close the underlying generator and release resources."""
-        try:
-            if self._generator:
-                if self._is_async:
-                    agen_aclose = getattr(self._generator, "aclose", None)
-                    if agen_aclose:
-                        await agen_aclose()
-                else:
-                    loop = asyncio.get_running_loop()
-                    await loop.run_in_executor(
-                        self._executor,
-                        lambda: getattr(self._generator, "close", lambda: None)(),
-                    )
-        finally:
-            self._executor.shutdown(wait=False)
-
 
 class ScanKeyset(AsyncIterator):
     """Keyset-based scan iterator."""
@@ -235,23 +218,6 @@ class ScanKeyset(AsyncIterator):
     def __del__(self) -> None:
         """Clean up resources."""
         self._executor.shutdown(wait=False)
-
-    async def aclose(self) -> None:
-        """Close the underlying generator and release resources."""
-        try:
-            if self._generator:
-                if self._is_async:
-                    agen_aclose = getattr(self._generator, "aclose", None)
-                    if agen_aclose:
-                        await agen_aclose()
-                else:
-                    loop = asyncio.get_running_loop()
-                    await loop.run_in_executor(
-                        self._executor,
-                        lambda: getattr(self._generator, "close", lambda: None)(),
-                    )
-        finally:
-            self._executor.shutdown(wait=False)
 
     async def aclose(self) -> None:
         """Close the underlying generator and release resources."""
