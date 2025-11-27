@@ -78,8 +78,7 @@ class PostgresConnectionPool:
     async def getconn(self):
         """Get a connection from the pool."""
         try:
-            async with asyncio.timeout(60.0):
-                conn = await self.pool.getconn()
+            conn = await asyncio.wait_for(self.pool.getconn(), timeout=60.0)
             # Rollback any existing transaction to ensure clean state
             # This ensures the connection is in IDLE state before returning
             await conn.rollback()

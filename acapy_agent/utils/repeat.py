@@ -1,6 +1,7 @@
 """Utils for repeating tasks."""
 
 import asyncio
+from contextlib import asynccontextmanager
 from typing import Optional
 
 
@@ -45,7 +46,8 @@ class RepeatAttempt:
 
     def timeout(self, interval: Optional[float] = None):
         """Create a context manager for timing out an attempt."""
-        return asyncio.timeout(self.next_interval if interval is None else interval)
+        duration = self.next_interval if interval is None else interval
+        return _timeout_cm(duration)
 
     def __repr__(self) -> str:
         """Format as a string for debugging."""
@@ -88,3 +90,23 @@ class RepeatSequence:
             f"<{self.__class__.__name__} "
             f"limit={self.limit} interval={self.interval} backoff={self.backoff}>"
         )
+
+
+def _timeout_cm(duration: float):
+    """Compatibility wrapper for asyncio.timeout (Python <3.11)."""
+    if hasattr(asyncio, "timeout"):
+        return asyncio.timeout(duration)
+
+    @asynccontextmanager
+    async def _timeout_gen():
+        loop = asyncio.get_running_loop()
+        task = asyncio.current_task()
+        handle = loop.call_later(duration, task.cancel)
+        try:
+            yield
+        except asyncio.CancelledError as exc:
+            raise asyncio.TimeoutError from exc
+        finally:
+            handle.cancel()
+
+    return _timeout_gen()
