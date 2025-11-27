@@ -10,7 +10,7 @@ from aries_askar import AskarError, AskarErrorCode
 
 from .error import DBStoreError, DBStoreErrorCode
 
-DBError: Tuple[Type[BaseException], ...] = (AskarError, DBStoreError)
+DBError: Tuple[Type[AskarError], Type[DBStoreError]] = (AskarError, DBStoreError)
 
 DBCodeUnion = Union[AskarErrorCode, DBStoreErrorCode]
 

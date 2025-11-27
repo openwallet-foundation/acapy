@@ -3,6 +3,7 @@
 import asyncio
 import logging
 import os
+import re
 from contextlib import contextmanager
 from functools import partial
 from typing import (
@@ -151,14 +152,18 @@ class EventBus:
 
         return error_handler
 
-    def subscribe(self, pattern: Pattern, processor: Callable):
+    def subscribe(self, pattern: Pattern | str, processor: Callable):
         """Subscribe to an event.
 
         Args:
-            pattern (Pattern): compiled regular expression for matching topics
+            pattern (Pattern | str): compiled regular expression for matching topics,
+                or the string to be compiled into a regular expression.
             processor (Callable): async callable accepting profile and event
 
         """
+        if isinstance(pattern, str):
+            pattern = re.compile(pattern)
+
         if pattern not in self.topic_patterns_to_subscribers:
             self.topic_patterns_to_subscribers[pattern] = []
         self.topic_patterns_to_subscribers[pattern].append(processor)
