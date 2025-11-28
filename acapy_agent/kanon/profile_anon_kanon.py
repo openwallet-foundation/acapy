@@ -264,18 +264,45 @@ class KanonAnonCredsProfileSession(ProfileSession):
 
     async def _setup(self):
         self._acquire_start = time.perf_counter()
+        is_txn = getattr(self._dbstore_opener, 'is_transaction', 'unknown')
+        LOGGER.debug(
+            "KanonSession._setup starting for profile=%s, is_txn=%s",
+            self._profile.profile_id,
+            is_txn
+        )
         try:
             # Open both sessions in parallel for better performance
+            LOGGER.debug("Opening DBStore and Askar sessions in parallel...")
             self._dbstore_handle, self._askar_handle = await asyncio.gather(
                 asyncio.wait_for(self._dbstore_opener, 60),
                 asyncio.wait_for(self._askar_opener, 60),
             )
+            LOGGER.debug(
+                "Sessions opened successfully in %.3fs",
+                time.perf_counter() - self._acquire_start
+            )
         except asyncio.TimeoutError:
-            LOGGER.error("Timeout waiting for store session")
+            LOGGER.error(
+                "TIMEOUT waiting for store session after %.3fs for profile=%s",
+                time.perf_counter() - self._acquire_start,
+                self._profile.profile_id
+            )
             raise
         except DBError as err:
-            LOGGER.error("Error opening store session: %s", str(err))
+            LOGGER.error(
+                "DBError opening store session after %.3fs: %s",
+                time.perf_counter() - self._acquire_start,
+                str(err)
+            )
             raise ProfileError("Error opening store session") from err
+        except Exception as err:
+            LOGGER.error(
+                "Unexpected error opening store session after %.3fs: %s - %s",
+                time.perf_counter() - self._acquire_start,
+                type(err).__name__,
+                str(err)
+            )
+            raise
 
         self._acquire_end = time.perf_counter()
         self._dbstore_opener = None
@@ -293,26 +320,44 @@ class KanonAnonCredsProfileSession(ProfileSession):
 
     async def _teardown(self, commit: Optional[bool] = None):
         """Close both sessions, committing transactions if needed."""
+        teardown_start = time.perf_counter()
+        LOGGER.debug(
+            "KanonSession._teardown starting, commit=%s, profile=%s",
+            commit,
+            self._profile.profile_id
+        )
         if commit and self.is_transaction:
             try:
-                # ***CHANGE***: Commit both sessions if transaction
+                LOGGER.debug("Committing DBStore transaction...")
                 await self._dbstore_handle.commit()
+                LOGGER.debug("Committing Askar transaction...")
                 await self._askar_handle.commit()
+                LOGGER.debug("Both transactions committed")
             except DBError as err:
+                LOGGER.error("Error committing transaction: %s", str(err))
                 raise ProfileError("Error committing transaction") from err
         if self._dbstore_handle:
+            LOGGER.debug("Closing DBStore handle...")
             await self._dbstore_handle.close()
         if self._askar_handle:
+            LOGGER.debug("Closing Askar handle...")
             await self._askar_handle.close()
+        LOGGER.debug(
+            "KanonSession._teardown completed in %.3fs",
+            time.perf_counter() - teardown_start
+        )
         self._check_duration()
 
     def _check_duration(self):
-        """Check transaction duration for monitoring purposes.
-
-        This method is intentionally empty as duration checking is not
-        implemented in the current kanon profile implementation.
-        """
-        pass
+        """Check transaction duration for monitoring purposes."""
+        if self._acquire_start and self._acquire_end:
+            duration = time.perf_counter() - self._acquire_start
+            if duration > 5.0:
+                LOGGER.warning(
+                    "Long-running session detected: %.3fs for profile=%s",
+                    duration,
+                    self._profile.profile_id
+                )
 
     def __del__(self):
         """Clean up resources."""

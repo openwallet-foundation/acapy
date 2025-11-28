@@ -814,17 +814,28 @@ class DBOpenSession:
 
     async def _open(self) -> DBStoreSession:
         """Perform the action."""
-        LOGGER.debug("_open called")
+        import time
+        start = time.perf_counter()
+        LOGGER.debug(
+            "DBOpenSession._open starting for profile=%s, is_txn=%s",
+            self._profile, self._is_txn
+        )
         if self._session:
             raise DBStoreError(DBStoreErrorCode.WRAPPER, "Session already opened")
         method = self._db.transaction if self._is_txn else self._db.session
+        LOGGER.debug("Calling db.%s...", "transaction" if self._is_txn else "session")
         self._db_session = (
             await method(self._profile)
             if inspect.iscoroutinefunction(method)
             else method(self._profile)
         )
+        LOGGER.debug("Got db_session, calling __aenter__...")
         await self._db_session.__aenter__()
         self._session = DBStoreSession(self._db_session, self._is_txn)
+        LOGGER.debug(
+            "DBOpenSession._open completed in %.3fs for profile=%s",
+            time.perf_counter() - start, self._profile
+        )
         return self._session
 
     def __await__(self) -> DBStoreSession:
