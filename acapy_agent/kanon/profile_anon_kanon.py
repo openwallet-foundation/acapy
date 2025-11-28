@@ -264,11 +264,11 @@ class KanonAnonCredsProfileSession(ProfileSession):
 
     async def _setup(self):
         self._acquire_start = time.perf_counter()
-        is_txn = getattr(self._dbstore_opener, 'is_transaction', 'unknown')
+        is_txn = getattr(self._dbstore_opener, "is_transaction", "unknown")
         LOGGER.debug(
             "KanonSession._setup starting for profile=%s, is_txn=%s",
             self._profile.profile_id,
-            is_txn
+            is_txn,
         )
         try:
             # Open both sessions in parallel for better performance
@@ -279,20 +279,20 @@ class KanonAnonCredsProfileSession(ProfileSession):
             )
             LOGGER.debug(
                 "Sessions opened successfully in %.3fs",
-                time.perf_counter() - self._acquire_start
+                time.perf_counter() - self._acquire_start,
             )
         except asyncio.TimeoutError:
             LOGGER.error(
                 "TIMEOUT waiting for store session after %.3fs for profile=%s",
                 time.perf_counter() - self._acquire_start,
-                self._profile.profile_id
+                self._profile.profile_id,
             )
             raise
         except DBError as err:
             LOGGER.error(
                 "DBError opening store session after %.3fs: %s",
                 time.perf_counter() - self._acquire_start,
-                str(err)
+                str(err),
             )
             raise ProfileError("Error opening store session") from err
         except Exception as err:
@@ -300,7 +300,7 @@ class KanonAnonCredsProfileSession(ProfileSession):
                 "Unexpected error opening store session after %.3fs: %s - %s",
                 time.perf_counter() - self._acquire_start,
                 type(err).__name__,
-                str(err)
+                str(err),
             )
             raise
 
@@ -324,7 +324,7 @@ class KanonAnonCredsProfileSession(ProfileSession):
         LOGGER.debug(
             "KanonSession._teardown starting, commit=%s, profile=%s",
             commit,
-            self._profile.profile_id
+            self._profile.profile_id,
         )
         if commit and self.is_transaction:
             try:
@@ -344,7 +344,7 @@ class KanonAnonCredsProfileSession(ProfileSession):
             await self._askar_handle.close()
         LOGGER.debug(
             "KanonSession._teardown completed in %.3fs",
-            time.perf_counter() - teardown_start
+            time.perf_counter() - teardown_start,
         )
         self._check_duration()
 
@@ -356,7 +356,7 @@ class KanonAnonCredsProfileSession(ProfileSession):
                 LOGGER.warning(
                     "Long-running session detected: %.3fs for profile=%s",
                     duration,
-                    self._profile.profile_id
+                    self._profile.profile_id,
                 )
 
     def __del__(self):

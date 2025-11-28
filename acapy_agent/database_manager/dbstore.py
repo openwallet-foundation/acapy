@@ -815,10 +815,12 @@ class DBOpenSession:
     async def _open(self) -> DBStoreSession:
         """Perform the action."""
         import time
+
         start = time.perf_counter()
         LOGGER.debug(
             "DBOpenSession._open starting for profile=%s, is_txn=%s",
-            self._profile, self._is_txn
+            self._profile,
+            self._is_txn,
         )
         if self._session:
             raise DBStoreError(DBStoreErrorCode.WRAPPER, "Session already opened")
@@ -834,7 +836,8 @@ class DBOpenSession:
         self._session = DBStoreSession(self._db_session, self._is_txn)
         LOGGER.debug(
             "DBOpenSession._open completed in %.3fs for profile=%s",
-            time.perf_counter() - start, self._profile
+            time.perf_counter() - start,
+            self._profile,
         )
         return self._session
 
