@@ -1,0 +1,13 @@
+# LTS Version Patterns
+# Each line represents a version pattern that should be treated as LTS
+# Use major.minor format (e.g., 1.2 for versions 1.2.x)
+# Lines starting with # are comments and will be ignored
+# Empty lines are ignored
+
+# Example: Uncomment the lines below to enable LTS for specific versions
+# 0.11
+# 0.12
+# 1.0
+
+# For testing purposes (remove in production):
+0.0
