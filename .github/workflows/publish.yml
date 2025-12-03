@@ -133,6 +133,8 @@ jobs:
             ghcr.io/${{ steps.lower.outputs.owner }}/${{ matrix.image-name }}
           tags: |
             type=raw,value=py${{ matrix.python-version }}-${{ inputs.tag || github.event.release.tag_name }}
+            type=semver,pattern={{version}},enable=${{ github.event_name == 'release' && !contains(github.event.release.tag_name, 'rc') }}
+            type=semver,pattern={{major}}.{{minor}},enable=${{ github.event_name == 'release' && !contains(github.event.release.tag_name, 'rc') }}
             type=raw,value=latest,enable=${{ github.event_name == 'release' && !contains(github.event.release.tag_name, 'rc') }}
 
       - name: Publish Image to GHCR.io
