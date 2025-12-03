@@ -133,6 +133,7 @@ jobs:
             ghcr.io/${{ steps.lower.outputs.owner }}/${{ matrix.image-name }}
           tags: |
             type=raw,value=py${{ matrix.python-version }}-${{ inputs.tag || github.event.release.tag_name }}
+            type=raw,value=latest,enable=${{ github.event_name == 'release' && !contains(github.event.release.tag_name, 'rc') }}
 
       - name: Publish Image to GHCR.io
         uses: docker/build-push-action@471d1dc4e07e5cdedd4c2171150001c434f0b7a4 # v6.15.0
