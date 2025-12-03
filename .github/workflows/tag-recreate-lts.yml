@@ -4,6 +4,8 @@
 name: Tag and Recreate LTS Release
 
 on:
+  release:
+    types: [published]
   workflow_run:
     workflows: ["Publish ACA-Py Image"]
     types: [completed]
@@ -22,10 +24,11 @@ jobs:
   recreate-lts-release:
     # LTS versions are now configured in .github/lts-versions.txt
     # Add version patterns (major.minor format) to that file to enable LTS processing
-    # When triggered by workflow_run, check if the publish workflow succeeded
+    # When triggered by workflow_run or release, check if it should proceed
     if: |
       (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success') ||
-      (github.event_name == 'workflow_dispatch')
+      (github.event_name == 'workflow_dispatch') ||
+      (github.event_name == 'release')
     name: Recreate LTS Release
     runs-on: ubuntu-latest
     outputs:
@@ -40,27 +43,35 @@ jobs:
 
       - name: Get Release Tag
         id: get_release
-        if: github.event_name == 'workflow_run'
+        if: github.event_name == 'workflow_run' || github.event_name == 'release'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # Get the release associated with the workflow run
-          RELEASE_TAG=$(gh api /repos/${{ github.repository }}/releases | \
-            jq -r --arg sha "${{ github.event.workflow_run.head_sha }}" \
-            '.[] | select(.target_commitish == $sha or .tag_name == $sha) | .tag_name' | head -1)
-          
-          if [ -z "$RELEASE_TAG" ]; then
-            echo "No release found for this workflow run"
-            echo "skip=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "Found release: $RELEASE_TAG"
+          if [ "${{ github.event_name }}" == "release" ]; then
+            # Direct release event
+            RELEASE_TAG="${{ github.event.release.tag_name }}"
+            echo "Found release from event: $RELEASE_TAG"
             echo "release_tag=$RELEASE_TAG" >> "$GITHUB_OUTPUT"
             echo "skip=false" >> "$GITHUB_OUTPUT"
+          else
+            # workflow_run event - need to find the release
+            RELEASE_TAG=$(gh api /repos/${{ github.repository }}/releases | \
+              jq -r --arg sha "${{ github.event.workflow_run.head_sha }}" \
+              '.[] | select(.target_commitish == $sha or .tag_name == $sha) | .tag_name' | head -1)
+            
+            if [ -z "$RELEASE_TAG" ]; then
+              echo "No release found for this workflow run"
+              echo "skip=true" >> "$GITHUB_OUTPUT"
+            else
+              echo "Found release: $RELEASE_TAG"
+              echo "release_tag=$RELEASE_TAG" >> "$GITHUB_OUTPUT"
+              echo "skip=false" >> "$GITHUB_OUTPUT"
+            fi
           fi
 
       - name: Check if Release is LTS
         id: check_lts
-        if: github.event_name == 'workflow_run' && steps.get_release.outputs.skip != 'true'
+        if: (github.event_name == 'workflow_run' || github.event_name == 'release') && steps.get_release.outputs.skip != 'true'
         run: |
           RELEASE_TAG="${{ steps.get_release.outputs.release_tag }}"
           
@@ -97,18 +108,54 @@ jobs:
             echo "release_tag=${{ steps.get_release.outputs.release_tag }}" >> "$GITHUB_OUTPUT"
           fi
 
+      - name: Wait for Publish Workflow
+        id: wait_publish
+        if: github.event_name == 'release'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          RELEASE_TAG="${{ steps.get_release.outputs.release_tag }}"
+          echo "Waiting for 'Publish ACA-Py Image' workflow to complete for release $RELEASE_TAG..."
+          
+          # Wait up to 30 minutes (180 attempts * 10 seconds)
+          MAX_ATTEMPTS=180
+          ATTEMPT=0
+          
+          while [ $ATTEMPT -lt $MAX_ATTEMPTS ]; do
+            # Check if publish workflow completed successfully for this release
+            WORKFLOW_STATUS=$(gh run list --workflow="Publish ACA-Py Image" --json conclusion,headBranch \
+              --jq ".[] | select(.headBranch == \"$RELEASE_TAG\") | .conclusion" | head -1)
+            
+            if [ "$WORKFLOW_STATUS" == "success" ]; then
+              echo "Publish workflow completed successfully!"
+              echo "skip=false" >> "$GITHUB_OUTPUT"
+              exit 0
+            elif [ "$WORKFLOW_STATUS" == "failure" ] || [ "$WORKFLOW_STATUS" == "cancelled" ]; then
+              echo "Publish workflow failed or was cancelled"
+              echo "skip=true" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+            
+            echo "Attempt $((ATTEMPT+1))/$MAX_ATTEMPTS - Waiting for publish workflow..."
+            sleep 10
+            ATTEMPT=$((ATTEMPT+1))
+          done
+          
+          echo "Timeout waiting for publish workflow"
+          echo "skip=true" >> "$GITHUB_OUTPUT"
+
       - name: Check if should skip
         if: |
-          github.event_name == 'workflow_run' && 
-          (steps.get_release.outputs.skip == 'true' || steps.check_lts.outputs.skip == 'true')
+          (github.event_name == 'workflow_run' && (steps.get_release.outputs.skip == 'true' || steps.check_lts.outputs.skip == 'true')) ||
+          (github.event_name == 'release' && (steps.get_release.outputs.skip == 'true' || steps.check_lts.outputs.skip == 'true' || steps.wait_publish.outputs.skip == 'true'))
         run: |
-          echo "Skipping LTS tagging - either no release found or not an LTS release"
+          echo "Skipping LTS tagging - either no release found, not an LTS release, or publish workflow not ready"
           exit 0
 
       - name: Set up Git identity
         if: |
           github.event_name == 'workflow_dispatch' || 
-          (steps.get_release.outputs.skip != 'true' && steps.check_lts.outputs.skip != 'true')
+          ((github.event_name == 'workflow_run' || github.event_name == 'release') && steps.get_release.outputs.skip != 'true' && steps.check_lts.outputs.skip != 'true')
         run: |
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
@@ -116,7 +163,7 @@ jobs:
       - name: Determine LTS tag and update
         if: |
           github.event_name == 'workflow_dispatch' || 
-          (steps.get_release.outputs.skip != 'true' && steps.check_lts.outputs.skip != 'true')
+          ((github.event_name == 'workflow_run' || github.event_name == 'release') && steps.get_release.outputs.skip != 'true' && steps.check_lts.outputs.skip != 'true')
         id: vars
         env:
           RELEASE_TAG: ${{ steps.set_release_tag.outputs.release_tag }}
@@ -144,7 +191,7 @@ jobs:
       - name: Delete existing LTS release (if any)
         if: |
           github.event_name == 'workflow_dispatch' || 
-          (steps.get_release.outputs.skip != 'true' && steps.check_lts.outputs.skip != 'true')
+          ((github.event_name == 'workflow_run' || github.event_name == 'release') && steps.get_release.outputs.skip != 'true' && steps.check_lts.outputs.skip != 'true')
         continue-on-error: true
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -156,7 +203,7 @@ jobs:
       - name: Create fresh LTS release
         if: |
           github.event_name == 'workflow_dispatch' || 
-          (steps.get_release.outputs.skip != 'true' && steps.check_lts.outputs.skip != 'true')
+          ((github.event_name == 'workflow_run' || github.event_name == 'release') && steps.get_release.outputs.skip != 'true' && steps.check_lts.outputs.skip != 'true')
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           LTS_TAG: ${{ steps.vars.outputs.LTS_TAG }}
