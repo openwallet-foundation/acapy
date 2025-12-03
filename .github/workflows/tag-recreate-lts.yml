@@ -51,6 +51,9 @@ jobs:
           if [ -z "$RELEASE_TAG" ]; then
             echo "No release found for this workflow run"
             echo "skip=true" >> "$GITHUB_OUTPUT"
+          elif [[ "$RELEASE_TAG" =~ rc ]]; then
+            echo "Release $RELEASE_TAG is an RC release - skipping LTS tagging"
+            echo "skip=true" >> "$GITHUB_OUTPUT"
           else
             echo "Found release: $RELEASE_TAG"
             echo "release_tag=$RELEASE_TAG" >> "$GITHUB_OUTPUT"
