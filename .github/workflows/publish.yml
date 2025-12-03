@@ -140,7 +140,8 @@ jobs:
           
           # Get all non-RC release tags and sort by semantic version
           HIGHEST_TAG=$(gh api /repos/${{ github.repository }}/releases --paginate \
-            | jq -r '[.[] | select(.prerelease == false and (.tag_name | test("rc") | not)) | .tag_name] | sort_by(split(".") | map(tonumber)) | .[-1]')
+            | jq -r '[.[] | select(.prerelease == false and (.tag_name | test("rc") | not)) | .tag_name] | .[]' \
+            | sort -V | tail -1)
           
           echo "Current tag: $CURRENT_TAG"
           echo "Highest semantic version: $HIGHEST_TAG"
