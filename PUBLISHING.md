@@ -142,17 +142,17 @@ cd docs; sphinx-build -b html -a -E -c ./ ./ ./_build; cd ..
      - `py3.12-1.4.0` - Python version specific tag
      - `1.4.0` - Semantic version tag
      - `1.4` - Major.minor tag (moves to latest patch release)
-     - `latest` - Automatically assigned to the highest semantic version
+     - `latest` - Only assigned if this is the highest semantic version
    
    - **Release Candidates** (e.g., `1.4.0-rc1`):
      - `py3.12-1.4.0-rc1` - Python version specific RC tag
      - `1.4.0-rc1` - Semantic version RC tag
      - **Note**: RC releases do NOT receive major.minor (`1.4`) or `latest` tags
    
-   The `latest` tag is automatically managed based on semantic versioning, ensuring
-   it always points to the highest non-RC release, regardless of publication order.
-   For example, if version `0.12.5` is released after `1.3.0`, the `latest` tag
-   will remain on `1.3.0`.
+   The `latest` tag is explicitly managed by comparing semantic versions across all
+   releases. It will only be applied to the highest non-RC semantic version. For
+   example, if version `0.12.5` is released after `1.3.0`, the `latest` tag will
+   remain on `1.3.0` because `1.3.0 > 0.12.5` in semantic version ordering.
    
    **LTS (Long Term Support) Releases:**
    

@@ -65,10 +65,11 @@ The following is the ACA-Py container images tagging format:
 
 **Tagging Behavior:**
 
-The `latest` tag is managed using semantic versioning comparison, ensuring it always points to
-the highest released version. This means:
-- Publishing `0.12.5` after `1.3.0` will NOT move `latest` to `0.12.5`
-- Publishing `1.3.1` after `1.3.0` WILL move `latest` to `1.3.1`
+The `latest` tag is determined by comparing all release versions semantically. The workflow
+checks all non-RC releases and only applies the `latest` tag if the current release is the
+highest semantic version. This ensures:
+- Publishing `0.12.5` after `1.3.0` will NOT move `latest` to `0.12.5` (1.3.0 > 0.12.5)
+- Publishing `1.3.1` after `1.3.0` WILL move `latest` to `1.3.1` (1.3.1 > 1.3.0)
 - Release candidates never receive the `latest` tag
 
 The major.minor tags (e.g., `1.4`) automatically track the latest patch release, so publishing
