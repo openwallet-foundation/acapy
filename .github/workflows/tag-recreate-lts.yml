@@ -43,13 +43,37 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # Get the release associated with the workflow run
-          RELEASE_TAG=$(gh api /repos/${{ github.repository }}/releases | \
-            jq -r --arg sha "${{ github.event.workflow_run.head_sha }}" \
-            '.[] | select(.target_commitish == $sha or .tag_name == $sha) | .tag_name' | head -1)
+          SHA="${{ github.event.workflow_run.head_sha }}"
+          echo "Looking for release associated with commit: $SHA"
+          
+          # Try to find release by target_commitish first (fast path)
+          RELEASE_TAG=$(gh api /repos/${{ github.repository }}/releases --paginate | \
+            jq -r --arg sha "$SHA" \
+            '.[] | select(.target_commitish == $sha) | .tag_name' | head -1)
+          
+          # If not found, try to find tags pointing to this commit and check for releases
+          if [ -z "$RELEASE_TAG" ]; then
+            echo "No release found by target_commitish, checking tags pointing to commit..."
+            TAGS=$(git tag --points-at "$SHA" 2>/dev/null || echo "")
+            
+            if [ -n "$TAGS" ]; then
+              echo "Tags found: $TAGS"
+              # Fetch all releases once
+              ALL_RELEASES=$(gh api /repos/${{ github.repository }}/releases --paginate | jq -r '.[].tag_name')
+              
+              # Check each tag to see if it has a release
+              for TAG in $TAGS; do
+                if echo "$ALL_RELEASES" | grep -q "^${TAG}$"; then
+                  RELEASE_TAG="$TAG"
+                  echo "Found release for tag: $TAG"
+                  break
+                fi
+              done
+            fi
+          fi
           
           if [ -z "$RELEASE_TAG" ]; then
-            echo "No release found for this workflow run"
+            echo "No release found for commit $SHA"
             echo "skip=true" >> "$GITHUB_OUTPUT"
           elif [[ "$RELEASE_TAG" =~ rc ]]; then
             echo "Release $RELEASE_TAG is an RC release - skipping LTS tagging"
@@ -98,12 +122,6 @@ jobs:
           else
             echo "release_tag=${{ steps.get_release.outputs.release_tag }}" >> "$GITHUB_OUTPUT"
           fi
-
-      - name: Check if should skip
-        if: github.event_name == 'workflow_run' && (steps.get_release.outputs.skip == 'true' || steps.check_lts.outputs.skip == 'true')
-        run: |
-          echo "Skipping LTS tagging - either no release found or not an LTS release"
-          exit 0
 
       - name: Set up Git identity
         if: github.event_name == 'workflow_dispatch' || (github.event_name == 'workflow_run' && steps.get_release.outputs.skip != 'true' && steps.check_lts.outputs.skip != 'true')
