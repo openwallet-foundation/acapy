@@ -26,9 +26,9 @@ jobs:
     # For example, if your LTS versions are prefixed with '1.2.', you can use:
     #   if: startsWith(github.event.release.tag_name, '1.2.')
     # This will ensure that the job only runs for releases that are tagged with LTS versions.
-    # When triggered by workflow_run, check if the publish workflow succeeded and if it's an LTS release
+    # When triggered by workflow_run, check if the publish workflow succeeded
     if: |
-      (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success' && startsWith(github.event.workflow_run.head_branch, '0.0.')) ||
+      (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success') ||
       (github.event_name == 'workflow_dispatch')
     name: Recreate LTS Release
     runs-on: ubuntu-latest
@@ -36,34 +36,68 @@ jobs:
       lts_tag: ${{ steps.vars.outputs.LTS_TAG }}
 
     steps:
+      - name: Get Release Tag
+        id: get_release
+        if: github.event_name == 'workflow_run'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Get the release associated with the workflow run
+          RELEASE_TAG=$(gh api /repos/${{ github.repository }}/releases | \
+            jq -r --arg sha "${{ github.event.workflow_run.head_sha }}" \
+            '.[] | select(.target_commitish == $sha or .tag_name == $sha) | .tag_name' | head -1)
+          
+          if [ -z "$RELEASE_TAG" ]; then
+            echo "No release found for this workflow run"
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          elif [[ ! "$RELEASE_TAG" =~ ^0\.0\. ]]; then
+            echo "Release $RELEASE_TAG is not an LTS release (doesn't start with 0.0.)"
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "Found release: $RELEASE_TAG"
+            echo "release_tag=$RELEASE_TAG" >> "$GITHUB_OUTPUT"
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Check if should skip
+        if: github.event_name == 'workflow_run' && steps.get_release.outputs.skip == 'true'
+        run: |
+          echo "Skipping LTS tagging - not an LTS release"
+          exit 0
+
       - name: Checkout repository
+        if: github.event_name == 'workflow_dispatch' || steps.get_release.outputs.skip != 'true'
         uses: actions/checkout@v6
         with:
-          ref: ${{ inputs.release_tag || github.event.workflow_run.head_branch }}
+          ref: ${{ inputs.release_tag || steps.get_release.outputs.release_tag }}
           fetch-depth: 0
 
       - name: Set up Git identity
+        if: github.event_name == 'workflow_dispatch' || steps.get_release.outputs.skip != 'true'
         run: |
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
 
       - name: Determine LTS tag and update
+        if: github.event_name == 'workflow_dispatch' || steps.get_release.outputs.skip != 'true'
         id: vars
         env:
-          BRANCH_REF: ${{ github.event.workflow_run.head_branch || '' }}
-          RELEASE_TAG: ${{ inputs.release_tag || github.event.workflow_run.head_branch }}
-          RELEASE_BODY: ${{ github.event.release.body }}
+          RELEASE_TAG: ${{ inputs.release_tag || steps.get_release.outputs.release_tag }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          echo "Release published from branch: $BRANCH_REF"
+          echo "Processing release: $RELEASE_TAG"
 
-          # Creating a LTS tag from the branch name
+          # Creating a LTS tag from the release tag
           SHORT_TAG=$(echo "$RELEASE_TAG" | cut -d. -f1,2)
           LTS_TAG="${SHORT_TAG}-lts"
           echo "LTS_TAG=$LTS_TAG" >> "$GITHUB_OUTPUT"
 
           # Force update the tag to the current commit
           git tag -f "$LTS_TAG" $GITHUB_SHA
-          git push origin -f "$LTS_TAG" 
+          git push origin -f "$LTS_TAG"
+          
+          # Get release body from the original release
+          RELEASE_BODY=$(gh release view "$RELEASE_TAG" --json body -q .body)
 
           # Write release notes into env (for multiline input)
           echo "RELEASE_BODY<<EOF" >> "$GITHUB_ENV"
@@ -71,6 +105,7 @@ jobs:
           echo "EOF" >> "$GITHUB_ENV"
 
       - name: Delete existing LTS release (if any)
+        if: github.event_name == 'workflow_dispatch' || steps.get_release.outputs.skip != 'true'
         continue-on-error: true
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -80,6 +115,7 @@ jobs:
           gh release delete "$LTS_TAG" -y
 
       - name: Create fresh LTS release
+        if: github.event_name == 'workflow_dispatch' || steps.get_release.outputs.skip != 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           LTS_TAG: ${{ steps.vars.outputs.LTS_TAG }}
@@ -91,6 +127,7 @@ jobs:
   tag-lts-images:
     name: Tag Existing Images with LTS
     needs: recreate-lts-release
+    if: needs.recreate-lts-release.outputs.lts_tag != ''
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -98,6 +135,21 @@ jobs:
         image-name: ["acapy-agent", "acapy-agent-bbs"]
     
     steps:
+      - name: Get Release Tag
+        id: get_tag
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            echo "release_tag=${{ inputs.release_tag }}" >> "$GITHUB_OUTPUT"
+          else
+            # Get the release tag from the workflow run
+            RELEASE_TAG=$(gh api /repos/${{ github.repository }}/releases | \
+              jq -r --arg sha "${{ github.event.workflow_run.head_sha }}" \
+              '.[] | select(.target_commitish == $sha or .tag_name == $sha) | .tag_name' | head -1)
+            echo "release_tag=$RELEASE_TAG" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Log in to the GitHub Container Registry
         uses: docker/login-action@5e57cd118135c172c3672efd75eb46360885c0ef # v3.6.0
         with:
@@ -111,7 +163,7 @@ jobs:
 
       - name: Tag Images with LTS
         env:
-          SOURCE_TAG: py${{ matrix.python-version }}-${{ github.event.release.tag_name }}
+          SOURCE_TAG: py${{ matrix.python-version }}-${{ steps.get_tag.outputs.release_tag }}
           LTS_TAG: py${{ matrix.python-version }}-${{ needs.recreate-lts-release.outputs.lts_tag }}
           IMAGE_NAME: ghcr.io/${{ steps.lower.outputs.owner }}/${{ matrix.image-name }}
         run: |
