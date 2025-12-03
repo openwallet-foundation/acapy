@@ -205,16 +205,16 @@ jobs:
           LTS_TAG: py${{ matrix.python-version }}-${{ needs.recreate-lts-release.outputs.lts_tag }}
           IMAGE_NAME: ghcr.io/${{ steps.lower.outputs.owner }}/${{ matrix.image-name }}
         run: |
-          echo "Tagging $IMAGE_NAME:$SOURCE_TAG with $LTS_TAG"
+          echo "Tagging \"$IMAGE_NAME:$SOURCE_TAG\" with \"$LTS_TAG\""
           
           # Pull the source image
-          docker pull $IMAGE_NAME:$SOURCE_TAG
+          docker pull "$IMAGE_NAME:$SOURCE_TAG"
           
           # Tag it with the LTS tag
-          docker tag $IMAGE_NAME:$SOURCE_TAG $IMAGE_NAME:$LTS_TAG
+          docker tag "$IMAGE_NAME:$SOURCE_TAG" "$IMAGE_NAME:$LTS_TAG"
           
           # Push the new tag
-          docker push $IMAGE_NAME:$LTS_TAG
+          docker push "$IMAGE_NAME:$LTS_TAG"
           
-          echo "Successfully tagged $IMAGE_NAME with $LTS_TAG"
+          echo "Successfully tagged \"$IMAGE_NAME\" with \"$LTS_TAG\""
 
