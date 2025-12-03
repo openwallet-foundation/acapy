@@ -118,10 +118,19 @@ jobs:
         id: set_release_tag
         run: |
           if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
-            echo "release_tag=${{ inputs.release_tag }}" >> "$GITHUB_OUTPUT"
+            RELEASE_TAG="${{ inputs.release_tag }}"
           else
-            echo "release_tag=${{ steps.get_release.outputs.release_tag }}" >> "$GITHUB_OUTPUT"
+            RELEASE_TAG="${{ steps.get_release.outputs.release_tag }}"
           fi
+          
+          # Validate semantic versioning format (semver 2.0)
+          if ! echo "$RELEASE_TAG" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?(\+[0-9A-Za-z.-]+)?$'; then
+            echo "Error: Release tag '$RELEASE_TAG' does not match semantic versioning format (X.Y.Z[-prerelease][+build])"
+            exit 1
+          fi
+          
+          echo "release_tag=$RELEASE_TAG" >> "$GITHUB_OUTPUT"
+          echo "Validated release tag: $RELEASE_TAG"
 
       - name: Set up Git identity
         if: github.event_name == 'workflow_dispatch' || (github.event_name == 'workflow_run' && steps.get_release.outputs.skip != 'true' && steps.check_lts.outputs.skip != 'true')
