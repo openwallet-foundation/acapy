@@ -134,6 +134,32 @@ cd docs; sphinx-build -b html -a -E -c ./ ./ ./_build; cd ..
    Foundation Package Repository under
    acapy-agent](https://github.com/openwallet-foundation/acapy/pkgs/container/acapy-agent/versions?filters%5Bversion_type%5D=tagged).
 
+   **Image Tagging Strategy:**
+   
+   Published images are automatically tagged with multiple tags for flexibility:
+   
+   - **Regular Releases** (e.g., `1.4.0`):
+     - `py3.12-1.4.0` - Python version specific tag
+     - `1.4.0` - Semantic version tag
+     - `1.4` - Major.minor tag (moves to latest patch release)
+     - `latest` - Automatically assigned to the highest semantic version
+   
+   - **Release Candidates** (e.g., `1.4.0-rc1`):
+     - `py3.12-1.4.0-rc1` - Python version specific RC tag
+     - `1.4.0-rc1` - Semantic version RC tag
+     - **Note**: RC releases do NOT receive major.minor (`1.4`) or `latest` tags
+   
+   The `latest` tag is automatically managed based on semantic versioning, ensuring
+   it always points to the highest non-RC release, regardless of publication order.
+   For example, if version `0.12.5` is released after `1.3.0`, the `latest` tag
+   will remain on `1.3.0`.
+   
+   **LTS (Long Term Support) Releases:**
+   
+   LTS versions receive additional tags (e.g., `py3.12-0.12-lts`) that move to the
+   latest patch release in that LTS line. LTS versions are configured in
+   `.github/lts-versions.txt`. See `.github/LTS-README.md` for more details.
+
    Additional information about the container image publication process can be
    found in the document [Container Images and Github Actions](docs/deploying/ContainerImagesAndGithubActions.md).
 

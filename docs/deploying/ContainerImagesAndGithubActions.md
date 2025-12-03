@@ -38,13 +38,41 @@ Standard image is outside of the scope of this document.
 The ACA-Py images built by this project are tagged to indicate which of the
 above variants it is. Other tags may also be generated for use by developers.
 
-Click [here](https://github.com/openwallet-foundation/acapy/pkgs/container/acapy-agent/versions?filters%5Bversion_type%5D=tagged) to see a current list of the tagged images available for ACA-Py in.
+Click [here](https://github.com/openwallet-foundation/acapy/pkgs/container/acapy-agent/versions?filters%5Bversion_type%5D=tagged) to see a current list of the tagged images available for ACA-Py.
 
-The following is the ACA-Py comntainer images tagging format. In each of the following, `pyV.vv` is the base Python image being used (e.g. `py3.12`):
+The following is the ACA-Py container images tagging format:
 
-- Regular Releases: `pyV.vv-X.Y.Z` where `X.Y.Z` is the ACA-Py release.  The `Z` component may have an `rcN` appended when the tag is for a Release Candidate.
-- Nightlies: `pyV-vv-nightly-YYYY-MM-DD` and `pyV-vv-nightly`
-- LTS ([Long Term Support](../LTS-Strategy.md)): `pyV-vv-X.Y-lts`, where the `X.Y` are the major and minor components of the LTS (e.g. `0.12`, `1.2`). This tag moves to always be on latest release of each line of LTS releases (e.g. from `0.12.4` to `0.12.5` when the latter is released).
+**Regular Releases** (e.g., publishing version `1.4.0`):
+- `pyV.vv-X.Y.Z` - Python version specific tag (e.g., `py3.12-1.4.0`)
+- `X.Y.Z` - Semantic version tag (e.g., `1.4.0`)
+- `X.Y` - Major.minor version tag (e.g., `1.4`), automatically moves to the latest patch release
+- `latest` - Automatically assigned to the highest semantic version (non-RC) release
+
+**Release Candidates** (e.g., publishing version `1.4.0-rc1`):
+- `pyV.vv-X.Y.Z-rcN` - Python version specific RC tag (e.g., `py3.12-1.4.0-rc1`)
+- `X.Y.Z-rcN` - Semantic version RC tag (e.g., `1.4.0-rc1`)
+- **Note**: RC releases do NOT receive major.minor (`X.Y`) or `latest` tags
+
+**Nightly Builds**:
+- `pyV.vv-nightly-YYYY-MM-DD` - Date-stamped nightly build
+- `pyV.vv-nightly` - Latest nightly build
+
+**LTS ([Long Term Support](../../LTS-Strategy.md)) Releases**:
+- `pyV.vv-X.Y-lts` - LTS tag (e.g., `py3.12-0.12-lts`)
+- This tag automatically moves to the latest patch release in the LTS line (e.g., from `0.12.4` to `0.12.5`)
+- LTS versions are managed via the `.github/lts-versions.txt` configuration file
+- See `.github/LTS-README.md` for details on configuring LTS versions
+
+**Tagging Behavior:**
+
+The `latest` tag is managed using semantic versioning comparison, ensuring it always points to
+the highest released version. This means:
+- Publishing `0.12.5` after `1.3.0` will NOT move `latest` to `0.12.5`
+- Publishing `1.3.1` after `1.3.0` WILL move `latest` to `1.3.1`
+- Release candidates never receive the `latest` tag
+
+The major.minor tags (e.g., `1.4`) automatically track the latest patch release, so publishing
+`1.4.1` will move the `1.4` tag from `1.4.0` to `1.4.1`.
 
 ### Image Comparison
 
