@@ -77,10 +77,42 @@ jobs:
           echo "Creating new GitHub release for $LTS_TAG"
           gh release create "$LTS_TAG" --title "$LTS_TAG" --notes "$RELEASE_BODY"
   
-  call-publish-image:
-    name: Publish LTS Image in GHCR
+  tag-lts-images:
+    name: Tag Existing Images with LTS
     needs: recreate-lts-release
-    uses: ./.github/workflows/publish.yml
-    with:
-      tag: ${{ needs.recreate-lts-release.outputs.lts_tag }}
-      ref: ${{ github.event.release.tag_name }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.12"]
+        image-name: ["acapy-agent", "acapy-agent-bbs"]
+    
+    steps:
+      - name: Log in to the GitHub Container Registry
+        uses: docker/login-action@5e57cd118135c172c3672efd75eb46360885c0ef # v3.6.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Lowercase Repo Owner
+        id: lower
+        run: echo "owner=${GITHUB_REPOSITORY_OWNER,,}" >> $GITHUB_OUTPUT
+
+      - name: Tag Images with LTS
+        env:
+          SOURCE_TAG: py${{ matrix.python-version }}-${{ github.event.release.tag_name }}
+          LTS_TAG: py${{ matrix.python-version }}-${{ needs.recreate-lts-release.outputs.lts_tag }}
+          IMAGE_NAME: ghcr.io/${{ steps.lower.outputs.owner }}/${{ matrix.image-name }}
+        run: |
+          echo "Tagging $IMAGE_NAME:$SOURCE_TAG with $LTS_TAG"
+          
+          # Pull the source image
+          docker pull $IMAGE_NAME:$SOURCE_TAG
+          
+          # Tag it with the LTS tag
+          docker tag $IMAGE_NAME:$SOURCE_TAG $IMAGE_NAME:$LTS_TAG
+          
+          # Push the new tag
+          docker push $IMAGE_NAME:$LTS_TAG
+          
+          echo "Successfully tagged $IMAGE_NAME with $LTS_TAG"
