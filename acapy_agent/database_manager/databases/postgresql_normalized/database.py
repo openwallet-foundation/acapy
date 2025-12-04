@@ -146,7 +146,6 @@ class PostgresDatabase(AbstractDatabaseStore):
                 actual_error=str(e),
             )
         finally:
-            await conn.rollback()
             await self.pool.putconn(conn)
 
     async def create_profile(self, name: str = None) -> str:
@@ -329,8 +328,12 @@ class PostgresDatabase(AbstractDatabaseStore):
                     code=DatabaseErrorCode.CONNECTION_POOL_EXHAUSTED,
                     message="Maximum number of active sessions reached",
                 )
+        effective_profile = profile or self.default_profile
+        cached_profile_id = (
+            self.default_profile_id if effective_profile == self.default_profile else None
+        )
         sess = PostgresSession(
-            self, profile or self.default_profile, False, self.release_number
+            self, effective_profile, False, self.release_number, cached_profile_id
         )
         with self.lock:
             self.active_sessions.append(sess)
@@ -355,8 +358,12 @@ class PostgresDatabase(AbstractDatabaseStore):
                     code=DatabaseErrorCode.CONNECTION_POOL_EXHAUSTED,
                     message="Maximum number of active sessions reached",
                 )
+        effective_profile = profile or self.default_profile
+        cached_profile_id = (
+            self.default_profile_id if effective_profile == self.default_profile else None
+        )
         sess = PostgresSession(
-            self, profile or self.default_profile, True, self.release_number
+            self, effective_profile, True, self.release_number, cached_profile_id
         )
         with self.lock:
             self.active_sessions.append(sess)

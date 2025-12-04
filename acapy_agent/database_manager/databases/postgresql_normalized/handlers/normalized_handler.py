@@ -123,8 +123,10 @@ class NormalizedHandler(BaseHandler):
 
         self.EXPIRY_CLAUSE = "(i.expiry IS NULL OR i.expiry > CURRENT_TIMESTAMP)"
 
-    async def _ensure_utf8(self, cursor: AsyncCursor) -> None:
-        await cursor.execute(SQL_SET_UTF8)
+    async def _ensure_utf8(self, _cursor: AsyncCursor) -> None:
+        # UTF8 encoding is set via connection pool options (-c client_encoding=UTF8)
+        # No need to execute SET here - would add unnecessary latency
+        pass
 
     def _validate_order_by(self, order_by: Optional[str]) -> None:
         if order_by and order_by not in self.ALLOWED_ORDER_BY_COLUMNS:
