@@ -12,7 +12,6 @@ from ..messaging.request_context import RequestContext
 from ..protocols.didcomm_prefix import DIDCommPrefix
 from ..protocols.issue_credential.v2_0.message_types import CRED_20_OFFER
 from ..protocols.out_of_band.v1_0.models.oob_record import OobRecord
-from ..protocols.present_proof.v1_0.message_types import PRESENTATION_REQUEST
 from ..protocols.present_proof.v2_0.message_types import PRES_20_REQUEST
 from ..storage.error import StorageNotFoundError
 from ..transport.inbound.message import InboundMessage
@@ -301,9 +300,9 @@ class OobMessageProcessor:
         """Message handler for inbound messages."""
         supported_types = [
             CRED_20_OFFER,
-            PRESENTATION_REQUEST,
             PRES_20_REQUEST,
             "issue-credential/1.0/offer-credential",
+            "present-proof/1.0/request-presentation",
         ]
 
         supported_messages = [
