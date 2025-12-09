@@ -2808,7 +2808,6 @@ files = [
 
 [package.dependencies]
 pytest = ">=8.2,<10"
-typing-extensions = {version = ">=4.12", markers = "python_version < \"3.13\""}
 
 [package.extras]
 docs = ["sphinx (>=5.3)", "sphinx-rtd-theme (>=1)"]
@@ -3507,4 +3506,4 @@ sqlcipher = ["sqlcipher3-binary"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.13"
-content-hash = "2b35b7400a174881b5cf40e11971577f6767cbd2f781cc94c20071e1e766b24b"
+content-hash = "0dd7b1b68283f344310806ab786fe61e886fec89e8009f87f0761a2575da4243"
