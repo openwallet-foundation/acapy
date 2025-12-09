@@ -3101,6 +3101,35 @@ a major, minor or patch release, per <a href="https://semver.org/">semver</a> ru
    acapy-agent</a>.</p>
 </li>
 </ol>
+<p><strong>Image Tagging Strategy:</strong></p>
+<p>Published images are automatically tagged with multiple tags for flexibility:</p>
+<ul>
+<li>
+<p><strong>Regular Releases</strong> (e.g., <code>1.4.0</code>):</p>
+<ul>
+<li><code>py3.12-1.4.0</code> - Python version specific tag</li>
+<li><code>1.4.0</code> - Semantic version tag</li>
+<li><code>1.4</code> - Major.minor tag (moves to latest patch release)</li>
+<li><code>latest</code> - Only assigned if this is the highest semantic version</li>
+</ul>
+</li>
+<li>
+<p><strong>Release Candidates</strong> (e.g., <code>1.4.0-rc1</code>):</p>
+<ul>
+<li><code>py3.12-1.4.0-rc1</code> - Python version specific RC tag</li>
+<li><code>1.4.0-rc1</code> - Semantic version RC tag</li>
+<li><strong>Note</strong>: RC releases do NOT receive major.minor (<code>1.4</code>) or <code>latest</code> tags</li>
+</ul>
+</li>
+</ul>
+<p>The <code>latest</code> tag is explicitly managed by comparing semantic versions across all
+   releases. It will only be applied to the highest non-RC semantic version. For
+   example, if version <code>0.12.5</code> is released after <code>1.3.0</code>, the <code>latest</code> tag will
+   remain on <code>1.3.0</code> because <code>1.3.0 &gt; 0.12.5</code> in semantic version ordering.</p>
+<p><strong>LTS (Long Term Support) Releases:</strong></p>
+<p>LTS versions receive additional tags (e.g., <code>py3.12-0.12-lts</code>) that move to the
+   latest patch release in that LTS line. LTS versions are configured in
+   <code>.github/lts-versions.txt</code>. See <code>.github/LTS-README.md</code> for more details.</p>
 <p>Additional information about the container image publication process can be
    found in the document <a href="../deploying/ContainerImagesAndGithubActions/">Container Images and Github Actions</a>.</p>
 <p>In addition, the published documentation site <a href="https://aca-py.org">https://aca-py.org</a> must be
