@@ -1,8 +1,14 @@
+import re
 from unittest import IsolatedAsyncioTestCase
 
 from .....admin.request_context import AdminRequestContext
+from .....anoncreds.models.issuer_cred_rev_record import (
+    IssuerCredRevRecord as IssuerCredRevAnoncredsRecord,
+)
 from .....connections.models.conn_record import ConnRecord
+from .....core.event_bus import EventMetadata, EventWithMetadata, MockEventBus
 from .....protocols.issue_credential.v2_0.models.cred_ex_record import V20CredExRecord
+from .....revocation.models.issuer_cred_rev_record import IssuerCredRevRecord
 from .....tests import mock
 from .....utils.testing import create_test_profile
 from .....vc.ld_proofs.error import LinkedDataProofException
@@ -1914,3 +1920,88 @@ class TestV20CredRoutes(IsolatedAsyncioTestCase):
         mock_app = mock.MagicMock(_state={"swagger_dict": {}})
         test_module.post_process_routes(mock_app)
         assert "tags" in mock_app._state["swagger_dict"]
+
+    def test_register_events(self):
+        # Make sure cred-revoked listener is added
+        event_bus = MockEventBus()
+        test_module.register_events(event_bus)
+        assert (
+            event_bus.topic_patterns_to_subscribers.get(
+                re.compile(r"^acapy::cred-revoked$")
+            )[0]
+            == test_module.cred_revoked
+        )
+
+    async def test_cred_revoked_both_cred_rev_records_without_cred_ex_id(self):
+        await test_module.cred_revoked(
+            self.profile,
+            EventWithMetadata(
+                "test",
+                IssuerCredRevRecord(),
+                EventMetadata(pattern=re.compile(r"^acapy::cred-revoked$"), match=None),
+            ),
+        )
+        await test_module.cred_revoked(
+            self.profile,
+            EventWithMetadata(
+                "test",
+                IssuerCredRevAnoncredsRecord(),
+                EventMetadata(pattern=re.compile(r"^acapy::cred-revoked$"), match=None),
+            ),
+        )
+
+    async def test_cred_revoked_not_version_2(self):
+        await test_module.cred_revoked(
+            self.profile,
+            EventWithMetadata(
+                "test",
+                IssuerCredRevAnoncredsRecord(
+                    cred_ex_id="dummy", cred_ex_version=IssuerCredRevRecord.VERSION_1
+                ),
+                EventMetadata(pattern=re.compile(r"^acapy::cred-revoked$"), match=None),
+            ),
+        )
+
+    @mock.patch.object(
+        test_module.V20CredExRecord,
+        "retrieve_by_id",
+        mock.CoroutineMock(
+            return_value=test_module.V20CredExRecord(
+                cred_ex_id="dummy",
+                state=None,
+            )
+        ),
+    )
+    @mock.patch.object(
+        test_module.V20CredExRecord,
+        "save",
+        mock.CoroutineMock(),
+    )
+    async def test_cred_revoked(self):
+        await test_module.cred_revoked(
+            self.profile,
+            EventWithMetadata(
+                "test",
+                IssuerCredRevAnoncredsRecord(
+                    cred_ex_id="dummy", cred_ex_version=IssuerCredRevRecord.VERSION_2
+                ),
+                EventMetadata(pattern=re.compile(r"^acapy::cred-revoked$"), match=None),
+            ),
+        )
+
+    @mock.patch.object(
+        test_module.V20CredExRecord,
+        "retrieve_by_id",
+        mock.CoroutineMock(side_effect=test_module.StorageNotFoundError()),
+    )
+    async def test_cred_not_found(self):
+        await test_module.cred_revoked(
+            self.profile,
+            EventWithMetadata(
+                "test",
+                IssuerCredRevAnoncredsRecord(
+                    cred_ex_id="dummy", cred_ex_version=IssuerCredRevRecord.VERSION_2
+                ),
+                EventMetadata(pattern=re.compile(r"^acapy::cred-revoked$"), match=None),
+            ),
+        )

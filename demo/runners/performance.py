@@ -84,11 +84,6 @@ class BaseAgent(DemoAgent):
                 self.log("Connected")
                 self._connection_ready.set_result(True)
 
-    async def handle_issue_credential(self, payload):
-        cred_ex_id = payload["credential_exchange_id"]
-        self.credential_state[cred_ex_id] = payload["state"]
-        self.credential_event.set()
-
     async def handle_issue_credential_v2_0(self, payload):
         cred_ex_id = payload["cred_ex_id"]
         self.credential_state[cred_ex_id] = payload["state"]

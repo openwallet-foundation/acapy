@@ -16,9 +16,6 @@ from .....ledger.multiple_ledger.ledger_requests_executor import (
 )
 from .....messaging.decorators.attach_decorator import AttachDecorator
 from .....messaging.responder import BaseResponder, MockResponder
-from .....protocols.issue_credential.v1_0.models.credential_exchange import (
-    V10CredentialExchange,
-)
 from .....tests import mock
 from .....utils.testing import create_test_profile
 from ....didcomm_prefix import DIDCommPrefix
@@ -1319,7 +1316,7 @@ class TestPresentationManager(IsolatedAsyncioTestCase):
             )
             save_ex.assert_called_once()
 
-            assert ret_exchange.state == V10CredentialExchange.STATE_ABANDONED
+            assert ret_exchange.state == "abandoned"
 
     async def test_receive_problem_report_x(self):
         connection_id = "connection-id"
