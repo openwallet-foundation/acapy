@@ -27,8 +27,18 @@ class PostgresSession(AbstractDatabaseSession):
         profile: str,
         is_txn: bool,
         release_number: str = "release_0",
+        profile_id: int = None,
     ):
-        """Initialize PostgreSQL session."""
+        """Initialize PostgreSQL session.
+
+        Args:
+            database: The PostgresDatabase instance
+            profile: Profile name
+            is_txn: Whether this is a transaction
+            release_number: Schema release number
+            profile_id: Optional cached profile ID (avoids DB lookup)
+
+        """
         self.lock = threading.RLock()
         self.database = database
         self.pool = database.pool
@@ -36,7 +46,7 @@ class PostgresSession(AbstractDatabaseSession):
         self.is_txn = is_txn
         self.release_number = release_number
         self.conn = None
-        self.profile_id = None
+        self.profile_id = profile_id
         self.schema_context = database.schema_context
 
     def _process_value(
@@ -173,19 +183,12 @@ class PostgresSession(AbstractDatabaseSession):
                 self._handle_session_failure(max_retries, e)
 
     async def _acquire_and_validate_connection(self):
-        """Acquire and validate database connection."""
+        """Acquire database connection from pool.
+
+        Note: Connection validation is handled by the pool and getconn's rollback.
+        The retry logic in __aenter__ handles any stale connection issues.
+        """
         self.conn = await self.pool.getconn()
-        try:
-            async with self.conn.cursor() as cursor:
-                await cursor.execute("SELECT 1")
-        except Exception as e:
-            await self._cleanup_connection()
-            LOGGER.error("Invalid connection retrieved: %s", str(e))
-            raise DatabaseError(
-                code=DatabaseErrorCode.CONNECTION_ERROR,
-                message="Invalid connection retrieved from pool",
-                actual_error=str(e),
-            )
 
     async def _setup_session(self):
         """Setup session with profile and transaction state."""
@@ -204,11 +207,22 @@ class PostgresSession(AbstractDatabaseSession):
         )
 
     async def _cleanup_connection(self):
-        """Clean up database connection."""
+        """Clean up database connection during session setup failure."""
         if self.conn:
-            await self.conn.rollback()
-            await self.pool.putconn(self.conn)
-            self.conn = None
+            try:
+                await self.conn.rollback()
+            except Exception as e:
+                LOGGER.warning("[cleanup_connection] Rollback failed: %s", str(e))
+
+            try:
+                await self.pool.putconn(self.conn)
+            except Exception as e:
+                LOGGER.error(
+                    "[cleanup_connection] CRITICAL: Failed to return connection: %s",
+                    str(e),
+                )
+            finally:
+                self.conn = None
 
     def _handle_session_failure(self, max_retries: int, error: Exception):
         """Handle session setup failure after retries."""
@@ -260,15 +274,27 @@ class PostgresSession(AbstractDatabaseSession):
 
     async def _cleanup_session(self):
         """Clean up session resources."""
+        conn_returned = False
         try:
-            await self.conn.rollback()
             await self.pool.putconn(self.conn)
+            conn_returned = True
             self.conn = None
+        except Exception as e:
+            LOGGER.error(
+                "[close_session] CRITICAL: Failed to return connection to pool: %s",
+                str(e),
+            )
+            self.conn = None
+
+        try:
             if self in self.database.active_sessions:
                 self.database.active_sessions.remove(self)
-            LOGGER.debug("[close_session] Completed")
-        except Exception:
-            pass
+        except Exception as e:
+            LOGGER.warning(
+                "[close_session] Failed to remove from active_sessions: %s", str(e)
+            )
+
+        LOGGER.debug("[close_session] Completed (connection_returned=%s)", conn_returned)
 
     async def count(self, category: str, tag_filter: str | dict = None) -> int:
         """Count entries in a category."""
@@ -583,16 +609,18 @@ class PostgresSession(AbstractDatabaseSession):
         """Close session."""
         if self.conn:
             try:
-                async with self.conn.cursor() as cursor:
-                    await cursor.execute("SELECT 1")
-            except Exception:
-                pass
-            try:
-                await self.conn.rollback()
                 await self.pool.putconn(self.conn)
+            except Exception as e:
+                LOGGER.error("[close] CRITICAL: Failed to return connection: %s", str(e))
+            finally:
                 self.conn = None
+
+            try:
                 if self in self.database.active_sessions:
                     self.database.active_sessions.remove(self)
-                LOGGER.debug("[close_session] Completed")
-            except Exception:
-                pass
+            except Exception as e:
+                LOGGER.warning(
+                    "[close] Failed to remove from active_sessions: %s", str(e)
+                )
+
+            LOGGER.debug("[close] Completed")
