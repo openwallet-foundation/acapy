@@ -1,11 +1,18 @@
 # This Action will run when a release is published from the LTS branches 
-# and create new LTS tag, release and publish the image in GHCR
+# and create new LTS tag, release and tag the existing image in GHCR
 
 name: Tag and Recreate LTS Release
 
 on:
-  release:
-    types: [published]
+  workflow_run:
+    workflows: ["Publish ACA-Py Image"]
+    types: [completed]
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: 'Release tag to create LTS from (e.g., 1.2.3)'
+        required: true
+        type: string
       
 permissions:
   contents: write
@@ -13,17 +20,16 @@ permissions:
 
 jobs:
   recreate-lts-release:
-    # This job is disabled by default for main, should be enabled for LTS branches and tags.
-    # To enable it, you can set the condition in the `if` statement below.
-    # The condition should check if the release tag starts with the LTS version prefix.
-    # For example, if your LTS versions are prefixed with '1.2.', you can use:
-    #   if: startsWith(github.event.release.tag_name, '1.2.')
-    # This will ensure that the job only runs for releases that are tagged with LTS versions.
-    if: false 
+    # LTS versions are now configured in .github/lts-versions.txt
+    # Add version patterns (major.minor format) to that file to enable LTS processing
+    if: |
+      (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success') ||
+      (github.event_name == 'workflow_dispatch')
     name: Recreate LTS Release
     runs-on: ubuntu-latest
     outputs:
-      lts_tag: ${{ steps.vars.outputs.LTS_TAG }}
+      lts_tag: ${{ steps.set_outputs.outputs.lts_tag }}
+      release_tag: ${{ steps.set_outputs.outputs.release_tag }}
 
     steps:
       - name: Checkout repository
@@ -31,28 +37,158 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Get Release Tag
+        id: get_release
+        if: github.event_name == 'workflow_run'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          SHA="${{ github.event.workflow_run.head_sha }}"
+          echo "Looking for release associated with commit: $SHA"
+          
+          # Try to find release by target_commitish first (fast path)
+          RELEASE_TAG=$(gh api /repos/${{ github.repository }}/releases --paginate | \
+            jq -r --arg sha "$SHA" \
+            '.[] | select(.target_commitish == $sha) | .tag_name' | head -1)
+          
+          # If not found, try to find tags pointing to this commit and check for releases
+          if [ -z "$RELEASE_TAG" ]; then
+            echo "No release found by target_commitish, checking tags pointing to commit..."
+            TAGS=$(git tag --points-at "$SHA" 2>/dev/null || echo "")
+            
+            if [ -n "$TAGS" ]; then
+              echo "Tags found: $TAGS"
+              # Fetch all releases once
+              ALL_RELEASES=$(gh api /repos/${{ github.repository }}/releases --paginate | jq -r '.[].tag_name')
+              
+              # Check each tag to see if it has a release
+              for TAG in $TAGS; do
+                if echo "$ALL_RELEASES" | grep -q "^${TAG}$"; then
+                  RELEASE_TAG="$TAG"
+                  echo "Found release for tag: $TAG"
+                  break
+                fi
+              done
+            fi
+          fi
+          
+          if [ -z "$RELEASE_TAG" ]; then
+            echo "No release found for commit $SHA"
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          elif [[ "$RELEASE_TAG" =~ rc ]]; then
+            echo "Release $RELEASE_TAG is an RC release - skipping LTS tagging"
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "Found release: $RELEASE_TAG"
+            echo "release_tag=$RELEASE_TAG" >> "$GITHUB_OUTPUT"
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Check if Release is LTS
+        id: check_lts
+        if: steps.get_release.outputs.skip != 'true' || github.event_name == 'workflow_dispatch'
+        run: |
+          # Get release tag based on trigger type
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            RELEASE_TAG="${{ inputs.release_tag }}"
+          else
+            RELEASE_TAG="${{ steps.get_release.outputs.release_tag }}"
+          fi
+          
+          # Read LTS versions from config file (remove comments and empty lines)
+          LTS_VERSIONS=$(grep -v '^#' .github/lts-versions.txt | grep -v '^$' | tr '\n' '|' | sed 's/|$//')
+          
+          if [ -z "$LTS_VERSIONS" ]; then
+            echo "No LTS versions configured in .github/lts-versions.txt"
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          
+          echo "Configured LTS versions: $LTS_VERSIONS"
+          echo "Checking release: $RELEASE_TAG"
+          
+          # Extract major.minor from release tag
+          SHORT_TAG=$(echo "$RELEASE_TAG" | cut -d. -f1,2)
+          
+          # Check if it matches any LTS version pattern
+          if echo "$SHORT_TAG" | grep -qE "^($LTS_VERSIONS)$"; then
+            echo "Release $RELEASE_TAG matches LTS version $SHORT_TAG"
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "Release $RELEASE_TAG (version $SHORT_TAG) is not configured as LTS"
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Set Release Tag for Output
+        id: set_release_tag
+        run: |
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            RELEASE_TAG="${{ inputs.release_tag }}"
+          else
+            RELEASE_TAG="${{ steps.get_release.outputs.release_tag }}"
+          fi
+          
+          # Validate semantic versioning format (semver 2.0)
+          if ! echo "$RELEASE_TAG" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?(\+[0-9A-Za-z.-]+)?$'; then
+            echo "Error: Release tag '$RELEASE_TAG' does not match semantic versioning format (X.Y.Z[-prerelease][+build])"
+            exit 1
+          fi
+          
+          echo "release_tag=$RELEASE_TAG" >> "$GITHUB_OUTPUT"
+          echo "Validated release tag: $RELEASE_TAG"
+
+      - name: Determine if workflow should proceed
+        id: should_proceed
+        run: |
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            # workflow_dispatch: check LTS validation result
+            if [ "${{ steps.check_lts.outputs.skip }}" == "true" ]; then
+              echo "proceed=false" >> "$GITHUB_OUTPUT"
+              echo "Skipping: Release is not configured as LTS"
+            else
+              echo "proceed=true" >> "$GITHUB_OUTPUT"
+              echo "Proceeding with workflow_dispatch"
+            fi
+          elif [ "${{ steps.get_release.outputs.skip }}" == "true" ] || [ "${{ steps.check_lts.outputs.skip }}" == "true" ]; then
+            # workflow_run: skip if either check failed
+            echo "proceed=false" >> "$GITHUB_OUTPUT"
+            echo "Skipping: release check or LTS check failed"
+          else
+            # workflow_run: proceed if both checks passed
+            echo "proceed=true" >> "$GITHUB_OUTPUT"
+            echo "Proceeding with workflow_run"
+          fi
+
       - name: Set up Git identity
+        if: steps.should_proceed.outputs.proceed == 'true'
         run: |
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
 
       - name: Determine LTS tag and update
+        if: steps.should_proceed.outputs.proceed == 'true'
         id: vars
         env:
-          BRANCH_REF: ${{ github.event.release.target_commitish }}
-          RELEASE_TAG: ${{ github.event.release.tag_name }}
-          RELEASE_BODY: ${{ github.event.release.body }}
+          RELEASE_TAG: ${{ steps.set_release_tag.outputs.release_tag }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          echo "Release published from branch: $BRANCH_REF"
+          echo "Processing release: $RELEASE_TAG"
 
-          # Creating a LTS tag from the branch name
+          # Creating a LTS tag from the release tag
           SHORT_TAG=$(echo "$RELEASE_TAG" | cut -d. -f1,2)
           LTS_TAG="${SHORT_TAG}-lts"
           echo "LTS_TAG=$LTS_TAG" >> "$GITHUB_OUTPUT"
 
-          # Force update the tag to the current commit
-          git tag -f "$LTS_TAG" $GITHUB_SHA
-          git push origin -f "$LTS_TAG" 
+          # Get the commit SHA that the release tag points to
+          RELEASE_SHA=$(git rev-parse "$RELEASE_TAG^{}")
+          echo "Release tag $RELEASE_TAG points to commit: $RELEASE_SHA"
+          
+          # Force update the LTS tag to point to the same commit as the release
+          git tag -f "$LTS_TAG" "$RELEASE_SHA"
+          git push origin -f "$LTS_TAG"
+          
+          # Get release body from the original release
+          RELEASE_BODY=$(gh release view "$RELEASE_TAG" --json body -q .body)
 
           # Write release notes into env (for multiline input)
           echo "RELEASE_BODY<<EOF" >> "$GITHUB_ENV"
@@ -60,6 +196,7 @@ jobs:
           echo "EOF" >> "$GITHUB_ENV"
 
       - name: Delete existing LTS release (if any)
+        if: steps.should_proceed.outputs.proceed == 'true'
         continue-on-error: true
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -69,6 +206,7 @@ jobs:
           gh release delete "$LTS_TAG" -y
 
       - name: Create fresh LTS release
+        if: steps.should_proceed.outputs.proceed == 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           LTS_TAG: ${{ steps.vars.outputs.LTS_TAG }}
@@ -76,11 +214,55 @@ jobs:
         run: |
           echo "Creating new GitHub release for $LTS_TAG"
           gh release create "$LTS_TAG" --title "$LTS_TAG" --notes "$RELEASE_BODY"
+
+      - name: Set Job Outputs
+        id: set_outputs
+        if: steps.should_proceed.outputs.proceed == 'true'
+        run: |
+          echo "lts_tag=${{ steps.vars.outputs.LTS_TAG }}" >> "$GITHUB_OUTPUT"
+          echo "release_tag=${{ steps.set_release_tag.outputs.release_tag }}" >> "$GITHUB_OUTPUT"
+          echo "Set job outputs for downstream job"
   
-  call-publish-image:
-    name: Publish LTS Image in GHCR
+  tag-lts-images:
+    name: Tag Existing Images with LTS
     needs: recreate-lts-release
-    uses: ./.github/workflows/publish.yml
-    with:
-      tag: ${{ needs.recreate-lts-release.outputs.lts_tag }}
-      ref: ${{ github.event.release.tag_name }}
+    if: |
+      needs.recreate-lts-release.outputs.lts_tag != '' && 
+      needs.recreate-lts-release.outputs.release_tag != ''
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.12"]
+        image-name: ["acapy-agent", "acapy-agent-bbs"]
+    
+    steps:
+      - name: Log in to the GitHub Container Registry
+        uses: docker/login-action@5e57cd118135c172c3672efd75eb46360885c0ef # v3.6.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Lowercase Repo Owner
+        id: lower
+        run: echo "owner=${GITHUB_REPOSITORY_OWNER,,}" >> $GITHUB_OUTPUT
+
+      - name: Tag Images with LTS
+        env:
+          SOURCE_TAG: py${{ matrix.python-version }}-${{ needs.recreate-lts-release.outputs.release_tag }}
+          LTS_TAG: py${{ matrix.python-version }}-${{ needs.recreate-lts-release.outputs.lts_tag }}
+          IMAGE_NAME: ghcr.io/${{ steps.lower.outputs.owner }}/${{ matrix.image-name }}
+        run: |
+          echo "Tagging \"$IMAGE_NAME:$SOURCE_TAG\" with \"$LTS_TAG\""
+          
+          # Pull the source image
+          docker pull "$IMAGE_NAME:$SOURCE_TAG"
+          
+          # Tag it with the LTS tag
+          docker tag "$IMAGE_NAME:$SOURCE_TAG" "$IMAGE_NAME:$LTS_TAG"
+          
+          # Push the new tag
+          docker push "$IMAGE_NAME:$LTS_TAG"
+          
+          echo "Successfully tagged \"$IMAGE_NAME\" with \"$LTS_TAG\""
+

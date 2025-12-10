@@ -516,6 +516,7 @@ class KanonStorageSearchSession(BaseStorageSearchSession):
         await self._open(limit=limit, offset=offset)
         count = 0
         ret = []
+        done = False
         if not hasattr(self._scan, "__anext__") and inspect.isawaitable(self._scan):
             try:
                 await self._scan
@@ -545,8 +546,9 @@ class KanonStorageSearchSession(BaseStorageSearchSession):
                 await self.close()
                 raise StorageSearchError(ERR_FETCH_SEARCH_RESULTS) from err
             except StopAsyncIteration:
+                done = True
                 break
-        if not ret:
+        if done or not ret:
             await self.close()
         return ret
 
