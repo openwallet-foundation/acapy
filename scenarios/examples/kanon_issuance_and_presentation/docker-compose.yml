@@ -2,29 +2,52 @@
   kanon-postgres:
     image: acapy-test
     ports:
-      - "3001:3001"
+      - "8031:8031"
+      - "8030:8030"
+    environment:
+      - DB_USER=myuser
+      - DB_PASSWORD=mypass
     command: >
       start
-        --label kanon-postgres
-        --inbound-transport http 0.0.0.0 3000
+        --endpoint http://kanon-postgres:8030
+        --label kanon_postgres_normalized
+        --inbound-transport http 0.0.0.0 8030
         --outbound-transport http
-        --endpoint http://kanon-postgres:3000
-        --admin 0.0.0.0 3001
+        --admin 0.0.0.0 8031
         --admin-insecure-mode
-        --tails-server-base-url http://tails:6543
-        --genesis-url https://test.bcovrin.vonx.io/genesis
         --wallet-type kanon-anoncreds
-        --wallet-name kanon-postgres
-        --wallet-key insecure
         --wallet-storage-type postgres_storage
-        --wallet-storage-config "{\"url\":\"wallet-db:5432\",\"max_connections\":100,\"min_idle_count\":5,\"max_idle\":10.0,\"max_lifetime\":7200.0}"
-        --wallet-storage-creds "{\"account\":\"DB_USER\",\"password\":\"DB_PASSWORD\",\"admin_account\":\"DB_USER\",\"admin_password\":\"DB_PASSWORD\"}"
-        --auto-provision
+        --recreate-wallet
+        --wallet-name kanon-postgres-normalized
+        --wallet-key insecure
+        --wallet-storage-config {"url":"wallet-db:5432","max_connections":100,"min_idle_count":5,"max_idle":10.0,"max_lifetime":7200.0}
+        --wallet-storage-creds {"account":"myuser","password":"mypass"}
+        --dbstore-storage-type postgres_storage
+        --dbstore-storage-config {"url":"wallet-db:5432","connection_timeout":30.0,"max_connections":100,"min_idle_count":5,"max_idle":10.0,"max_lifetime":7200.0}
+        --dbstore-storage-creds {"account":"myuser","password":"mypass"}
+        --dbstore-schema-config normalize
+        --preserve-exchange-records
+        --genesis-url http://test.bcovrin.vonx.io/genesis
+        --tails-server-base-url http://tails:6543
+        --auto-ping-connection
+        --auto-respond-messages
+        --auto-accept-invites
+        --auto-accept-requests
+        --auto-respond-credential-proposal
+        --auto-respond-credential-offer
+        --auto-respond-credential-request
+        --auto-store-credential
+        --log-file /home/indy/acatest.log
         --log-level debug
+        --trace-target log
+        --trace-tag acapy.events
+        --trace-label kanon_issuer_normalized_postgres.trace
+        --auto-provision
+        --wallet-allow-insecure-seed
         --debug-webhooks
         --notify-revocation
     healthcheck:
-      test: curl -s -o /dev/null -w '%{http_code}' "http://localhost:3001/status/live" | grep "200" > /dev/null
+      test: curl -s -o /dev/null -w '%{http_code}' "http://localhost:8031/status/live" | grep "200" > /dev/null
       start_period: 30s
       interval: 7s
       timeout: 5s
@@ -68,7 +91,7 @@
     build:
       context: ../..
     environment:
-      - KANON_POSTGRES=http://kanon-postgres:3001
+      - KANON_POSTGRES=http://kanon-postgres:8031
       - BOB=http://bob:3001
     volumes:
       - ./example.py:/usr/src/app/example.py:ro,z
@@ -95,12 +118,12 @@
   wallet-db:
     image: postgres:12
     environment:
-      - POSTGRES_USER=DB_USER
-      - POSTGRES_PASSWORD=DB_PASSWORD
+      - POSTGRES_USER=myuser
+      - POSTGRES_PASSWORD=mypass
     ports:
       - 5433:5432
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U DB_USER"]
+      test: ["CMD-SHELL", "pg_isready -U myuser"]
       interval: 10s
       retries: 5
       start_period: 30s
