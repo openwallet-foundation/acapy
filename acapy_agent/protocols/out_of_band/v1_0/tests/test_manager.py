@@ -45,9 +45,6 @@ from ....issue_credential.v2_0.messages.inner.cred_preview import (
     V20CredPreview,
 )
 from ....issue_credential.v2_0.tests import INDY_OFFER
-from ....present_proof.v1_0.message_types import ATTACH_DECO_IDS as V10_PRES_ATTACH_FORMAT
-from ....present_proof.v1_0.message_types import PRESENTATION_REQUEST
-from ....present_proof.v1_0.messages.presentation_request import PresentationRequest
 from ....present_proof.v2_0.message_types import (
     ATTACHMENT_FORMAT as V20_PRES_ATTACH_FORMAT,
 )
@@ -170,29 +167,6 @@ class TestConfig:
                     },
                 }
             ],
-        },
-    }
-
-    PRES_REQ_V1 = PresentationRequest(
-        comment="Test",
-        request_presentations_attach=[
-            AttachDecorator.data_base64(
-                mapping=INDY_PROOF_REQ,
-                ident=V10_PRES_ATTACH_FORMAT[PRESENTATION_REQUEST],
-            )
-        ],
-    )
-    pres_req_dict = PRES_REQ_V1.request_presentations_attach[0].serialize()
-    req_attach_v1 = {
-        "@id": "request-0",
-        "mime-type": "application/json",
-        "data": {
-            "json": {
-                "@type": DIDCommPrefix.qualify_current(PRESENTATION_REQUEST),
-                "@id": "12345678-0123-4567-1234-567812345678",
-                "comment": "some comment",
-                "request_presentations~attach": [pres_req_dict],
-            }
         },
     }
 
@@ -504,55 +478,12 @@ class TestOOBManager(IsolatedAsyncioTestCase, TestConfig):
             assert "~thread" in attach and "pthid" in attach["~thread"]
             assert attach["~thread"]["pthid"] == invi_rec.invi_msg_id
 
-    async def test_create_invitation_attachment_present_proof_v1_0(self):
-        self.profile.context.update_settings({"public_invites": True})
-        with (
-            mock.patch.object(
-                AskarWallet, "get_public_did", autospec=True
-            ) as mock_wallet_get_public_did,
-            mock.patch.object(
-                test_module.V10PresentationExchange,
-                "retrieve_by_id",
-                mock.CoroutineMock(),
-            ) as mock_retrieve_pxid,
-        ):
-            mock_wallet_get_public_did.return_value = DIDInfo(
-                TestConfig.test_did,
-                TestConfig.test_verkey,
-                None,
-                method=SOV,
-                key_type=ED25519,
-            )
-            mock_retrieve_pxid.return_value = mock.MagicMock(
-                presentation_request_dict=self.PRES_REQ_V1
-            )
-            invi_rec = await self.manager.create_invitation(
-                my_endpoint=TestConfig.test_endpoint,
-                public=True,
-                hs_protos=[test_module.HSProto.RFC23],
-                multi_use=False,
-                attachments=[{"type": "present-proof", "id": "dummy-id"}],
-            )
-
-            mock_retrieve_pxid.assert_called_once_with(ANY, "dummy-id")
-            assert isinstance(invi_rec, InvitationRecord)
-            assert invi_rec.invitation.handshake_protocols
-            assert invi_rec.invitation.requests_attach[0].content == {
-                **self.PRES_REQ_V1.serialize(),
-                "~thread": {"pthid": invi_rec.invi_msg_id},
-            }
-
     async def test_create_invitation_attachment_present_proof_v2_0(self):
         self.profile.context.update_settings({"public_invites": True})
         with (
             mock.patch.object(
                 AskarWallet, "get_public_did", autospec=True
             ) as mock_wallet_get_public_did,
-            mock.patch.object(
-                test_module.V10PresentationExchange,
-                "retrieve_by_id",
-                mock.CoroutineMock(),
-            ) as mock_retrieve_pxid_1,
             mock.patch.object(
                 test_module.V20PresExRecord,
                 "retrieve_by_id",
@@ -566,7 +497,6 @@ class TestOOBManager(IsolatedAsyncioTestCase, TestConfig):
                 method=SOV,
                 key_type=ED25519,
             )
-            mock_retrieve_pxid_1.side_effect = StorageNotFoundError()
             mock_retrieve_pxid_2.return_value = mock.MagicMock(
                 pres_request=TestConfig.PRES_REQ_V2
             )
@@ -1470,7 +1400,7 @@ class TestOOBManager(IsolatedAsyncioTestCase, TestConfig):
 
     async def test_request_attach_oob_message_processor_connectionless(self):
         requests_attach: List[AttachDecorator] = [
-            AttachDecorator.deserialize(deepcopy(TestConfig.req_attach_v1))
+            AttachDecorator.deserialize(deepcopy(TestConfig.req_attach_v2))
         ]
 
         mock_oob_processor = mock.MagicMock(OobMessageProcessor, autospec=True)
@@ -1539,7 +1469,7 @@ class TestOOBManager(IsolatedAsyncioTestCase, TestConfig):
         )
 
         requests_attach: List[AttachDecorator] = [
-            AttachDecorator.deserialize(deepcopy(TestConfig.req_attach_v1))
+            AttachDecorator.deserialize(deepcopy(TestConfig.req_attach_v2))
         ]
 
         mock_oob_processor = mock.MagicMock(OobMessageProcessor, autospec=True)
@@ -1602,7 +1532,7 @@ class TestOOBManager(IsolatedAsyncioTestCase, TestConfig):
                     ],
                     services=[TestConfig.test_target_did],
                     requests_attach=[
-                        AttachDecorator.deserialize(deepcopy(TestConfig.req_attach_v1))
+                        AttachDecorator.deserialize(deepcopy(TestConfig.req_attach_v2))
                     ],
                 )
 

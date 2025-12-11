@@ -30,7 +30,6 @@ from ...coordinate_mediation.v1_0.route_manager import RouteManager
 from ...didcomm_prefix import DIDCommPrefix
 from ...didexchange.v1_0.manager import DIDXManager
 from ...issue_credential.v2_0.models.cred_ex_record import V20CredExRecord
-from ...present_proof.v1_0.models.presentation_exchange import V10PresentationExchange
 from ...present_proof.v2_0.models.pres_exchange import V20PresExRecord
 from .message_types import DEFAULT_VERSION
 from .messages.invitation import HSProto, InvitationMessage
@@ -202,12 +201,8 @@ class InvitationCreator:
             )
             message = cred_ex_rec.cred_offer
         elif a_type == "present-proof":
-            try:
-                pres_ex_rec = await V10PresentationExchange.retrieve_by_id(session, a_id)
-                message = pres_ex_rec.presentation_request_dict
-            except StorageNotFoundError:
-                pres_ex_rec = await V20PresExRecord.retrieve_by_id(session, a_id)
-                message = pres_ex_rec.pres_request
+            pres_ex_rec = await V20PresExRecord.retrieve_by_id(session, a_id)
+            message = pres_ex_rec.pres_request
         else:
             raise OutOfBandManagerError(f"Unknown attachment type: {a_type}")
         message.assign_thread_id(pthid=pthid)
