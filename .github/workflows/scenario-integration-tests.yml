@@ -62,7 +62,6 @@ jobs:
         if: steps.check-if-scenarios-or-src-changed.outputs.run_tests != 'false'
         run: |
           # Build the docker image for testing
-          docker compose down --remove-orphans -v
           docker build -t acapy-test -f docker/Dockerfile.run .
           cd scenarios
           poetry install --no-root
