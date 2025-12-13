@@ -37,7 +37,6 @@
         --auto-respond-credential-offer
         --auto-respond-credential-request
         --auto-store-credential
-        --log-file /home/indy/acatest.log
         --log-level debug
         --trace-target log
         --trace-tag acapy.events
