@@ -253,16 +253,16 @@ yaml = ["PyYAML (>=3.10)"]
 
 [[package]]
 name = "aries-askar"
-version = "0.4.5"
-description = ""
+version = "0.5.0"
+description = "Python wrapper for the Aries Askar cryptographic library"
 optional = false
-python-versions = ">=3.6.3"
+python-versions = "<4.0,>=3.10"
 groups = ["main"]
 files = [
-    {file = "aries_askar-0.4.5-py3-none-macosx_10_9_universal2.whl", hash = "sha256:3a9353e055327a8d484e15f7cfb292754d9d56e6434b5405e6c187ebdf8d02f2"},
-    {file = "aries_askar-0.4.5-py3-none-manylinux2014_aarch64.whl", hash = "sha256:dc5748ee85d03a1ac9366cf913805ec6e1fce9fcf40d7be7338de749910d1a33"},
-    {file = "aries_askar-0.4.5-py3-none-manylinux2014_x86_64.whl", hash = "sha256:4e2303e2785645426fcb7f5ccdd7922e3b949da6a5b4a6dae1e55fe1b5b26d21"},
-    {file = "aries_askar-0.4.5-py3-none-win_amd64.whl", hash = "sha256:8026cb55b039d452c10ed4cf77b8bff400f4951f2fcc4bd75af989c7bb7cef70"},
+    {file = "aries_askar-0.5.0-py3-none-macosx_10_9_universal2.whl", hash = "sha256:03da20836bbc9cd4d6ad7c272d52caa7a9089fc754da58f849bfe4a81a0d27be"},
+    {file = "aries_askar-0.5.0-py3-none-manylinux2014_aarch64.whl", hash = "sha256:be5bc1c89d9633ec1d9e20222f97f4c78a345f675f825529bdc28103be29f6ba"},
+    {file = "aries_askar-0.5.0-py3-none-manylinux2014_x86_64.whl", hash = "sha256:ee736b24acf724b866bb1bd8b64b075806b39cf6a7ab35b668f12fbf7ffda077"},
+    {file = "aries_askar-0.5.0-py3-none-win_amd64.whl", hash = "sha256:1301e330c0dfb0fc81335a98e167671630d2eb47f536d8dc52b15ea738c973aa"},
 ]
 
 [[package]]
