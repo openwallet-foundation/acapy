@@ -3506,4 +3506,4 @@ sqlcipher = ["sqlcipher3-binary"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.13"
-content-hash = "0dd7b1b68283f344310806ab786fe61e886fec89e8009f87f0761a2575da4243"
+content-hash = "55667d16816551aaff46b47b61d9b7bf30fccc7d39fe4c42ea830644b9ecd1da"
