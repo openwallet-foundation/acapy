@@ -363,7 +363,9 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
             if schema_id_from_cred_def.isdigit():
                 # schemaId is a seqNo, fetch the actual schema to get its ID
                 try:
-                    schema = await ledger.fetch_schema_by_seq_no(int(schema_id_from_cred_def))
+                    schema = await ledger.fetch_schema_by_seq_no(
+                        int(schema_id_from_cred_def)
+                    )
                     if schema and schema.get("id"):
                         schema_id_from_cred_def = schema["id"]
                     # If schema is None or missing id, fall back to seqNo
