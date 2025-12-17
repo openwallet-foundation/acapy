@@ -26,34 +26,22 @@ class ExampleRunner:
         self.compose_file = compose_file
 
     def compose(self, *command: str) -> int:
-        """Run docker compose and stream stdout/stderr live.
+        """Runs docker compose using subprocess with the given command.
 
-        Uses subprocess.Popen so output is printed line-by-line to pytest stdout.
-        Returns the process exit code.
+        Returns exit status and output.
         """
-        cmd = ["docker", "compose", "-f", self.compose_file, *command]
-        # Use text mode for convenience
-        proc = subprocess.Popen(
-            cmd,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            bufsize=1,
-            universal_newlines=True,
-        )
-
         try:
-            if proc.stdout is not None:
-                for line in proc.stdout:
-                    print(line, end="")
-        except Exception:
-            # in case streaming fails, ensure we still wait for process
-            pass
-
-        proc.wait()
-        return proc.returncode if proc.returncode is not None else 0
+            subprocess.run(
+                ["docker", "compose", "-f", self.compose_file, *command],
+                check=True,
+            )
+            return 0
+        except subprocess.CalledProcessError as e:
+            return e.returncode
 
     def cleanup(self):
         """Runs docker compose down -v for cleanup."""
+        self.compose("logs")
         exit_status = self.compose("down", "-v")
         if exit_status != 0:
             raise ExampleFailedException(
