@@ -39,7 +39,6 @@ RUN mkdir demo && chmod -R ug+rw demo
 # Copy and install demo code
 COPY demo/requirements.txt ./demo/requirements.txt
 RUN pip3 install --no-cache-dir -r demo/requirements.txt
-RUN pip3 install git+https://github.com/webpy/webpy.git@0.62
 
 COPY demo ./demo
 
