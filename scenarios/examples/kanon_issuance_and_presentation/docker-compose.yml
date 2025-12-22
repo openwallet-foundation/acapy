@@ -20,11 +20,11 @@
         --recreate-wallet
         --wallet-name kanon-postgres-normalized
         --wallet-key insecure
-        --wallet-storage-config {"url":"wallet-db:5432","max_connections":100,"min_idle_count":5,"max_idle":10.0,"max_lifetime":7200.0}
-        --wallet-storage-creds {"account":"myuser","password":"mypass"}
+        --wallet-storage-config "{\"url\":\"wallet-db:5432\",\"max_connections\":100,\"min_idle_count\":5,\"max_idle\":10.0,\"max_lifetime\":7200.0}"
+        --wallet-storage-creds "{\"account\":\"myuser\",\"password\":\"mypass\"}"
         --dbstore-storage-type postgres_storage
-        --dbstore-storage-config {"url":"wallet-db:5432","connection_timeout":30.0,"max_connections":100,"min_idle_count":5,"max_idle":10.0,"max_lifetime":7200.0}
-        --dbstore-storage-creds {"account":"myuser","password":"mypass"}
+        --dbstore-storage-config "{\"url\":\"wallet-db:5432\",\"connection_timeout\":30.0,\"max_connections\":100,\"min_idle_count\":5,\"max_idle\":10.0,\"max_lifetime\":7200.0}"
+        --dbstore-storage-creds "{\"account\":\"myuser\",\"password\":\"mypass\"}"
         --dbstore-schema-config normalize
         --preserve-exchange-records
         --genesis-url http://test.bcovrin.vonx.io/genesis
@@ -37,7 +37,6 @@
         --auto-respond-credential-offer
         --auto-respond-credential-request
         --auto-store-credential
-        --log-file /home/indy/acatest.log
         --log-level debug
         --trace-target log
         --trace-tag acapy.events

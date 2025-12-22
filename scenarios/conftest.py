@@ -14,7 +14,6 @@ class ExampleFailedException(Exception):
 
     def __init__(self, message: str, exit_status: int):
         """Initialize ExampleFailedException."""
-
         super().__init__(message)
         self.exit_status = exit_status
 
@@ -24,7 +23,6 @@ class ExampleRunner:
 
     def __init__(self, compose_file: str):
         """Initialize ExampleRunner."""
-
         self.compose_file = compose_file
 
     def compose(self, *command: str) -> int:
@@ -43,6 +41,7 @@ class ExampleRunner:
 
     def cleanup(self):
         """Runs docker compose down -v for cleanup."""
+        self.compose("logs")
         exit_status = self.compose("down", "-v")
         if exit_status != 0:
             raise ExampleFailedException(
