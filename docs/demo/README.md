@@ -460,7 +460,7 @@ You can also run the demo against a postgres database using the following:
 
 (Obviously you need to be running a postgres database - the command to start postgres is in the yml file provided above.)
 
-You can tweak the number of credentials issued using the `--count` and `--batch` parameters, and you can run against an Askar database using the `--wallet-type askar` option (or run using indy-sdk using `--wallet-type indy`).
+You can tweak the number of credentials issued using the `--count` and `--batch` parameters, and you can run against an Askar database using the `--wallet-type askar` option.
 
 An example full set of options is:
 
@@ -468,11 +468,6 @@ An example full set of options is:
 ./run_demo performance --arg-file demo/postgres-indy-args.yml -c 10000 -b 10 --wallet-type askar
 ```
 
-Or:
-
-``` bash
-./run_demo performance --arg-file demo/postgres-indy-args.yml -c 10000 -b 10 --wallet-type indy
-```
 
 ## Coding Challenge: Adding ACME
 
