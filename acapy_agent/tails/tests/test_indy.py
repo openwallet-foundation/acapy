@@ -45,12 +45,9 @@ class TestIndyTailsServer(IsolatedAsyncioTestCase):
             assert text == context.settings["tails_server_base_url"] + quote(
                 REV_REG_ID, safe=":"
             )
-            assert (
-                mock_put.call_args.args[0]
-                == context.settings["tails_server_upload_url"]
-                + "/"
-                + quote(REV_REG_ID, safe=":")
-            )
+            assert mock_put.call_args.args[0] == context.settings[
+                "tails_server_upload_url"
+            ] + "/" + quote(REV_REG_ID, safe=":")
 
     async def test_upload_indy_vdr(self):
         self.profile = await create_test_profile()
@@ -88,12 +85,9 @@ class TestIndyTailsServer(IsolatedAsyncioTestCase):
             assert text == self.profile.settings["tails_server_base_url"] + quote(
                 REV_REG_ID, safe=":"
             )
-            assert (
-                mock_put.call_args.args[0]
-                == self.profile.settings["tails_server_upload_url"]
-                + "/"
-                + quote(REV_REG_ID, safe=":")
-            )
+            assert mock_put.call_args.args[0] == self.profile.settings[
+                "tails_server_upload_url"
+            ] + "/" + quote(REV_REG_ID, safe=":")
 
     async def test_upload_with_space_in_revocation_tag(self):
         # BUG #1580: ensure revocation tag whitespace is URL-encoded
@@ -118,12 +112,9 @@ class TestIndyTailsServer(IsolatedAsyncioTestCase):
             assert text == context.settings["tails_server_base_url"] + quote(
                 REV_REG_ID_WITH_SPACE, safe=":"
             )
-            assert (
-                mock_put.call_args.args[0]
-                == context.settings["tails_server_upload_url"]
-                + "/"
-                + quote(REV_REG_ID_WITH_SPACE, safe=":")
-            )
+            assert mock_put.call_args.args[0] == context.settings[
+                "tails_server_upload_url"
+            ] + "/" + quote(REV_REG_ID_WITH_SPACE, safe=":")
 
     async def test_upload_x(self):
         context = InjectionContext(
