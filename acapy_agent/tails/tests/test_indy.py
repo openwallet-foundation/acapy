@@ -20,14 +20,14 @@ class TestIndyTailsServer(IsolatedAsyncioTestCase):
         indy_tails = test_module.IndyTailsServer()
 
         with self.assertRaises(test_module.TailsServerNotConfiguredError):
-            await indy_tails.upload_tails_file(context, REV_REG_ID, "/tmp/dummy/path")
+            await indy_tails.upload_tails_file(context, REV_REG_ID, "dummy/path")
 
     async def test_upload(self):
         context = InjectionContext(
             settings={
                 "ledger.genesis_transactions": "dummy",
-                "tails_server_base_url": "http://1.2.3.4:8088/tails/",
-                "tails_server_upload_url": "http://1.2.3.4:8088",
+                "tails_server_base_url": "https://tails.example/tails/",
+                "tails_server_upload_url": "https://tails.example",
             }
         )
         indy_tails = test_module.IndyTailsServer()
@@ -37,7 +37,7 @@ class TestIndyTailsServer(IsolatedAsyncioTestCase):
             (ok, text) = await indy_tails.upload_tails_file(
                 context,
                 REV_REG_ID,
-                "/tmp/dummy/path",
+                "dummy/path",
             )
             assert ok
 
@@ -51,8 +51,8 @@ class TestIndyTailsServer(IsolatedAsyncioTestCase):
 
     async def test_upload_indy_vdr(self):
         self.profile = await create_test_profile()
-        self.profile.settings["tails_server_base_url"] = "http://1.2.3.4:8088/tails/"
-        self.profile.settings["tails_server_upload_url"] = "http://1.2.3.4:8088"
+        self.profile.settings["tails_server_base_url"] = "https://tails.example/tails/"
+        self.profile.settings["tails_server_upload_url"] = "https://tails.example"
         mock_multi_ledger_manager = mock.MagicMock(
             BaseMultipleLedgerManager, autospec=True
         )
@@ -77,7 +77,7 @@ class TestIndyTailsServer(IsolatedAsyncioTestCase):
             (ok, text) = await indy_tails.upload_tails_file(
                 self.profile.context,
                 REV_REG_ID,
-                "/tmp/dummy/path",
+                "dummy/path",
             )
             assert ok
 
@@ -94,8 +94,8 @@ class TestIndyTailsServer(IsolatedAsyncioTestCase):
         context = InjectionContext(
             settings={
                 "ledger.genesis_transactions": "dummy",
-                "tails_server_base_url": "http://1.2.3.4:8088/tails/",
-                "tails_server_upload_url": "http://1.2.3.4:8088",
+                "tails_server_base_url": "https://tails.example/tails/",
+                "tails_server_upload_url": "https://tails.example",
             }
         )
         indy_tails = test_module.IndyTailsServer()
@@ -105,7 +105,7 @@ class TestIndyTailsServer(IsolatedAsyncioTestCase):
             (ok, text) = await indy_tails.upload_tails_file(
                 context,
                 REV_REG_ID_WITH_SPACE,
-                "/tmp/dummy/path",
+                "dummy/path",
             )
             assert ok
 
@@ -120,8 +120,8 @@ class TestIndyTailsServer(IsolatedAsyncioTestCase):
         context = InjectionContext(
             settings={
                 "ledger.genesis_transactions": "dummy",
-                "tails_server_base_url": "http://1.2.3.4:8088/tails/",
-                "tails_server_upload_url": "http://1.2.3.4:8088",
+                "tails_server_base_url": "https://tails.example/tails/",
+                "tails_server_upload_url": "https://tails.example",
             }
         )
         indy_tails = test_module.IndyTailsServer()
@@ -130,7 +130,7 @@ class TestIndyTailsServer(IsolatedAsyncioTestCase):
             mock_put.side_effect = test_module.PutError("Server down for maintenance")
 
             (ok, text) = await indy_tails.upload_tails_file(
-                context, REV_REG_ID, "/tmp/dummy/path"
+                context, REV_REG_ID, "dummy/path"
             )
             assert not ok
             assert text == "Server down for maintenance"
