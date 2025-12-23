@@ -41,7 +41,6 @@ class TestIndyTailsServer(IsolatedAsyncioTestCase):
             )
             assert ok
 
-            # already contains / from config, no need to add it
             assert text == context.settings["tails_server_base_url"] + quote(
                 REV_REG_ID, safe=":"
             )
@@ -81,7 +80,6 @@ class TestIndyTailsServer(IsolatedAsyncioTestCase):
             )
             assert ok
 
-            # already contains / from config, no need to add it
             assert text == self.profile.settings["tails_server_base_url"] + quote(
                 REV_REG_ID, safe=":"
             )
