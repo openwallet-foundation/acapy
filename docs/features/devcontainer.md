@@ -44,7 +44,7 @@ To open ACA-Py in a devcontainer, we open the *root* of this repository. We can 
 
 #### devcontainer.json
 
-When the [.devcontainer/devcontainer.json](https://github.com/openwallet-foundation/acapy/blob/main/.devcontainer/devcontainer.json) is opened, you will see it building... it is building a Python 3.12 image (bash shell) and loading it with all the ACA-Py requirements. We also load a few Visual Studio settings (for running Pytests and formatting with Ruff).
+When the [.devcontainer/devcontainer.json](https://github.com/openwallet-foundation/acapy/blob/main/.devcontainer/devcontainer.json) is opened, you will see it building... it is building a Python 3.13 image (bash shell) and loading it with all the ACA-Py requirements. We also load a few Visual Studio settings (for running Pytests and formatting with Ruff).
 
 ### Poetry
 

@@ -266,7 +266,7 @@ class AnonCredsIssuer:
                 },
             )
         # entry.name was stored as the schema's ID
-        return [entry.name for entry in schemas]
+        return [entry.name for entry in list(schemas)]
 
     async def credential_definition_in_wallet(
         self, credential_definition_id: str
@@ -510,7 +510,7 @@ class AnonCredsIssuer:
                 },
             )
         # entry.name is cred def id when state == finished
-        return [entry.name for entry in credential_definition_entries]
+        return [entry.name for entry in list(credential_definition_entries)]
 
     async def match_created_credential_definitions(
         self,

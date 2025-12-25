@@ -1,6 +1,6 @@
 # ACA-Py -- A Cloud Agent - Python  <!-- omit in toc -->
 
-![Python](https://img.shields.io/badge/python-3.12-blue.svg)
+![Python](https://img.shields.io/badge/python-3.13-blue.svg)
 [![PyPI version](https://img.shields.io/pypi/v/acapy-agent)](https://pypi.org/project/acapy-agent/)
 [![Lines of Code](https://sonarcloud.io/api/project_badges/measure?project=openwallet-foundation_acapy&metric=ncloc)](https://sonarcloud.io/summary/new_code?id=openwallet-foundation_acapy)
 [![Coverage](https://sonarcloud.io/api/project_badges/measure?project=openwallet-foundation_acapy&metric=coverage)](https://sonarcloud.io/summary/new_code?id=openwallet-foundation_acapy)
