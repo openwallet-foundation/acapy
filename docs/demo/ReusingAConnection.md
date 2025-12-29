@@ -25,7 +25,7 @@ Example invitation:
         "https://didcomm.org/didexchange/1.0"
     ],
     "services": [
-        "did:sov:4JiUsoK85pVkkB1bAPzFaP"
+        "did:peer:2.4JiUsoK85pVkkB1bAPzFaP4JiUsoK85pVkkB1bAPzFaP"
     ]
 }
 ```
@@ -65,8 +65,8 @@ agents (the inviter and the invitee) that establish connections with one another
 The [RFC 0434 Out of Band] protocol requirement enables `reuse` message by the
 invitee (the Wallet in the flow above) is that the `service` in the invitation
 **MUST** be a resolvable DID that is the same in all of the invitations. In the
-example invitation above, the DID is a `did:sov` DID that is resolvable on a public
-Hyperledger Indy network. The DID could also be a [Peer DID] of types 2 or 4,
+example invitation above, the DID is a `did:peer` DID that is resolvable without
+requiring a public ledger. The DID could also be a [Peer DID] of types 2 or 4,
 which encode the entire DIDDoc contents into the DID identifier (thus they are
 "resolvable DIDs"). What cannot be used is either the old "unqualified" DIDs
 that were commonly used in Aries prior to 2024, and [Peer DID] type 1. Both of
@@ -87,7 +87,7 @@ Example invitation:
         "https://didcomm.org/didexchange/1.0"
     ],
     "services": [
-        "did:sov:4JiUsoK85pVkkB1bAPzFaP"
+        "did:peer:2.4JiUsoK85pVkkB1bAPzFaP4JiUsoK85pVkkB1bAPzFaP"
     ]
 }
 ```

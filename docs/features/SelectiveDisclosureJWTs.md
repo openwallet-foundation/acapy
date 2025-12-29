@@ -148,7 +148,7 @@ Note that attributes in the `non_sd_list` (`given_name`, `family_name`, and `nat
   "headers": {
     "typ": "JWT",
     "alg": "EdDSA",
-    "kid": "did:sov:WpVJtxKVwGQdRpQP8iwJZy#key-1"
+    "kid": "did:key:z6Mkt3g9hU7F7Qz7fV5oHfC1H2Q8oM6QWwP5p9nX8tQm#key-1"
   },
   "payload": {
     "_sd": [
@@ -179,7 +179,7 @@ Note that attributes in the `non_sd_list` (`given_name`, `family_name`, and `nat
     "_sd_alg": "sha-256"
   },
   "valid": true,
-  "kid": "did:sov:WpVJtxKVwGQdRpQP8iwJZy#key-1",
+  "kid": "did:key:z6Mkt3g9hU7F7Qz7fV5oHfC1H2Q8oM6QWwP5p9nX8tQm#key-1",
   "disclosures": [
     [
       "xvDX00fjZferiNiPod51qQ",
