@@ -87,9 +87,9 @@ variants and between the BC Gov ACA-Py images.
   - Uses container's system python environment rather than `pyenv`
   - Askar and Indy Shared libraries are installed as dependencies of ACA-Py through pip from pre-compiled binaries included in the python wrappers
   - Built from repo contents
-- Indy Image (no longer produced but included here for clarity)
+- Indy Image (no longer produced; legacy reference only)
   - Based on slim variant of Debian
-  - Built from multi-stage build step (`indy-base` in the Dockerfile) which includes Indy dependencies; this could be replaced with an explicit `indy-python` image from the Indy SDK repo
+  - Built from multi-stage build step (`indy-base` in the Dockerfile) which includes Indy dependencies
   - Includes `libindy` but does **NOT** include the Indy CLI
   - Default user is `indy`
   - Uses container's system python environment rather than `pyenv`

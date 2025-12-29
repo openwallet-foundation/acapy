@@ -357,7 +357,7 @@ The presentation (proof) request should automatically show up in the mobile agen
 
 If the mobile agent is able to successfully prepare and send the proof, you can go back to the Play with Docker terminal to see the status of the proof.
 
-The process should "just work" for the non-revocation use case. If you are using revocation, your results may vary. As of writing this, we get failures on the wallet side with some mobile wallets, and on the Faber side with others (an error in the Indy SDK). As the results improve, we'll update this. Please let us know through GitHub issues if you have any problems running this.
+The process should "just work" for the non-revocation use case. If you are using revocation, your results may vary. As of writing this, we get failures on the wallet side with some mobile wallets, and on the Faber side with others. As the results improve, we'll update this. Please let us know through GitHub issues if you have any problems running this.
 
 ## Review the Proof
 
