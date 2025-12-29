@@ -10,7 +10,7 @@ ACA-Py provides a `DIDMethods` registry holding all the DID methods supported fo
 
 ## Registering a DID method
 
-By default, ACA-Py supports `did:key` and `did:sov`.
+By default, ACA-Py supports `did:key`.
 Plugins can register DID additional methods to make them available to holders.
 Here's a snippet adding support for `did:web` to the registry from a plugin `setup` method.
 
