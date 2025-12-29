@@ -110,7 +110,7 @@ async def connect_agents_and_issue_credentials(
     )
     print(">>> Done!")
 
-    return (inviter_conn, invitee_conn)
+    return (inviter_conn, invitee_conn, inviter_cred_ex)
 
 
 async def verify_schema_cred_def(issuer, schema_count, cred_def_count):
@@ -219,7 +219,7 @@ async def upgrade_wallet_and_shutdown_container(
     agent_command = agent_container.attrs["Config"]["Cmd"]
 
     # command is a List, find the wallet type and replace "askar" with "askar-anoncreds"
-    correct_wallet_type = update_wallet_type(agent_command, "askar-anoncreds")
+    update_wallet_type(agent_command, "askar-anoncreds")
     wallet_name = get_wallet_name(agent_command)
 
     # call the wallet upgrade endpoint to upgrade to askar-anoncreds
@@ -299,7 +299,7 @@ async def main():
         Controller(base_url=BOB_ASKAR) as bob,
     ):
         # connect to Bob (Askar wallet) and issue (and revoke) some credentials
-        (alice_conn, bob_conn) = await connect_agents_and_issue_credentials(
+        (alice_conn, bob_conn, _) = await connect_agents_and_issue_credentials(
             alice,
             bob,
             cred_def,
@@ -315,7 +315,7 @@ async def main():
         Controller(base_url=BOB_ANONCREDS) as bob,
     ):
         # connect to Bob (AnonCreds wallet) and issue (and revoke) some credentials
-        (alice_conn, bob_conn) = await connect_agents_and_issue_credentials(
+        (alice_conn, bob_conn, _) = await connect_agents_and_issue_credentials(
             alice,
             bob,
             cred_def,
@@ -331,7 +331,11 @@ async def main():
         Controller(base_url=BOB_ASKAR_ANON) as bob,
     ):
         # connect to Bob (Askar wallet which will be upgraded) and issue (and revoke) some credentials
-        (alice_conn, bob_conn) = await connect_agents_and_issue_credentials(
+        (
+            alice_conn,
+            bob_conn,
+            pre_upgraded_cred_ex,
+        ) = await connect_agents_and_issue_credentials(
             alice,
             bob,
             cred_def,
@@ -386,113 +390,124 @@ async def main():
     alice_id = None
     new_bob_container = None
     bob_id = None
-    try:
-        (new_alice_container, alice_id) = start_new_container(
-            client,
-            alice_command,
-            alice_container,
-            "alice",
+
+    (new_alice_container, alice_id) = start_new_container(
+        client,
+        alice_command,
+        alice_container,
+        "alice",
+    )
+
+    (new_bob_container, bob_id) = start_new_container(
+        client,
+        bob_command,
+        bob_container,
+        "bob-askar-anon",
+    )
+
+    # TODO verify counts of credentials, revocations etc for each upgraded agent
+    async with (
+        Controller(base_url=ALICE) as alice,
+        Controller(base_url=BOB_ASKAR_ANON) as bob,
+    ):
+        await verify_schema_cred_def(alice, 1, 1)
+
+    # run some more tests ...  alice should still be connected to bob for example ...
+    async with (
+        Controller(base_url=ALICE) as alice,
+        Controller(base_url=BOB_ANONCREDS) as bob,
+    ):
+        # Present the the credential's attributes
+        print(">>> present proof ... again ...")
+        await anoncreds_present_proof_v2(
+            bob,
+            alice,
+            bob_conns["anoncreds"].connection_id,
+            alice_conns["anoncreds"].connection_id,
+            requested_attributes=[{"name": "firstname"}],
+        )
+        await connect_agents_and_issue_credentials(
+            alice,
+            bob,
+            cred_def,
+            "Bob",
+            "AnonCreds",
+            inviter_conn=alice_conns["anoncreds"],
+            invitee_conn=bob_conns["anoncreds"],
+        )
+        await verify_recd_credentials(bob, 2, 2)
+        print(">>> Done! (again)")
+
+    async with (
+        Controller(base_url=ALICE) as alice,
+        Controller(base_url=BOB_ASKAR_ANON) as bob,
+    ):
+        # Present the the credential's attributes
+        print(">>> present proof ... again ...")
+        await anoncreds_present_proof_v2(
+            bob,
+            alice,
+            bob_conns["askar-anon"].connection_id,
+            alice_conns["askar-anon"].connection_id,
+            requested_attributes=[{"name": "firstname"}],
+        )
+        await connect_agents_and_issue_credentials(
+            alice,
+            bob,
+            cred_def,
+            "Bob",
+            "Askar_Anon",
+            inviter_conn=alice_conns["askar-anon"],
+            invitee_conn=bob_conns["askar-anon"],
+        )
+        await verify_recd_credentials(bob, 2, 2)
+        print(">>> Done! (again)")
+
+    async with (
+        Controller(base_url=ALICE) as alice,
+        Controller(base_url=BOB_ASKAR) as bob,
+    ):
+        # Present the the credential's attributes
+        print(">>> present proof ... again ...")
+        await anoncreds_present_proof_v2(
+            bob,
+            alice,
+            bob_conns["askar"].connection_id,
+            alice_conns["askar"].connection_id,
+            requested_attributes=[{"name": "firstname"}],
+        )
+        await connect_agents_and_issue_credentials(
+            alice,
+            bob,
+            cred_def,
+            "Bob",
+            "Askar",
+            inviter_conn=alice_conns["askar"],
+            invitee_conn=bob_conns["askar"],
+        )
+        await verify_recd_credentials(bob, 2, 2)
+        await verify_issued_credentials(alice, 12, 6)
+        await verify_recd_presentations(alice, 9)
+        print(">>> Done! (again)")
+
+        # Revoke one more credential to test revocation post-upgrade
+        print(
+            ">>> revoke one more credential created before the upgrade and with cred_ex_id..."
+        )
+        await alice.post(
+            url="/anoncreds/revocation/revoke",
+            json={
+                "connection_id": alice_conns["askar"].connection_id,
+                "cred_ex_id": pre_upgraded_cred_ex.details.cred_ex_id,
+                "publish": True,
+                "notify": True,
+                "notify_version": "v1_0",
+            },
         )
 
-        (new_bob_container, bob_id) = start_new_container(
-            client,
-            bob_command,
-            bob_container,
-            "bob-askar-anon",
-        )
-
-        # TODO verify counts of credentials, revocations etc for each upgraded agent
-        async with (
-            Controller(base_url=ALICE) as alice,
-            Controller(base_url=BOB_ASKAR_ANON) as bob,
-        ):
-            await verify_schema_cred_def(alice, 1, 1)
-
-        # run some more tests ...  alice should still be connected to bob for example ...
-        async with (
-            Controller(base_url=ALICE) as alice,
-            Controller(base_url=BOB_ANONCREDS) as bob,
-        ):
-            # Present the the credential's attributes
-            print(">>> present proof ... again ...")
-            await anoncreds_present_proof_v2(
-                bob,
-                alice,
-                bob_conns["anoncreds"].connection_id,
-                alice_conns["anoncreds"].connection_id,
-                requested_attributes=[{"name": "firstname"}],
-            )
-            await connect_agents_and_issue_credentials(
-                alice,
-                bob,
-                cred_def,
-                "Bob",
-                "AnonCreds",
-                inviter_conn=alice_conns["anoncreds"],
-                invitee_conn=bob_conns["anoncreds"],
-            )
-            await verify_recd_credentials(bob, 2, 2)
-            print(">>> Done! (again)")
-
-        async with (
-            Controller(base_url=ALICE) as alice,
-            Controller(base_url=BOB_ASKAR_ANON) as bob,
-        ):
-            # Present the the credential's attributes
-            print(">>> present proof ... again ...")
-            await anoncreds_present_proof_v2(
-                bob,
-                alice,
-                bob_conns["askar-anon"].connection_id,
-                alice_conns["askar-anon"].connection_id,
-                requested_attributes=[{"name": "firstname"}],
-            )
-            await connect_agents_and_issue_credentials(
-                alice,
-                bob,
-                cred_def,
-                "Bob",
-                "Askar_Anon",
-                inviter_conn=alice_conns["askar-anon"],
-                invitee_conn=bob_conns["askar-anon"],
-            )
-            await verify_recd_credentials(bob, 2, 2)
-            print(">>> Done! (again)")
-
-        async with (
-            Controller(base_url=ALICE) as alice,
-            Controller(base_url=BOB_ASKAR) as bob,
-        ):
-            # Present the the credential's attributes
-            print(">>> present proof ... again ...")
-            await anoncreds_present_proof_v2(
-                bob,
-                alice,
-                bob_conns["askar"].connection_id,
-                alice_conns["askar"].connection_id,
-                requested_attributes=[{"name": "firstname"}],
-            )
-            await connect_agents_and_issue_credentials(
-                alice,
-                bob,
-                cred_def,
-                "Bob",
-                "Askar",
-                inviter_conn=alice_conns["askar"],
-                invitee_conn=bob_conns["askar"],
-            )
-            await verify_recd_credentials(bob, 2, 2)
-            await verify_issued_credentials(alice, 12, 6)
-            await verify_recd_presentations(alice, 9)
-            print(">>> Done! (again)")
-
-    finally:
-        if alice_id and new_alice_container:
-            # cleanup - shut down alice agent (not part of docker compose)
-            stop_and_remove_container(client, alice_id)
-        if bob_id and new_bob_container:
-            # cleanup - shut down bob agent (not part of docker compose)
-            stop_and_remove_container(client, bob_id)
+    # cleanup - shut down alice agent (not part of docker compose)
+    stop_and_remove_container(client, alice_id)
+    stop_and_remove_container(client, bob_id)
 
 
 if __name__ == "__main__":
