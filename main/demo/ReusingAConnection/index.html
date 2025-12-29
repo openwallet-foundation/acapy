@@ -2991,7 +2991,7 @@ every visit to an existing contact, the invitee got a new connection.</p>
 <a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>        &quot;https://didcomm.org/didexchange/1.0&quot;
 <a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>    ],
 <a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>    &quot;services&quot;: [
-<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>        &quot;did:sov:4JiUsoK85pVkkB1bAPzFaP&quot;
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>        &quot;did:peer:2.4JiUsoK85pVkkB1bAPzFaP4JiUsoK85pVkkB1bAPzFaP&quot;
 <a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>    ]
 <a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>}
 </code></pre></div>
@@ -3023,8 +3023,8 @@ agents (the inviter and the invitee) that establish connections with one another
 <p>The <a href="https://github.com/decentralized-identity/aries-rfcs/tree/main/features/0434-outofband">RFC 0434 Out of Band</a> protocol requirement enables <code>reuse</code> message by the
 invitee (the Wallet in the flow above) is that the <code>service</code> in the invitation
 <strong>MUST</strong> be a resolvable DID that is the same in all of the invitations. In the
-example invitation above, the DID is a <code>did:sov</code> DID that is resolvable on a public
-Hyperledger Indy network. The DID could also be a <a href="https://identity.foundation/peer-did-method-spec/">Peer DID</a> of types 2 or 4,
+example invitation above, the DID is a <code>did:peer</code> DID that is resolvable without
+requiring a public ledger. The DID could also be a <a href="https://identity.foundation/peer-did-method-spec/">Peer DID</a> of types 2 or 4,
 which encode the entire DIDDoc contents into the DID identifier (thus they are
 "resolvable DIDs"). What cannot be used is either the old "unqualified" DIDs
 that were commonly used in Aries prior to 2024, and <a href="https://identity.foundation/peer-did-method-spec/">Peer DID</a> type 1. Both of
@@ -3040,7 +3040,7 @@ item of the Out of Band invitation. As noted in the Out of Band specification,
 <a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>        &quot;https://didcomm.org/didexchange/1.0&quot;
 <a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>    ],
 <a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>    &quot;services&quot;: [
-<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>        &quot;did:sov:4JiUsoK85pVkkB1bAPzFaP&quot;
+<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>        &quot;did:peer:2.4JiUsoK85pVkkB1bAPzFaP4JiUsoK85pVkkB1bAPzFaP&quot;
 <a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a>    ]
 <a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a>}
 </code></pre></div>

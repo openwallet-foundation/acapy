@@ -3748,12 +3748,9 @@ on starting and stopping your own local Hyperledger Indy instance.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-31-1" name="__codelineno-31-1" href="#__codelineno-31-1"></a>./run_demo<span class="w"> </span>performance<span class="w"> </span>--arg-file<span class="w"> </span>demo/postgres-indy-args.yml
 </code></pre></div>
 <p>(Obviously you need to be running a postgres database - the command to start postgres is in the yml file provided above.)</p>
-<p>You can tweak the number of credentials issued using the <code>--count</code> and <code>--batch</code> parameters, and you can run against an Askar database using the <code>--wallet-type askar</code> option (or run using indy-sdk using <code>--wallet-type indy</code>).</p>
+<p>You can tweak the number of credentials issued using the <code>--count</code> and <code>--batch</code> parameters, and you can run against an Askar database using the <code>--wallet-type askar</code> option.</p>
 <p>An example full set of options is:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-32-1" name="__codelineno-32-1" href="#__codelineno-32-1"></a>./run_demo<span class="w"> </span>performance<span class="w"> </span>--arg-file<span class="w"> </span>demo/postgres-indy-args.yml<span class="w"> </span>-c<span class="w"> </span><span class="m">10000</span><span class="w"> </span>-b<span class="w"> </span><span class="m">10</span><span class="w"> </span>--wallet-type<span class="w"> </span>askar
-</code></pre></div>
-<p>Or:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-33-1" name="__codelineno-33-1" href="#__codelineno-33-1"></a>./run_demo<span class="w"> </span>performance<span class="w"> </span>--arg-file<span class="w"> </span>demo/postgres-indy-args.yml<span class="w"> </span>-c<span class="w"> </span><span class="m">10000</span><span class="w"> </span>-b<span class="w"> </span><span class="m">10</span><span class="w"> </span>--wallet-type<span class="w"> </span>indy
 </code></pre></div>
 <h2 id="coding-challenge-adding-acme">Coding Challenge: Adding ACME<a class="headerlink" href="#coding-challenge-adding-acme" title="Permanent link">&para;</a></h2>
 <p>Now that you have a solid foundation in using ACA-Py, time for a coding challenge. In this challenge, we extend the Alice-Faber command line demo by adding in ACME Corp, a place where Alice wants to work. The demo adds:</p>

@@ -3088,7 +3088,7 @@ DID methods support specific types of keys and may or may not require the holder
 <p><img alt="⚠" class="twemoji" src="https://cdn.jsdelivr.net/gh/jdecked/twemoji@16.0.1/assets/svg/26a0.svg" title=":warning:" /> Askar and InMemory are the only wallets supporting this registry.</p>
 </blockquote>
 <h2 id="registering-a-did-method">Registering a DID method<a class="headerlink" href="#registering-a-did-method" title="Permanent link">&para;</a></h2>
-<p>By default, ACA-Py supports <code>did:key</code> and <code>did:sov</code>.
+<p>By default, ACA-Py supports <code>did:key</code>.
 Plugins can register DID additional methods to make them available to holders.
 Here's a snippet adding support for <code>did:web</code> to the registry from a plugin <code>setup</code> method.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">WEB</span> <span class="o">=</span> <span class="n">DIDMethod</span><span class="p">(</span>

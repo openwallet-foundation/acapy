@@ -3215,13 +3215,11 @@ doing anything with an Indy ledger-based credentials. However, there must be som
 <p>Now open up two browser windows to the <a href="http://localhost:8021/api/doc">Faber</a> and <a href="http://localhost:8031/api/doc">Alice</a> admin api swagger pages.</p>
 <p>Using the Faber admin api, you have to create a DID with the appropriate:</p>
 <ul>
-<li>DID method ("key" or "sov")</li>
-<li>if you use DID method "sov" you must use key type "ed25519"</li>
+<li>DID method ("key")</li>
 <li>Either one of the following key types:</li>
 <li>"ed25519" (corresponding to signature types "Ed25519Signature2018" or "Ed25519Signature2020")</li>
 <li>"bls12381g2" (corresponding to signature type "BbsBlsSignature2020")</li>
 </ul>
-<p>Note that "did:sov" must be a public DID (i.e. registered on the ledger) but "did:key" is not.</p>
 <p>For example, in Faber's swagger page call the <code>/wallet/did/create</code> endpoint with the following payload:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="p">{</span>
 <a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="w">  </span><span class="nt">&quot;method&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;key&quot;</span><span class="p">,</span>

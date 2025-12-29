@@ -3314,7 +3314,6 @@
 </li>
 <li><a href="#signature-suite">Signature Suite</a></li>
 <li><a href="#did-method">DID Method</a><ul>
-<li><a href="#didsov"><code>did:sov</code></a></li>
 <li><a href="#didkey"><code>did:key</code></a></li>
 </ul>
 </li>
@@ -3373,11 +3372,8 @@
 <h3 id="did-method">DID Method<a class="headerlink" href="#did-method" title="Permanent link">&para;</a></h3>
 <p>Besides the JSON-LD context, we need a DID to use for issuing the credential. ACA-Py currently supports two did methods for issuing credentials:</p>
 <ul>
-<li><code>did:sov</code> - Can only be used for <code>Ed25519Signature2018</code> signature suite.</li>
 <li><code>did:key</code> - Can be used for both <code>Ed25519Signature2018</code> and <code>BbsBlsSignature2020</code> signature suites.</li>
 </ul>
-<h4 id="didsov"><code>did:sov</code><a class="headerlink" href="#didsov" title="Permanent link">&para;</a></h4>
-<p>When using <code>did:sov</code> you need to make sure to use a public did so other agents can resolve the did. It is also important the other agent is using the same indy ledger for resolving the did. You can get the public did using the <code>/wallet/did/public</code> endpoint. For backwards compatibility the did is returned without <code>did:sov</code> prefix. When using the did for issuance make sure this prepend this to the did. (so <code>DViYrCMPWfuLiY7LLs8giB</code> becomes <code>did:sov:DViYrCMPWfuLiY7LLs8giB</code>)</p>
 <h4 id="didkey"><code>did:key</code><a class="headerlink" href="#didkey" title="Permanent link">&para;</a></h4>
 <p>A <code>did:key</code> did is not anchored to a ledger, but embeds the key directly in the identifier part of the did. See the <a href="https://w3c-ccg.github.io/did-key-spec/">did:key Method Specification</a> for more information.</p>
 <p>You can create a <code>did:key</code> using the <code>/wallet/did/create</code> endpoint with the following body. Use <code>ed25519</code> for <code>Ed25519Signature2018</code>, <code>bls12381g2</code> for <code>BbsBlsSignature2020</code>.</p>
