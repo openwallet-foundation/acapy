@@ -276,7 +276,6 @@ class RevRegDefResultSchema(BaseModelSchema):
     job_id = fields.Str()
     revocation_registry_definition_state = fields.Nested(RevRegDefStateSchema())
     registration_metadata = fields.Dict()
-    # For indy, revocation_registry_definition_metadata will contain the seqNo
     revocation_registry_definition_metadata = fields.Dict()
 
 
@@ -523,7 +522,6 @@ class RevListResultSchema(BaseModelSchema):
     job_id = fields.Str()
     revocation_list_state = fields.Nested(RevListStateSchema())
     registration_metadata = fields.Dict()
-    # For indy, revocation_list_metadata will contain the seqNo
     revocation_list_metadata = fields.Dict()
 
 
