@@ -65,4 +65,4 @@ jobs:
           docker build -t acapy-test -f docker/Dockerfile.run .
           cd scenarios
           poetry install --no-root
-          poetry run pytest -s -m examples
+          poetry run pytest -m examples
