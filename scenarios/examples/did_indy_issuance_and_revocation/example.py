@@ -14,9 +14,9 @@ from acapy_controller.models import V20PresExRecord
 from acapy_controller.protocols import (
     DIDResult,
     anoncreds_publish_revocation,
+    anoncreds_revoke,
     didexchange,
     indy_anoncred_credential_artifacts,
-    anoncreds_revoke,
     indy_issue_credential_v2,
     indy_present_proof_v2,
     params,
@@ -97,7 +97,7 @@ async def main():
             {"firstname": "Bob", "lastname": "Builder"},
         )
 
-        # Present the the credential's attributes
+        # Present the credential's attributes
         await indy_present_proof_v2(
             bob,
             alice,

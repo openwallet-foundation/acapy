@@ -19,7 +19,7 @@
         --wallet-name alice
         --wallet-key insecure
         --auto-provision
-        --log-level debug
+        --log-level info
         --debug-webhooks
         --universal-resolver
     healthcheck:
@@ -52,7 +52,7 @@
         --wallet-name bob
         --wallet-key insecure
         --auto-provision
-        --log-level debug
+        --log-level info
         --debug-webhooks
         --monitor-revocation-notification
     healthcheck:
@@ -73,7 +73,7 @@
       --host 0.0.0.0
       --port 6543
       --storage-path /tmp/tails-files
-      --log-level INFO
+      --log-level info
 
   example:
     container_name: controller

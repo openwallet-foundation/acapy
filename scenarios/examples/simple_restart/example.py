@@ -71,7 +71,7 @@ async def main():
             {"firstname": "Bob", "lastname": "Builder"},
         )
 
-        # Present the the credential's attributes
+        # Present the credential's attributes
         print(">>> present proof ...")
         await indy_present_proof_v2(
             bob,
@@ -108,7 +108,7 @@ async def main():
             {"firstname": "Bob", "lastname": "Builder"},
         )
 
-        # Present the the credential's attributes
+        # Present the credential's attributes
         print(">>> present proof ...")
         await indy_present_proof_v2(
             bob,
@@ -182,7 +182,7 @@ async def main():
 
         # run some more tests ...  alice should still be connected to bob for example ...
         async with Controller(base_url=ALICE) as alice, Controller(base_url=BOB) as bob:
-            # Present the the credential's attributes
+            # Present the credential's attributes
             print(">>> present proof ... again ...")
             await indy_present_proof_v2(
                 bob,
@@ -230,7 +230,7 @@ async def main():
                 subwallet_token=multitenant_issuer_tenant.token,
             ) as multitenant_issuer,
         ):
-            # Present the the credential's attributes
+            # Present the credential's attributes
             print(">>> present proof ... again ...")
             await indy_present_proof_v2(
                 bob,

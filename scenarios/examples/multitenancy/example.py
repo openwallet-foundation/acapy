@@ -97,7 +97,7 @@ async def main():
             {"firstname": "Bob", "lastname": "Builder"},
         )
 
-        # Present the the credential's attributes
+        # Present the credential's attributes
         await indy_present_proof_v2(
             bob,
             alice,

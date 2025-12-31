@@ -18,7 +18,7 @@
         --wallet-name alice
         --wallet-key insecure
         --auto-provision
-        --log-level debug
+        --log-level info
         --debug-webhooks
         --multitenant
         --multitenant-admin

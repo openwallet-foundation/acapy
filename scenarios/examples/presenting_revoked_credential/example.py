@@ -92,7 +92,7 @@ async def main():
         )
         issued_time = int(time.time())
 
-        # Present the the credential's attributes
+        # Present the credential's attributes
         await indy_present_proof_v2(
             bob,
             alice,
