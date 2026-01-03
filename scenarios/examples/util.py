@@ -56,16 +56,29 @@ def get_wallet_name(agent_command: List) -> str:
 
 
 # anoncreds utilities:
+def _presentation_request_payload(
+    presentation: V20PresExRecord,
+) -> Optional[Dict[str, Any]]:
+    if presentation.by_format and presentation.by_format.pres_request:
+        return presentation.by_format.pres_request
+    request = presentation.pres_request
+    if not request:
+        return None
+    if isinstance(request, dict):
+        return request
+    if hasattr(request, "model_dump"):
+        return request.model_dump(by_alias=True)
+    return request.dict(by_alias=True)
+
+
 def anoncreds_presentation_summary(presentation: V20PresExRecord) -> str:
     """Summarize a presentation exchange record."""
-    request = presentation.pres_request
+    request = _presentation_request_payload(presentation)
     return "Summary: " + json.dumps(
         {
             "state": presentation.state,
             "verified": presentation.verified,
-            "presentation_request": (
-                request.model_dump(by_alias=True) if request else None
-            ),
+            "presentation_request": request,
         },
         indent=2,
         sort_keys=True,
@@ -413,7 +426,6 @@ async def anoncreds_present_proof_v2(
         connection_id=holder_connection_id,
         state="request-received",
     )
-    assert holder_pres_ex.pres_request
     holder_pres_ex_id = holder_pres_ex.pres_ex_id
 
     relevant_creds = await holder.get(
@@ -429,10 +441,13 @@ async def anoncreds_present_proof_v2(
             if cred.cred_info._extra.get("cred_rev_id") == cred_rev_id
         ]
 
-    assert holder_pres_ex.by_format.pres_request
-    proof_request = holder_pres_ex.by_format.pres_request.get(
-        "anoncreds"
-    ) or holder_pres_ex.by_format.pres_request.get("indy")
+    request_payload = _presentation_request_payload(holder_pres_ex)
+    assert request_payload
+    if "anoncreds" in request_payload or "indy" in request_payload:
+        proof_request = request_payload.get("anoncreds") or request_payload.get("indy")
+    else:
+        proof_request = request_payload
+    assert proof_request
     pres_spec = auto_select_credentials_for_presentation_request(
         proof_request, relevant_creds
     )
