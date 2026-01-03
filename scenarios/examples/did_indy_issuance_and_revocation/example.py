@@ -18,10 +18,10 @@ from acapy_controller.protocols import (
     didexchange,
     indy_anoncred_credential_artifacts,
     indy_issue_credential_v2,
-    indy_present_proof_v2,
     params,
 )
 from aiohttp import ClientSession
+from examples.util import indy_present_proof_v2
 
 ALICE = getenv("ALICE", "http://alice:3001")
 BOB = getenv("BOB", "http://bob:3001")
