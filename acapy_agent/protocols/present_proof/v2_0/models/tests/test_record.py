@@ -174,9 +174,7 @@ class TestRecord(IsolatedAsyncioTestCase):
             formats=[
                 V20PresFormat(
                     attach_id="indy",
-                    format_=ATTACHMENT_FORMAT[PRES_20][
-                        V20PresFormat.Format.INDY.api
-                    ],
+                    format_=ATTACHMENT_FORMAT[PRES_20][V20PresFormat.Format.INDY.api],
                 )
             ],
             presentations_attach=[
