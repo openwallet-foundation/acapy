@@ -49,6 +49,20 @@ class PostgresSession(AbstractDatabaseSession):
         self.profile_id = profile_id
         self.schema_context = database.schema_context
 
+    def _get_handler(self, category: str):
+        """Get a handler for the given category with the correct schema context.
+
+        Handlers are created at module load time with a default schema context.
+        This method updates the handler's schema context to match the session's
+        schema context before returning it.
+        """
+        handlers, _, _ = get_release(self.release_number, "postgresql")
+        handler = handlers.get(category, handlers["default"])
+        # Update handler's schema context to match session's schema context
+        if hasattr(handler, "set_schema_context"):
+            handler.set_schema_context(self.schema_context)
+        return handler
+
     def _process_value(
         self, value: str | bytes, operation: str, name: str, category: str
     ) -> str:
@@ -298,8 +312,7 @@ class PostgresSession(AbstractDatabaseSession):
 
     async def count(self, category: str, tag_filter: str | dict = None) -> int:
         """Count entries in a category."""
-        handlers, _, _ = get_release(self.release_number, "postgresql")
-        handler = handlers.get(category, handlers["default"])
+        handler = self._get_handler(category)
         async with self.conn.cursor() as cursor:
             try:
                 count = await handler.count(cursor, self.profile_id, category, tag_filter)
@@ -310,6 +323,10 @@ class PostgresSession(AbstractDatabaseSession):
                     await self.conn.commit()
                 return count
             except asyncio.CancelledError:
+                if not self.is_txn:
+                    await self.conn.rollback()
+                raise
+            except DatabaseError:
                 if not self.is_txn:
                     await self.conn.rollback()
                 raise
@@ -334,8 +351,7 @@ class PostgresSession(AbstractDatabaseSession):
         expiry_ms: int = None,
     ):
         """Insert an entry."""
-        handlers, _, _ = get_release(self.release_number, "postgresql")
-        handler = handlers.get(category, handlers["default"])
+        handler = self._get_handler(category)
         value = self._process_value(value, "insert", name, category)
         async with self.conn.cursor() as cursor:
             try:
@@ -348,6 +364,11 @@ class PostgresSession(AbstractDatabaseSession):
                 ):
                     await self.conn.commit()
             except asyncio.CancelledError:
+                if not self.is_txn:
+                    await self.conn.rollback()
+                raise
+            except DatabaseError:
+                # Re-raise DatabaseError as-is to preserve original error code
                 if not self.is_txn:
                     await self.conn.rollback()
                 raise
@@ -374,8 +395,7 @@ class PostgresSession(AbstractDatabaseSession):
         for_update: bool = False,
     ) -> Optional[Entry]:
         """Fetch a single entry."""
-        handlers, _, _ = get_release(self.release_number, "postgresql")
-        handler = handlers.get(category, handlers["default"])
+        handler = self._get_handler(category)
         async with self.conn.cursor() as cursor:
             try:
                 result = await handler.fetch(
@@ -395,6 +415,10 @@ class PostgresSession(AbstractDatabaseSession):
                     await self.conn.commit()
                 return result
             except asyncio.CancelledError:
+                if not self.is_txn:
+                    await self.conn.rollback()
+                raise
+            except DatabaseError:
                 if not self.is_txn:
                     await self.conn.rollback()
                 raise
@@ -423,8 +447,7 @@ class PostgresSession(AbstractDatabaseSession):
         descending: bool = False,
     ) -> Sequence[Entry]:
         """Fetch all entries matching criteria."""
-        handlers, _, _ = get_release(self.release_number, "postgresql")
-        handler = handlers.get(category, handlers["default"])
+        handler = self._get_handler(category)
         async with self.conn.cursor() as cursor:
             try:
                 results = await handler.fetch_all(
@@ -458,6 +481,10 @@ class PostgresSession(AbstractDatabaseSession):
                 if not self.is_txn:
                     await self.conn.rollback()
                 raise
+            except DatabaseError:
+                if not self.is_txn:
+                    await self.conn.rollback()
+                raise
             except Exception as e:
                 if not self.is_txn:
                     await self.conn.rollback()
@@ -479,8 +506,7 @@ class PostgresSession(AbstractDatabaseSession):
         expiry_ms: int = None,
     ):
         """Replace an entry."""
-        handlers, _, _ = get_release(self.release_number, "postgresql")
-        handler = handlers.get(category, handlers["default"])
+        handler = self._get_handler(category)
         value = self._process_value(value, "replace", name, category)
         async with self.conn.cursor() as cursor:
             try:
@@ -493,6 +519,10 @@ class PostgresSession(AbstractDatabaseSession):
                 ):
                     await self.conn.commit()
             except asyncio.CancelledError:
+                if not self.is_txn:
+                    await self.conn.rollback()
+                raise
+            except DatabaseError:
                 if not self.is_txn:
                     await self.conn.rollback()
                 raise
@@ -513,8 +543,7 @@ class PostgresSession(AbstractDatabaseSession):
 
     async def remove(self, category: str, name: str):
         """Remove a single entry."""
-        handlers, _, _ = get_release(self.release_number, "postgresql")
-        handler = handlers.get(category, handlers["default"])
+        handler = self._get_handler(category)
         async with self.conn.cursor() as cursor:
             try:
                 await handler.remove(cursor, self.profile_id, category, name)
@@ -524,6 +553,10 @@ class PostgresSession(AbstractDatabaseSession):
                 ):
                     await self.conn.commit()
             except asyncio.CancelledError:
+                if not self.is_txn:
+                    await self.conn.rollback()
+                raise
+            except DatabaseError:
                 if not self.is_txn:
                     await self.conn.rollback()
                 raise
@@ -544,8 +577,7 @@ class PostgresSession(AbstractDatabaseSession):
 
     async def remove_all(self, category: str, tag_filter: str | dict = None) -> int:
         """Remove all entries matching criteria."""
-        handlers, _, _ = get_release(self.release_number, "postgresql")
-        handler = handlers.get(category, handlers["default"])
+        handler = self._get_handler(category)
         async with self.conn.cursor() as cursor:
             try:
                 result = await handler.remove_all(
@@ -558,6 +590,10 @@ class PostgresSession(AbstractDatabaseSession):
                     await self.conn.commit()
                 return result
             except asyncio.CancelledError:
+                if not self.is_txn:
+                    await self.conn.rollback()
+                raise
+            except DatabaseError:
                 if not self.is_txn:
                     await self.conn.rollback()
                 raise

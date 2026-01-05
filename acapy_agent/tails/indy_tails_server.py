@@ -2,6 +2,7 @@
 
 import logging
 from typing import Tuple
+from urllib.parse import quote
 
 from ..config.injection_context import InjectionContext
 from ..ledger.base import BaseLedger
@@ -70,8 +71,10 @@ class IndyTailsServer(BaseTailsServer):
                 "tails_server_base_url setting is not set"
             )
 
-        upload_url = tails_server_upload_url.rstrip("/") + f"/{filename}"
-        public_url = tails_server_base_url.rstrip("/") + f"/{filename}"
+        # BUG #1580: encode revocation tag to avoid spaces in tails URLs
+        encoded_filename = quote(filename, safe=":")
+        upload_url = tails_server_upload_url.rstrip("/") + f"/{encoded_filename}"
+        public_url = tails_server_base_url.rstrip("/") + f"/{encoded_filename}"
 
         try:
             await put_file(
