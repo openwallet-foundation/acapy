@@ -21,7 +21,7 @@ jobs:
     - name: Tests
       uses: ./.github/actions/run-unit-tests
       with:
-        python-version: "3.12"
+        python-version: "3.13"
         os: "ubuntu-latest"
         is_pr: "true"
 
@@ -48,5 +48,5 @@ jobs:
     - name: PostgreSQL Integration Tests
       uses: ./.github/actions/run-postgres-tests
       with:
-        python-version: "3.12"
+        python-version: "3.13"
         os: "ubuntu-latest"
