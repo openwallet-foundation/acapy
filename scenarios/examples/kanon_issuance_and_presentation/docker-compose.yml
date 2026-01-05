@@ -1,12 +1,11 @@
- services:
+services:
   kanon-postgres:
     image: acapy-test
     ports:
       - "8031:8031"
       - "8030:8030"
     environment:
-      - DB_USER=myuser
-      - DB_PASSWORD=mypass
+      - RUST_LOG=aries-askar::log::target=error
     command: >
       start
         --endpoint http://kanon-postgres:8030
@@ -16,16 +15,16 @@
         --admin 0.0.0.0 8031
         --admin-insecure-mode
         --wallet-type kanon-anoncreds
-        --wallet-storage-type postgres_storage
-        --recreate-wallet
+        --wallet-storage-type postgres
         --wallet-name kanon-postgres-normalized
         --wallet-key insecure
-        --wallet-storage-config "{\"url\":\"wallet-db:5432\",\"max_connections\":100,\"min_idle_count\":5,\"max_idle\":10.0,\"max_lifetime\":7200.0}"
-        --wallet-storage-creds "{\"account\":\"myuser\",\"password\":\"mypass\",\"admin_account\":\"myuser\",\"admin_password\":\"mypass\"}"
-        --dbstore-storage-type postgres_storage
-        --dbstore-storage-config "{\"url\":\"wallet-db:5432\",\"connection_timeout\":30.0,\"max_connections\":100,\"min_idle_count\":5,\"max_idle\":10.0,\"max_lifetime\":7200.0}"
-        --dbstore-storage-creds "{\"account\":\"myuser\",\"password\":\"mypass\",\"admin_account\":\"myuser\",\"admin_password\":\"mypass\"}"
+        --wallet-storage-config '{"url":"wallet-db:5432","max_connections":100,"min_idle_count":5,"max_idle":10.0,"max_lifetime":7200.0}'
+        --wallet-storage-creds '{"account":"myuser","password":"mypass","admin_account":"myuser","admin_password":"mypass"}'
+        --dbstore-storage-type postgres
+        --dbstore-storage-config '{"url":"wallet-db:5432","connection_timeout":30.0,"max_connections":100,"min_idle_count":5,"max_idle":10.0,"max_lifetime":7200.0}'
+        --dbstore-storage-creds '{"account":"myuser","password":"mypass","admin_account":"myuser","admin_password":"mypass"}'
         --dbstore-schema-config normalize
+        --recreate-wallet
         --preserve-exchange-records
         --genesis-url http://test.bcovrin.vonx.io/genesis
         --tails-server-base-url http://tails:6543
@@ -61,6 +60,8 @@
     image: acapy-test
     ports:
       - "3002:3001"
+    environment:
+      - RUST_LOG=aries-askar::log::target=error
     command: >
       start
         --label Bob
