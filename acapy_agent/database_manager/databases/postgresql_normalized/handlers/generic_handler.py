@@ -454,6 +454,11 @@ class GenericHandler(BaseHandler):
             entry = Entry(category=category, name=name, value=item_value, tags=tags)
             LOGGER.debug("[%s] Returning entry: %s", operation_name, entry)
             return entry
+        else:
+            # No tag_filter - return entry with empty tags
+            entry = Entry(category=category, name=name, value=item_value, tags={})
+            LOGGER.debug("[%s] Returning entry (no tag_filter): %s", operation_name, entry)
+            return entry
 
     async def fetch_all(
         self,
