@@ -326,6 +326,10 @@ class PostgresSession(AbstractDatabaseSession):
                 if not self.is_txn:
                     await self.conn.rollback()
                 raise
+            except DatabaseError:
+                if not self.is_txn:
+                    await self.conn.rollback()
+                raise
             except Exception as e:
                 if not self.is_txn:
                     await self.conn.rollback()
@@ -360,6 +364,11 @@ class PostgresSession(AbstractDatabaseSession):
                 ):
                     await self.conn.commit()
             except asyncio.CancelledError:
+                if not self.is_txn:
+                    await self.conn.rollback()
+                raise
+            except DatabaseError:
+                # Re-raise DatabaseError as-is to preserve original error code
                 if not self.is_txn:
                     await self.conn.rollback()
                 raise
@@ -406,6 +415,10 @@ class PostgresSession(AbstractDatabaseSession):
                     await self.conn.commit()
                 return result
             except asyncio.CancelledError:
+                if not self.is_txn:
+                    await self.conn.rollback()
+                raise
+            except DatabaseError:
                 if not self.is_txn:
                     await self.conn.rollback()
                 raise
@@ -468,6 +481,10 @@ class PostgresSession(AbstractDatabaseSession):
                 if not self.is_txn:
                     await self.conn.rollback()
                 raise
+            except DatabaseError:
+                if not self.is_txn:
+                    await self.conn.rollback()
+                raise
             except Exception as e:
                 if not self.is_txn:
                     await self.conn.rollback()
@@ -505,6 +522,10 @@ class PostgresSession(AbstractDatabaseSession):
                 if not self.is_txn:
                     await self.conn.rollback()
                 raise
+            except DatabaseError:
+                if not self.is_txn:
+                    await self.conn.rollback()
+                raise
             except Exception as e:
                 if not self.is_txn:
                     await self.conn.rollback()
@@ -532,6 +553,10 @@ class PostgresSession(AbstractDatabaseSession):
                 ):
                     await self.conn.commit()
             except asyncio.CancelledError:
+                if not self.is_txn:
+                    await self.conn.rollback()
+                raise
+            except DatabaseError:
                 if not self.is_txn:
                     await self.conn.rollback()
                 raise
@@ -565,6 +590,10 @@ class PostgresSession(AbstractDatabaseSession):
                     await self.conn.commit()
                 return result
             except asyncio.CancelledError:
+                if not self.is_txn:
+                    await self.conn.rollback()
+                raise
+            except DatabaseError:
                 if not self.is_txn:
                     await self.conn.rollback()
                 raise
