@@ -64,7 +64,7 @@ AIP 1.0 protocols that were [previously announced as deprecated](#140-deprecatio
 - **Dependabot PRs**
   - [Link to list of Dependabot PRs in this release](https://github.com/openwallet-foundation/acapy/pulls?q=is%3Apr+is%3Amerged+merged%3A2025-11-15..2026-01-06+author%3Aapp%2Fdependabot+)
 - **Release management pull requests**:
-  - 1.5.0rc0 [\#4010](https://github.com/openwallet-foundation/acapy/pull/4010) [swcurran](https://github.com/swcurran)
+  - 1.5.0rc0 [\#4011](https://github.com/openwallet-foundation/acapy/pull/4011) [swcurran](https://github.com/swcurran)
 
 ## 1.4.0
 
