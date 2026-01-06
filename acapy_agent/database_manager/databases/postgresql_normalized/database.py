@@ -235,6 +235,9 @@ class PostgresDatabase(AbstractDatabaseStore):
         handlers, _, _ = get_release(self.release_number, "postgresql")
 
         handler = handlers.get(category, handlers["default"])
+        # Update handler's schema_context to match database's schema_context
+        if hasattr(handler, "set_schema_context"):
+            handler.set_schema_context(self.schema_context)
         profile_id = await self._get_profile_id(profile or self.default_profile)
         tag_query = None
         if tag_filter:
@@ -282,6 +285,9 @@ class PostgresDatabase(AbstractDatabaseStore):
         handlers, _, _ = get_release(self.release_number, "postgresql")
 
         handler = handlers.get(category, handlers["default"])
+        # Update handler's schema_context to match database's schema_context
+        if hasattr(handler, "set_schema_context"):
+            handler.set_schema_context(self.schema_context)
         profile_id = await self._get_profile_id(profile or self.default_profile)
         tag_query = None
         if tag_filter:

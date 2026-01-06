@@ -3137,21 +3137,20 @@ files = [
 
 [[package]]
 name = "sqlcipher3-binary"
-version = "0.5.4"
+version = "0.6.0"
 description = "DB-API 2.0 interface for SQLCipher 3.x"
 optional = true
 python-versions = "*"
 groups = ["main"]
 markers = "extra == \"sqlcipher\""
 files = [
-    {file = "sqlcipher3_binary-0.5.4-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:e0264a85f54537647e737be3c1250ab202cc3b260bd3b4256cf301f3a0c0f570"},
-    {file = "sqlcipher3_binary-0.5.4-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:be70bcf780abda9df53facc45c7cdc45d64e20b4869eebdf2e5e3ee636f5ec0f"},
-    {file = "sqlcipher3_binary-0.5.4-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:fe9e4303725dd98d60af26de0a6d5105a20b32e37a43fc3d18cbaaba6dbb22e5"},
-    {file = "sqlcipher3_binary-0.5.4-cp313-cp313-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:82c8f208f153b1a5e7b47165d8a462526294b7330fae77b7747b25361eeeca53"},
-    {file = "sqlcipher3_binary-0.5.4-cp36-cp36m-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:eb74dd533c59662f0b4d79c75f593d02688343d927ef4a45706d3debf5b3f05c"},
-    {file = "sqlcipher3_binary-0.5.4-cp37-cp37m-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:5ce2a4ce0036db4a6f567ba3141e5f16eab681bc6593ad1f58c7c1679134aa0f"},
-    {file = "sqlcipher3_binary-0.5.4-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:947594dd8047f5d7f1f39738526a08ea2a76c270df9207e229a80580b547a30a"},
-    {file = "sqlcipher3_binary-0.5.4-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:f25524d5098fdd57fea74cf14de4ced498f50a2703c224187e3042462d4541f8"},
+    {file = "sqlcipher3_binary-0.6.0-cp310-cp310-manylinux2014_x86_64.manylinux_2_17_x86_64.whl", hash = "sha256:9886d2d30b5bb4e3ddc3a9e2b9e5b65261fa0c748eaf8a584781082312d37cee"},
+    {file = "sqlcipher3_binary-0.6.0-cp311-cp311-manylinux2014_x86_64.manylinux_2_17_x86_64.whl", hash = "sha256:421abf7a81e134bd808a7933d296f408aaf75475d6561d4a21e1f285b75445aa"},
+    {file = "sqlcipher3_binary-0.6.0-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl", hash = "sha256:c8a7076a18b4f6fc9b580b0f24aa526d6a47605b1e3e6491ee3e9f2977940d8e"},
+    {file = "sqlcipher3_binary-0.6.0-cp313-cp313-manylinux2014_x86_64.manylinux_2_17_x86_64.whl", hash = "sha256:8a6afbdef7cbbb33b1228ce96edc1bfe7f15bdf2a5e8bdab87261ab52e4111e6"},
+    {file = "sqlcipher3_binary-0.6.0-cp314-cp314-manylinux2014_x86_64.manylinux_2_17_x86_64.whl", hash = "sha256:f9bccb9e942a04bbf920714940c8f9e00134cd655b11ba4c6f1306bcc3504d6c"},
+    {file = "sqlcipher3_binary-0.6.0-cp38-cp38-manylinux2014_x86_64.manylinux_2_17_x86_64.whl", hash = "sha256:04dc5ac3f748c4cec5fb53e5f0f6474e9d702239372cc9d3d94cd27d06e3ebd3"},
+    {file = "sqlcipher3_binary-0.6.0-cp39-cp39-manylinux2014_x86_64.manylinux_2_17_x86_64.whl", hash = "sha256:1a616747d6244918259d9dc8a668b58ddf9fd751c56eaddf8733566a412f2bae"},
 ]
 
 [[package]]
