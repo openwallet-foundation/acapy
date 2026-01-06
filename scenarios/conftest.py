@@ -41,7 +41,6 @@ class ExampleRunner:
 
     def cleanup(self):
         """Runs docker compose down -v for cleanup."""
-        self.compose("logs")
         exit_status = self.compose("down", "-v")
         if exit_status != 0:
             raise ExampleFailedException(
@@ -56,6 +55,7 @@ class ExampleRunner:
         try:
             exit_status = self.compose(*command)
             if exit_status != 0:
+                self.compose("logs")
                 raise ExampleFailedException(
                     f"Command failed with exit status: {exit_status}",
                     exit_status=exit_status,

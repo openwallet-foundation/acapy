@@ -106,7 +106,8 @@ class NormalizedHandler(BaseHandler):
         """Initialize NormalizedHandler."""
         super().__init__(category)
         self.schema_context = schema_context or SchemaContext()
-        self.table = self.schema_context.qualify_table(table_name or category)
+        self._table_name = table_name or category  # Store unqualified table name
+        self.table = self.schema_context.qualify_table(self._table_name)
         self.columns = columns
         self.ALLOWED_ORDER_BY_COLUMNS = set(columns) | {"id", "name", "value"}
         self.encoder = encoder_factory.get_encoder(
@@ -122,6 +123,25 @@ class NormalizedHandler(BaseHandler):
         )
 
         self.EXPIRY_CLAUSE = "(i.expiry IS NULL OR i.expiry > CURRENT_TIMESTAMP)"
+
+    def set_schema_context(self, schema_context: SchemaContext) -> None:
+        """Update the schema context and re-qualify table names.
+
+        This method should be called when the handler is used with a different
+        schema than the one it was initialized with (e.g., when handlers are
+        created at module load time with a default schema).
+        """
+        if (
+            schema_context
+            and schema_context.schema_name != self.schema_context.schema_name
+        ):
+            self.schema_context = schema_context
+            self.table = self.schema_context.qualify_table(self._table_name)
+            LOGGER.debug(
+                "[set_schema_context] Updated schema_context to %s, table=%s",
+                self.schema_context,
+                self.table,
+            )
 
     async def _ensure_utf8(self, _cursor: AsyncCursor) -> None:
         # UTF8 encoding is set via connection pool options (-c client_encoding=UTF8)
