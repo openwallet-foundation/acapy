@@ -97,6 +97,14 @@ acapy\_agent.utils.outofband module
    :undoc-members:
    :show-inheritance:
 
+acapy\_agent.utils.plugin\_installer module
+-------------------------------------------
+
+.. automodule:: acapy_agent.utils.plugin_installer
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 acapy\_agent.utils.profiles module
 ----------------------------------
 
