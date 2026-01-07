@@ -26,7 +26,7 @@ from ...storage.type import (
 )
 from ...tests import mock
 from ...utils.testing import create_test_profile
-from .. import anoncreds_upgrade
+from .. import upgrade
 
 
 class TestAnonCredsUpgrade(IsolatedAsyncioTestCase):
@@ -108,45 +108,47 @@ class TestAnonCredsUpgrade(IsolatedAsyncioTestCase):
                 )
             )
 
-            anoncreds_upgrade.IndyLedgerRequestsExecutor = mock.MagicMock(
+            upgrade.IndyLedgerRequestsExecutor = mock.MagicMock(
                 IndyLedgerRequestsExecutor, autospec=True
             )
-            anoncreds_upgrade.IndyLedgerRequestsExecutor.return_value.get_ledger_for_identifier = mock.CoroutineMock(
-                return_value=(
-                    None,
-                    mock.MagicMock(
-                        get_schema=mock.CoroutineMock(
-                            return_value={
-                                "attrNames": [
-                                    "name",
-                                    "age",
-                                ],
-                            },
-                        ),
-                        get_credential_definition=mock.CoroutineMock(
-                            return_value={
-                                "type": "CL",
-                                "tag": "default",
-                                "value": {
-                                    "primary": {
-                                        "n": "123",
+            upgrade.IndyLedgerRequestsExecutor.return_value.get_ledger_for_identifier = (
+                mock.CoroutineMock(
+                    return_value=(
+                        None,
+                        mock.MagicMock(
+                            get_schema=mock.CoroutineMock(
+                                return_value={
+                                    "attrNames": [
+                                        "name",
+                                        "age",
+                                    ],
+                                },
+                            ),
+                            get_credential_definition=mock.CoroutineMock(
+                                return_value={
+                                    "type": "CL",
+                                    "tag": "default",
+                                    "value": {
+                                        "primary": {
+                                            "n": "123",
+                                        },
                                     },
                                 },
-                            },
+                            ),
                         ),
-                    ),
+                    )
                 )
             )
 
         # Need to update private key with a real private key
         with self.assertRaises(AskarError) as err:
-            await anoncreds_upgrade.convert_records_to_anoncreds(self.profile)
+            await upgrade.convert_records_to_anoncreds(self.profile)
 
         assert "Error updating existing entry" in str(err.exception)
 
     async def test_retry_converting_records(self):
         with mock.patch.object(
-            anoncreds_upgrade, "convert_records_to_anoncreds", mock.CoroutineMock()
+            upgrade, "convert_records_to_anoncreds", mock.CoroutineMock()
         ) as mock_convert_records_to_anoncreds:
             mock_convert_records_to_anoncreds.side_effect = [
                 Exception("Error"),
@@ -157,19 +159,17 @@ class TestAnonCredsUpgrade(IsolatedAsyncioTestCase):
                 storage = session.inject(BaseStorage)
                 upgrading_record = StorageRecord(
                     RECORD_TYPE_ACAPY_UPGRADING,
-                    anoncreds_upgrade.UPGRADING_RECORD_IN_PROGRESS,
+                    upgrade.UPGRADING_RECORD_IN_PROGRESS,
                 )
                 await storage.add_record(upgrading_record)
 
-            await anoncreds_upgrade.retry_converting_records(
-                self.profile, upgrading_record, 0
-            )
+            await upgrade.retry_converting_records(self.profile, upgrading_record, 0)
 
             assert mock_convert_records_to_anoncreds.call_count == 3
 
     async def test_upgrade_wallet_to_anoncreds(self):
         # upgrading record not present
-        await anoncreds_upgrade.upgrade_wallet_to_anoncreds_if_requested(self.profile)
+        await upgrade.upgrade_wallet_to_anoncreds_if_requested(self.profile)
 
     async def test_set_storage_type_to_anoncreds_no_existing_record(self):
         async with self.profile.session() as session:
@@ -180,7 +180,7 @@ class TestAnonCredsUpgrade(IsolatedAsyncioTestCase):
                     "true",
                 )
             )
-            await anoncreds_upgrade.finish_upgrade(self.profile)
+            await upgrade.finish_upgrade(self.profile)
 
             storage_type_record = await storage.find_record(
                 RECORD_TYPE_ACAPY_STORAGE_TYPE, tag_query={}
@@ -202,7 +202,7 @@ class TestAnonCredsUpgrade(IsolatedAsyncioTestCase):
                     "true",
                 )
             )
-            await anoncreds_upgrade.finish_upgrade(self.profile)
+            await upgrade.finish_upgrade(self.profile)
             storage_type_record = await storage.find_record(
                 RECORD_TYPE_ACAPY_STORAGE_TYPE, tag_query={}
             )
@@ -217,7 +217,7 @@ class TestAnonCredsUpgrade(IsolatedAsyncioTestCase):
                     "askar",
                 )
             )
-            await anoncreds_upgrade.finish_upgrade_by_updating_profile_or_shutting_down(
+            await upgrade.finish_upgrade_by_updating_profile_or_shutting_down(
                 self.profile, True
             )
             storage_type_record = await storage.find_record(
@@ -237,7 +237,7 @@ class TestAnonCredsUpgrade(IsolatedAsyncioTestCase):
                     "askar",
                 )
             )
-        await anoncreds_upgrade.finish_upgrade_by_updating_profile_or_shutting_down(
+        await upgrade.finish_upgrade_by_updating_profile_or_shutting_down(
             self.profile, False
         )
 
@@ -304,39 +304,39 @@ class TestAnonCredsUpgrade(IsolatedAsyncioTestCase):
                     id=credential_definition_id,
                 )
             )
-            anoncreds_upgrade.IndyLedgerRequestsExecutor = mock.MagicMock()
-            anoncreds_upgrade.IndyLedgerRequestsExecutor.return_value.get_ledger_for_identifier = mock.CoroutineMock(
-                return_value=(
-                    None,
-                    mock.MagicMock(
-                        get_schema=mock.CoroutineMock(
-                            return_value={
-                                "attrNames": [
-                                    "name",
-                                    "age",
-                                ],
-                            },
-                        ),
-                        get_credential_definition=mock.CoroutineMock(
-                            return_value={
-                                "type": "CL",
-                                "tag": "default",
-                                "value": {
-                                    "primary": {
-                                        "n": "123",
+            upgrade.IndyLedgerRequestsExecutor = mock.MagicMock()
+            upgrade.IndyLedgerRequestsExecutor.return_value.get_ledger_for_identifier = (
+                mock.CoroutineMock(
+                    return_value=(
+                        None,
+                        mock.MagicMock(
+                            get_schema=mock.CoroutineMock(
+                                return_value={
+                                    "attrNames": [
+                                        "name",
+                                        "age",
+                                    ],
+                                },
+                            ),
+                            get_credential_definition=mock.CoroutineMock(
+                                return_value={
+                                    "type": "CL",
+                                    "tag": "default",
+                                    "value": {
+                                        "primary": {
+                                            "n": "123",
+                                        },
                                     },
                                 },
-                            },
+                            ),
                         ),
-                    ),
+                    )
                 )
             )
 
             with (
-                mock.patch.object(anoncreds_upgrade, "upgrade_and_delete_schema_records"),
-                mock.patch.object(
-                    anoncreds_upgrade, "upgrade_and_delete_cred_def_records"
-                ),
+                mock.patch.object(upgrade, "upgrade_and_delete_schema_records"),
+                mock.patch.object(upgrade, "upgrade_and_delete_cred_def_records"),
                 mock.patch.object(AskarProfileSession, "rollback") as mock_rollback,
                 mock.patch.object(
                     AskarProfileSession,
@@ -351,7 +351,7 @@ class TestAnonCredsUpgrade(IsolatedAsyncioTestCase):
                 """
 
                 # Schemas fails to upgrade
-                anoncreds_upgrade.upgrade_and_delete_schema_records = mock.CoroutineMock(
+                upgrade.upgrade_and_delete_schema_records = mock.CoroutineMock(
                     # Needs to fail 5 times because of the retry logic
                     side_effect=[
                         Exception("Error"),
@@ -361,9 +361,7 @@ class TestAnonCredsUpgrade(IsolatedAsyncioTestCase):
                         Exception("Error"),
                     ]
                 )
-                await anoncreds_upgrade.upgrade_wallet_to_anoncreds_if_requested(
-                    self.profile
-                )
+                await upgrade.upgrade_wallet_to_anoncreds_if_requested(self.profile)
                 assert mock_rollback.called
                 assert not mock_commit.called
                 # Upgrading record should not be deleted
@@ -379,20 +377,16 @@ class TestAnonCredsUpgrade(IsolatedAsyncioTestCase):
                 assert storage_type_record.value == "askar"
 
                 # Cred_defs fails to upgrade
-                anoncreds_upgrade.upgrade_and_delete_cred_def_records = (
-                    mock.CoroutineMock(
-                        side_effect=[
-                            Exception("Error"),
-                            Exception("Error"),
-                            Exception("Error"),
-                            Exception("Error"),
-                            Exception("Error"),
-                        ]
-                    )
+                upgrade.upgrade_and_delete_cred_def_records = mock.CoroutineMock(
+                    side_effect=[
+                        Exception("Error"),
+                        Exception("Error"),
+                        Exception("Error"),
+                        Exception("Error"),
+                        Exception("Error"),
+                    ]
                 )
-                await anoncreds_upgrade.upgrade_wallet_to_anoncreds_if_requested(
-                    self.profile
-                )
+                await upgrade.upgrade_wallet_to_anoncreds_if_requested(self.profile)
                 assert mock_rollback.called
                 assert not mock_commit.called
                 # Upgrading record should not be deleted

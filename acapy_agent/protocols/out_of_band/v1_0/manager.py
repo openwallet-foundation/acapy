@@ -17,7 +17,7 @@ from ....did.did_key import DIDKey
 from ....messaging.decorators.attach_decorator import AttachDecorator
 from ....messaging.decorators.service_decorator import ServiceDecorator
 from ....messaging.responder import BaseResponder
-from ....messaging.valid import IndyDID
+from ....messaging.valid import UnqualifiedOrIndyDID
 from ....storage.error import StorageNotFoundError
 from ....transport.inbound.receipt import MessageReceipt
 from ....wallet.base import BaseWallet
@@ -395,7 +395,7 @@ class InvitationCreator:
             )
 
         LOGGER.debug("Public DID found: %s", public_did.did)
-        if bool(IndyDID.PATTERN.match(public_did.did)):
+        if bool(UnqualifiedOrIndyDID.PATTERN.match(public_did.did)):
             public_did = DIDInfo(
                 did=f"did:sov:{public_did.did}",
                 verkey=public_did.verkey,
@@ -697,7 +697,7 @@ class OutOfBandManager(BaseConnectionManager):
         # Get the DID public did, if any (might also be a did:peer)
         public_did = None
         if isinstance(oob_service_item, str):
-            if bool(IndyDID.PATTERN.match(oob_service_item)):
+            if bool(UnqualifiedOrIndyDID.PATTERN.match(oob_service_item)):
                 public_did = oob_service_item.split(":")[-1]
             else:
                 public_did = oob_service_item

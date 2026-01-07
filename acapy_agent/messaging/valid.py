@@ -8,14 +8,15 @@ from marshmallow.exceptions import ValidationError
 from marshmallow.fields import Field
 from marshmallow.validate import OneOf, Range, Regexp, Validator
 
-from ..ledger.endpoint_type import EndpointType as EndpointTypeEnum
-from ..revocation.models.revocation_registry import RevocationRegistry
 from ..wallet.did_posture import DIDPosture as DIDPostureEnum
 from .util import epoch_to_str
 
 B58 = alphabet if isinstance(alphabet, str) else alphabet.decode("ascii")
 
 EXAMPLE_TIMESTAMP = 1640995199  # 2021-12-31 23:59:59Z
+
+MIN_SIZE = 4
+MAX_SIZE = 32768
 
 
 class StrOrDictField(Field):
@@ -144,34 +145,6 @@ class NumericStrNatural(Regexp):
             NumericStrNatural.PATTERN,
             error="Value {input} is not a positive numeric string",
         )
-
-
-class IndyRevRegSize(Range):
-    """Validate value as indy revocation registry size."""
-
-    EXAMPLE = 1000
-
-    def __init__(self):
-        """Initialize the instance."""
-        super().__init__(
-            min=RevocationRegistry.MIN_SIZE,
-            max=RevocationRegistry.MAX_SIZE,
-            error=(
-                "Value {input} must be an integer between "
-                f"{RevocationRegistry.MIN_SIZE} and "
-                f"{RevocationRegistry.MAX_SIZE} inclusively"
-            ),
-        )
-
-    def __call__(self, value):
-        """Validate input value."""
-        if not isinstance(value, int):
-            raise ValidationError(
-                "Value {input} must be an integer between "
-                f"{RevocationRegistry.MIN_SIZE} and "
-                f"{RevocationRegistry.MAX_SIZE} inclusively"
-            )
-        super().__call__(value)
 
 
 class JWSHeaderKid(Regexp):
@@ -327,7 +300,7 @@ class DIDPosture(OneOf):
         )
 
 
-class IndyDID(Regexp):
+class UnqualifiedOrIndyDID(Regexp):
     """Validate value against indy DID."""
 
     EXAMPLE = "did:indy:sovrin:WRfXPg8dantKVubE3HX8pw"
@@ -336,7 +309,7 @@ class IndyDID(Regexp):
     def __init__(self):
         """Initialize the instance."""
         super().__init__(
-            IndyDID.PATTERN,
+            UnqualifiedOrIndyDID.PATTERN,
             error="Value {input} is not an indy decentralized identifier (DID)",
         )
 
@@ -384,16 +357,18 @@ class DIDValidation(Regexp):
 
 
 # temporary support for short Indy DIDs in place of qualified DIDs
-class MaybeIndyDID(Regexp):
+class GenericDID(Regexp):
     """Validate value against any valid DID spec or a short Indy DID."""
 
     EXAMPLE = DIDValidation.EXAMPLE
-    PATTERN = re.compile(IndyDID.PATTERN.pattern + "|" + DIDValidation.PATTERN.pattern)
+    PATTERN = re.compile(
+        UnqualifiedOrIndyDID.PATTERN.pattern + "|" + DIDValidation.PATTERN.pattern
+    )
 
     def __init__(self):
         """Initialize the instance."""
         super().__init__(
-            MaybeIndyDID.PATTERN,
+            GenericDID.PATTERN,
             error="Value {input} is not a valid DID",
         )
 
@@ -435,26 +410,6 @@ class RoutingKey(Regexp):
         )
 
 
-class IndyCredDefId(Regexp):
-    """Validate value against indy credential definition identifier specification."""
-
-    EXAMPLE = "WgWxqztrNooG92RXvxSTWv:3:CL:20:tag"
-    PATTERN = (
-        rf"^([{B58}]{{21,22}})"  # issuer DID
-        f":3"  # cred def id marker
-        f":CL"  # sig alg
-        rf":(([1-9][0-9]*)|([{B58}]{{21,22}}:2:.+:[0-9.]+))"  # schema txn / id
-        f":(.+)?$"  # tag
-    )
-
-    def __init__(self):
-        """Initialize the instance."""
-        super().__init__(
-            IndyCredDefId.PATTERN,
-            error="Value {input} is not an indy credential definition identifier",
-        )
-
-
 class AnonCredsCredDefId(Regexp):
     """Validate value against anoncreds credential definition identifier specification."""
 
@@ -483,20 +438,6 @@ class MajorMinorVersion(Regexp):
         )
 
 
-class IndySchemaId(Regexp):
-    """Validate value against indy schema identifier specification."""
-
-    EXAMPLE = "WgWxqztrNooG92RXvxSTWv:2:schema_name:1.0"
-    PATTERN = rf"^[{B58}]{{21,22}}:2:.+:[0-9.]+$"
-
-    def __init__(self):
-        """Initialize the instance."""
-        super().__init__(
-            IndySchemaId.PATTERN,
-            error="Value {input} is not an indy schema identifier",
-        )
-
-
 class AnonCredsSchemaId(Regexp):
     """Validate value against indy schema identifier specification."""
 
@@ -511,25 +452,6 @@ class AnonCredsSchemaId(Regexp):
         )
 
 
-class IndyRevRegId(Regexp):
-    """Validate value against indy revocation registry identifier specification."""
-
-    EXAMPLE = "WgWxqztrNooG92RXvxSTWv:4:WgWxqztrNooG92RXvxSTWv:3:CL:20:tag:CL_ACCUM:0"
-    PATTERN = (
-        rf"^([{B58}]{{21,22}}):4:"
-        rf"([{B58}]{{21,22}}):3:"
-        rf"CL:(([1-9][0-9]*)|([{B58}]{{21,22}}:2:.+:[0-9.]+))(:.+)?:"
-        rf"CL_ACCUM:(.+$)"
-    )
-
-    def __init__(self):
-        """Initialize the instance."""
-        super().__init__(
-            IndyRevRegId.PATTERN,
-            error="Value {input} is not an indy revocation registry identifier",
-        )
-
-
 class AnonCredsRevRegId(Regexp):
     """Validate value against anoncreds revocation registry identifier specification."""
 
@@ -541,20 +463,6 @@ class AnonCredsRevRegId(Regexp):
         super().__init__(
             AnonCredsRevRegId.PATTERN,
             error="Value {input} is not an anoncreds revocation registry identifier",
-        )
-
-
-class IndyCredRevId(Regexp):
-    """Validate value against indy credential revocation identifier specification."""
-
-    EXAMPLE = "12345"
-    PATTERN = r"^[1-9][0-9]*$"
-
-    def __init__(self):
-        """Initialize the instance."""
-        super().__init__(
-            IndyCredRevId.PATTERN,
-            error="Value {input} is not an indy credential revocation identifier",
         )
 
 
@@ -619,7 +527,7 @@ class RFC3339DateTime(Regexp):
         )
 
 
-class IndyWQL(Regexp):  # using Regexp brings in nice visual validator cue
+class WQL(Regexp):  # using Regexp brings in nice visual validator cue
     """Validate value as potential WQL query."""
 
     EXAMPLE = json.dumps({"attr::name::value": "Alex"})
@@ -628,7 +536,7 @@ class IndyWQL(Regexp):  # using Regexp brings in nice visual validator cue
     def __init__(self):
         """Initialize the instance."""
         super().__init__(
-            IndyWQL.PATTERN,
+            WQL.PATTERN,
             error="Value {input} is not a valid WQL query",
         )
 
@@ -645,7 +553,7 @@ class IndyWQL(Regexp):  # using Regexp brings in nice visual validator cue
         return value
 
 
-class IndyExtraWQL(Regexp):  # using Regexp brings in nice visual validator cue
+class ExtraWQL(Regexp):  # using Regexp brings in nice visual validator cue
     """Validate value as potential extra WQL query in cred search for proof req."""
 
     EXAMPLE = json.dumps({"0_drink_uuid": {"attr::drink::value": "martini"}})
@@ -654,7 +562,7 @@ class IndyExtraWQL(Regexp):  # using Regexp brings in nice visual validator cue
     def __init__(self):
         """Initialize the instance."""
         super().__init__(
-            IndyExtraWQL.PATTERN,
+            ExtraWQL.PATTERN,
             error="Value {input} is not a valid extra WQL query",
         )
 
@@ -794,12 +702,12 @@ class Endpoint(Regexp):  # using Regexp brings in nice visual validator cue
 class EndpointType(OneOf):
     """Validate value against allowed endpoint/service types."""
 
-    EXAMPLE = EndpointTypeEnum.ENDPOINT.w3c
+    EXAMPLE = "w3c"
 
     def __init__(self):
         """Initialize the instance."""
         super().__init__(
-            choices=[e.w3c for e in EndpointTypeEnum],
+            choices=["w3c"],
             error="Value {input} must be one of {choices}",
         )
 
@@ -922,22 +830,6 @@ class CredentialStatus(Validator):
         return value
 
 
-class IndyOrKeyDID(Regexp):
-    """Indy or Key DID class."""
-
-    PATTERN = "|".join(x.pattern for x in [DIDKey.PATTERN, IndyDID.PATTERN])
-    EXAMPLE = IndyDID.EXAMPLE
-
-    def __init__(
-        self,
-    ):
-        """Initialize the instance."""
-        super().__init__(
-            IndyOrKeyDID.PATTERN,
-            error="Value {input} is not in did:key or indy did format",
-        )
-
-
 # Instances for marshmallow schema specification
 INT_EPOCH_VALIDATE = IntEpoch()
 INT_EPOCH_EXAMPLE = IntEpoch.EXAMPLE
@@ -956,9 +848,6 @@ NATURAL_NUM_EXAMPLE = NaturalNumber.EXAMPLE
 
 NUM_STR_NATURAL_VALIDATE = NumericStrNatural()
 NUM_STR_NATURAL_EXAMPLE = NumericStrNatural.EXAMPLE
-
-INDY_REV_REG_SIZE_VALIDATE = IndyRevRegSize()
-INDY_REV_REG_SIZE_EXAMPLE = IndyRevRegSize.EXAMPLE
 
 JWS_HEADER_KID_VALIDATE = JWSHeaderKid()
 JWS_HEADER_KID_EXAMPLE = JWSHeaderKid.EXAMPLE
@@ -993,35 +882,22 @@ DID_WEBVH_EXAMPLE = DIDWebvh.EXAMPLE
 ROUTING_KEY_VALIDATE = RoutingKey()
 ROUTING_KEY_EXAMPLE = RoutingKey.EXAMPLE
 
-INDY_DID_VALIDATE = IndyDID()
-INDY_DID_EXAMPLE = IndyDID.EXAMPLE
-
-GENERIC_DID_VALIDATE = MaybeIndyDID()
-GENERIC_DID_EXAMPLE = MaybeIndyDID.EXAMPLE
+UNQUALIFIED_OR_INDY_DID_VALIDATE = UnqualifiedOrIndyDID()
+UNQUALIFIED_OR_INDY_DID_EXAMPLE = UnqualifiedOrIndyDID.EXAMPLE
+GENERIC_DID_VALIDATE = GenericDID()
+GENERIC_DID_EXAMPLE = GenericDID.EXAMPLE
 
 RAW_ED25519_2018_PUBLIC_KEY_VALIDATE = RawPublicEd25519VerificationKey2018()
 RAW_ED25519_2018_PUBLIC_KEY_EXAMPLE = RawPublicEd25519VerificationKey2018.EXAMPLE
 
-INDY_SCHEMA_ID_VALIDATE = IndySchemaId()
-INDY_SCHEMA_ID_EXAMPLE = IndySchemaId.EXAMPLE
-
 ANONCREDS_SCHEMA_ID_VALIDATE = AnonCredsSchemaId()
 ANONCREDS_SCHEMA_ID_EXAMPLE = AnonCredsSchemaId.EXAMPLE
-
-INDY_CRED_DEF_ID_VALIDATE = IndyCredDefId()
-INDY_CRED_DEF_ID_EXAMPLE = IndyCredDefId.EXAMPLE
 
 ANONCREDS_CRED_DEF_ID_VALIDATE = AnonCredsCredDefId()
 ANONCREDS_CRED_DEF_ID_EXAMPLE = AnonCredsCredDefId.EXAMPLE
 
-INDY_REV_REG_ID_VALIDATE = IndyRevRegId()
-INDY_REV_REG_ID_EXAMPLE = IndyRevRegId.EXAMPLE
-
 ANONCREDS_REV_REG_ID_VALIDATE = AnonCredsRevRegId()
 ANONCREDS_REV_REG_ID_EXAMPLE = AnonCredsRevRegId.EXAMPLE
-
-INDY_CRED_REV_ID_VALIDATE = IndyCredRevId()
-INDY_CRED_REV_ID_EXAMPLE = IndyCredRevId.EXAMPLE
 
 ANONCREDS_CRED_REV_ID_VALIDATE = AnonCredsCredRevId()
 ANONCREDS_CRED_REV_ID_EXAMPLE = AnonCredsCredRevId.EXAMPLE
@@ -1038,11 +914,11 @@ ISO8601_DATETIME_EXAMPLE = ISO8601DateTime.EXAMPLE
 RFC3339_DATETIME_VALIDATE = RFC3339DateTime()
 RFC3339_DATETIME_EXAMPLE = RFC3339DateTime.EXAMPLE
 
-INDY_WQL_VALIDATE = IndyWQL()
-INDY_WQL_EXAMPLE = IndyWQL.EXAMPLE
+WQL_VALIDATE = WQL()
+WQL_EXAMPLE = WQL.EXAMPLE
 
-INDY_EXTRA_WQL_VALIDATE = IndyExtraWQL()
-INDY_EXTRA_WQL_EXAMPLE = IndyExtraWQL.EXAMPLE
+EXTRA_WQL_VALIDATE = ExtraWQL()
+EXTRA_WQL_EXAMPLE = ExtraWQL.EXAMPLE
 
 BASE64_VALIDATE = Base64()
 BASE64_EXAMPLE = Base64.EXAMPLE
@@ -1085,9 +961,6 @@ CREDENTIAL_STATUS_EXAMPLE = CredentialStatus.EXAMPLE
 
 PRESENTATION_TYPE_VALIDATE = PresentationType()
 PRESENTATION_TYPE_EXAMPLE = PresentationType.EXAMPLE
-
-INDY_OR_KEY_DID_VALIDATE = IndyOrKeyDID()
-INDY_OR_KEY_DID_EXAMPLE = IndyOrKeyDID.EXAMPLE
 
 ANONCREDS_DID_VALIDATE = AnonCredsDID()
 ANONCREDS_DID_EXAMPLE = AnonCredsDID.EXAMPLE

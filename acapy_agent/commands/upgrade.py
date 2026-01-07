@@ -17,10 +17,8 @@ from ..config.default_context import DefaultContextBuilder
 from ..config.injection_context import InjectionContext
 from ..config.util import common_config
 from ..config.wallet import wallet_config
-from ..core.profile import Profile, ProfileSession
-from ..messaging.models.base import BaseModelError
-from ..messaging.models.base_record import BaseRecord, RecordType
-from ..revocation.models.issuer_rev_reg_record import IssuerRevRegRecord
+from ..core.profile import Profile
+from ..messaging.models.base_record import BaseRecord
 from ..storage.base import BaseStorage, BaseStorageSearch
 from ..storage.error import StorageNotFoundError
 from ..storage.record import StorageRecord
@@ -559,68 +557,6 @@ async def update_existing_records(profile: Profile):
     pass
 
 
-##########################################################
-# Fix for ACA-Py Issue #2485
-# issuance_type attribute in IssuerRevRegRecord was removed
-# in 0.5.3 version. IssuerRevRegRecord created previously
-# will need
-##########################################################
-
-
-async def find_affected_issue_rev_reg_records(
-    session: ProfileSession,
-) -> Sequence[RecordType]:
-    """Get IssuerRevRegRecord records with issuance_type for re-saving.
-
-    Args:
-        session: The profile session to use
-
-    """
-    storage = session.inject(BaseStorage)
-    rows = await storage.find_all_records(
-        IssuerRevRegRecord.RECORD_TYPE,
-    )
-    issue_rev_reg_records_to_update = []
-    for record in rows:
-        vals = json.loads(record.value)
-        to_update = False
-        try:
-            record_id = record.id
-            record_id_name = IssuerRevRegRecord.RECORD_ID_NAME
-            if record_id_name in vals:
-                raise ValueError(f"Duplicate {record_id_name} inputs; {vals}")
-            params = dict(**vals)
-            # Check for issuance_type and add record_id for later tracking
-            if "issuance_type" in params:
-                LOGGER.info(
-                    f"IssuerRevRegRecord {record_id} tagged for fixing issuance_type."
-                )
-                del params["issuance_type"]
-                to_update = True
-            params[record_id_name] = record_id
-            if to_update:
-                issue_rev_reg_records_to_update.append(IssuerRevRegRecord(**params))
-        except BaseModelError as err:
-            raise BaseModelError(f"{err}, for record id {record.id}")
-    return issue_rev_reg_records_to_update
-
-
-async def fix_issue_rev_reg_records(profile: Profile):
-    """Update IssuerRevRegRecord records.
-
-    Args:
-        profile: Root profile
-
-    """
-    async with profile.session() as session:
-        issue_rev_reg_records = await find_affected_issue_rev_reg_records(session)
-        for record in issue_rev_reg_records:
-            await record.save(
-                session,
-                reason="re-saving issue_rev_reg record without issuance type",
-            )
-
-
 def execute(argv: Sequence[str] = None):
     """Entrypoint."""
     # Preprocess argv to handle --arg-file-url
@@ -645,7 +581,6 @@ def main():
 
 UPGRADE_EXISTING_RECORDS_FUNCTION_MAPPING = {
     "update_existing_records": update_existing_records,
-    "fix_issue_rev_reg_records": fix_issue_rev_reg_records,
 }
 
 main()

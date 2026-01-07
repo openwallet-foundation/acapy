@@ -2,8 +2,6 @@
 
 from .....anoncreds.issuer import AnonCredsIssuerError
 from .....core.oob_processor import OobMessageProcessor
-from .....indy.issuer import IndyIssuerError
-from .....ledger.error import LedgerError
 from .....messaging.base_handler import BaseHandler, HandlerException
 from .....messaging.models.base import BaseModelError
 from .....messaging.request_context import RequestContext
@@ -92,10 +90,9 @@ class V20CredRequestHandler(BaseHandler):
             except (
                 BaseModelError,
                 AnonCredsIssuerError,
-                IndyIssuerError,
-                LedgerError,
                 StorageError,
                 V20CredManagerError,
+                Exception,
             ) as err:
                 self._logger.exception(err)
                 async with profile.session() as session:

@@ -122,7 +122,6 @@ class DefaultContextBuilder(ContextBuilder):
         # Define core plugins
         core_plugins = [
             "acapy_agent.holder",
-            "acapy_agent.ledger",
             "acapy_agent.connections",
             "acapy_agent.messaging.jsonld",
             "acapy_agent.resolver",
@@ -133,47 +132,22 @@ class DefaultContextBuilder(ContextBuilder):
             "acapy_agent.wallet.keys",
         ]
 
-        did_management_plugins = [
-            "acapy_agent.did.indy",
-        ]
-
-        default_plugins = core_plugins + did_management_plugins
-
         LOGGER.info("Registering default plugins")
-        for plugin in default_plugins:
+        for plugin in core_plugins:
             plugin_registry.register_plugin(plugin)
 
         anoncreds_plugins = [
             "acapy_agent.anoncreds",
             "acapy_agent.anoncreds.default.did_web",
-            "acapy_agent.anoncreds.default.legacy_indy",
             "acapy_agent.anoncreds.revocation",
         ]
-
-        askar_plugins = [
-            "acapy_agent.messaging.credential_definitions",
-            "acapy_agent.messaging.schemas",
-            "acapy_agent.revocation",
-        ]
-
-        def register_askar_plugins():
-            LOGGER.info("Registering askar plugins")
-            for plugin in askar_plugins:
-                plugin_registry.register_plugin(plugin)
 
         def register_anoncreds_plugins():
             LOGGER.info("Registering anoncreds plugins")
             for plugin in anoncreds_plugins:
                 plugin_registry.register_plugin(plugin)
 
-        if context.settings.get("multitenant.enabled"):
-            # Register both askar and anoncreds plugins for multitenancy
-            register_askar_plugins()
-            register_anoncreds_plugins()
-        elif self.settings.get("wallet.type") in ("askar-anoncreds", "kanon-anoncreds"):
-            register_anoncreds_plugins()
-        else:
-            register_askar_plugins()
+        register_anoncreds_plugins()
 
         if context.settings.get("multitenant.admin_enabled"):
             LOGGER.info("Registering multitenant admin API plugin")

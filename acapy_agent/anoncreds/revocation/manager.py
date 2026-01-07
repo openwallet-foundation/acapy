@@ -2,17 +2,17 @@
 
 import logging
 from collections.abc import Mapping, Sequence
-from typing import Optional, Tuple
+from typing import Optional
 
 from ...core.error import BaseError
 from ...core.profile import Profile
 from ...protocols.revocation_notification.v1_0.models.rev_notification_record import (
     RevNotificationRecord,
 )
-from ...revocation.util import notify_pending_cleared_event
 from ...storage.error import StorageNotFoundError
 from ..models.issuer_cred_rev_record import IssuerCredRevRecord
 from .revocation import AnonCredsRevocation
+from .util import notify_pending_cleared_event
 
 
 class RevocationManagerError(BaseError):
@@ -173,37 +173,6 @@ class RevocationManager:
 
         else:
             await revoc.mark_pending_revocations(rev_reg_id, int(cred_rev_id))
-
-    async def update_rev_reg_revoked_state(
-        self,
-        rev_reg_def_id: str,
-        apply_ledger_update: bool,
-        genesis_transactions: str,
-    ) -> Tuple[dict, dict, dict]:
-        """Request handler to fix ledger entry of credentials revoked against registry.
-
-        This is an indy registry specific operation.
-
-        Args:
-            rev_reg_def_id: revocation registry definition id
-            apply_ledger_update: whether to apply an update to the ledger
-            genesis_transactions: genesis transactions for the ledger
-
-        Returns:
-            Number of credentials posted to ledger
-
-        """
-        revoc = AnonCredsRevocation(self._profile)
-        rev_list = await revoc.get_created_revocation_list(rev_reg_def_id)
-        if not rev_list:
-            raise RevocationManagerError(
-                f"No revocation list found for revocation registry id {rev_reg_def_id}"
-            )
-
-        raise RevocationManagerError(
-            "Indy registry does not support revocation registry "
-            f"identified by {rev_reg_def_id}"
-        )
 
     async def publish_pending_revocations(
         self,

@@ -20,9 +20,7 @@ from ......anoncreds.models.issuer_cred_rev_record import IssuerCredRevRecord
 from ......anoncreds.registry import AnonCredsRegistry
 from ......anoncreds.revocation.revocation import AnonCredsRevocation
 from ......cache.base import BaseCache
-from ......messaging.credential_definitions.util import CRED_DEF_SENT_RECORD_TYPE
 from ......messaging.decorators.attach_decorator import AttachDecorator
-from ......storage.base import BaseStorage
 from ...message_types import (
     ATTACHMENT_FORMAT,
     CRED_20_ISSUE,
@@ -145,19 +143,6 @@ class AnonCredsCredFormatHandler(V20CredFormatHandler):
             ),
         )
 
-    async def _match_sent_cred_def_id(self, tag_query: Mapping[str, str]) -> str:
-        """Return most recent matching id of cred def that agent sent to ledger."""
-        async with self.profile.session() as session:
-            storage = session.inject(BaseStorage)
-            found = await storage.find_all_records(
-                type_filter=CRED_DEF_SENT_RECORD_TYPE, tag_query=tag_query
-            )
-        if not found:
-            raise V20CredFormatError(
-                f"Issuer has no operable cred def for proposal spec {tag_query}"
-            )
-        return max(found, key=lambda r: int(r.tags["epoch"])).tags["cred_def_id"]
-
     async def create_proposal(
         self, cred_ex_record: V20CredExRecord, proposal_data: Mapping[str, str]
     ) -> Tuple[V20CredFormat, AttachDecorator]:
@@ -185,11 +170,6 @@ class AnonCredsCredFormatHandler(V20CredFormatHandler):
         anoncreds_attachment = cred_proposal_message.attachment(
             AnonCredsCredFormatHandler.format
         )
-
-        if not anoncreds_attachment:
-            anoncreds_attachment = cred_proposal_message.attachment(
-                V20CredFormat.Format.INDY.api
-            )
 
         cred_def_id = await issuer.match_created_credential_definitions(
             **anoncreds_attachment
@@ -286,12 +266,9 @@ class AnonCredsCredFormatHandler(V20CredFormatHandler):
         await self._check_uniqueness(cred_ex_record.cred_ex_id)
         holder_did = request_data.get("holder_did") if request_data else None
 
-        # For backwards compatibility, remove indy backup when indy format is retired
-        from ..indy.handler import IndyCredFormatHandler
-
         cred_offer = cred_ex_record.cred_offer.attachment(
             AnonCredsCredFormatHandler.format
-        ) or cred_ex_record.cred_offer.attachment(IndyCredFormatHandler.format)
+        )
 
         if "nonce" not in cred_offer:
             raise V20CredFormatError("Missing nonce in credential offer")
@@ -317,8 +294,8 @@ class AnonCredsCredFormatHandler(V20CredFormatHandler):
                 }
             # This is for compatability with a holder that isn't anoncreds capable
             except AnonCredsResolutionError:
-                return await IndyCredFormatHandler.create_cred_request_result(
-                    self, cred_offer, holder_did, cred_def_id
+                raise V20CredFormatError(
+                    f"Credential definition {cred_def_id} not found for credential offer"
                 )
 
         cache_key = f"credential_request::{cred_def_id}::{holder_did}::{nonce}"
@@ -358,13 +335,6 @@ class AnonCredsCredFormatHandler(V20CredFormatHandler):
     ) -> CredFormatAttachment:
         """Issue anoncreds credential."""
         await self._check_uniqueness(cred_ex_record.cred_ex_id)
-
-        # For backwards compatibility, remove indy backup when indy format is retired
-        from ..indy.handler import IndyCredFormatHandler
-
-        if cred_ex_record.cred_offer.attachment(IndyCredFormatHandler.format):
-            indy_handler = IndyCredFormatHandler(self.profile)
-            return await indy_handler.issue_credential(cred_ex_record, retries)
 
         cred_offer = cred_ex_record.cred_offer.attachment(
             AnonCredsCredFormatHandler.format
@@ -429,12 +399,7 @@ class AnonCredsCredFormatHandler(V20CredFormatHandler):
         self, cred_ex_record: V20CredExRecord, cred_id: Optional[str] = None
     ) -> None:
         """Store anoncreds credential."""
-        # For backwards compatibility, remove indy backup when indy format is retired
-        from ..indy.handler import IndyCredFormatHandler
-
-        cred = cred_ex_record.cred_issue.attachment(
-            AnonCredsCredFormatHandler.format
-        ) or cred_ex_record.cred_issue.attachment(IndyCredFormatHandler.format)
+        cred = cred_ex_record.cred_issue.attachment(AnonCredsCredFormatHandler.format)
 
         rev_reg_def = None
         anoncreds_registry = self.profile.inject(AnonCredsRegistry)
@@ -451,8 +416,8 @@ class AnonCredsCredFormatHandler(V20CredFormatHandler):
                 rev_reg_def = rev_reg_def_result.revocation_registry
 
         except AnonCredsResolutionError:
-            return await IndyCredFormatHandler.store_credential(
-                self, cred_ex_record, cred_id
+            raise V20CredFormatError(
+                f"Credential definition {cred['cred_def_id']} not found for credential"
             )
 
         holder = AnonCredsHolder(self.profile)

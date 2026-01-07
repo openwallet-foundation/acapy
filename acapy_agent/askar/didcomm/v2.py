@@ -8,7 +8,7 @@ from aries_askar import AskarError, Key, KeyAlg, Session, ecdh
 from marshmallow import ValidationError
 
 from ...utils.jwe import JweEnvelope, JweRecipient, b64url, from_b64url
-from ...wallet.base import WalletError
+from ...wallet.error import WalletError
 
 
 class DidcommEnvelopeError(WalletError):

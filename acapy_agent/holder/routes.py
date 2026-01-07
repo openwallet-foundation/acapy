@@ -18,21 +18,18 @@ from marshmallow.validate import Range
 from ..admin.decorators.auth import tenant_authentication
 from ..admin.request_context import AdminRequestContext
 from ..anoncreds.holder import AnonCredsHolder, AnonCredsHolderError
-from ..indy.holder import IndyHolder, IndyHolderError
-from ..indy.models.cred_precis import IndyCredInfoSchema
-from ..ledger.base import BaseLedger
-from ..ledger.error import LedgerError
+from ..anoncreds.models.cred_info import CredInfoSchema
 from ..messaging.models.openapi import OpenAPISchema
 from ..messaging.valid import (
     ENDPOINT_EXAMPLE,
     ENDPOINT_VALIDATE,
-    INDY_WQL_EXAMPLE,
-    INDY_WQL_VALIDATE,
     NUM_STR_NATURAL_EXAMPLE,
     NUM_STR_NATURAL_VALIDATE,
     NUM_STR_WHOLE_EXAMPLE,
     NUM_STR_WHOLE_VALIDATE,
     UUID4_EXAMPLE,
+    WQL_EXAMPLE,
+    WQL_VALIDATE,
 )
 from ..storage.base import DEFAULT_PAGE_SIZE, MAXIMUM_PAGE_SIZE
 from ..storage.error import StorageError, StorageNotFoundError
@@ -60,7 +57,7 @@ class AttributeMimeTypesResultSchema(OpenAPISchema):
 class CredInfoListSchema(OpenAPISchema):
     """Result schema for credential query."""
 
-    results = fields.List(fields.Nested(IndyCredInfoSchema()))
+    results = fields.List(fields.Nested(CredInfoSchema()))
 
 
 class CredentialsListQueryStringSchema(OpenAPISchema):
@@ -98,8 +95,8 @@ class CredentialsListQueryStringSchema(OpenAPISchema):
     )
     wql = fields.Str(
         required=False,
-        validate=INDY_WQL_VALIDATE,
-        metadata={"description": "(JSON) WQL query", "example": INDY_WQL_EXAMPLE},
+        validate=WQL_VALIDATE,
+        metadata={"description": "(JSON) WQL query", "example": WQL_EXAMPLE},
     )
 
 
@@ -216,7 +213,7 @@ class CredRevokedResultSchema(OpenAPISchema):
 
 @docs(tags=["credentials"], summary="Fetch credential from wallet by id")
 @match_info_schema(HolderCredIdMatchInfoSchema())
-@response_schema(IndyCredInfoSchema(), 200, description="")
+@response_schema(CredInfoSchema(), 200, description="")
 @tenant_authentication
 async def credentials_get(request: web.BaseRequest):
     """Request handler for retrieving credential.
@@ -231,10 +228,7 @@ async def credentials_get(request: web.BaseRequest):
     context: AdminRequestContext = request["context"]
     credential_id = request.match_info["credential_id"]
 
-    if context.settings.get(wallet_type_config) in ("askar-anoncreds", "kanon-anoncreds"):
-        holder = AnonCredsHolder(context.profile)
-    else:
-        holder = context.profile.inject(IndyHolder)
+    holder = AnonCredsHolder(context.profile)
 
     try:
         credential = await holder.get_credential(credential_id)
@@ -265,7 +259,6 @@ async def credentials_revoked(request: web.BaseRequest):
     fro = request.query.get("from")
     to = request.query.get("to")
     profile = context.profile
-    wallet_type = profile.settings.get_value(wallet_type_config)
 
     async def get_revoked_using_anoncreds(profile: Profile):
         holder = AnonCredsHolder(profile)
@@ -275,30 +268,8 @@ async def credentials_revoked(request: web.BaseRequest):
             int(to) if to else None,
         )
 
-    async def get_revoked_using_indy(profile: Profile):
-        async with profile.session() as session:
-            ledger = session.inject_or(BaseLedger)
-            if not ledger:
-                raise web.HTTPForbidden(reason="No ledger available")
-
-            holder = session.inject(IndyHolder)
-
-            async with ledger:
-                try:
-                    return await holder.credential_revoked(
-                        ledger,
-                        credential_id,
-                        int(fro) if fro else None,
-                        int(to) if to else None,
-                    )
-                except LedgerError as err:
-                    raise web.HTTPBadRequest(reason=err.roll_up) from err
-
     try:
-        if wallet_type in ("askar-anoncreds", "kanon-anoncreds"):
-            revoked = await get_revoked_using_anoncreds(profile)
-        else:
-            revoked = await get_revoked_using_indy(profile)
+        revoked = await get_revoked_using_anoncreds(profile)
     except WalletNotFoundError as err:
         raise web.HTTPNotFound(reason=err.roll_up) from err
 
@@ -322,13 +293,8 @@ async def credentials_attr_mime_types_get(request: web.BaseRequest):
     context: AdminRequestContext = request["context"]
     credential_id = request.match_info["credential_id"]
 
-    if context.settings.get(wallet_type_config) in ("askar-anoncreds", "kanon-anoncreds"):
-        holder = AnonCredsHolder(context.profile)
-        mime_types = await holder.get_mime_type(credential_id)
-    else:
-        async with context.profile.session() as session:
-            holder = session.inject(IndyHolder)
-            mime_types = await holder.get_mime_type(credential_id)
+    holder = AnonCredsHolder(context.profile)
+    mime_types = await holder.get_mime_type(credential_id)
 
     return web.json_response({"results": mime_types})
 
@@ -360,30 +326,7 @@ async def credentials_remove(request: web.BaseRequest):
                 raise web.HTTPNotFound(reason=err.roll_up) from err
             raise web.HTTPBadRequest(reason=err.roll_up) from err
 
-    async def delete_credential_using_indy():
-        async with profile.session() as session:
-            try:
-                holder = session.inject(IndyHolder)
-                await holder.delete_credential(credential_id)
-            except WalletNotFoundError as err:
-                raise web.HTTPNotFound(reason=err.roll_up) from err
-
-    async def delete_using_anoncreds_or_indy():
-        """Try to delete anoncreds credential with fallback to indy if not found."""
-        try:
-            await delete_credential_using_anoncreds()
-        except web.HTTPNotFound as anoncreds_err:
-            # If credential not found in anoncreds, try with indy
-            try:
-                await delete_credential_using_indy()
-            except web.HTTPNotFound:
-                # Raise original anoncreds error if neither found
-                raise web.HTTPNotFound(reason=anoncreds_err.reason) from anoncreds_err
-
-    if context.settings.get(wallet_type_config) in ("askar-anoncreds", "kanon-anoncreds"):
-        await delete_using_anoncreds_or_indy()
-    else:
-        await delete_credential_using_indy()
+    await delete_credential_using_anoncreds()
 
     # Notify event subscribers
     topic = "acapy::record::credential::delete"
@@ -426,18 +369,8 @@ async def credentials_list(request: web.BaseRequest):
     encoded_wql = request.query.get("wql") or "{}"
     wql = json.loads(encoded_wql)
 
-    if context.settings.get(wallet_type_config) in ("askar-anoncreds", "kanon-anoncreds"):
-        holder = AnonCredsHolder(context.profile)
-        credentials = await holder.get_credentials(limit=limit, offset=offset, wql=wql)
-    else:
-        async with context.profile.session() as session:
-            holder = session.inject(IndyHolder)
-            try:
-                credentials = await holder.get_credentials(
-                    limit=limit, offset=offset, wql=wql
-                )
-            except IndyHolderError as err:
-                raise web.HTTPBadRequest(reason=err.roll_up) from err
+    holder = AnonCredsHolder(context.profile)
+    credentials = await holder.get_credentials(limit=limit, offset=offset, wql=wql)
 
     return web.json_response({"results": credentials})
 

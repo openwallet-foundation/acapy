@@ -3,14 +3,14 @@
 import logging
 import re
 
-from ....core.event_bus import Event, EventBus
-from ....core.profile import Profile
-from ....messaging.responder import BaseResponder
-from ....revocation.util import (
+from ....anoncreds.revocation.util import (
     REVOCATION_CLEAR_PENDING_EVENT,
     REVOCATION_EVENT_PREFIX,
     REVOCATION_PUBLISHED_EVENT,
 )
+from ....core.event_bus import Event, EventBus
+from ....core.profile import Profile
+from ....messaging.responder import BaseResponder
 from ....storage.error import StorageError, StorageNotFoundError
 from .models.rev_notification_record import RevNotificationRecord
 

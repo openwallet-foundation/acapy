@@ -8,8 +8,8 @@ from .....messaging.models.base import BaseModel, BaseModelSchema
 from .....messaging.valid import (
     DID_KEY_OR_REF_EXAMPLE,
     DID_KEY_OR_REF_VALIDATE,
-    INDY_DID_EXAMPLE,
-    INDY_DID_VALIDATE,
+    GENERIC_DID_EXAMPLE,
+    GENERIC_DID_VALIDATE,
 )
 
 
@@ -67,8 +67,8 @@ class ServiceSchema(BaseModelSchema):
     )
     did = fields.Str(
         required=False,
-        validate=INDY_DID_VALIDATE,
-        metadata={"description": "Service DID", "example": INDY_DID_EXAMPLE},
+        validate=GENERIC_DID_VALIDATE,
+        metadata={"description": "Service DID", "example": GENERIC_DID_EXAMPLE},
     )
 
     recipient_keys = fields.List(
