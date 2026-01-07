@@ -1,6 +1,6 @@
 # ACA-Py Changelog
 
-## 1.5.0rc1
+## 1.5.0rc0
 
 ### January 6, 2026
 
