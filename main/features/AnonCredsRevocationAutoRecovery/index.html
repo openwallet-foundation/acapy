@@ -9,6 +9,10 @@
       
       
       
+        <link rel="prev" href="../AnonCredsProofValidation/">
+      
+      
+        <link rel="next" href="../Multicredentials/">
       
       
         
@@ -19,7 +23,7 @@
     
     
       
-        <title>AnonCreds Revocation: Event-driven auto-recovery - ACA-Py Docs</title>
+        <title>AnonCreds Revocation Auto Recovery - ACA-Py Docs</title>
       
     
     
@@ -109,7 +113,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              AnonCreds Revocation: Event-driven auto-recovery
+              AnonCreds Revocation Auto Recovery
             
           </span>
         </div>
@@ -232,10 +236,12 @@
   
   
   
+    
+  
   
     
     
-      <li class="md-tabs__item">
+      <li class="md-tabs__item md-tabs__item--active">
         <a href="../DevReadMe/" class="md-tabs__link">
           
   
@@ -545,26 +551,29 @@
       
   
   
+    
   
   
+  
     
     
     
     
-      
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
       
         
+        
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" checked>
         
           
-        
-        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_2" >
-        
-          
-          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="">
             
   
   
@@ -582,7 +591,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_2">
             <span class="md-nav__icon md-icon"></span>
             
@@ -1092,6 +1101,325 @@
   
 
       </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    AnonCreds Revocation Auto Recovery
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    AnonCreds Revocation Auto Recovery
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#scope" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Scope
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#high-level-overview" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        High-level overview
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#key-concepts-terminology" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Key concepts &amp; terminology
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Key concepts &amp; terminology">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#event-types" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Event types
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#event-records-in-storage" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Event records in storage
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#lifecycle-initial-revocation-setup" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Lifecycle: initial revocation setup
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#lifecycle-handling-a-full-revocation-registry" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Lifecycle: handling a full revocation registry
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#failure-handling-retries" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Failure handling &amp; retries
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Failure handling &amp; retries">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#error-information" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Error information
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#exponential-backoff" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Exponential backoff
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#event-expiry-recovery-delay" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Event expiry &amp; recovery delay
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#recovery-flow" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Recovery flow
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Recovery flow">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#eventstoragemanager" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        EventStorageManager
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#eventrecoverymanager" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        EventRecoveryManager
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#admin-middleware-triggering-recovery-per-profile" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Admin middleware: triggering recovery per profile
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#operational-notes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Operational notes
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Operational notes">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#what-operators-should-expect" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What operators should expect
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#logging-monitoring" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Logging &amp; monitoring
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tuning-behavior" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tuning behavior
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Summary
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -3793,6 +4121,44 @@
       
         <footer class="md-footer">
   
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="../AnonCredsProofValidation/" class="md-footer__link md-footer__link--prev" aria-label="Previous: AnonCreds Presentation Validation">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                AnonCreds Presentation Validation
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="../Multicredentials/" class="md-footer__link md-footer__link--next" aria-label="Next: Multiple Credential Types">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              <div class="md-ellipsis">
+                Multiple Credential Types
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11z"/></svg>
+            </div>
+          </a>
+        
+      </nav>
     
   
   <div class="md-footer-meta md-typeset">

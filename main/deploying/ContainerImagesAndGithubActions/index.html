@@ -1110,6 +1110,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../../features/AnonCredsRevocationAutoRecovery/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    AnonCreds Revocation Auto Recovery
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../features/Multicredentials/" class="md-nav__link">
         
   
@@ -3147,19 +3175,19 @@ Standard image is outside of the scope of this document.</p>
 above variants it is. Other tags may also be generated for use by developers.</p>
 <p>Click <a href="https://github.com/openwallet-foundation/acapy/pkgs/container/acapy-agent/versions?filters%5Bversion_type%5D=tagged">here</a> to see a current list of the tagged images available for ACA-Py.</p>
 <p>The following is the ACA-Py container images tagging format:</p>
-<p><strong>Regular Releases</strong> (e.g., publishing version <code>1.4.0</code>):
-- <code>pyV.vv-X.Y.Z</code> - Python version specific tag (e.g., <code>py3.12-1.4.0</code>)
-- <code>X.Y.Z</code> - Semantic version tag (e.g., <code>1.4.0</code>)
-- <code>X.Y</code> - Major.minor version tag (e.g., <code>1.4</code>), automatically moves to the latest patch release
-- <code>latest</code> - Automatically assigned to the highest semantic version (non-RC) release</p>
-<p><strong>Release Candidates</strong> (e.g., publishing version <code>1.4.0-rc1</code>):
-- <code>pyV.vv-X.Y.Z-rcN</code> - Python version specific RC tag (e.g., <code>py3.12-1.4.0-rc1</code>)
-- <code>X.Y.Z-rcN</code> - Semantic version RC tag (e.g., <code>1.4.0-rc1</code>)
-- <strong>Note</strong>: RC releases do NOT receive major.minor (<code>X.Y</code>) or <code>latest</code> tags</p>
+<p><strong>Regular Releases</strong> (e.g., <code>1.5.0</code>):
+ - <code>py3.12-1.5.0</code> - Python version specific tag
+ - <code>1.5.0</code> - Semantic version tag
+ - <code>1.5</code> - Major.minor tag (moves to latest patch release)
+ - <code>latest</code> - Only assigned if this is the highest semantic version</p>
+<p><strong>Release Candidates</strong> (e.g., <code>1.5.0-rc0</code>):
+ - <code>py3.12-1.5.0-rc0</code> - Python version specific RC tag
+ - <code>1.5.0-rc0</code> - Semantic version RC tag
+ - <strong>Note</strong>: RC releases do NOT receive major.minor (<code>1.5</code>) or <code>latest</code> tags</p>
 <p><strong>Nightly Builds</strong>:
 - <code>pyV.vv-nightly-YYYY-MM-DD</code> - Date-stamped nightly build
 - <code>pyV.vv-nightly</code> - Latest nightly build</p>
-<p><strong>LTS (<a href="../../LTS-Strategy.md">Long Term Support</a>) Releases</strong>:
+<p><strong>LTS (<a href="../../LTS-Strategy/">Long Term Support</a>) Releases</strong>:
 - <code>pyV.vv-X.Y-lts</code> - LTS tag (e.g., <code>py3.12-0.12-lts</code>)
 - This tag automatically moves to the latest patch release in the LTS line (e.g., from <code>0.12.4</code> to <code>0.12.5</code>)
 - LTS versions are managed via the <code>.github/lts-versions.txt</code> configuration file

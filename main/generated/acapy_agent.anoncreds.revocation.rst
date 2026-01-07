@@ -6,6 +6,14 @@ acapy\_agent.anoncreds.revocation package
    :undoc-members:
    :show-inheritance:
 
+Subpackages
+-----------
+
+.. toctree::
+   :maxdepth: 4
+
+   acapy_agent.anoncreds.revocation.auto_recovery
+
 Submodules
 ----------
 
