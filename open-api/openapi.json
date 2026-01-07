@@ -2,7 +2,7 @@
   "openapi" : "3.0.1",
   "info" : {
     "title" : "Aries Cloud Agent",
-    "version" : "v1.4.0"
+    "version" : "v1.5.0rc0"
   },
   "servers" : [ {
     "url" : "/"
@@ -114,13 +114,6 @@
     "description" : "Introduction of known parties",
     "name" : "introduction"
   }, {
-    "description" : "Credential issue v1.0",
-    "externalDocs" : {
-      "description" : "Specification",
-      "url" : "https://github.com/decentralized-identity/aries-rfcs/tree/bb42a6c35e0d5543718fb36dd099551ab192f7b0/features/0036-issue-credential"
-    },
-    "name" : "issue-credential v1.0"
-  }, {
     "description" : "Credential issue v2.0",
     "externalDocs" : {
       "description" : "Specification",
@@ -158,13 +151,6 @@
       "url" : "https://github.com/decentralized-identity/aries-rfcs/tree/2da7fc4ee043effa3a9960150e7ba8c9a4628b68/features/0434-outofband"
     },
     "name" : "out-of-band"
-  }, {
-    "description" : "Proof presentation v1.0",
-    "externalDocs" : {
-      "description" : "Specification",
-      "url" : "https://github.com/decentralized-identity/aries-rfcs/tree/4fae574c03f9f1013db30bf2c0c676b1122f7149/features/0037-present-proof"
-    },
-    "name" : "present-proof v1.0"
   }, {
     "description" : "Proof presentation v2.0",
     "externalDocs" : {
@@ -923,7 +909,7 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/CredRevIndyRecordsResultSchemaAnonCreds"
+                  "$ref" : "#/components/schemas/CredRevRecordsResultSchemaAnonCreds"
                 }
               }
             },
@@ -3078,498 +3064,6 @@
         "x-codegen-request-body-name" : "body"
       }
     },
-    "/issue-credential/create" : {
-      "post" : {
-        "deprecated" : true,
-        "requestBody" : {
-          "content" : {
-            "*/*" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/V10CredentialCreate"
-              }
-            }
-          },
-          "required" : false
-        },
-        "responses" : {
-          "200" : {
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/V10CredentialExchange"
-                }
-              }
-            },
-            "description" : ""
-          }
-        },
-        "summary" : "Create a credential record without sending (generally for use with Out-Of-Band)",
-        "tags" : [ "issue-credential v1.0" ],
-        "x-codegen-request-body-name" : "body"
-      }
-    },
-    "/issue-credential/create-offer" : {
-      "post" : {
-        "deprecated" : true,
-        "requestBody" : {
-          "content" : {
-            "*/*" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/V10CredentialConnFreeOfferRequest"
-              }
-            }
-          },
-          "required" : false
-        },
-        "responses" : {
-          "200" : {
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/V10CredentialExchange"
-                }
-              }
-            },
-            "description" : ""
-          }
-        },
-        "summary" : "Create a credential offer, independent of any proposal or connection",
-        "tags" : [ "issue-credential v1.0" ],
-        "x-codegen-request-body-name" : "body"
-      }
-    },
-    "/issue-credential/records" : {
-      "get" : {
-        "deprecated" : true,
-        "parameters" : [ {
-          "description" : "Connection identifier",
-          "in" : "query",
-          "name" : "connection_id",
-          "schema" : {
-            "type" : "string"
-          }
-        }, {
-          "description" : "Order results in descending order if true",
-          "in" : "query",
-          "name" : "descending",
-          "schema" : {
-            "default" : false,
-            "type" : "boolean"
-          }
-        }, {
-          "description" : "Number of results to return",
-          "in" : "query",
-          "name" : "limit",
-          "schema" : {
-            "default" : 100,
-            "maximum" : 10000,
-            "minimum" : 1,
-            "type" : "integer"
-          }
-        }, {
-          "description" : "Offset for pagination",
-          "in" : "query",
-          "name" : "offset",
-          "schema" : {
-            "default" : 0,
-            "minimum" : 0,
-            "type" : "integer"
-          }
-        }, {
-          "description" : "The column to order results by. Only \"id\" is currently supported.",
-          "in" : "query",
-          "name" : "order_by",
-          "schema" : {
-            "default" : "id",
-            "enum" : [ "id" ],
-            "type" : "string"
-          }
-        }, {
-          "description" : "Role assigned in credential exchange",
-          "in" : "query",
-          "name" : "role",
-          "schema" : {
-            "enum" : [ "issuer", "holder" ],
-            "type" : "string"
-          }
-        }, {
-          "description" : "Credential exchange state",
-          "in" : "query",
-          "name" : "state",
-          "schema" : {
-            "enum" : [ "proposal_sent", "proposal_received", "offer_sent", "offer_received", "request_sent", "request_received", "credential_issued", "credential_received", "credential_acked", "credential_revoked", "abandoned" ],
-            "type" : "string"
-          }
-        }, {
-          "description" : "Thread identifier",
-          "in" : "query",
-          "name" : "thread_id",
-          "schema" : {
-            "type" : "string"
-          }
-        } ],
-        "responses" : {
-          "200" : {
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/V10CredentialExchangeListResult"
-                }
-              }
-            },
-            "description" : ""
-          }
-        },
-        "summary" : "Fetch all credential exchange records",
-        "tags" : [ "issue-credential v1.0" ]
-      }
-    },
-    "/issue-credential/records/{cred_ex_id}" : {
-      "delete" : {
-        "deprecated" : true,
-        "parameters" : [ {
-          "description" : "Credential exchange identifier",
-          "in" : "path",
-          "name" : "cred_ex_id",
-          "required" : true,
-          "schema" : {
-            "pattern" : "[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-4[a-fA-F0-9]{3}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}",
-            "type" : "string"
-          }
-        } ],
-        "responses" : {
-          "200" : {
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/IssueCredentialModuleResponse"
-                }
-              }
-            },
-            "description" : ""
-          }
-        },
-        "summary" : "Remove an existing credential exchange record",
-        "tags" : [ "issue-credential v1.0" ]
-      },
-      "get" : {
-        "deprecated" : true,
-        "parameters" : [ {
-          "description" : "Credential exchange identifier",
-          "in" : "path",
-          "name" : "cred_ex_id",
-          "required" : true,
-          "schema" : {
-            "pattern" : "[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-4[a-fA-F0-9]{3}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}",
-            "type" : "string"
-          }
-        } ],
-        "responses" : {
-          "200" : {
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/V10CredentialExchange"
-                }
-              }
-            },
-            "description" : ""
-          }
-        },
-        "summary" : "Fetch a single credential exchange record",
-        "tags" : [ "issue-credential v1.0" ]
-      }
-    },
-    "/issue-credential/records/{cred_ex_id}/issue" : {
-      "post" : {
-        "deprecated" : true,
-        "parameters" : [ {
-          "description" : "Credential exchange identifier",
-          "in" : "path",
-          "name" : "cred_ex_id",
-          "required" : true,
-          "schema" : {
-            "pattern" : "[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-4[a-fA-F0-9]{3}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}",
-            "type" : "string"
-          }
-        } ],
-        "requestBody" : {
-          "content" : {
-            "*/*" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/V10CredentialIssueRequest"
-              }
-            }
-          },
-          "required" : false
-        },
-        "responses" : {
-          "200" : {
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/V10CredentialExchange"
-                }
-              }
-            },
-            "description" : ""
-          }
-        },
-        "summary" : "Send holder a credential",
-        "tags" : [ "issue-credential v1.0" ],
-        "x-codegen-request-body-name" : "body"
-      }
-    },
-    "/issue-credential/records/{cred_ex_id}/problem-report" : {
-      "post" : {
-        "deprecated" : true,
-        "parameters" : [ {
-          "description" : "Credential exchange identifier",
-          "in" : "path",
-          "name" : "cred_ex_id",
-          "required" : true,
-          "schema" : {
-            "pattern" : "[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-4[a-fA-F0-9]{3}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}",
-            "type" : "string"
-          }
-        } ],
-        "requestBody" : {
-          "content" : {
-            "*/*" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/V10CredentialProblemReportRequest"
-              }
-            }
-          },
-          "required" : false
-        },
-        "responses" : {
-          "200" : {
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/IssueCredentialModuleResponse"
-                }
-              }
-            },
-            "description" : ""
-          }
-        },
-        "summary" : "Send a problem report for credential exchange",
-        "tags" : [ "issue-credential v1.0" ],
-        "x-codegen-request-body-name" : "body"
-      }
-    },
-    "/issue-credential/records/{cred_ex_id}/send-offer" : {
-      "post" : {
-        "deprecated" : true,
-        "parameters" : [ {
-          "description" : "Credential exchange identifier",
-          "in" : "path",
-          "name" : "cred_ex_id",
-          "required" : true,
-          "schema" : {
-            "pattern" : "[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-4[a-fA-F0-9]{3}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}",
-            "type" : "string"
-          }
-        } ],
-        "requestBody" : {
-          "content" : {
-            "*/*" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/V10CredentialBoundOfferRequest"
-              }
-            }
-          },
-          "required" : false
-        },
-        "responses" : {
-          "200" : {
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/V10CredentialExchange"
-                }
-              }
-            },
-            "description" : ""
-          }
-        },
-        "summary" : "Send holder a credential offer in reference to a proposal with preview",
-        "tags" : [ "issue-credential v1.0" ],
-        "x-codegen-request-body-name" : "body"
-      }
-    },
-    "/issue-credential/records/{cred_ex_id}/send-request" : {
-      "post" : {
-        "deprecated" : true,
-        "parameters" : [ {
-          "description" : "Credential exchange identifier",
-          "in" : "path",
-          "name" : "cred_ex_id",
-          "required" : true,
-          "schema" : {
-            "pattern" : "[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-4[a-fA-F0-9]{3}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}",
-            "type" : "string"
-          }
-        } ],
-        "requestBody" : {
-          "content" : {
-            "*/*" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/V10CredentialExchangeAutoRemoveRequest"
-              }
-            }
-          },
-          "required" : false
-        },
-        "responses" : {
-          "200" : {
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/V10CredentialExchange"
-                }
-              }
-            },
-            "description" : ""
-          }
-        },
-        "summary" : "Send issuer a credential request",
-        "tags" : [ "issue-credential v1.0" ],
-        "x-codegen-request-body-name" : "body"
-      }
-    },
-    "/issue-credential/records/{cred_ex_id}/store" : {
-      "post" : {
-        "deprecated" : true,
-        "parameters" : [ {
-          "description" : "Credential exchange identifier",
-          "in" : "path",
-          "name" : "cred_ex_id",
-          "required" : true,
-          "schema" : {
-            "pattern" : "[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-4[a-fA-F0-9]{3}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}",
-            "type" : "string"
-          }
-        } ],
-        "requestBody" : {
-          "content" : {
-            "*/*" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/V10CredentialStoreRequest"
-              }
-            }
-          },
-          "required" : false
-        },
-        "responses" : {
-          "200" : {
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/V10CredentialExchange"
-                }
-              }
-            },
-            "description" : ""
-          }
-        },
-        "summary" : "Store a received credential",
-        "tags" : [ "issue-credential v1.0" ],
-        "x-codegen-request-body-name" : "body"
-      }
-    },
-    "/issue-credential/send" : {
-      "post" : {
-        "deprecated" : true,
-        "requestBody" : {
-          "content" : {
-            "*/*" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/V10CredentialProposalRequestMand"
-              }
-            }
-          },
-          "required" : false
-        },
-        "responses" : {
-          "200" : {
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/V10CredentialExchange"
-                }
-              }
-            },
-            "description" : ""
-          }
-        },
-        "summary" : "Send holder a credential, automating entire flow",
-        "tags" : [ "issue-credential v1.0" ],
-        "x-codegen-request-body-name" : "body"
-      }
-    },
-    "/issue-credential/send-offer" : {
-      "post" : {
-        "deprecated" : true,
-        "requestBody" : {
-          "content" : {
-            "*/*" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/V10CredentialFreeOfferRequest"
-              }
-            }
-          },
-          "required" : false
-        },
-        "responses" : {
-          "200" : {
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/V10CredentialExchange"
-                }
-              }
-            },
-            "description" : ""
-          }
-        },
-        "summary" : "Send holder a credential offer, independent of any proposal",
-        "tags" : [ "issue-credential v1.0" ],
-        "x-codegen-request-body-name" : "body"
-      }
-    },
-    "/issue-credential/send-proposal" : {
-      "post" : {
-        "deprecated" : true,
-        "requestBody" : {
-          "content" : {
-            "*/*" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/V10CredentialProposalRequestOpt"
-              }
-            }
-          },
-          "required" : false
-        },
-        "responses" : {
-          "200" : {
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/V10CredentialExchange"
-                }
-              }
-            },
-            "description" : ""
-          }
-        },
-        "summary" : "Send issuer a credential proposal",
-        "tags" : [ "issue-credential v1.0" ],
-        "x-codegen-request-body-name" : "body"
-      }
-    },
     "/jsonld/sign" : {
       "post" : {
         "deprecated" : true,
@@ -5210,469 +4704,6 @@
         },
         "summary" : "Sends a free presentation request not bound to any proposal",
         "tags" : [ "present-proof v2.0" ],
-        "x-codegen-request-body-name" : "body"
-      }
-    },
-    "/present-proof/create-request" : {
-      "post" : {
-        "deprecated" : true,
-        "requestBody" : {
-          "content" : {
-            "*/*" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/V10PresentationCreateRequestRequest"
-              }
-            }
-          },
-          "required" : false
-        },
-        "responses" : {
-          "200" : {
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/V10PresentationExchange"
-                }
-              }
-            },
-            "description" : ""
-          }
-        },
-        "summary" : "Creates a presentation request not bound to any proposal or connection",
-        "tags" : [ "present-proof v1.0" ],
-        "x-codegen-request-body-name" : "body"
-      }
-    },
-    "/present-proof/records" : {
-      "get" : {
-        "deprecated" : true,
-        "parameters" : [ {
-          "description" : "Connection identifier",
-          "in" : "query",
-          "name" : "connection_id",
-          "schema" : {
-            "type" : "string"
-          }
-        }, {
-          "description" : "Order results in descending order if true",
-          "in" : "query",
-          "name" : "descending",
-          "schema" : {
-            "default" : false,
-            "type" : "boolean"
-          }
-        }, {
-          "description" : "Number of results to return",
-          "in" : "query",
-          "name" : "limit",
-          "schema" : {
-            "default" : 100,
-            "maximum" : 10000,
-            "minimum" : 1,
-            "type" : "integer"
-          }
-        }, {
-          "description" : "Offset for pagination",
-          "in" : "query",
-          "name" : "offset",
-          "schema" : {
-            "default" : 0,
-            "minimum" : 0,
-            "type" : "integer"
-          }
-        }, {
-          "description" : "The column to order results by. Only \"id\" is currently supported.",
-          "in" : "query",
-          "name" : "order_by",
-          "schema" : {
-            "default" : "id",
-            "enum" : [ "id" ],
-            "type" : "string"
-          }
-        }, {
-          "description" : "Role assigned in presentation exchange",
-          "in" : "query",
-          "name" : "role",
-          "schema" : {
-            "enum" : [ "prover", "verifier" ],
-            "type" : "string"
-          }
-        }, {
-          "description" : "Presentation exchange state",
-          "in" : "query",
-          "name" : "state",
-          "schema" : {
-            "enum" : [ "proposal_sent", "proposal_received", "request_sent", "request_received", "presentation_sent", "presentation_received", "verified", "presentation_acked", "abandoned" ],
-            "type" : "string"
-          }
-        }, {
-          "description" : "Thread identifier",
-          "in" : "query",
-          "name" : "thread_id",
-          "schema" : {
-            "type" : "string"
-          }
-        } ],
-        "responses" : {
-          "200" : {
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/V10PresentationExchangeList"
-                }
-              }
-            },
-            "description" : ""
-          }
-        },
-        "summary" : "Fetch all present-proof exchange records",
-        "tags" : [ "present-proof v1.0" ]
-      }
-    },
-    "/present-proof/records/{pres_ex_id}" : {
-      "delete" : {
-        "deprecated" : true,
-        "parameters" : [ {
-          "description" : "Presentation exchange identifier",
-          "in" : "path",
-          "name" : "pres_ex_id",
-          "required" : true,
-          "schema" : {
-            "pattern" : "[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-4[a-fA-F0-9]{3}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}",
-            "type" : "string"
-          }
-        } ],
-        "responses" : {
-          "200" : {
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/V10PresentProofModuleResponse"
-                }
-              }
-            },
-            "description" : ""
-          }
-        },
-        "summary" : "Remove an existing presentation exchange record",
-        "tags" : [ "present-proof v1.0" ]
-      },
-      "get" : {
-        "deprecated" : true,
-        "parameters" : [ {
-          "description" : "Presentation exchange identifier",
-          "in" : "path",
-          "name" : "pres_ex_id",
-          "required" : true,
-          "schema" : {
-            "pattern" : "[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-4[a-fA-F0-9]{3}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}",
-            "type" : "string"
-          }
-        } ],
-        "responses" : {
-          "200" : {
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/V10PresentationExchange"
-                }
-              }
-            },
-            "description" : ""
-          }
-        },
-        "summary" : "Fetch a single presentation exchange record",
-        "tags" : [ "present-proof v1.0" ]
-      }
-    },
-    "/present-proof/records/{pres_ex_id}/credentials" : {
-      "get" : {
-        "deprecated" : true,
-        "parameters" : [ {
-          "description" : "Presentation exchange identifier",
-          "in" : "path",
-          "name" : "pres_ex_id",
-          "required" : true,
-          "schema" : {
-            "pattern" : "[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-4[a-fA-F0-9]{3}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}",
-            "type" : "string"
-          }
-        }, {
-          "description" : "Maximum number to retrieve (DEPRECATED - use limit instead)",
-          "in" : "query",
-          "name" : "count",
-          "schema" : {
-            "default" : "10",
-            "pattern" : "^[1-9][0-9]*$",
-            "type" : "string"
-          }
-        }, {
-          "description" : "(JSON) object mapping referents to extra WQL queries",
-          "in" : "query",
-          "name" : "extra_query",
-          "schema" : {
-            "pattern" : "^{\\s*\".*?\"\\s*:\\s*{.*?}\\s*(,\\s*\".*?\"\\s*:\\s*{.*?}\\s*)*\\s*}$",
-            "type" : "string"
-          }
-        }, {
-          "description" : "Number of results to return",
-          "in" : "query",
-          "name" : "limit",
-          "schema" : {
-            "maximum" : 10000,
-            "minimum" : 1,
-            "type" : "integer"
-          }
-        }, {
-          "description" : "Offset for pagination",
-          "in" : "query",
-          "name" : "offset",
-          "schema" : {
-            "minimum" : 0,
-            "type" : "integer"
-          }
-        }, {
-          "description" : "Proof request referents of interest, comma-separated",
-          "in" : "query",
-          "name" : "referent",
-          "schema" : {
-            "type" : "string"
-          }
-        }, {
-          "description" : "Start index (DEPRECATED - use offset instead)",
-          "in" : "query",
-          "name" : "start",
-          "schema" : {
-            "default" : "0",
-            "pattern" : "^[0-9]*$",
-            "type" : "string"
-          }
-        } ],
-        "responses" : {
-          "200" : {
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "items" : {
-                    "$ref" : "#/components/schemas/IndyCredPrecis"
-                  },
-                  "type" : "array"
-                }
-              }
-            },
-            "description" : ""
-          }
-        },
-        "summary" : "Fetch credentials for a presentation request from wallet",
-        "tags" : [ "present-proof v1.0" ]
-      }
-    },
-    "/present-proof/records/{pres_ex_id}/problem-report" : {
-      "post" : {
-        "deprecated" : true,
-        "parameters" : [ {
-          "description" : "Presentation exchange identifier",
-          "in" : "path",
-          "name" : "pres_ex_id",
-          "required" : true,
-          "schema" : {
-            "pattern" : "[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-4[a-fA-F0-9]{3}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}",
-            "type" : "string"
-          }
-        } ],
-        "requestBody" : {
-          "content" : {
-            "*/*" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/V10PresentationProblemReportRequest"
-              }
-            }
-          },
-          "required" : false
-        },
-        "responses" : {
-          "200" : {
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/V10PresentProofModuleResponse"
-                }
-              }
-            },
-            "description" : ""
-          }
-        },
-        "summary" : "Send a problem report for presentation exchange",
-        "tags" : [ "present-proof v1.0" ],
-        "x-codegen-request-body-name" : "body"
-      }
-    },
-    "/present-proof/records/{pres_ex_id}/send-presentation" : {
-      "post" : {
-        "deprecated" : true,
-        "parameters" : [ {
-          "description" : "Presentation exchange identifier",
-          "in" : "path",
-          "name" : "pres_ex_id",
-          "required" : true,
-          "schema" : {
-            "pattern" : "[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-4[a-fA-F0-9]{3}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}",
-            "type" : "string"
-          }
-        } ],
-        "requestBody" : {
-          "content" : {
-            "*/*" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/V10PresentationSendRequest"
-              }
-            }
-          },
-          "required" : false
-        },
-        "responses" : {
-          "200" : {
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/V10PresentationExchange"
-                }
-              }
-            },
-            "description" : ""
-          }
-        },
-        "summary" : "Sends a proof presentation",
-        "tags" : [ "present-proof v1.0" ],
-        "x-codegen-request-body-name" : "body"
-      }
-    },
-    "/present-proof/records/{pres_ex_id}/send-request" : {
-      "post" : {
-        "deprecated" : true,
-        "parameters" : [ {
-          "description" : "Presentation exchange identifier",
-          "in" : "path",
-          "name" : "pres_ex_id",
-          "required" : true,
-          "schema" : {
-            "pattern" : "[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-4[a-fA-F0-9]{3}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}",
-            "type" : "string"
-          }
-        } ],
-        "requestBody" : {
-          "content" : {
-            "*/*" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/V10PresentationSendRequestToProposal"
-              }
-            }
-          },
-          "required" : false
-        },
-        "responses" : {
-          "200" : {
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/V10PresentationExchange"
-                }
-              }
-            },
-            "description" : ""
-          }
-        },
-        "summary" : "Sends a presentation request in reference to a proposal",
-        "tags" : [ "present-proof v1.0" ],
-        "x-codegen-request-body-name" : "body"
-      }
-    },
-    "/present-proof/records/{pres_ex_id}/verify-presentation" : {
-      "post" : {
-        "deprecated" : true,
-        "parameters" : [ {
-          "description" : "Presentation exchange identifier",
-          "in" : "path",
-          "name" : "pres_ex_id",
-          "required" : true,
-          "schema" : {
-            "pattern" : "[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-4[a-fA-F0-9]{3}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}",
-            "type" : "string"
-          }
-        } ],
-        "responses" : {
-          "200" : {
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/V10PresentationExchange"
-                }
-              }
-            },
-            "description" : ""
-          }
-        },
-        "summary" : "Verify a received presentation",
-        "tags" : [ "present-proof v1.0" ]
-      }
-    },
-    "/present-proof/send-proposal" : {
-      "post" : {
-        "deprecated" : true,
-        "requestBody" : {
-          "content" : {
-            "*/*" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/V10PresentationProposalRequest"
-              }
-            }
-          },
-          "required" : false
-        },
-        "responses" : {
-          "200" : {
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/V10PresentationExchange"
-                }
-              }
-            },
-            "description" : ""
-          }
-        },
-        "summary" : "Sends a presentation proposal",
-        "tags" : [ "present-proof v1.0" ],
-        "x-codegen-request-body-name" : "body"
-      }
-    },
-    "/present-proof/send-request" : {
-      "post" : {
-        "deprecated" : true,
-        "requestBody" : {
-          "content" : {
-            "*/*" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/V10PresentationSendRequestRequest"
-              }
-            }
-          },
-          "required" : false
-        },
-        "responses" : {
-          "200" : {
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/V10PresentationExchange"
-                }
-              }
-            },
-            "description" : ""
-          }
-        },
-        "summary" : "Sends a free presentation request not bound to any proposal",
-        "tags" : [ "present-proof v1.0" ],
         "x-codegen-request-body-name" : "body"
       }
     },
@@ -8834,28 +7865,6 @@
         },
         "type" : "object"
       },
-      "CredAttrSpec" : {
-        "properties" : {
-          "mime-type" : {
-            "description" : "MIME type: omit for (null) default",
-            "example" : "image/jpeg",
-            "nullable" : true,
-            "type" : "string"
-          },
-          "name" : {
-            "description" : "Attribute name",
-            "example" : "favourite_drink",
-            "type" : "string"
-          },
-          "value" : {
-            "description" : "Attribute value: base64-encode if MIME type is present",
-            "example" : "martini",
-            "type" : "string"
-          }
-        },
-        "required" : [ "name", "value" ],
-        "type" : "object"
-      },
       "CredDef" : {
         "properties" : {
           "issuerId" : {
@@ -9186,18 +8195,6 @@
         },
         "type" : "object"
       },
-      "CredRevIndyRecordsResultSchemaAnonCreds" : {
-        "properties" : {
-          "rev_reg_delta" : {
-            "additionalProperties" : {
-              "type" : "object"
-            },
-            "description" : "Indy revocation registry delta",
-            "type" : "object"
-          }
-        },
-        "type" : "object"
-      },
       "CredRevRecordDetailsResult" : {
         "properties" : {
           "results" : {
@@ -9232,6 +8229,18 @@
         "properties" : {
           "result" : {
             "$ref" : "#/components/schemas/IssuerCredRevRecordSchemaAnonCreds"
+          }
+        },
+        "type" : "object"
+      },
+      "CredRevRecordsResultSchemaAnonCreds" : {
+        "properties" : {
+          "rev_reg_delta" : {
+            "additionalProperties" : {
+              "type" : "object"
+            },
+            "description" : "AnonCreds revocation registry delta",
+            "type" : "object"
           }
         },
         "type" : "object"
@@ -9426,104 +8435,6 @@
               "type" : "string"
             },
             "type" : "array"
-          }
-        },
-        "type" : "object"
-      },
-      "CredentialOffer" : {
-        "properties" : {
-          "@id" : {
-            "description" : "Message identifier",
-            "example" : "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-            "type" : "string"
-          },
-          "@type" : {
-            "description" : "Message type",
-            "example" : "https://didcomm.org/my-family/1.0/my-message-type",
-            "type" : "string"
-          },
-          "comment" : {
-            "description" : "Human-readable comment",
-            "nullable" : true,
-            "type" : "string"
-          },
-          "credential_preview" : {
-            "$ref" : "#/components/schemas/CredentialPreview"
-          },
-          "offers~attach" : {
-            "items" : {
-              "$ref" : "#/components/schemas/AttachDecorator"
-            },
-            "type" : "array"
-          }
-        },
-        "required" : [ "offers~attach" ],
-        "type" : "object"
-      },
-      "CredentialPreview" : {
-        "properties" : {
-          "@type" : {
-            "description" : "Message type identifier",
-            "example" : "issue-credential/1.0/credential-preview",
-            "type" : "string"
-          },
-          "attributes" : {
-            "items" : {
-              "$ref" : "#/components/schemas/CredAttrSpec"
-            },
-            "type" : "array"
-          }
-        },
-        "required" : [ "attributes" ],
-        "type" : "object"
-      },
-      "CredentialProposal" : {
-        "properties" : {
-          "@id" : {
-            "description" : "Message identifier",
-            "example" : "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-            "type" : "string"
-          },
-          "@type" : {
-            "description" : "Message type",
-            "example" : "https://didcomm.org/my-family/1.0/my-message-type",
-            "type" : "string"
-          },
-          "comment" : {
-            "description" : "Human-readable comment",
-            "nullable" : true,
-            "type" : "string"
-          },
-          "cred_def_id" : {
-            "example" : "WgWxqztrNooG92RXvxSTWv:3:CL:20:tag",
-            "pattern" : "^([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}):3:CL:(([1-9][0-9]*)|([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}:2:.+:[0-9.]+)):(.+)?$",
-            "type" : "string"
-          },
-          "credential_proposal" : {
-            "$ref" : "#/components/schemas/CredentialPreview"
-          },
-          "issuer_did" : {
-            "example" : "did:indy:sovrin:WRfXPg8dantKVubE3HX8pw",
-            "pattern" : "^(did:(sov|indy):)?[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}$",
-            "type" : "string"
-          },
-          "schema_id" : {
-            "example" : "WgWxqztrNooG92RXvxSTWv:2:schema_name:1.0",
-            "pattern" : "^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}:2:.+:[0-9.]+$",
-            "type" : "string"
-          },
-          "schema_issuer_did" : {
-            "example" : "did:indy:sovrin:WRfXPg8dantKVubE3HX8pw",
-            "pattern" : "^(did:(sov|indy):)?[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}$",
-            "type" : "string"
-          },
-          "schema_name" : {
-            "type" : "string"
-          },
-          "schema_version" : {
-            "example" : "1.0",
-            "pattern" : "^[0-9.]+$",
-            "type" : "string"
           }
         },
         "type" : "object"
@@ -10333,53 +9244,6 @@
       "HolderModuleResponse" : {
         "type" : "object"
       },
-      "IndyAttrValue" : {
-        "properties" : {
-          "encoded" : {
-            "description" : "Attribute encoded value",
-            "example" : "-1",
-            "pattern" : "^-?[0-9]*$",
-            "type" : "string"
-          },
-          "raw" : {
-            "description" : "Attribute raw value",
-            "type" : "string"
-          }
-        },
-        "required" : [ "encoded", "raw" ],
-        "type" : "object"
-      },
-      "IndyCredAbstract" : {
-        "properties" : {
-          "cred_def_id" : {
-            "description" : "Credential definition identifier",
-            "example" : "WgWxqztrNooG92RXvxSTWv:3:CL:20:tag",
-            "pattern" : "^([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}):3:CL:(([1-9][0-9]*)|([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}:2:.+:[0-9.]+)):(.+)?$",
-            "type" : "string"
-          },
-          "key_correctness_proof" : {
-            "allOf" : [ {
-              "$ref" : "#/components/schemas/IndyKeyCorrectnessProof"
-            } ],
-            "description" : "Key correctness proof",
-            "type" : "object"
-          },
-          "nonce" : {
-            "description" : "Nonce in credential abstract",
-            "example" : "0",
-            "pattern" : "^[0-9]*$",
-            "type" : "string"
-          },
-          "schema_id" : {
-            "description" : "Schema identifier",
-            "example" : "WgWxqztrNooG92RXvxSTWv:2:schema_name:1.0",
-            "pattern" : "^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}:2:.+:[0-9.]+$",
-            "type" : "string"
-          }
-        },
-        "required" : [ "cred_def_id", "key_correctness_proof", "nonce", "schema_id" ],
-        "type" : "object"
-      },
       "IndyCredInfo" : {
         "properties" : {
           "attrs" : {
@@ -10452,253 +9316,6 @@
         "required" : [ "cred_info" ],
         "type" : "object"
       },
-      "IndyCredRequest" : {
-        "properties" : {
-          "blinded_ms" : {
-            "additionalProperties" : {
-              "type" : "object"
-            },
-            "description" : "Blinded master secret",
-            "type" : "object"
-          },
-          "blinded_ms_correctness_proof" : {
-            "additionalProperties" : {
-              "type" : "object"
-            },
-            "description" : "Blinded master secret correctness proof",
-            "type" : "object"
-          },
-          "cred_def_id" : {
-            "description" : "Credential definition identifier",
-            "example" : "WgWxqztrNooG92RXvxSTWv:3:CL:20:tag",
-            "pattern" : "^([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}):3:CL:(([1-9][0-9]*)|([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}:2:.+:[0-9.]+)):(.+)?$",
-            "type" : "string"
-          },
-          "nonce" : {
-            "description" : "Nonce in credential request",
-            "example" : "0",
-            "pattern" : "^[0-9]*$",
-            "type" : "string"
-          },
-          "prover_did" : {
-            "description" : "Prover DID/Random String/UUID",
-            "example" : "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-            "type" : "string"
-          }
-        },
-        "required" : [ "blinded_ms", "blinded_ms_correctness_proof", "cred_def_id", "nonce", "prover_did" ],
-        "type" : "object"
-      },
-      "IndyCredential" : {
-        "properties" : {
-          "cred_def_id" : {
-            "description" : "Credential definition identifier",
-            "example" : "WgWxqztrNooG92RXvxSTWv:3:CL:20:tag",
-            "pattern" : "^([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}):3:CL:(([1-9][0-9]*)|([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}:2:.+:[0-9.]+)):(.+)?$",
-            "type" : "string"
-          },
-          "rev_reg" : {
-            "additionalProperties" : {
-              "type" : "object"
-            },
-            "description" : "Revocation registry state",
-            "nullable" : true,
-            "type" : "object"
-          },
-          "rev_reg_id" : {
-            "description" : "Revocation registry identifier",
-            "example" : "WgWxqztrNooG92RXvxSTWv:4:WgWxqztrNooG92RXvxSTWv:3:CL:20:tag:CL_ACCUM:0",
-            "nullable" : true,
-            "pattern" : "^([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}):4:([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}):3:CL:(([1-9][0-9]*)|([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}:2:.+:[0-9.]+))(:.+)?:CL_ACCUM:(.+$)",
-            "type" : "string"
-          },
-          "schema_id" : {
-            "description" : "Schema identifier",
-            "example" : "WgWxqztrNooG92RXvxSTWv:2:schema_name:1.0",
-            "pattern" : "^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}:2:.+:[0-9.]+$",
-            "type" : "string"
-          },
-          "signature" : {
-            "additionalProperties" : {
-              "type" : "object"
-            },
-            "description" : "Credential signature",
-            "type" : "object"
-          },
-          "signature_correctness_proof" : {
-            "additionalProperties" : {
-              "type" : "object"
-            },
-            "description" : "Credential signature correctness proof",
-            "type" : "object"
-          },
-          "values" : {
-            "additionalProperties" : {
-              "$ref" : "#/components/schemas/IndyAttrValue"
-            },
-            "description" : "Credential attributes",
-            "type" : "object"
-          },
-          "witness" : {
-            "additionalProperties" : {
-              "type" : "object"
-            },
-            "description" : "Witness for revocation proof",
-            "nullable" : true,
-            "type" : "object"
-          }
-        },
-        "required" : [ "cred_def_id", "schema_id", "signature", "signature_correctness_proof", "values" ],
-        "type" : "object"
-      },
-      "IndyEQProof" : {
-        "properties" : {
-          "a_prime" : {
-            "example" : "0",
-            "pattern" : "^[0-9]*$",
-            "type" : "string"
-          },
-          "e" : {
-            "example" : "0",
-            "pattern" : "^[0-9]*$",
-            "type" : "string"
-          },
-          "m" : {
-            "additionalProperties" : {
-              "example" : "0",
-              "pattern" : "^[0-9]*$",
-              "type" : "string"
-            },
-            "type" : "object"
-          },
-          "m2" : {
-            "example" : "0",
-            "pattern" : "^[0-9]*$",
-            "type" : "string"
-          },
-          "revealed_attrs" : {
-            "additionalProperties" : {
-              "example" : "-1",
-              "pattern" : "^-?[0-9]*$",
-              "type" : "string"
-            },
-            "type" : "object"
-          },
-          "v" : {
-            "example" : "0",
-            "pattern" : "^[0-9]*$",
-            "type" : "string"
-          }
-        },
-        "type" : "object"
-      },
-      "IndyGEProof" : {
-        "properties" : {
-          "alpha" : {
-            "example" : "0",
-            "pattern" : "^[0-9]*$",
-            "type" : "string"
-          },
-          "mj" : {
-            "example" : "0",
-            "pattern" : "^[0-9]*$",
-            "type" : "string"
-          },
-          "predicate" : {
-            "$ref" : "#/components/schemas/IndyGEProofPred"
-          },
-          "r" : {
-            "additionalProperties" : {
-              "example" : "0",
-              "pattern" : "^[0-9]*$",
-              "type" : "string"
-            },
-            "type" : "object"
-          },
-          "t" : {
-            "additionalProperties" : {
-              "example" : "0",
-              "pattern" : "^[0-9]*$",
-              "type" : "string"
-            },
-            "type" : "object"
-          },
-          "u" : {
-            "additionalProperties" : {
-              "example" : "0",
-              "pattern" : "^[0-9]*$",
-              "type" : "string"
-            },
-            "type" : "object"
-          }
-        },
-        "type" : "object"
-      },
-      "IndyGEProofPred" : {
-        "properties" : {
-          "attr_name" : {
-            "description" : "Attribute name, indy-canonicalized",
-            "type" : "string"
-          },
-          "p_type" : {
-            "description" : "Predicate type",
-            "enum" : [ "LT", "LE", "GE", "GT" ],
-            "type" : "string"
-          },
-          "value" : {
-            "description" : "Predicate threshold value",
-            "type" : "integer"
-          }
-        },
-        "type" : "object"
-      },
-      "IndyKeyCorrectnessProof" : {
-        "properties" : {
-          "c" : {
-            "description" : "c in key correctness proof",
-            "example" : "0",
-            "pattern" : "^[0-9]*$",
-            "type" : "string"
-          },
-          "xr_cap" : {
-            "description" : "xr_cap in key correctness proof",
-            "items" : {
-              "description" : "xr_cap components in key correctness proof",
-              "items" : {
-                "description" : "xr_cap component values in key correctness proof",
-                "type" : "string"
-              },
-              "type" : "array"
-            },
-            "type" : "array"
-          },
-          "xz_cap" : {
-            "description" : "xz_cap in key correctness proof",
-            "example" : "0",
-            "pattern" : "^[0-9]*$",
-            "type" : "string"
-          }
-        },
-        "required" : [ "c", "xr_cap", "xz_cap" ],
-        "type" : "object"
-      },
-      "IndyNonRevocProof" : {
-        "properties" : {
-          "c_list" : {
-            "additionalProperties" : {
-              "type" : "string"
-            },
-            "type" : "object"
-          },
-          "x_list" : {
-            "additionalProperties" : {
-              "type" : "string"
-            },
-            "type" : "object"
-          }
-        },
-        "type" : "object"
-      },
       "IndyNonRevocationInterval" : {
         "properties" : {
           "from" : {
@@ -10716,87 +9333,6 @@
             "type" : "integer"
           }
         },
-        "type" : "object"
-      },
-      "IndyPresAttrSpec" : {
-        "properties" : {
-          "cred_def_id" : {
-            "example" : "WgWxqztrNooG92RXvxSTWv:3:CL:20:tag",
-            "pattern" : "^([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}):3:CL:(([1-9][0-9]*)|([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}:2:.+:[0-9.]+)):(.+)?$",
-            "type" : "string"
-          },
-          "mime-type" : {
-            "description" : "MIME type (default null)",
-            "example" : "image/jpeg",
-            "type" : "string"
-          },
-          "name" : {
-            "description" : "Attribute name",
-            "example" : "favourite_drink",
-            "type" : "string"
-          },
-          "referent" : {
-            "description" : "Credential referent",
-            "example" : "0",
-            "type" : "string"
-          },
-          "value" : {
-            "description" : "Attribute value",
-            "example" : "martini",
-            "type" : "string"
-          }
-        },
-        "required" : [ "name" ],
-        "type" : "object"
-      },
-      "IndyPresPredSpec" : {
-        "properties" : {
-          "cred_def_id" : {
-            "description" : "Credential definition identifier",
-            "example" : "WgWxqztrNooG92RXvxSTWv:3:CL:20:tag",
-            "pattern" : "^([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}):3:CL:(([1-9][0-9]*)|([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}:2:.+:[0-9.]+)):(.+)?$",
-            "type" : "string"
-          },
-          "name" : {
-            "description" : "Attribute name",
-            "example" : "high_score",
-            "type" : "string"
-          },
-          "predicate" : {
-            "description" : "Predicate type ('<', '<=', '>=', or '>')",
-            "enum" : [ "<", "<=", ">=", ">" ],
-            "example" : ">=",
-            "type" : "string"
-          },
-          "threshold" : {
-            "description" : "Threshold value",
-            "type" : "integer"
-          }
-        },
-        "required" : [ "name", "predicate", "threshold" ],
-        "type" : "object"
-      },
-      "IndyPresPreview" : {
-        "properties" : {
-          "@type" : {
-            "description" : "Message type identifier",
-            "example" : "https://didcomm.org/present-proof/1.0/presentation-preview",
-            "type" : "string"
-          },
-          "attributes" : {
-            "items" : {
-              "$ref" : "#/components/schemas/IndyPresAttrSpec"
-            },
-            "type" : "array"
-          },
-          "predicates" : {
-            "items" : {
-              "$ref" : "#/components/schemas/IndyPresPredSpec"
-            },
-            "type" : "array"
-          }
-        },
-        "required" : [ "attributes", "predicates" ],
         "type" : "object"
       },
       "IndyPresSpec" : {
@@ -10831,143 +9367,6 @@
           }
         },
         "required" : [ "requested_attributes", "requested_predicates", "self_attested_attributes" ],
-        "type" : "object"
-      },
-      "IndyPrimaryProof" : {
-        "properties" : {
-          "eq_proof" : {
-            "allOf" : [ {
-              "$ref" : "#/components/schemas/IndyEQProof"
-            } ],
-            "description" : "Indy equality proof",
-            "nullable" : true,
-            "type" : "object"
-          },
-          "ge_proofs" : {
-            "description" : "Indy GE proofs",
-            "items" : {
-              "$ref" : "#/components/schemas/IndyGEProof"
-            },
-            "nullable" : true,
-            "type" : "array"
-          }
-        },
-        "type" : "object"
-      },
-      "IndyProof" : {
-        "properties" : {
-          "identifiers" : {
-            "description" : "Indy proof.identifiers content",
-            "items" : {
-              "$ref" : "#/components/schemas/IndyProofIdentifier"
-            },
-            "type" : "array"
-          },
-          "proof" : {
-            "allOf" : [ {
-              "$ref" : "#/components/schemas/IndyProofProof"
-            } ],
-            "description" : "Indy proof.proof content",
-            "type" : "object"
-          },
-          "requested_proof" : {
-            "allOf" : [ {
-              "$ref" : "#/components/schemas/IndyProofRequestedProof"
-            } ],
-            "description" : "Indy proof.requested_proof content",
-            "type" : "object"
-          }
-        },
-        "type" : "object"
-      },
-      "IndyProofIdentifier" : {
-        "properties" : {
-          "cred_def_id" : {
-            "description" : "Credential definition identifier",
-            "example" : "WgWxqztrNooG92RXvxSTWv:3:CL:20:tag",
-            "pattern" : "^([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}):3:CL:(([1-9][0-9]*)|([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}:2:.+:[0-9.]+)):(.+)?$",
-            "type" : "string"
-          },
-          "rev_reg_id" : {
-            "description" : "Revocation registry identifier",
-            "example" : "WgWxqztrNooG92RXvxSTWv:4:WgWxqztrNooG92RXvxSTWv:3:CL:20:tag:CL_ACCUM:0",
-            "nullable" : true,
-            "pattern" : "^([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}):4:([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}):3:CL:(([1-9][0-9]*)|([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}:2:.+:[0-9.]+))(:.+)?:CL_ACCUM:(.+$)",
-            "type" : "string"
-          },
-          "schema_id" : {
-            "description" : "Schema identifier",
-            "example" : "WgWxqztrNooG92RXvxSTWv:2:schema_name:1.0",
-            "pattern" : "^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}:2:.+:[0-9.]+$",
-            "type" : "string"
-          },
-          "timestamp" : {
-            "description" : "Timestamp epoch",
-            "example" : 1640995199,
-            "maximum" : 18446744073709551615,
-            "minimum" : 0,
-            "nullable" : true,
-            "type" : "integer"
-          }
-        },
-        "type" : "object"
-      },
-      "IndyProofProof" : {
-        "properties" : {
-          "aggregated_proof" : {
-            "allOf" : [ {
-              "$ref" : "#/components/schemas/IndyProofProofAggregatedProof"
-            } ],
-            "description" : "Indy proof aggregated proof",
-            "type" : "object"
-          },
-          "proofs" : {
-            "description" : "Indy proof proofs",
-            "items" : {
-              "$ref" : "#/components/schemas/IndyProofProofProofsProof"
-            },
-            "type" : "array"
-          }
-        },
-        "type" : "object"
-      },
-      "IndyProofProofAggregatedProof" : {
-        "properties" : {
-          "c_hash" : {
-            "description" : "c_hash value",
-            "type" : "string"
-          },
-          "c_list" : {
-            "description" : "c_list value",
-            "items" : {
-              "items" : {
-                "type" : "integer"
-              },
-              "type" : "array"
-            },
-            "type" : "array"
-          }
-        },
-        "type" : "object"
-      },
-      "IndyProofProofProofsProof" : {
-        "properties" : {
-          "non_revoc_proof" : {
-            "allOf" : [ {
-              "$ref" : "#/components/schemas/IndyNonRevocProof"
-            } ],
-            "description" : "Indy non-revocation proof",
-            "nullable" : true,
-            "type" : "object"
-          },
-          "primary_proof" : {
-            "allOf" : [ {
-              "$ref" : "#/components/schemas/IndyPrimaryProof"
-            } ],
-            "description" : "Indy primary proof",
-            "type" : "object"
-          }
-        },
         "type" : "object"
       },
       "IndyProofReqAttrSpec" : {
@@ -11133,92 +9532,6 @@
             "maximum" : 18446744073709551615,
             "minimum" : 0,
             "type" : "integer"
-          }
-        },
-        "type" : "object"
-      },
-      "IndyProofRequestedProof" : {
-        "properties" : {
-          "predicates" : {
-            "additionalProperties" : {
-              "$ref" : "#/components/schemas/IndyProofRequestedProofPredicate"
-            },
-            "description" : "Proof requested proof predicates.",
-            "type" : "object"
-          },
-          "revealed_attr_groups" : {
-            "additionalProperties" : {
-              "$ref" : "#/components/schemas/IndyProofRequestedProofRevealedAttrGroup"
-            },
-            "description" : "Proof requested proof revealed attribute groups",
-            "nullable" : true,
-            "type" : "object"
-          },
-          "revealed_attrs" : {
-            "additionalProperties" : {
-              "$ref" : "#/components/schemas/IndyProofRequestedProofRevealedAttr"
-            },
-            "description" : "Proof requested proof revealed attributes",
-            "nullable" : true,
-            "type" : "object"
-          },
-          "self_attested_attrs" : {
-            "additionalProperties" : {
-              "type" : "object"
-            },
-            "description" : "Proof requested proof self-attested attributes",
-            "type" : "object"
-          },
-          "unrevealed_attrs" : {
-            "additionalProperties" : {
-              "type" : "object"
-            },
-            "description" : "Unrevealed attributes",
-            "type" : "object"
-          }
-        },
-        "type" : "object"
-      },
-      "IndyProofRequestedProofPredicate" : {
-        "properties" : {
-          "sub_proof_index" : {
-            "description" : "Sub-proof index",
-            "type" : "integer"
-          }
-        },
-        "type" : "object"
-      },
-      "IndyProofRequestedProofRevealedAttr" : {
-        "properties" : {
-          "encoded" : {
-            "description" : "Encoded value",
-            "example" : "-1",
-            "pattern" : "^-?[0-9]*$",
-            "type" : "string"
-          },
-          "raw" : {
-            "description" : "Raw value",
-            "type" : "string"
-          },
-          "sub_proof_index" : {
-            "description" : "Sub-proof index",
-            "type" : "integer"
-          }
-        },
-        "type" : "object"
-      },
-      "IndyProofRequestedProofRevealedAttrGroup" : {
-        "properties" : {
-          "sub_proof_index" : {
-            "description" : "Sub-proof index",
-            "type" : "integer"
-          },
-          "values" : {
-            "additionalProperties" : {
-              "$ref" : "#/components/schemas/RawEncoded"
-            },
-            "description" : "Indy proof requested proof revealed attr groups group value",
-            "type" : "object"
           }
         },
         "type" : "object"
@@ -11703,9 +10016,6 @@
         "type" : "object"
       },
       "InvitationRecordResponse" : {
-        "type" : "object"
-      },
-      "IssueCredentialModuleResponse" : {
         "type" : "object"
       },
       "IssueCredentialRequest" : {
@@ -12835,57 +11145,6 @@
         },
         "type" : "object"
       },
-      "PresentationProposal" : {
-        "properties" : {
-          "@id" : {
-            "description" : "Message identifier",
-            "example" : "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-            "type" : "string"
-          },
-          "@type" : {
-            "description" : "Message type",
-            "example" : "https://didcomm.org/my-family/1.0/my-message-type",
-            "type" : "string"
-          },
-          "comment" : {
-            "description" : "Human-readable comment",
-            "nullable" : true,
-            "type" : "string"
-          },
-          "presentation_proposal" : {
-            "$ref" : "#/components/schemas/IndyPresPreview"
-          }
-        },
-        "required" : [ "presentation_proposal" ],
-        "type" : "object"
-      },
-      "PresentationRequest" : {
-        "properties" : {
-          "@id" : {
-            "description" : "Message identifier",
-            "example" : "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-            "type" : "string"
-          },
-          "@type" : {
-            "description" : "Message type",
-            "example" : "https://didcomm.org/my-family/1.0/my-message-type",
-            "type" : "string"
-          },
-          "comment" : {
-            "description" : "Human-readable comment",
-            "nullable" : true,
-            "type" : "string"
-          },
-          "request_presentations~attach" : {
-            "items" : {
-              "$ref" : "#/components/schemas/AttachDecorator"
-            },
-            "type" : "array"
-          }
-        },
-        "required" : [ "request_presentations~attach" ],
-        "type" : "object"
-      },
       "PresentationVerificationResult" : {
         "additionalProperties" : false,
         "properties" : {
@@ -13135,21 +11394,6 @@
           }
         },
         "required" : [ "feature-type", "match" ],
-        "type" : "object"
-      },
-      "RawEncoded" : {
-        "properties" : {
-          "encoded" : {
-            "description" : "Encoded value",
-            "example" : "-1",
-            "pattern" : "^-?[0-9]*$",
-            "type" : "string"
-          },
-          "raw" : {
-            "description" : "Raw value",
-            "type" : "string"
-          }
-        },
         "type" : "object"
       },
       "RemoveWalletRequest" : {
@@ -13523,7 +11767,7 @@
             "additionalProperties" : {
               "type" : "object"
             },
-            "description" : "Indy revocation registry delta",
+            "description" : "AnonCreds revocation registry delta",
             "type" : "object"
           }
         },
@@ -14632,469 +12876,6 @@
       "UpgradeResult" : {
         "type" : "object"
       },
-      "V10CredentialBoundOfferRequest" : {
-        "properties" : {
-          "counter_proposal" : {
-            "allOf" : [ {
-              "$ref" : "#/components/schemas/CredentialProposal"
-            } ],
-            "description" : "Optional counter-proposal",
-            "type" : "object"
-          }
-        },
-        "type" : "object"
-      },
-      "V10CredentialConnFreeOfferRequest" : {
-        "properties" : {
-          "auto_issue" : {
-            "description" : "Whether to respond automatically to credential requests, creating and issuing requested credentials",
-            "type" : "boolean"
-          },
-          "auto_remove" : {
-            "description" : "Whether to remove the credential exchange record on completion (overrides --preserve-exchange-records configuration setting)",
-            "type" : "boolean"
-          },
-          "comment" : {
-            "description" : "Human-readable comment",
-            "nullable" : true,
-            "type" : "string"
-          },
-          "cred_def_id" : {
-            "description" : "Credential definition identifier",
-            "example" : "WgWxqztrNooG92RXvxSTWv:3:CL:20:tag",
-            "pattern" : "^([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}):3:CL:(([1-9][0-9]*)|([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}:2:.+:[0-9.]+)):(.+)?$",
-            "type" : "string"
-          },
-          "credential_preview" : {
-            "$ref" : "#/components/schemas/CredentialPreview"
-          },
-          "trace" : {
-            "description" : "Record trace information, based on agent configuration",
-            "type" : "boolean"
-          }
-        },
-        "required" : [ "cred_def_id", "credential_preview" ],
-        "type" : "object"
-      },
-      "V10CredentialCreate" : {
-        "properties" : {
-          "auto_remove" : {
-            "description" : "Whether to remove the credential exchange record on completion (overrides --preserve-exchange-records configuration setting)",
-            "type" : "boolean"
-          },
-          "comment" : {
-            "description" : "Human-readable comment",
-            "nullable" : true,
-            "type" : "string"
-          },
-          "cred_def_id" : {
-            "description" : "Credential definition identifier",
-            "example" : "WgWxqztrNooG92RXvxSTWv:3:CL:20:tag",
-            "pattern" : "^([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}):3:CL:(([1-9][0-9]*)|([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}:2:.+:[0-9.]+)):(.+)?$",
-            "type" : "string"
-          },
-          "credential_proposal" : {
-            "$ref" : "#/components/schemas/CredentialPreview"
-          },
-          "issuer_did" : {
-            "description" : "Credential issuer DID",
-            "example" : "did:indy:sovrin:WRfXPg8dantKVubE3HX8pw",
-            "pattern" : "^(did:(sov|indy):)?[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}$",
-            "type" : "string"
-          },
-          "schema_id" : {
-            "description" : "Schema identifier",
-            "example" : "WgWxqztrNooG92RXvxSTWv:2:schema_name:1.0",
-            "pattern" : "^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}:2:.+:[0-9.]+$",
-            "type" : "string"
-          },
-          "schema_issuer_did" : {
-            "description" : "Schema issuer DID",
-            "example" : "did:indy:sovrin:WRfXPg8dantKVubE3HX8pw",
-            "pattern" : "^(did:(sov|indy):)?[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}$",
-            "type" : "string"
-          },
-          "schema_name" : {
-            "description" : "Schema name",
-            "example" : "preferences",
-            "type" : "string"
-          },
-          "schema_version" : {
-            "description" : "Schema version",
-            "example" : "1.0",
-            "pattern" : "^[0-9.]+$",
-            "type" : "string"
-          },
-          "trace" : {
-            "description" : "Record trace information, based on agent configuration",
-            "type" : "boolean"
-          }
-        },
-        "required" : [ "credential_proposal" ],
-        "type" : "object"
-      },
-      "V10CredentialExchange" : {
-        "additionalProperties" : false,
-        "properties" : {
-          "auto_issue" : {
-            "description" : "Issuer choice to issue to request in this credential exchange",
-            "example" : false,
-            "type" : "boolean"
-          },
-          "auto_offer" : {
-            "description" : "Holder choice to accept offer in this credential exchange",
-            "example" : false,
-            "type" : "boolean"
-          },
-          "auto_remove" : {
-            "description" : "Issuer choice to remove this credential exchange record when complete",
-            "example" : false,
-            "type" : "boolean"
-          },
-          "connection_id" : {
-            "description" : "Connection identifier",
-            "example" : "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-            "type" : "string"
-          },
-          "created_at" : {
-            "description" : "Time of record creation",
-            "example" : "2021-12-31T23:59:59Z",
-            "pattern" : "^\\d{4}-\\d\\d-\\d\\d[T ]\\d\\d:\\d\\d(?:\\:(?:\\d\\d(?:\\.\\d{1,6})?))?(?:[+-]\\d\\d:?\\d\\d|Z|)$",
-            "type" : "string"
-          },
-          "credential" : {
-            "allOf" : [ {
-              "$ref" : "#/components/schemas/IndyCredInfo"
-            } ],
-            "description" : "Credential as stored",
-            "type" : "object"
-          },
-          "credential_definition_id" : {
-            "description" : "Credential definition identifier",
-            "example" : "WgWxqztrNooG92RXvxSTWv:3:CL:20:tag",
-            "pattern" : "^([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}):3:CL:(([1-9][0-9]*)|([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}:2:.+:[0-9.]+)):(.+)?$",
-            "type" : "string"
-          },
-          "credential_exchange_id" : {
-            "description" : "Credential exchange identifier",
-            "example" : "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-            "type" : "string"
-          },
-          "credential_id" : {
-            "description" : "Credential identifier",
-            "example" : "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-            "type" : "string"
-          },
-          "credential_offer" : {
-            "allOf" : [ {
-              "$ref" : "#/components/schemas/IndyCredAbstract"
-            } ],
-            "description" : "(Indy) credential offer",
-            "type" : "object"
-          },
-          "credential_offer_dict" : {
-            "allOf" : [ {
-              "$ref" : "#/components/schemas/CredentialOffer"
-            } ],
-            "description" : "Credential offer message",
-            "type" : "object"
-          },
-          "credential_proposal_dict" : {
-            "allOf" : [ {
-              "$ref" : "#/components/schemas/CredentialProposal"
-            } ],
-            "description" : "Credential proposal message",
-            "type" : "object"
-          },
-          "credential_request" : {
-            "allOf" : [ {
-              "$ref" : "#/components/schemas/IndyCredRequest"
-            } ],
-            "description" : "(Indy) credential request",
-            "type" : "object"
-          },
-          "credential_request_metadata" : {
-            "additionalProperties" : {
-              "type" : "object"
-            },
-            "description" : "(Indy) credential request metadata",
-            "type" : "object"
-          },
-          "error_msg" : {
-            "description" : "Error message",
-            "example" : "Credential definition identifier is not set in proposal",
-            "type" : "string"
-          },
-          "initiator" : {
-            "description" : "Issue-credential exchange initiator: self or external",
-            "enum" : [ "self", "external" ],
-            "example" : "self",
-            "type" : "string"
-          },
-          "parent_thread_id" : {
-            "description" : "Parent thread identifier",
-            "example" : "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-            "type" : "string"
-          },
-          "raw_credential" : {
-            "allOf" : [ {
-              "$ref" : "#/components/schemas/IndyCredential"
-            } ],
-            "description" : "Credential as received, prior to storage in holder wallet",
-            "type" : "object"
-          },
-          "revoc_reg_id" : {
-            "description" : "Revocation registry identifier",
-            "type" : "string"
-          },
-          "revocation_id" : {
-            "description" : "Credential identifier within revocation registry",
-            "type" : "string"
-          },
-          "role" : {
-            "description" : "Issue-credential exchange role: holder or issuer",
-            "enum" : [ "holder", "issuer" ],
-            "example" : "issuer",
-            "type" : "string"
-          },
-          "schema_id" : {
-            "description" : "Schema identifier",
-            "example" : "WgWxqztrNooG92RXvxSTWv:2:schema_name:1.0",
-            "pattern" : "^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}:2:.+:[0-9.]+$",
-            "type" : "string"
-          },
-          "state" : {
-            "description" : "Issue-credential exchange state",
-            "example" : "credential_acked",
-            "type" : "string"
-          },
-          "thread_id" : {
-            "description" : "Thread identifier",
-            "example" : "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-            "type" : "string"
-          },
-          "trace" : {
-            "description" : "Record trace information, based on agent configuration",
-            "type" : "boolean"
-          },
-          "updated_at" : {
-            "description" : "Time of last record update",
-            "example" : "2021-12-31T23:59:59Z",
-            "pattern" : "^\\d{4}-\\d\\d-\\d\\d[T ]\\d\\d:\\d\\d(?:\\:(?:\\d\\d(?:\\.\\d{1,6})?))?(?:[+-]\\d\\d:?\\d\\d|Z|)$",
-            "type" : "string"
-          }
-        },
-        "type" : "object"
-      },
-      "V10CredentialExchangeAutoRemoveRequest" : {
-        "properties" : {
-          "auto_remove" : {
-            "description" : "Whether to remove the credential exchange record on completion (overrides --preserve-exchange-records configuration setting)",
-            "type" : "boolean"
-          }
-        },
-        "type" : "object"
-      },
-      "V10CredentialExchangeListResult" : {
-        "properties" : {
-          "results" : {
-            "description" : "Aries#0036 v1.0 credential exchange records",
-            "items" : {
-              "$ref" : "#/components/schemas/V10CredentialExchange"
-            },
-            "type" : "array"
-          }
-        },
-        "type" : "object"
-      },
-      "V10CredentialFreeOfferRequest" : {
-        "properties" : {
-          "auto_issue" : {
-            "description" : "Whether to respond automatically to credential requests, creating and issuing requested credentials",
-            "type" : "boolean"
-          },
-          "auto_remove" : {
-            "description" : "Whether to remove the credential exchange record on completion (overrides --preserve-exchange-records configuration setting)",
-            "type" : "boolean"
-          },
-          "comment" : {
-            "description" : "Human-readable comment",
-            "nullable" : true,
-            "type" : "string"
-          },
-          "connection_id" : {
-            "description" : "Connection identifier",
-            "example" : "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-            "type" : "string"
-          },
-          "cred_def_id" : {
-            "description" : "Credential definition identifier",
-            "example" : "WgWxqztrNooG92RXvxSTWv:3:CL:20:tag",
-            "pattern" : "^([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}):3:CL:(([1-9][0-9]*)|([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}:2:.+:[0-9.]+)):(.+)?$",
-            "type" : "string"
-          },
-          "credential_preview" : {
-            "$ref" : "#/components/schemas/CredentialPreview"
-          },
-          "trace" : {
-            "description" : "Record trace information, based on agent configuration",
-            "type" : "boolean"
-          }
-        },
-        "required" : [ "connection_id", "cred_def_id", "credential_preview" ],
-        "type" : "object"
-      },
-      "V10CredentialIssueRequest" : {
-        "properties" : {
-          "comment" : {
-            "description" : "Human-readable comment",
-            "nullable" : true,
-            "type" : "string"
-          }
-        },
-        "type" : "object"
-      },
-      "V10CredentialProblemReportRequest" : {
-        "properties" : {
-          "description" : {
-            "type" : "string"
-          }
-        },
-        "required" : [ "description" ],
-        "type" : "object"
-      },
-      "V10CredentialProposalRequestMand" : {
-        "properties" : {
-          "auto_remove" : {
-            "description" : "Whether to remove the credential exchange record on completion (overrides --preserve-exchange-records configuration setting)",
-            "type" : "boolean"
-          },
-          "comment" : {
-            "description" : "Human-readable comment",
-            "nullable" : true,
-            "type" : "string"
-          },
-          "connection_id" : {
-            "description" : "Connection identifier",
-            "example" : "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-            "type" : "string"
-          },
-          "cred_def_id" : {
-            "description" : "Credential definition identifier",
-            "example" : "WgWxqztrNooG92RXvxSTWv:3:CL:20:tag",
-            "pattern" : "^([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}):3:CL:(([1-9][0-9]*)|([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}:2:.+:[0-9.]+)):(.+)?$",
-            "type" : "string"
-          },
-          "credential_proposal" : {
-            "$ref" : "#/components/schemas/CredentialPreview"
-          },
-          "issuer_did" : {
-            "description" : "Credential issuer DID",
-            "example" : "did:indy:sovrin:WRfXPg8dantKVubE3HX8pw",
-            "pattern" : "^(did:(sov|indy):)?[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}$",
-            "type" : "string"
-          },
-          "schema_id" : {
-            "description" : "Schema identifier",
-            "example" : "WgWxqztrNooG92RXvxSTWv:2:schema_name:1.0",
-            "pattern" : "^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}:2:.+:[0-9.]+$",
-            "type" : "string"
-          },
-          "schema_issuer_did" : {
-            "description" : "Schema issuer DID",
-            "example" : "did:indy:sovrin:WRfXPg8dantKVubE3HX8pw",
-            "pattern" : "^(did:(sov|indy):)?[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}$",
-            "type" : "string"
-          },
-          "schema_name" : {
-            "description" : "Schema name",
-            "example" : "preferences",
-            "type" : "string"
-          },
-          "schema_version" : {
-            "description" : "Schema version",
-            "example" : "1.0",
-            "pattern" : "^[0-9.]+$",
-            "type" : "string"
-          },
-          "trace" : {
-            "description" : "Record trace information, based on agent configuration",
-            "type" : "boolean"
-          }
-        },
-        "required" : [ "connection_id", "credential_proposal" ],
-        "type" : "object"
-      },
-      "V10CredentialProposalRequestOpt" : {
-        "properties" : {
-          "auto_remove" : {
-            "description" : "Whether to remove the credential exchange record on completion (overrides --preserve-exchange-records configuration setting)",
-            "type" : "boolean"
-          },
-          "comment" : {
-            "description" : "Human-readable comment",
-            "nullable" : true,
-            "type" : "string"
-          },
-          "connection_id" : {
-            "description" : "Connection identifier",
-            "example" : "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-            "type" : "string"
-          },
-          "cred_def_id" : {
-            "description" : "Credential definition identifier",
-            "example" : "WgWxqztrNooG92RXvxSTWv:3:CL:20:tag",
-            "pattern" : "^([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}):3:CL:(([1-9][0-9]*)|([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}:2:.+:[0-9.]+)):(.+)?$",
-            "type" : "string"
-          },
-          "credential_proposal" : {
-            "$ref" : "#/components/schemas/CredentialPreview"
-          },
-          "issuer_did" : {
-            "description" : "Credential issuer DID",
-            "example" : "did:indy:sovrin:WRfXPg8dantKVubE3HX8pw",
-            "pattern" : "^(did:(sov|indy):)?[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}$",
-            "type" : "string"
-          },
-          "schema_id" : {
-            "description" : "Schema identifier",
-            "example" : "WgWxqztrNooG92RXvxSTWv:2:schema_name:1.0",
-            "pattern" : "^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}:2:.+:[0-9.]+$",
-            "type" : "string"
-          },
-          "schema_issuer_did" : {
-            "description" : "Schema issuer DID",
-            "example" : "did:indy:sovrin:WRfXPg8dantKVubE3HX8pw",
-            "pattern" : "^(did:(sov|indy):)?[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}$",
-            "type" : "string"
-          },
-          "schema_name" : {
-            "description" : "Schema name",
-            "example" : "preferences",
-            "type" : "string"
-          },
-          "schema_version" : {
-            "description" : "Schema version",
-            "example" : "1.0",
-            "pattern" : "^[0-9.]+$",
-            "type" : "string"
-          },
-          "trace" : {
-            "description" : "Record trace information, based on agent configuration",
-            "type" : "boolean"
-          }
-        },
-        "required" : [ "connection_id" ],
-        "type" : "object"
-      },
-      "V10CredentialStoreRequest" : {
-        "properties" : {
-          "credential_id" : {
-            "type" : "string"
-          }
-        },
-        "type" : "object"
-      },
       "V10DiscoveryExchangeListResult" : {
         "properties" : {
           "results" : {
@@ -15166,292 +12947,6 @@
         },
         "type" : "object"
       },
-      "V10PresentProofModuleResponse" : {
-        "type" : "object"
-      },
-      "V10PresentationCreateRequestRequest" : {
-        "properties" : {
-          "auto_remove" : {
-            "description" : "Whether to remove the presentation exchange record on completion (overrides --preserve-exchange-records configuration setting)",
-            "type" : "boolean"
-          },
-          "auto_verify" : {
-            "description" : "Verifier choice to auto-verify proof presentation",
-            "example" : false,
-            "type" : "boolean"
-          },
-          "comment" : {
-            "nullable" : true,
-            "type" : "string"
-          },
-          "proof_request" : {
-            "$ref" : "#/components/schemas/IndyProofRequest"
-          },
-          "trace" : {
-            "description" : "Whether to trace event (default false)",
-            "example" : false,
-            "type" : "boolean"
-          }
-        },
-        "required" : [ "proof_request" ],
-        "type" : "object"
-      },
-      "V10PresentationExchange" : {
-        "additionalProperties" : false,
-        "properties" : {
-          "auto_present" : {
-            "description" : "Prover choice to auto-present proof as verifier requests",
-            "example" : false,
-            "type" : "boolean"
-          },
-          "auto_remove" : {
-            "description" : "Verifier choice to remove this presentation exchange record when complete",
-            "example" : false,
-            "type" : "boolean"
-          },
-          "auto_verify" : {
-            "description" : "Verifier choice to auto-verify proof presentation",
-            "type" : "boolean"
-          },
-          "connection_id" : {
-            "description" : "Connection identifier",
-            "example" : "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-            "type" : "string"
-          },
-          "created_at" : {
-            "description" : "Time of record creation",
-            "example" : "2021-12-31T23:59:59Z",
-            "pattern" : "^\\d{4}-\\d\\d-\\d\\d[T ]\\d\\d:\\d\\d(?:\\:(?:\\d\\d(?:\\.\\d{1,6})?))?(?:[+-]\\d\\d:?\\d\\d|Z|)$",
-            "type" : "string"
-          },
-          "error_msg" : {
-            "description" : "Error message",
-            "example" : "Invalid structure",
-            "type" : "string"
-          },
-          "initiator" : {
-            "description" : "Present-proof exchange initiator: self or external",
-            "enum" : [ "self", "external" ],
-            "example" : "self",
-            "type" : "string"
-          },
-          "presentation" : {
-            "allOf" : [ {
-              "$ref" : "#/components/schemas/IndyProof"
-            } ],
-            "description" : "(Indy) presentation (also known as proof)",
-            "type" : "object"
-          },
-          "presentation_exchange_id" : {
-            "description" : "Presentation exchange identifier",
-            "example" : "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-            "type" : "string"
-          },
-          "presentation_proposal_dict" : {
-            "allOf" : [ {
-              "$ref" : "#/components/schemas/PresentationProposal"
-            } ],
-            "description" : "Presentation proposal message",
-            "type" : "object"
-          },
-          "presentation_request" : {
-            "allOf" : [ {
-              "$ref" : "#/components/schemas/IndyProofRequest"
-            } ],
-            "description" : "(Indy) presentation request (also known as proof request)",
-            "type" : "object"
-          },
-          "presentation_request_dict" : {
-            "allOf" : [ {
-              "$ref" : "#/components/schemas/PresentationRequest"
-            } ],
-            "description" : "Presentation request message",
-            "type" : "object"
-          },
-          "role" : {
-            "description" : "Present-proof exchange role: prover or verifier",
-            "enum" : [ "prover", "verifier" ],
-            "example" : "prover",
-            "type" : "string"
-          },
-          "state" : {
-            "description" : "Present-proof exchange state",
-            "example" : "verified",
-            "type" : "string"
-          },
-          "thread_id" : {
-            "description" : "Thread identifier",
-            "example" : "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-            "type" : "string"
-          },
-          "trace" : {
-            "description" : "Record trace information, based on agent configuration",
-            "type" : "boolean"
-          },
-          "updated_at" : {
-            "description" : "Time of last record update",
-            "example" : "2021-12-31T23:59:59Z",
-            "pattern" : "^\\d{4}-\\d\\d-\\d\\d[T ]\\d\\d:\\d\\d(?:\\:(?:\\d\\d(?:\\.\\d{1,6})?))?(?:[+-]\\d\\d:?\\d\\d|Z|)$",
-            "type" : "string"
-          },
-          "verified" : {
-            "description" : "Whether presentation is verified: true or false",
-            "enum" : [ "true", "false" ],
-            "example" : "true",
-            "type" : "string"
-          },
-          "verified_msgs" : {
-            "items" : {
-              "description" : "Proof verification warning or error information",
-              "type" : "string"
-            },
-            "type" : "array"
-          }
-        },
-        "type" : "object"
-      },
-      "V10PresentationExchangeList" : {
-        "properties" : {
-          "results" : {
-            "description" : "Aries RFC 37 v1.0 presentation exchange records",
-            "items" : {
-              "$ref" : "#/components/schemas/V10PresentationExchange"
-            },
-            "type" : "array"
-          }
-        },
-        "type" : "object"
-      },
-      "V10PresentationProblemReportRequest" : {
-        "properties" : {
-          "description" : {
-            "type" : "string"
-          }
-        },
-        "required" : [ "description" ],
-        "type" : "object"
-      },
-      "V10PresentationProposalRequest" : {
-        "properties" : {
-          "auto_present" : {
-            "description" : "Whether to respond automatically to presentation requests, building and presenting requested proof",
-            "type" : "boolean"
-          },
-          "auto_remove" : {
-            "description" : "Whether to remove the presentation exchange record on completion (overrides --preserve-exchange-records configuration setting)",
-            "type" : "boolean"
-          },
-          "comment" : {
-            "description" : "Human-readable comment",
-            "nullable" : true,
-            "type" : "string"
-          },
-          "connection_id" : {
-            "description" : "Connection identifier",
-            "example" : "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-            "type" : "string"
-          },
-          "presentation_proposal" : {
-            "$ref" : "#/components/schemas/IndyPresPreview"
-          },
-          "trace" : {
-            "description" : "Whether to trace event (default false)",
-            "example" : false,
-            "type" : "boolean"
-          }
-        },
-        "required" : [ "connection_id", "presentation_proposal" ],
-        "type" : "object"
-      },
-      "V10PresentationSendRequest" : {
-        "properties" : {
-          "auto_remove" : {
-            "description" : "Whether to remove the presentation exchange record on completion (overrides --preserve-exchange-records configuration setting)",
-            "type" : "boolean"
-          },
-          "requested_attributes" : {
-            "additionalProperties" : {
-              "$ref" : "#/components/schemas/IndyRequestedCredsRequestedAttr"
-            },
-            "description" : "Nested object mapping proof request attribute referents to requested-attribute specifiers",
-            "type" : "object"
-          },
-          "requested_predicates" : {
-            "additionalProperties" : {
-              "$ref" : "#/components/schemas/IndyRequestedCredsRequestedPred"
-            },
-            "description" : "Nested object mapping proof request predicate referents to requested-predicate specifiers",
-            "type" : "object"
-          },
-          "self_attested_attributes" : {
-            "additionalProperties" : {
-              "description" : "Self-attested attribute values to use in requested-credentials structure for proof construction",
-              "example" : "self_attested_value",
-              "type" : "string"
-            },
-            "description" : "Self-attested attributes to build into proof",
-            "type" : "object"
-          },
-          "trace" : {
-            "description" : "Whether to trace event (default false)",
-            "example" : false,
-            "type" : "boolean"
-          }
-        },
-        "required" : [ "requested_attributes", "requested_predicates", "self_attested_attributes" ],
-        "type" : "object"
-      },
-      "V10PresentationSendRequestRequest" : {
-        "properties" : {
-          "auto_remove" : {
-            "description" : "Whether to remove the presentation exchange record on completion (overrides --preserve-exchange-records configuration setting)",
-            "type" : "boolean"
-          },
-          "auto_verify" : {
-            "description" : "Verifier choice to auto-verify proof presentation",
-            "example" : false,
-            "type" : "boolean"
-          },
-          "comment" : {
-            "nullable" : true,
-            "type" : "string"
-          },
-          "connection_id" : {
-            "description" : "Connection identifier",
-            "example" : "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-            "type" : "string"
-          },
-          "proof_request" : {
-            "$ref" : "#/components/schemas/IndyProofRequest"
-          },
-          "trace" : {
-            "description" : "Whether to trace event (default false)",
-            "example" : false,
-            "type" : "boolean"
-          }
-        },
-        "required" : [ "connection_id", "proof_request" ],
-        "type" : "object"
-      },
-      "V10PresentationSendRequestToProposal" : {
-        "properties" : {
-          "auto_remove" : {
-            "description" : "Whether to remove the presentation exchange record on completion (overrides --preserve-exchange-records configuration setting)",
-            "type" : "boolean"
-          },
-          "auto_verify" : {
-            "description" : "Verifier choice to auto-verify proof presentation",
-            "example" : false,
-            "type" : "boolean"
-          },
-          "trace" : {
-            "description" : "Whether to trace event (default false)",
-            "example" : false,
-            "type" : "boolean"
-          }
-        },
-        "type" : "object"
-      },
       "V20CredAttrSpec" : {
         "properties" : {
           "mime-type" : {
@@ -15497,6 +12992,10 @@
         "properties" : {
           "auto_remove" : {
             "description" : "Whether to remove the credential exchange record on completion (overrides --preserve-exchange-records configuration setting)",
+            "type" : "boolean"
+          },
+          "auto_remove_on_failure" : {
+            "description" : "Whether to remove the credential exchange record on failure (overrides --no-preserve-failed-exchange-records configuration setting)",
             "type" : "boolean"
           },
           "comment" : {
@@ -15553,6 +13052,11 @@
           },
           "auto_remove" : {
             "description" : "Issuer choice to remove this credential exchange record when complete",
+            "example" : false,
+            "type" : "boolean"
+          },
+          "auto_remove_on_failure" : {
+            "description" : "Issuer choice to remove this credential exchange record when failed",
             "example" : false,
             "type" : "boolean"
           },
@@ -16162,6 +13666,10 @@
             "description" : "Whether to remove the credential exchange record on completion (overrides --preserve-exchange-records configuration setting)",
             "type" : "boolean"
           },
+          "auto_remove_on_failure" : {
+            "description" : "Whether to remove the credential exchange record on failure (overrides --no-preserve-failed-exchange-records configuration setting)",
+            "type" : "boolean"
+          },
           "comment" : {
             "description" : "Human-readable comment",
             "nullable" : true,
@@ -16199,6 +13707,10 @@
           },
           "auto_remove" : {
             "description" : "Whether to remove the credential exchange record on completion (overrides --preserve-exchange-records configuration setting)",
+            "type" : "boolean"
+          },
+          "auto_remove_on_failure" : {
+            "description" : "Whether to remove the credential exchange record on failure (overrides --no-preserve-failed-exchange-records configuration setting)",
             "type" : "boolean"
           },
           "comment" : {
@@ -16335,6 +13847,10 @@
             "description" : "Whether to remove the credential exchange record on completion (overrides --preserve-exchange-records configuration setting)",
             "type" : "boolean"
           },
+          "auto_remove_on_failure" : {
+            "description" : "Whether to remove the credential exchange record on failure (overrides --no-preserve-failed-exchange-records configuration setting)",
+            "type" : "boolean"
+          },
           "comment" : {
             "description" : "Human-readable comment",
             "nullable" : true,
@@ -16371,6 +13887,10 @@
         "properties" : {
           "auto_remove" : {
             "description" : "Whether to remove the credential exchange record on completion (overrides --preserve-exchange-records configuration setting)",
+            "type" : "boolean"
+          },
+          "auto_remove_on_failure" : {
+            "description" : "Whether to remove the credential exchange record on failure (overrides --no-preserve-failed-exchange-records configuration setting)",
             "type" : "boolean"
           },
           "holder_did" : {
@@ -16479,6 +13999,10 @@
             "description" : "Whether to remove the credential exchange record on completion (overrides --preserve-exchange-records configuration setting)",
             "type" : "boolean"
           },
+          "auto_remove_on_failure" : {
+            "description" : "Whether to remove the credential exchange record on failure (overrides --no-preserve-failed-exchange-records configuration setting)",
+            "type" : "boolean"
+          },
           "comment" : {
             "description" : "Human-readable comment",
             "nullable" : true,
@@ -16551,6 +14075,10 @@
             "description" : "Whether to remove the presentation exchange record on completion (overrides --preserve-exchange-records configuration setting)",
             "type" : "boolean"
           },
+          "auto_remove_on_failure" : {
+            "description" : "Whether to remove the presentation exchange record on failure (overrides --no-preserve-failed-exchange-records configuration setting)",
+            "type" : "boolean"
+          },
           "auto_verify" : {
             "description" : "Verifier choice to auto-verify proof presentation",
             "example" : false,
@@ -16582,6 +14110,11 @@
           },
           "auto_remove" : {
             "description" : "Verifier choice to remove this presentation exchange record when complete",
+            "example" : false,
+            "type" : "boolean"
+          },
+          "auto_remove_on_failure" : {
+            "description" : "Verifier choice to remove this presentation exchange record when failed",
             "example" : false,
             "type" : "boolean"
           },
@@ -16817,6 +14350,10 @@
             "description" : "Whether to remove the presentation exchange record on completion (overrides --preserve-exchange-records configuration setting)",
             "type" : "boolean"
           },
+          "auto_remove_on_failure" : {
+            "description" : "Whether to remove the presentation exchange record on failure (overrides --no-preserve-failed-exchange-records configuration setting)",
+            "type" : "boolean"
+          },
           "comment" : {
             "description" : "Human-readable comment",
             "nullable" : true,
@@ -16909,6 +14446,10 @@
             "description" : "Whether to remove the presentation exchange record on completion (overrides --preserve-exchange-records configuration setting)",
             "type" : "boolean"
           },
+          "auto_remove_on_failure" : {
+            "description" : "Whether to remove the presentation exchange record on failure (overrides --no-preserve-failed-exchange-records configuration setting)",
+            "type" : "boolean"
+          },
           "auto_verify" : {
             "description" : "Verifier choice to auto-verify proof presentation",
             "example" : false,
@@ -16948,6 +14489,10 @@
             "description" : "Whether to remove the presentation exchange record on completion (overrides --preserve-exchange-records configuration setting)",
             "type" : "boolean"
           },
+          "auto_remove_on_failure" : {
+            "description" : "Whether to remove the presentation exchange record on failure (overrides --no-preserve-failed-exchange-records configuration setting)",
+            "type" : "boolean"
+          },
           "dif" : {
             "allOf" : [ {
               "$ref" : "#/components/schemas/DIFPresSpec"
@@ -16976,6 +14521,10 @@
         "properties" : {
           "auto_remove" : {
             "description" : "Whether to remove the presentation exchange record on completion (overrides --preserve-exchange-records configuration setting)",
+            "type" : "boolean"
+          },
+          "auto_remove_on_failure" : {
+            "description" : "Whether to remove the presentation exchange record on failure (overrides --no-preserve-failed-exchange-records configuration setting)",
             "type" : "boolean"
           },
           "auto_verify" : {

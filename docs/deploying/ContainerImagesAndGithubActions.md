@@ -42,16 +42,16 @@ Click [here](https://github.com/openwallet-foundation/acapy/pkgs/container/acapy
 
 The following is the ACA-Py container images tagging format:
 
-**Regular Releases** (e.g., publishing version `1.4.0`):
-- `pyV.vv-X.Y.Z` - Python version specific tag (e.g., `py3.12-1.4.0`)
-- `X.Y.Z` - Semantic version tag (e.g., `1.4.0`)
-- `X.Y` - Major.minor version tag (e.g., `1.4`), automatically moves to the latest patch release
-- `latest` - Automatically assigned to the highest semantic version (non-RC) release
+**Regular Releases** (e.g., `1.5.0`):
+ - `py3.12-1.5.0` - Python version specific tag
+ - `1.5.0` - Semantic version tag
+ - `1.5` - Major.minor tag (moves to latest patch release)
+ - `latest` - Only assigned if this is the highest semantic version
 
-**Release Candidates** (e.g., publishing version `1.4.0-rc1`):
-- `pyV.vv-X.Y.Z-rcN` - Python version specific RC tag (e.g., `py3.12-1.4.0-rc1`)
-- `X.Y.Z-rcN` - Semantic version RC tag (e.g., `1.4.0-rc1`)
-- **Note**: RC releases do NOT receive major.minor (`X.Y`) or `latest` tags
+**Release Candidates** (e.g., `1.5.0-rc0`):
+ - `py3.12-1.5.0-rc0` - Python version specific RC tag
+ - `1.5.0-rc0` - Semantic version RC tag
+ - **Note**: RC releases do NOT receive major.minor (`1.5`) or `latest` tags
 
 **Nightly Builds**:
 - `pyV.vv-nightly-YYYY-MM-DD` - Date-stamped nightly build
