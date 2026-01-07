@@ -2,7 +2,7 @@
 
 ## 1.5.0rc0
 
-### January 6, 2026
+### January 7, 2026
 
 ACA-Py 1.5.0 is a significant release that advances the platform’s modernization and modularization goals. The most substantial changes are the upgrade to **Python 3.13** and the continued evolution of ACA-Py toward a **plugin-oriented architecture**, including the removal of the legacy v1.0 credential exchange protocols (issue credential and present proof) from the core agent.
 
