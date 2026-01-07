@@ -11,7 +11,6 @@ By design ACA-Py is credential format agnostic. This means you can use it for an
     - [Writing JSON-LD Contexts](#writing-json-ld-contexts)
   - [Signature Suite](#signature-suite)
   - [DID Method](#did-method)
-    - [`did:sov`](#didsov)
     - [`did:key`](#didkey)
 - [Issuing Credentials](#issuing-credentials)
 - [Retrieving Issued Credentials](#retrieving-issued-credentials)
@@ -83,12 +82,7 @@ Generally you should always use `BbsBlsSignature2020` as it allows the holder to
 
 Besides the JSON-LD context, we need a DID to use for issuing the credential. ACA-Py currently supports two did methods for issuing credentials:
 
-- `did:sov` - Can only be used for `Ed25519Signature2018` signature suite.
 - `did:key` - Can be used for both `Ed25519Signature2018` and `BbsBlsSignature2020` signature suites.
-
-#### `did:sov`
-
-When using `did:sov` you need to make sure to use a public did so other agents can resolve the did. It is also important the other agent is using the same indy ledger for resolving the did. You can get the public did using the `/wallet/did/public` endpoint. For backwards compatibility the did is returned without `did:sov` prefix. When using the did for issuance make sure this prepend this to the did. (so `DViYrCMPWfuLiY7LLs8giB` becomes `did:sov:DViYrCMPWfuLiY7LLs8giB`)
 
 #### `did:key`
 

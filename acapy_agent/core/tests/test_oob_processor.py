@@ -735,7 +735,7 @@ class TestOobProcessor(IsolatedAsyncioTestCase):
                 self.profile, [{"@type": "unsupported"}], mock.MagicMock()
             )
         assert (
-            "None of the oob attached messages supported. Supported message types are issue-credential/2.0/offer-credential, present-proof/1.0/request-presentation, present-proof/2.0/request-presentation"
+            "None of the oob attached messages supported. Supported message types are issue-credential/2.0/offer-credential, present-proof/2.0/request-presentation, issue-credential/1.0/offer-credential, present-proof/1.0/request-presentation"
             in err.exception.message
         )
 

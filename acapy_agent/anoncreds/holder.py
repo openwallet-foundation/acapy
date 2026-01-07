@@ -598,7 +598,7 @@ class AnonCredsHolder:
         """Get credentials stored in the wallet.
 
         Args:
-            presentation_request: Valid indy format presentation request
+            presentation_request: AnonCreds format presentation request
             requested_credentials: AnonCreds format requested credentials
             schemas: AnonCreds formatted schemas JSON
             credential_definitions: AnonCreds formatted credential definitions JSON
@@ -688,7 +688,7 @@ class AnonCredsHolder:
         """Get credentials stored in the wallet.
 
         Args:
-            presentation_request: Valid indy format presentation request
+            presentation_request: AnonCreds format presentation request
             requested_credentials_w3c: W3C format requested credentials
             credentials_w3c_metadata: W3C format credential metadata
             schemas: AnonCreds formatted schemas JSON

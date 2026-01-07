@@ -20,7 +20,7 @@ jobs:
         with:
             fetch-depth: 0
       - name: Download PR number artifact
-        uses: dawidd6/action-download-artifact@ac66b43f0e6a346234dd65d4d0c8fbb31cb316e5 # v11
+        uses: dawidd6/action-download-artifact@0bd50d53a6d7fb5cb921e607957e9cc12b4ce392 # v12
         with:
           workflow: Tests
           run_id: ${{ github.event.workflow_run.id }}
@@ -31,7 +31,7 @@ jobs:
         with:
           path: ./PR_NUMBER
       - name: Download Test Coverage
-        uses: dawidd6/action-download-artifact@ac66b43f0e6a346234dd65d4d0c8fbb31cb316e5 # v11
+        uses: dawidd6/action-download-artifact@0bd50d53a6d7fb5cb921e607957e9cc12b4ce392 # v12
         with:
           workflow: Tests
           run_id: ${{ github.event.workflow_run.id }}
