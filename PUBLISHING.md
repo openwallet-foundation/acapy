@@ -6,7 +6,7 @@ a major, minor or patch release, per [semver](https://semver.org/) rules.
 
 Once ready to do a release, create a local branch that includes the following updates:
 
-1. Create a local PR branch from an updated `main` branch, e.g. "1.4.0".
+1. Create a local PR branch from an updated `main` branch, e.g. "1.5.0rc0".
 
 2. See if there are any Document Site `mkdocs` changes needed. Run the script
    `./scripts/prepmkdocs.sh; mkdocs`. Watch the log, noting particularly if
@@ -94,6 +94,14 @@ cd docs; rm -rf generated; sphinx-apidoc -f -M -o  ./generated ../acapy_agent/ $
 cd docs; sphinx-build -b html -a -E -c ./ ./ ./_build; cd ..
 ```
 
+Sphinx can be run with docker -- at least the first step.  Here is the command to use:
+
+```sh
+cd docs; cp -r ../docker_agent .; rm -rf generated; docker run -it --rm -v .:/docs sphinxdoc/sphinx sphinx-apidoc -f -M -o  ./generated ./acapy_agent/ $(find ./acapy_agent/ -name '*tests*'); rm -rf docker_agent; cd ..
+```
+
+For the build test, the RTD Sphinx theme needs to be added to the docker image, and I've not figured out that yet.
+
 7. Search across the repository for the previous version number and update it
    everywhere that makes sense. The CHANGELOG.md entry for the previous release
    is a likely exception, and the `pyproject.toml` in the root **MUST** be
@@ -138,16 +146,16 @@ cd docs; sphinx-build -b html -a -E -c ./ ./ ./_build; cd ..
    
    Published images are automatically tagged with multiple tags for flexibility:
    
-   - **Regular Releases** (e.g., `1.4.0`):
-     - `py3.12-1.4.0` - Python version specific tag
-     - `1.4.0` - Semantic version tag
-     - `1.4` - Major.minor tag (moves to latest patch release)
+   - **Regular Releases** (e.g., `1.5.0`):
+     - `py3.12-1.5.0` - Python version specific tag
+     - `1.5.0` - Semantic version tag
+     - `1.5` - Major.minor tag (moves to latest patch release)
      - `latest` - Only assigned if this is the highest semantic version
    
-   - **Release Candidates** (e.g., `1.4.0-rc1`):
-     - `py3.12-1.4.0-rc1` - Python version specific RC tag
-     - `1.4.0-rc1` - Semantic version RC tag
-     - **Note**: RC releases do NOT receive major.minor (`1.4`) or `latest` tags
+   - **Release Candidates** (e.g., `1.5.0-rc0`):
+     - `py3.12-1.5.0-rc0` - Python version specific RC tag
+     - `1.5.0-rc0` - Semantic version RC tag
+     - **Note**: RC releases do NOT receive major.minor (`1.5`) or `latest` tags
    
    The `latest` tag is explicitly managed by comparing semantic versions across all
    releases. It will only be applied to the highest non-RC semantic version. For
@@ -171,7 +179,7 @@ cd docs; sphinx-build -b html -a -E -c ./ ./ ./_build; cd ..
 [publish.yml]: https://github.com/openwallet-foundation/acapy/blob/main/.github/workflows/publish.yml
 
 12. When a new release is tagged, create a new branch at the same commit with
-    the branch name in the format `docs-v<version>`, for example, `docs-v1.4.0`.
+    the branch name in the format `docs-v<version>`, for example, `docs-v1.5.0`.
     The creation of the branch triggers the execution of the [publish-docs]
     GitHub Action which generates the documentation for the new release,
     publishing it at [https://aca-py.org]. The GitHub Action also executes when

@@ -12,7 +12,6 @@ Subpackages
 .. toctree::
    :maxdepth: 4
 
-   acapy_agent.protocols.issue_credential.v1_0
    acapy_agent.protocols.issue_credential.v2_0
 
 Submodules
