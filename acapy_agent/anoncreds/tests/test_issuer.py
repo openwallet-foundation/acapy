@@ -33,6 +33,7 @@ from ...core.event_bus import Event, MockEventBus
 from ...tests import mock
 from ...utils.testing import create_test_profile
 from .. import issuer as test_module
+from ..events import CredDefFinishedEvent, SchemaFinishedEvent
 
 
 class MockSchemaEntry:
@@ -408,6 +409,47 @@ class TestAnonCredsIssuer(IsolatedAsyncioTestCase):
         )
         await self.issuer.finish_schema(job_id="job-id", schema_id="schema-id")
 
+        # Verify schema event was emitted with correct payload
+        mock_notify.assert_called_once()
+        call_args = mock_notify.call_args
+        assert isinstance(call_args[0][0], SchemaFinishedEvent)
+        event = call_args[0][0]
+        assert event.payload.schema_id == "schema-id"
+        assert event.payload.issuer_id == "issuer-id"
+        assert event.payload.name == "name"
+        assert event.payload.version == "1.0"
+        assert event.payload.attr_names == ["attr1", "attr2"]
+        assert event.payload.options == {}
+
+    @mock.patch.object(test_module.AnonCredsIssuer, "notify")
+    async def test_store_schema_emits_event(self, mock_notify):
+        """Test that store_schema emits SchemaFinishedEvent when state is finished."""
+        # Mock profile.session() for store_schema - it returns an async context manager
+        mock_session_handle = mock.MagicMock()
+        mock_session_handle.insert = mock.CoroutineMock(return_value=None)
+        mock_session = mock.MagicMock()
+        mock_session.handle = mock_session_handle  # Set handle property
+        # __aenter__ and __aexit__ must be coroutines (async methods)
+        mock_session.__aenter__ = mock.CoroutineMock(return_value=mock_session)
+        mock_session.__aexit__ = mock.CoroutineMock(return_value=None)
+        # profile.session() is a method that returns an async context manager (not a coroutine)
+        self.profile.session = mock.Mock(return_value=mock_session)
+
+        schema_result = get_mock_schema_result()
+        await self.issuer.store_schema(schema_result)
+
+        # Verify schema event was emitted
+        mock_notify.assert_called_once()
+        call_args = mock_notify.call_args
+        assert isinstance(call_args[0][0], SchemaFinishedEvent)
+        event = call_args[0][0]
+        assert event.payload.schema_id == "schema-id"
+        assert event.payload.issuer_id == "issuer-id"
+        assert event.payload.name == "name"
+        assert event.payload.version == "1.0"
+        assert event.payload.attr_names == ["attr1", "attr2"]
+        assert event.payload.options == {}
+
     @mock.patch.object(AskarAnonCredsProfileSession, "handle")
     async def test_get_created_schemas(self, mock_session_handle):
         mock_session_handle.fetch_all = mock.CoroutineMock(
@@ -692,7 +734,19 @@ class TestAnonCredsIssuer(IsolatedAsyncioTestCase):
         )
 
         assert isinstance(result, CredDefResult)
+        # Verify cred def event was emitted with tag
         mock_notify.assert_called_once()
+        call_args = mock_notify.call_args
+        assert isinstance(call_args[0][0], CredDefFinishedEvent)
+        event = call_args[0][0]
+        assert event.payload.schema_id == "schema-id"
+        # When job_id exists, identifier is job_id, not cred_def_id
+        assert event.payload.cred_def_id == "job-id"
+        assert event.payload.issuer_id == "did:sov:3avoBCqDMFHFaKUHug9s8W"
+        assert event.payload.tag == "tag"  # Verify tag is included in event
+        assert event.payload.support_revocation is False
+        assert event.payload.max_cred_num == 1000  # Default value
+        assert event.payload.options == {}
 
     @mock.patch.object(test_module.AnonCredsIssuer, "notify")
     async def test_create_and_register_credential_definition_errors(self, mock_notify):
