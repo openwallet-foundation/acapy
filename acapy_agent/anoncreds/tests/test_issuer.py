@@ -156,10 +156,13 @@ class TestAnonCredsIssuer(IsolatedAsyncioTestCase):
                 attr_names=["attr1", "attr2"],
             )
 
+    @mock.patch.object(test_module.AnonCredsIssuer, "notify")
+    @mock.patch.object(test_module.AnonCredsIssuer, "store_schema")
     @mock.patch.object(AskarAnonCredsProfileSession, "handle")
-    async def test_create_and_register_schema(self, mock_session_handle):
+    async def test_create_and_register_schema(
+        self, mock_session_handle, mock_store_schema, mock_notify
+    ):
         mock_session_handle.fetch_all = mock.CoroutineMock(return_value=[])
-        mock_session_handle.insert = mock.CoroutineMock(return_value=None)
         self.profile.inject = mock.Mock(
             return_value=mock.MagicMock(
                 register_schema=mock.CoroutineMock(return_value=get_mock_schema_result())
@@ -174,11 +177,12 @@ class TestAnonCredsIssuer(IsolatedAsyncioTestCase):
 
         assert result is not None
         mock_session_handle.fetch_all.assert_called_once()
-        mock_session_handle.insert.assert_called_once()
+        mock_store_schema.assert_called_once()
 
+    @mock.patch.object(test_module.AnonCredsIssuer, "notify")
     @mock.patch.object(AskarAnonCredsProfileSession, "handle")
     async def test_create_and_register_schema_missing_schema_id_or_job_id(
-        self, mock_session_handle
+        self, mock_session_handle, mock_notify
     ):
         mock_session_handle.fetch_all = mock.CoroutineMock(return_value=[])
         mock_session_handle.insert = mock.CoroutineMock(return_value=None)
@@ -278,9 +282,10 @@ class TestAnonCredsIssuer(IsolatedAsyncioTestCase):
             mock_session_handle.fetch_all.assert_called_once()
             mock_session_handle.insert.assert_called_once()
 
+    @mock.patch.object(test_module.AnonCredsIssuer, "notify")
     @mock.patch.object(AskarAnonCredsProfileSession, "handle")
     async def test_create_and_register_schema_already_exists_but_not_in_wallet(
-        self, mock_session_handle
+        self, mock_session_handle, mock_notify
     ):
         mock_session_handle.fetch_all = mock.CoroutineMock(return_value=[])
         mock_session_handle.insert = mock.CoroutineMock(return_value=None)
@@ -308,9 +313,10 @@ class TestAnonCredsIssuer(IsolatedAsyncioTestCase):
                 attr_names=["attr1", "attr2"],
             )
 
+    @mock.patch.object(test_module.AnonCredsIssuer, "notify")
     @mock.patch.object(AskarAnonCredsProfileSession, "handle")
     async def test_create_and_register_schema_without_job_id_or_schema_id_raises_x(
-        self, mock_session_handle
+        self, mock_session_handle, mock_notify
     ):
         mock_session_handle.fetch_all = mock.CoroutineMock(return_value=[])
         mock_session_handle.insert = mock.CoroutineMock(return_value=None)
@@ -381,7 +387,20 @@ class TestAnonCredsIssuer(IsolatedAsyncioTestCase):
         assert isinstance(result, SchemaResult)
         assert mock_store_schema.called
 
-    async def test_finish_schema(self):
+    @mock.patch.object(test_module.AnonCredsIssuer, "notify")
+    @mock.patch.object(test_module.AnonCredsIssuer, "_finish_registration")
+    async def test_finish_schema(self, mock_finish_registration, mock_notify):
+        # Mock entry with valid schema JSON
+        mock_entry = mock.MagicMock()
+        mock_entry.value = json.dumps(
+            {
+                "issuerId": "issuer-id",
+                "name": "name",
+                "version": "1.0",
+                "attrNames": ["attr1", "attr2"],
+            }
+        )
+        mock_finish_registration.return_value = mock_entry
         self.profile.transaction = mock.Mock(
             return_value=mock.MagicMock(
                 commit=mock.CoroutineMock(return_value=None),
