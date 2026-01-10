@@ -7,6 +7,7 @@ from anoncreds import CredentialDefinitionPrivate, KeyCorrectnessProof
 from aries_askar import AskarError
 
 from ...anoncreds.issuer import CATEGORY_CRED_DEF_PRIVATE
+from ...anoncreds.models.revocation import RevList
 from ...askar.profile import AskarProfileSession
 from ...cache.base import BaseCache
 from ...indy.credx.issuer import CATEGORY_CRED_DEF_KEY_PROOF
@@ -15,6 +16,7 @@ from ...messaging.credential_definitions.util import CRED_DEF_SENT_RECORD_TYPE
 from ...messaging.schemas.util import SCHEMA_SENT_RECORD_TYPE
 from ...multitenant.base import BaseMultitenantManager
 from ...multitenant.manager import MultitenantManager
+from ...revocation.models.issuer_cred_rev_record import IssuerCredRevRecord
 from ...storage.base import BaseStorage
 from ...storage.record import StorageRecord
 from ...storage.type import (
@@ -24,8 +26,6 @@ from ...storage.type import (
 )
 from ...tests import mock
 from ...utils.testing import create_test_profile
-from ...anoncreds.models.revocation import RevList
-from ...revocation.models.issuer_cred_rev_record import IssuerCredRevRecord
 from .. import anoncreds_upgrade
 
 
