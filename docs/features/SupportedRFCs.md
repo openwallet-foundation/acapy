@@ -8,7 +8,7 @@ ACA-Py or the repository `main` branch. Reminders (and PRs!) to update this page
 welcome! If you have any questions, please contact us on the #aries channel on
 [OpenWallet Foundation Discord](https://discord.gg/openwallet-foundation) or through an issue in this repo.
 
-**Last Update**: 2025-11-15, Release 1.4.0
+**Last Update**: 2026-01-06, Release 1.5.0rc0
 
 > The checklist version of this document was created as a joint effort
 > between [Northern Block](https://northernblock.io/), [Animo Solutions](https://animo.id/) and the Ontario government, on behalf of the Ontario government.
@@ -84,7 +84,7 @@ A summary of the Aries Interop Profiles and Aries RFCs supported in ACA-Py can b
 
 | Secure Storage Types | Supported | Notes |
 | --- | :--: | -- |
-| [Askar] | :white_check_mark: | **DEPRECATED** - Askar provides equivalent/evolved secure storage and cryptography support to the removed "indy-wallet" part of the Indy SDK. When using Askar (via the `--wallet-type askar` startup parameter), credential handling functionality is by [CredX](https://github.com/hyperledger/indy-shared-rs) (AnonCreds) and [Indy VDR](https://github.com/hyperledger/indy-vdr) (Indy ledger interactions). |
+| [Askar] | :white_check_mark: | Askar provides secure storage and cryptography support, replacing the former "indy-wallet" component. When using Askar (via the `--wallet-type askar` startup parameter), credential handling functionality is by [CredX](https://github.com/hyperledger/indy-shared-rs) (AnonCreds) and [Indy VDR](https://github.com/hyperledger/indy-vdr) (Indy ledger interactions). |
 | [Askar]-AnonCreds | :white_check_mark: | Recommended - When using Askar/AnonCreds (via the `--wallet-type askar-anoncreds` startup parameter), AnonCreds credential handling functionality is by [AnonCreds RS](https://github.com/hyperledger/anoncreds-rs). All key management and ACA-Py storage is managed by Askar.|
 | [Kanon]-AnonCreds | :white_check_mark: | Recommended - When using Kanon/AnonCreds (via the `--wallet-type kanon-anoncreds` startup parameter), AnonCreds credential handling functionality is by [AnonCreds RS](https://github.com/hyperledger/anoncreds-rs). All key management is handled by Askar, and all other ACA-Py storage is managed by [Kanon] and the selected database management system. With [Kanon], data is encrypted at rest using the database management system's handling.|
 | [Indy SDK](https://github.com/hyperledger/indy-sdk/tree/main/docs/design/003-wallet-storage) | :x: | **Removed in ACA-Py Release 1.0.0rc5** |
@@ -124,18 +124,18 @@ A summary of the Aries Interop Profiles and Aries RFCs supported in ACA-Py can b
 
 ### AIP 1.0
 
-Most RFCs listed in [AIP
+While the RFCs listed in [AIP
 1.0](https://identity.foundation/aries-rfcs/latest/concepts/0302-aries-interop-profile/#aries-interop-profile-version-10)
-are fully supported in ACA-Py, but deprecation and removal of some of the
-protocols has begun. The following table provides notes about the implementation
-of specific RFCs.
+are fully supported using ACA-Py, the primary protocols have been deprecated,
+removed from the core, and are now only available as plugins. The following
+table provides notes about the implementation of specific RFCs.
 
 | RFC | Supported | Notes |
 | --- | :--: | -- |
 | [0025-didcomm-transports](https://github.com/decentralized-identity/aries-rfcs/tree/b490ebe492985e1be9804fc0763119238b2e51ab/features/0025-didcomm-transports)      | :white_check_mark:        | ACA-Py currently supports HTTP and WebSockets for both inbound and outbound messaging. Transports are pluggable and an agent instance can use multiple inbound and outbound transports.|
 | [0160-connection-protocol](https://github.com/decentralized-identity/aries-rfcs/tree/9b0aaa39df7e8bd434126c4b33c097aae78d65bf/features/0160-connection-protocol)    | :x:        | **MOVED TO PLUGIN** The protocol has been moved into the [ACA-Py Plugins] repository. Those upgrading to Release 1.3.0 or later and continuing to use this protocol **MUST** include the [Connections plugin](https://plugins.aca-py.org/latest/connections/) in their deployment configuration. Users **SHOULD** upgrade to the equivalent [AIP 2.0] protocols as soon as possible. |
-| [0036-issue-credential-v1.0](https://github.com/decentralized-identity/aries-rfcs/tree/bb42a6c35e0d5543718fb36dd099551ab192f7b0/features/0036-issue-credential)    | :white_check_mark:        | **DEPRECATED** In the next release, the protocol will be removed. The protocol will continue to be available as an [ACA-Py plugin], but those upgrading to that pending release and continuing to use this protocol will need to include the plugin in their deployment configuration. Users **SHOULD** upgrade to the equivalent [AIP 2.0] protocols as soon as possible.  |
-| [0037-present-proof-v1.0](https://github.com/decentralized-identity/aries-rfcs/tree/4fae574c03f9f1013db30bf2c0c676b1122f7149/features/0037-present-proof)    | :white_check_mark:        | **DEPRECATED** In the next release, the protocol will be removed. It will continue to be available as an [ACA-Py plugin], but those upgrading to that pending release and continuing to use this protocol will need to include the plugin in their deployment configuration. Users **SHOULD** upgrade to the equivalent [AIP 2.0] protocols as soon as possible. |
+| [0036-issue-credential-v1.0](https://github.com/decentralized-identity/aries-rfcs/tree/bb42a6c35e0d5543718fb36dd099551ab192f7b0/features/0036-issue-credential)    | :x:         | **MOVED TO PLUGIN** The protocol has been moved into the [ACA-Py Plugins] repository. Those upgrading to Release 1.3.0 or later and continuing to use this protocol **MUST** include the [Issue Credentials v1.0 plugin](https://plugins.aca-py.org/latest/issue_credential/) in their deployment configuration. Users **SHOULD** upgrade to the equivalent [AIP 2.0] protocols as soon as possible.  |
+| [0037-present-proof-v1.0](https://github.com/decentralized-identity/aries-rfcs/tree/4fae574c03f9f1013db30bf2c0c676b1122f7149/features/0037-present-proof)    | :x:         | **MOVED TO PLUGIN** The protocol has been moved into the [ACA-Py Plugins] repository. Those upgrading to Release 1.3.0 or later and continuing to use this protocol **MUST** include the [Present Proof v1.0 plugin](https://plugins.aca-py.org/latest/present_proof/) in their deployment configuration. Users **SHOULD** upgrade to the equivalent [AIP 2.0] protocols as soon as possible. |
 
 [AIP 2.0]: https://identity.foundation/aries-rfcs/latest/concepts/0302-aries-interop-profile/#aries-interop-profile-version-20
 

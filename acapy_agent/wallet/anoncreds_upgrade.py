@@ -253,7 +253,7 @@ async def get_rev_reg_def_upgrade_object(
     )
 
     rev_reg_def = RevRegDef(
-        issuer_id=askar_issuer_rev_reg_def.tags.get("issuer_did"),
+        issuer_id=cred_def_upgrade_obj.cred_def.issuer_id,
         cred_def_id=cred_def_upgrade_obj.cred_def_id,
         tag=revoc_reg_def_values["tag"],
         type=revoc_reg_def_values["revoc_def_type"],
@@ -404,8 +404,6 @@ async def upgrade_and_delete_rev_entry_records(
     for cred_rev_record in rev_list_upgrade_obj.cred_rev_records:
         if int(cred_rev_record.tags.get("cred_rev_id")) > next_index:
             next_index = int(cred_rev_record.tags.get("cred_rev_id"))
-
-    # Preserve issuer cred rev records so revocation metadata survives the upgrade
 
     await txn.handle.insert(
         CATEGORY_REV_LIST,

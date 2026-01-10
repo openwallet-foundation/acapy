@@ -45,9 +45,8 @@ class GenericHandler(BaseHandler):
         """Initialize GenericHandler with category and database configuration."""
         super().__init__(category)
         self.schema_context = schema_context or SchemaContext()
-        self.tags_table = self.schema_context.qualify_table(
-            tags_table_name or "items_tags"
-        )
+        self._tags_table_name = tags_table_name or "items_tags"  # Store unqualified name
+        self.tags_table = self.schema_context.qualify_table(self._tags_table_name)
         self.encoder = encoder_factory.get_encoder(
             "postgresql",
             lambda x: x,
@@ -63,6 +62,33 @@ class GenericHandler(BaseHandler):
             category,
             self.tags_table,
         )
+
+    def set_schema_context(self, schema_context: SchemaContext) -> None:
+        """Update the schema context and re-qualify table names.
+
+        This method should be called when the handler is used with a different
+        schema than the one it was initialized with (e.g., when handlers are
+        created at module load time with a default schema).
+        """
+        if (
+            schema_context
+            and schema_context.schema_name != self.schema_context.schema_name
+        ):
+            self.schema_context = schema_context
+            self.tags_table = self.schema_context.qualify_table(self._tags_table_name)
+            # Recreate encoder with updated tags_table
+            self.encoder = encoder_factory.get_encoder(
+                "postgresql",
+                lambda x: x,
+                lambda x: x,
+                normalized=False,
+                tags_table=self.tags_table,
+            )
+            LOGGER.debug(
+                "[set_schema_context] Updated schema_context to %s, tags_table=%s",
+                self.schema_context,
+                self.tags_table,
+            )
 
     def _validate_order_by(self, order_by: Optional[str]) -> None:
         if order_by and order_by not in self.ALLOWED_ORDER_BY_COLUMNS:
@@ -427,6 +453,13 @@ class GenericHandler(BaseHandler):
 
             entry = Entry(category=category, name=name, value=item_value, tags=tags)
             LOGGER.debug("[%s] Returning entry: %s", operation_name, entry)
+            return entry
+        else:
+            # No tag_filter - return entry with empty tags
+            entry = Entry(category=category, name=name, value=item_value, tags={})
+            LOGGER.debug(
+                "[%s] Returning entry (no tag_filter): %s", operation_name, entry
+            )
             return entry
 
     async def fetch_all(
