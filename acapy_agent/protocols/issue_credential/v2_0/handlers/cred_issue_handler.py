@@ -68,17 +68,32 @@ class V20CredIssueHandler(BaseHandler):
 
         # Automatically move to next state if flag is set
         if context.settings.get("debug.auto_store_credential"):
+            cred_store_succeeded = False
             try:
                 cred_ex_record = await cred_manager.store_credential(cred_ex_record)
+                cred_store_succeeded = True
+            except StorageError as err:
+                # Leave record in credential-received to allow manual retry
+                self._logger.exception(
+                    "Auto-store failed; leaving credential in received state"
+                )
+                if cred_ex_record:
+                    cred_ex_record.error_msg = err.roll_up
+                    async with context.profile.session() as session:
+                        await cred_ex_record.save(
+                            session,
+                            reason=err.roll_up,
+                        )
             except (
                 BaseModelError,
                 AnonCredsHolderError,
                 IndyHolderError,
-                StorageError,
                 V20CredManagerError,
             ) as err:
                 # treat failure to store as mangled on receipt hence protocol error
-                self._logger.exception("Error storing issued credential")
+                self._logger.exception(
+                    "Auto-store failed; abandoning credential exchange"
+                )
                 if cred_ex_record:
                     async with context.profile.session() as session:
                         await cred_ex_record.save_error_state(
@@ -92,11 +107,11 @@ class V20CredIssueHandler(BaseHandler):
                         )
                     )
 
-            cred_ack_message = await cred_manager.send_cred_ack(cred_ex_record)
-
-            trace_event(
-                context.settings,
-                cred_ack_message,
-                outcome="V20CredIssueHandler.handle.STORE",
-                perf_counter=r_time,
-            )
+            if cred_store_succeeded:
+                cred_ack_message = await cred_manager.send_cred_ack(cred_ex_record)
+                trace_event(
+                    context.settings,
+                    cred_ack_message,
+                    outcome="V20CredIssueHandler.handle.STORE",
+                    perf_counter=r_time,
+                )
