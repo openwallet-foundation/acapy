@@ -1097,7 +1097,8 @@ class DIFPresExchHandler:
                 credentials=filtered_by_schema,
             )
             LOGGER.debug(
-                "DIF-PRES apply_requirements: descriptor=%s schema_filtered=%s constraints_filtered=%s",
+                "DIF-PRES apply_requirements: descriptor=%s schema_filtered=%s "
+                "constraints_filtered=%s",
                 descriptor.id,
                 len(filtered_by_schema),
                 len(filtered),

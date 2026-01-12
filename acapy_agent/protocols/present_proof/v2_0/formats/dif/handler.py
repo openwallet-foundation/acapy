@@ -21,6 +21,7 @@ from ......vc.vc_di.manager import VcDiManager
 from ......vc.vc_ld.manager import VcLdpManager
 from ......vc.vc_ld.models.options import LDProofVCOptions
 from ......vc.vc_ld.models.presentation import VerifiablePresentation
+from ......vc.ld_proofs.validation_result import DocumentVerificationResult
 from .....problem_report.v1_0.message import ProblemReport
 from ....dif.pres_exch import PresentationDefinition, SchemaInputDescriptor
 from ....dif.pres_exch_handler import DIFPresExchError, DIFPresExchHandler
@@ -168,7 +169,8 @@ class DIFPresFormatHandler(V20PresFormatHandler):
             challenge = str(uuid4())
         input_descriptors = pres_definition.input_descriptors
         LOGGER.debug(
-            "DIF-PRES create_pres: pres_ex_id=%s thread_id=%s pd_id=%s input_descriptors=%s issuer_id=%s record_ids=%s",
+            "DIF-PRES create_pres: pres_ex_id=%s thread_id=%s pd_id=%s "
+            "input_descriptors=%s issuer_id=%s record_ids=%s",
             pres_ex_record.pres_ex_id,
             pres_ex_record.thread_id,
             pres_definition.id if pres_definition else None,
@@ -210,7 +212,8 @@ class DIFPresFormatHandler(V20PresFormatHandler):
                 if len(one_of_uri_groups) == 0:
                     one_of_uri_groups = None
                 LOGGER.debug(
-                    "DIF-PRES descriptor=%s oneof=%s uri_list=%s uri_groups=%s limit_disclosure=%s",
+                    "DIF-PRES descriptor=%s oneof=%s uri_list=%s uri_groups=%s "
+                    "limit_disclosure=%s",
                     input_descriptor.id,
                     bool(one_of_uri_groups),
                     uri_list,
@@ -339,7 +342,8 @@ class DIFPresFormatHandler(V20PresFormatHandler):
                         max_results = 1000
                         cred_group = await search.fetch(max_results)
                         LOGGER.debug(
-                            "DIF-PRES search(oneof): descriptor=%s uris=%s proof_types=%s results=%s",
+                            "DIF-PRES search(oneof): descriptor=%s uris=%s "
+                            "proof_types=%s results=%s",
                             input_descriptor.id,
                             uri_group,
                             proof_type,
@@ -362,7 +366,8 @@ class DIFPresFormatHandler(V20PresFormatHandler):
                     max_results = 1000
                     records = await search.fetch(max_results)
                     LOGGER.debug(
-                        "DIF-PRES search: descriptor=%s uris=%s proof_types=%s results=%s",
+                        "DIF-PRES search: descriptor=%s uris=%s proof_types=%s "
+                        "results=%s",
                         input_descriptor.id,
                         uri_list,
                         proof_type,
@@ -414,7 +419,8 @@ class DIFPresFormatHandler(V20PresFormatHandler):
         )
         try:
             LOGGER.debug(
-                "DIF-PRES create_vp: pres_ex_id=%s thread_id=%s proof_type=%s creds=%s records_filter=%s",
+                "DIF-PRES create_vp: pres_ex_id=%s thread_id=%s proof_type=%s "
+                "creds=%s records_filter=%s",
                 pres_ex_record.pres_ex_id,
                 pres_ex_record.thread_id,
                 dif_handler_proof_type,
@@ -546,7 +552,8 @@ class DIFPresFormatHandler(V20PresFormatHandler):
                 )
                 if log_details:
                     LOGGER.debug(
-                        "DIF-PRES verify_pres details: presentation_result=%s credential_results=%s",
+                        "DIF-PRES verify_pres details: presentation_result=%s "
+                        "credential_results=%s",
                         self._summarize_doc_result(pres_ver_result.presentation_result),
                         [
                             self._summarize_doc_result(r)
@@ -574,7 +581,8 @@ class DIFPresFormatHandler(V20PresFormatHandler):
             )
             if log_details:
                 LOGGER.debug(
-                    "DIF-PRES verify_pres details: presentation_result=%s credential_results=%s",
+                    "DIF-PRES verify_pres details: presentation_result=%s "
+                    "credential_results=%s",
                     self._summarize_doc_result(pres_ver_result.presentation_result),
                     [
                         self._summarize_doc_result(r)
@@ -587,7 +595,7 @@ class DIFPresFormatHandler(V20PresFormatHandler):
         return pres_ex_record
 
     @staticmethod
-    def _summarize_doc_result(doc_result: Optional["DocumentVerificationResult"]):
+    def _summarize_doc_result(doc_result: Optional[DocumentVerificationResult]):
         if not doc_result:
             return None
         proof_results = [
