@@ -17,11 +17,11 @@ from ......vc.ld_proofs import (
     Ed25519Signature2018,
     Ed25519Signature2020,
 )
+from ......vc.ld_proofs.validation_result import DocumentVerificationResult
 from ......vc.vc_di.manager import VcDiManager
 from ......vc.vc_ld.manager import VcLdpManager
 from ......vc.vc_ld.models.options import LDProofVCOptions
 from ......vc.vc_ld.models.presentation import VerifiablePresentation
-from ......vc.ld_proofs.validation_result import DocumentVerificationResult
 from .....problem_report.v1_0.message import ProblemReport
 from ....dif.pres_exch import PresentationDefinition, SchemaInputDescriptor
 from ....dif.pres_exch_handler import DIFPresExchError, DIFPresExchHandler
