@@ -39,6 +39,6 @@ now=$(date +%Y-%m-%d)
 echo ""
 echo "- Dependabot PRs"
 echo "  - [Link to list of Dependabot PRs in this release](https://github.com/openwallet-foundation/acapy/pulls?q=is%3Apr+is%3Amerged+merged%3A${1}..${now}+author%3Aapp%2Fdependabot+)"
-
+echo ""
 echo Here are the latest issues and pull requests. The release PR you are preparing should be one higher than the highest of the numbers listed:
 gh issue list -s all -L 1; gh pr ls -s all -L 1
