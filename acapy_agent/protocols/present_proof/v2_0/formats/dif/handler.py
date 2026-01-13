@@ -17,6 +17,7 @@ from ......vc.ld_proofs import (
     Ed25519Signature2018,
     Ed25519Signature2020,
 )
+from ......vc.ld_proofs.validation_result import DocumentVerificationResult
 from ......vc.vc_di.manager import VcDiManager
 from ......vc.vc_ld.manager import VcLdpManager
 from ......vc.vc_ld.models.options import LDProofVCOptions
@@ -167,6 +168,16 @@ class DIFPresFormatHandler(V20PresFormatHandler):
         if not challenge:
             challenge = str(uuid4())
         input_descriptors = pres_definition.input_descriptors
+        LOGGER.debug(
+            "DIF-PRES create_pres: pres_ex_id=%s thread_id=%s pd_id=%s "
+            "input_descriptors=%s issuer_id=%s record_ids=%s",
+            pres_ex_record.pres_ex_id,
+            pres_ex_record.thread_id,
+            pres_definition.id if pres_definition else None,
+            len(input_descriptors) if input_descriptors else 0,
+            issuer_id,
+            len(limit_record_ids) if limit_record_ids else 0,
+        )
         claim_fmt = pres_definition.fmt
         dif_handler_proof_type = None
         try:
@@ -200,6 +211,15 @@ class DIFPresFormatHandler(V20PresFormatHandler):
                     uri_list = None
                 if len(one_of_uri_groups) == 0:
                     one_of_uri_groups = None
+                LOGGER.debug(
+                    "DIF-PRES descriptor=%s oneof=%s uri_list=%s uri_groups=%s "
+                    "limit_disclosure=%s",
+                    input_descriptor.id,
+                    bool(one_of_uri_groups),
+                    uri_list,
+                    one_of_uri_groups,
+                    limit_disclosure,
+                )
                 if limit_disclosure:
                     proof_type = [BbsBlsSignature2020.signature_type]
                     dif_handler_proof_type = BbsBlsSignature2020.signature_type
@@ -321,6 +341,14 @@ class DIFPresFormatHandler(V20PresFormatHandler):
                         )
                         max_results = 1000
                         cred_group = await search.fetch(max_results)
+                        LOGGER.debug(
+                            "DIF-PRES search(oneof): descriptor=%s uris=%s "
+                            "proof_types=%s results=%s",
+                            input_descriptor.id,
+                            uri_group,
+                            proof_type,
+                            len(cred_group),
+                        )
                         (
                             cred_group_vcrecord_list,
                             cred_group_vcrecord_ids_set,
@@ -337,6 +365,14 @@ class DIFPresFormatHandler(V20PresFormatHandler):
                     # For now, setting to 1000
                     max_results = 1000
                     records = await search.fetch(max_results)
+                    LOGGER.debug(
+                        "DIF-PRES search: descriptor=%s uris=%s proof_types=%s "
+                        "results=%s",
+                        input_descriptor.id,
+                        uri_list,
+                        proof_type,
+                        len(records),
+                    )
 
                 # Avoiding addition of duplicate records
                 (
@@ -345,6 +381,12 @@ class DIFPresFormatHandler(V20PresFormatHandler):
                 ) = await self.process_vcrecords_return_list(records, record_ids)
                 record_ids = vcrecord_ids_set
                 credentials_list = credentials_list + vcrecord_list
+                LOGGER.debug(
+                    "DIF-PRES candidates: descriptor=%s added=%s total=%s",
+                    input_descriptor.id,
+                    len(vcrecord_list),
+                    len(credentials_list),
+                )
 
         except StorageNotFoundError as err:
             raise V20PresFormatHandlerError(err)
@@ -376,6 +418,15 @@ class DIFPresFormatHandler(V20PresFormatHandler):
             reveal_doc=reveal_doc_frame,
         )
         try:
+            LOGGER.debug(
+                "DIF-PRES create_vp: pres_ex_id=%s thread_id=%s proof_type=%s "
+                "creds=%s records_filter=%s",
+                pres_ex_record.pres_ex_id,
+                pres_ex_record.thread_id,
+                dif_handler_proof_type,
+                len(credentials_list),
+                len(limit_record_ids) if limit_record_ids else 0,
+            )
             pres = await dif_handler.create_vp(
                 challenge=challenge,
                 domain=domain,
@@ -469,6 +520,14 @@ class DIFPresFormatHandler(V20PresFormatHandler):
         dif_proof = pres_ex_record.pres.attachment(DIFPresFormatHandler.format)
         pres_request = pres_ex_record.pres_request.attachment(DIFPresFormatHandler.format)
         pres_ver_result = None
+        log_details = self._profile.settings.get("debug.presentations")
+
+        LOGGER.debug(
+            "DIF-PRES verify_pres: pres_ex_id=%s thread_id=%s proof_is_sequence=%s",
+            pres_ex_record.pres_ex_id,
+            pres_ex_record.thread_id,
+            isinstance(dif_proof, Sequence),
+        )
         if isinstance(dif_proof, Sequence):
             if len(dif_proof) == 0:
                 raise V20PresFormatHandlerError(
@@ -476,22 +535,82 @@ class DIFPresFormatHandler(V20PresFormatHandler):
                 )
             for proof in dif_proof:
                 manager, options = self._get_type_manager_options(proof, pres_request)
+                proof_type = (proof.get("proof") or {}).get("type")
+                LOGGER.debug(
+                    "DIF-PRES verify_pres: proof_type=%s manager=%s",
+                    proof_type,
+                    manager.__class__.__name__,
+                )
                 pres_ver_result = await manager.verify_presentation(
                     vp=VerifiablePresentation.deserialize(proof),
                     options=options,
                 )
+                LOGGER.debug(
+                    "DIF-PRES verify_pres result: verified=%s errors=%s",
+                    pres_ver_result.verified,
+                    pres_ver_result.errors,
+                )
+                if log_details:
+                    LOGGER.debug(
+                        "DIF-PRES verify_pres details: presentation_result=%s "
+                        "credential_results=%s",
+                        self._summarize_doc_result(pres_ver_result.presentation_result),
+                        [
+                            self._summarize_doc_result(r)
+                            for r in (pres_ver_result.credential_results or [])
+                        ],
+                    )
                 if not pres_ver_result.verified:
                     break
         else:
             manager, options = self._get_type_manager_options(dif_proof, pres_request)
+            proof_type = (dif_proof.get("proof") or {}).get("type")
+            LOGGER.debug(
+                "DIF-PRES verify_pres: proof_type=%s manager=%s",
+                proof_type,
+                manager.__class__.__name__,
+            )
             pres_ver_result = await manager.verify_presentation(
                 vp=VerifiablePresentation.deserialize(dif_proof),
                 options=options,
             )
+            LOGGER.debug(
+                "DIF-PRES verify_pres result: verified=%s errors=%s",
+                pres_ver_result.verified,
+                pres_ver_result.errors,
+            )
+            if log_details:
+                LOGGER.debug(
+                    "DIF-PRES verify_pres details: presentation_result=%s "
+                    "credential_results=%s",
+                    self._summarize_doc_result(pres_ver_result.presentation_result),
+                    [
+                        self._summarize_doc_result(r)
+                        for r in (pres_ver_result.credential_results or [])
+                    ],
+                )
 
         assert pres_ver_result is not None
         pres_ex_record.verified = json.dumps(pres_ver_result.verified)
         return pres_ex_record
+
+    @staticmethod
+    def _summarize_doc_result(doc_result: Optional[DocumentVerificationResult]):
+        if not doc_result:
+            return None
+        proof_results = [
+            {
+                "verified": pr.verified,
+                "error": pr.error,
+                "purpose_error": getattr(pr.purpose_result, "error", None),
+            }
+            for pr in (doc_result.results or [])
+        ]
+        return {
+            "verified": doc_result.verified,
+            "errors": doc_result.errors,
+            "proof_results": proof_results,
+        }
 
     def _get_type_manager_options(self, dif_proof: dict, pres_request: dict):
         """Get the type of manager and options based on the proof type."""
