@@ -12,6 +12,11 @@ from .......storage.vc_holder.vc_record import VCRecord
 from .......tests import mock
 from .......utils.testing import create_test_profile, skip_on_jsonld_url_error
 from .......vc.ld_proofs import DocumentLoader
+from .......vc.ld_proofs.validation_result import (
+    DocumentVerificationResult,
+    ProofResult,
+    PurposeResult,
+)
 from .......vc.vc_di.manager import VcDiManager
 from .......vc.vc_ld.manager import VcLdpManager
 from .......vc.vc_ld.validation_result import PresentationVerificationResult
@@ -2379,3 +2384,27 @@ class TestDIFFormatHandler(IsolatedAsyncioTestCase):
         manager, options = handler._get_type_manager_options(dif_proof, pres_request)
         assert isinstance(manager, VcLdpManager)
         assert options.challenge == "3fa85f64-5717-4562-b3fc-2c963f66afa7"
+
+    async def test_summarize_doc_result_redacts_sensitive_fields(self):
+        self.profile = await create_test_profile()
+        handler = DIFPresFormatHandler(self.profile)
+        doc_result = DocumentVerificationResult(
+            verified=False,
+            document={"id": "doc", "proof": {"proofValue": "secret"}},
+            results=[
+                ProofResult(
+                    verified=False,
+                    proof={"proofValue": "secret"},
+                    error="bad proof",
+                    purpose_result=PurposeResult(valid=False, error="purpose failed"),
+                )
+            ],
+            errors=["verification failed"],
+        )
+        summary = handler._summarize_doc_result(doc_result)
+        assert summary["verified"] is False
+        assert summary["errors"] == ["verification failed"]
+        assert "document" not in summary
+        assert "proof" not in summary["proof_results"][0]
+        assert summary["proof_results"][0]["error"] == "bad proof"
+        assert summary["proof_results"][0]["purpose_error"] == "purpose failed"
