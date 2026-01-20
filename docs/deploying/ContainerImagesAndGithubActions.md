@@ -48,9 +48,9 @@ The following is the ACA-Py container images tagging format:
  - `1.5` - Major.minor tag (moves to latest patch release)
  - `latest` - Only assigned if this is the highest semantic version
 
-**Release Candidates** (e.g., `1.5.0-rc0`):
- - `py3.12-1.5.0-rc0` - Python version specific RC tag
- - `1.5.0-rc0` - Semantic version RC tag
+**Release Candidates** (e.g., `1.5.0rc1`):
+ - `py3.12-1.5.0rc1` - Python version specific RC tag
+ - `1.5.0rc1` - Semantic version RC tag
  - **Note**: RC releases do NOT receive major.minor (`1.5`) or `latest` tags
 
 **Nightly Builds**:
