@@ -39,7 +39,6 @@ AIP 1.0 protocols that were [previously announced as deprecated](#140-deprecatio
 
 ### 1.5.0 Categorized PR List
 
-
 - **Core Platform and Architecture**
   - Fix plugin installer hardcoded version [\#4015](https://github.com/openwallet-foundation/acapy/pull/4015) [PatStLouis](https://github.com/PatStLouis)
   - Upgrade python to 3.13 [#3911](https://github.com/openwallet-foundation/acapy/pull/3911) [jamshale](https://github.com/jamshale)
@@ -63,6 +62,7 @@ AIP 1.0 protocols that were [previously announced as deprecated](#140-deprecatio
   - fix: minor fix to avoid pool exhaustion and deadlocks [#3958](https://github.com/openwallet-foundation/acapy/pull/3958) [vinaysingh8866](https://github.com/vinaysingh8866)
   - Fix for handler for postgres [#3992](https://github.com/openwallet-foundation/acapy/pull/3992) [vinaysingh8866](https://github.com/vinaysingh8866)
 - **Testing, Logging, and Diagnostics**
+  - Add citizenship context to document downloader [\#4027](https://github.com/openwallet-foundation/acapy/pull/4027) [PatStLouis](https://github.com/PatStLouis)
   - DIF presentation debug logging [\#4019](https://github.com/openwallet-foundation/acapy/pull/4019) [nodlesh](https://github.com/nodlesh)
   - feat: Only log failing scenarios [#4005](https://github.com/openwallet-foundation/acapy/pull/4005) [jamshale](https://github.com/jamshale)
   - chore: Lower scenario test logging to info level [#4000](https://github.com/openwallet-foundation/acapy/pull/4000) [jamshale](https://github.com/jamshale)
