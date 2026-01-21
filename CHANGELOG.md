@@ -2,7 +2,7 @@
 
 ## 1.5.0rc1
 
-### January 20, 2026
+### January 21, 2026
 
 ACA-Py 1.5.0 is a significant release that advances the platform’s modernization and modularization goals. The most substantial changes are the upgrade to **Python 3.13** and the continued evolution of ACA-Py toward a **plugin-oriented architecture**, including the removal of the legacy v1.0 credential exchange protocols (issue credential and present proof) from the core agent. The release also includes some important fixes to the wallet migration process to the `askar-anoncreds` wallet type, and to the webhooks associated with the use of the `askar-anoncreds` wallet type.
 
@@ -71,7 +71,7 @@ AIP 1.0 protocols that were [previously announced as deprecated](#140-deprecatio
   - WebVH Workshop (traction / openapi) [\#4013](https://github.com/openwallet-foundation/acapy/pull/4013) [PatStLouis](https://github.com/PatStLouis)
   - Sonivijayk/fix/issue 2319 docs update to remove indy usage [#3997](https://github.com/openwallet-foundation/acapy/pull/3997) [sonivijayk](https://github.com/sonivijayk)
 - **Dependabot PRs**
-  - [Link to list of Dependabot PRs in this release](https://github.com/openwallet-foundation/acapy/pulls?q=is%3Apr+is%3Amerged+merged%3A2025-11-15..2026-01-20+author%3Aapp%2Fdependabot+)
+  - [Link to list of Dependabot PRs in this release](https://github.com/openwallet-foundation/acapy/pulls?q=is%3Apr+is%3Amerged+merged%3A2025-11-15..2026-01-21+author%3Aapp%2Fdependabot+)
 - **Release management pull requests**:
   - 1.5.0rc1 [\#4026](https://github.com/openwallet-foundation/acapy/pull/4026) [swcurran](https://github.com/swcurran)
   - 1.5.0rc0 [\#4011](https://github.com/openwallet-foundation/acapy/pull/4011) [swcurran](https://github.com/swcurran)
