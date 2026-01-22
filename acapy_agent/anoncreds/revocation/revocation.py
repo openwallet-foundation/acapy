@@ -1508,8 +1508,9 @@ class AnonCredsRevocation:
         if new_reg and not isinstance(new_reg, str):
             new_rev_reg_def_id = new_reg.rev_reg_def_id
             # Store the registry definition synchronously before setting it as active
-            # This ensures the registry is available in the wallet when set_active_registry
-            # tries to fetch it, avoiding a race condition with async event processing
+            # This ensures the registry is available in the wallet when
+            # set_active_registry tries to fetch it, avoiding a race condition
+            # with async event processing
             await self.store_revocation_registry_definition(new_reg)
             await self.set_active_registry(new_rev_reg_def_id)
         else:
