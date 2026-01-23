@@ -107,6 +107,7 @@ nav:
     - ACA-Py as a DIDComm Mediator: features/Mediation.md
 - Demos:
     - ACA-Py / AnonCreds Workshop: demo/ACA-Py-Workshop.md
+    - ACA-Py / AnonCreds / did:webvh Workshop: demo/WebVH-Workshop.md
     - The Alice-Faber Demo: demo/README.md
     - Open API Tutorial: demo/OpenAPIDemo.md
     - Alice Gets a Phone: demo/AliceGetsAPhone.md

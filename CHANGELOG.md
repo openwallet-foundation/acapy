@@ -1,14 +1,14 @@
 # ACA-Py Changelog
 
-## 1.5.0rc0
+## 1.5.0rc1
 
-### January 7, 2026
+### January 22, 2026
 
-ACA-Py 1.5.0 is a significant release that advances the platform’s modernization and modularization goals. The most substantial changes are the upgrade to **Python 3.13** and the continued evolution of ACA-Py toward a **plugin-oriented architecture**, including the removal of the legacy v1.0 credential exchange protocols (issue credential and present proof) from the core agent.
+ACA-Py 1.5.0 is a significant release that advances the platform’s modernization and modularization goals. The most substantial changes are the upgrade to **Python 3.13** and the continued evolution of ACA-Py toward a **plugin-oriented architecture**, including the removal of the legacy v1.0 credential exchange protocols (issue credential and present proof) from the core agent. The release also includes some important fixes to the wallet migration process to the `askar-anoncreds` wallet type, and to the webhooks associated with the use of the `askar-anoncreds` wallet type.
 
 With this release, the v1.0 credential exchange protocols have been fully removed from ACA-Py core and are now expected to be provided via plugins where required. This aligns with earlier deprecation signals and reinforces a cleaner separation between the core agent and optional protocol implementations.
 
-This release also includes important fixes to the migration process from the `askar` wallet type to `askar-anoncreds`, necessary for upgrades of deployments adopting the newest AnonCreds libraries. Several follow-on fixes and cleanups were also made to the **Kanon Storage** capability added in [Release 1.4.0](#140), addressing connection management/pooling behavior.
+This release includes some follow-on fixes and cleanups to the **Kanon Storage** capability added in [Release 1.4.0](#140), addressing connection management/pooling behavior.
 
 Additional improvements include enhanced scenario test logging and diagnostics, recoverable and event-driven revocation registry management, improvements to Docker image versioning, the introduction of a **plugin installer** to simplify deployment and management of external ACA-Py plugins, and the usual dependabot updates.
 
@@ -24,6 +24,7 @@ This release includes **intentional breaking changes** as part of ACA-Py’s ong
 While not breaking at the API level, implementers should also be aware of behavioral and configuration changes related to:
 
 - Migration from `askar` to `askar-anoncreds`
+- The addition of some webhooks missing since the introduction of the `askar-anoncreds` wallet type
 - Kanon Storage connection handling and pooling behavior
 
 These areas should be explicitly tested when upgrading to 1.5.0.
@@ -39,14 +40,20 @@ AIP 1.0 protocols that were [previously announced as deprecated](#140-deprecatio
 ### 1.5.0 Categorized PR List
 
 - **Core Platform and Architecture**
+  - Fix plugin installer hardcoded version [\#4015](https://github.com/openwallet-foundation/acapy/pull/4015) [PatStLouis](https://github.com/PatStLouis)
   - Upgrade python to 3.13 [#3911](https://github.com/openwallet-foundation/acapy/pull/3911) [jamshale](https://github.com/jamshale)
   - Feature: Add plugin installer [#3955](https://github.com/openwallet-foundation/acapy/pull/3955) [PatStLouis](https://github.com/PatStLouis)
   - Feature: semantic image versioning for released images [#3976](https://github.com/openwallet-foundation/acapy/pull/3976) [esune](https://github.com/esune)
 - **Protocol Changes and Credential Exchange**
+  - Issue #3845 fix :  auto-store failure going to done state [\#3999](https://github.com/openwallet-foundation/acapy/pull/3999) [sonivijayk](https://github.com/sonivijayk)
   - Remove present proof v1 [#3981](https://github.com/openwallet-foundation/acapy/pull/3981) [jamshale](https://github.com/jamshale)
   - feat: Remove issuance v1 protocols [#3923](https://github.com/openwallet-foundation/acapy/pull/3923) [jamshale](https://github.com/jamshale)
   - feat: Add option to remove credex on failure [#3947](https://github.com/openwallet-foundation/acapy/pull/3947) [TheTechmage](https://github.com/TheTechmage)
 - **AnonCreds, Revocation, and Wallet Migration**
+  - Synchronously store the revocation registry  [\#4028](https://github.com/openwallet-foundation/acapy/pull/4028) [PatStLouis](https://github.com/PatStLouis)
+  - Sonivijayk/fix/issue 3990 revoke indy cred post askar anoncres upgrade [\#4017](https://github.com/openwallet-foundation/acapy/pull/4017) [sonivijayk](https://github.com/sonivijayk)
+  - Update AnonCreds events [\#4016](https://github.com/openwallet-foundation/acapy/pull/4016) [PatStLouis](https://github.com/PatStLouis)
+  - Fetch schemaId on legacy cred def [\#3988](https://github.com/openwallet-foundation/acapy/pull/3988) [PatStLouis](https://github.com/PatStLouis)
   - chore: Remove some more indy refs from anoncreds module [#4004](https://github.com/openwallet-foundation/acapy/pull/4004) [jamshale](https://github.com/jamshale)
   - Recoverable, event-driven revocation registry management [#3831](https://github.com/openwallet-foundation/acapy/pull/3831) [ff137](https://github.com/ff137)
   - Fix issues with anoncreds upgrade [#3991](https://github.com/openwallet-foundation/acapy/pull/3991) [jamshale](https://github.com/jamshale)
@@ -56,14 +63,18 @@ AIP 1.0 protocols that were [previously announced as deprecated](#140-deprecatio
   - fix: minor fix to avoid pool exhaustion and deadlocks [#3958](https://github.com/openwallet-foundation/acapy/pull/3958) [vinaysingh8866](https://github.com/vinaysingh8866)
   - Fix for handler for postgres [#3992](https://github.com/openwallet-foundation/acapy/pull/3992) [vinaysingh8866](https://github.com/vinaysingh8866)
 - **Testing, Logging, and Diagnostics**
+  - Add citizenship context to document downloader [\#4027](https://github.com/openwallet-foundation/acapy/pull/4027) [PatStLouis](https://github.com/PatStLouis)
+  - DIF presentation debug logging [\#4019](https://github.com/openwallet-foundation/acapy/pull/4019) [nodlesh](https://github.com/nodlesh)
   - feat: Only log failing scenarios [#4005](https://github.com/openwallet-foundation/acapy/pull/4005) [jamshale](https://github.com/jamshale)
   - chore: Lower scenario test logging to info level [#4000](https://github.com/openwallet-foundation/acapy/pull/4000) [jamshale](https://github.com/jamshale)
   - feat: Add logging to scenario tests [#3983](https://github.com/openwallet-foundation/acapy/pull/3983) [jamshale](https://github.com/jamshale)
 - **Documentation and Cleanup**
+  - WebVH Workshop (traction / openapi) [\#4013](https://github.com/openwallet-foundation/acapy/pull/4013) [PatStLouis](https://github.com/PatStLouis)
   - Sonivijayk/fix/issue 2319 docs update to remove indy usage [#3997](https://github.com/openwallet-foundation/acapy/pull/3997) [sonivijayk](https://github.com/sonivijayk)
 - **Dependabot PRs**
-  - [Link to list of Dependabot PRs in this release](https://github.com/openwallet-foundation/acapy/pulls?q=is%3Apr+is%3Amerged+merged%3A2025-11-15..2026-01-06+author%3Aapp%2Fdependabot+)
+  - [Link to list of Dependabot PRs in this release](https://github.com/openwallet-foundation/acapy/pulls?q=is%3Apr+is%3Amerged+merged%3A2025-11-15..2026-01-22+author%3Aapp%2Fdependabot+)
 - **Release management pull requests**:
+  - 1.5.0rc1 [\#4026](https://github.com/openwallet-foundation/acapy/pull/4026) [swcurran](https://github.com/swcurran)
   - 1.5.0rc0 [\#4011](https://github.com/openwallet-foundation/acapy/pull/4011) [swcurran](https://github.com/swcurran)
 
 ## 1.4.0

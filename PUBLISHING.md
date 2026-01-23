@@ -6,7 +6,7 @@ a major, minor or patch release, per [semver](https://semver.org/) rules.
 
 Once ready to do a release, create a local branch that includes the following updates:
 
-1. Create a local PR branch from an updated `main` branch, e.g. "1.5.0rc0".
+1. Create a local PR branch from an updated `main` branch, e.g. "1.5.0rc1".
 
 2. See if there are any Document Site `mkdocs` changes needed. Run the script
    `./scripts/prepmkdocs.sh; mkdocs`. Watch the log, noting particularly if
@@ -152,9 +152,9 @@ For the build test, the RTD Sphinx theme needs to be added to the docker image, 
      - `1.5` - Major.minor tag (moves to latest patch release)
      - `latest` - Only assigned if this is the highest semantic version
    
-   - **Release Candidates** (e.g., `1.5.0-rc0`):
-     - `py3.12-1.5.0-rc0` - Python version specific RC tag
-     - `1.5.0-rc0` - Semantic version RC tag
+   - **Release Candidates** (e.g., `1.5.0rc1`):
+     - `py3.12-1.5.0rc1` - Python version specific RC tag
+     - `1.5.0rc1` - Semantic version RC tag
      - **Note**: RC releases do NOT receive major.minor (`1.5`) or `latest` tags
    
    The `latest` tag is explicitly managed by comparing semantic versions across all
