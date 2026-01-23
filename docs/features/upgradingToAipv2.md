@@ -24,7 +24,8 @@ AIP 2.0 introduces significant changes to how credential and presentation exchan
 - ACA-Py instance with AIP 2.0 support (typically ACA-Py 0.7.0 or later)
 - Controller application using ACA-Py's Admin API
 - Understanding of Aries protocols and REST APIs
-- For `anoncreds` filter: ACA-Py started with `--wallet-type askar-anoncreds`
+- For `anoncreds` filter: ACA-Py started with `--wallet-type askar-anoncreds` (in multitenant mode, this setting can be overwritten per tenant)
+- For existing wallets with the `askar` type, there's an endpoint to upgrade the wallet to `askar-anoncreds`
 
 ## API Endpoints
 
@@ -150,6 +151,16 @@ aca-py start \
   --wallet-name mywallet \
   --wallet-key mykey
 ```
+
+**Multitenant mode:** In multitenant mode, the wallet type setting can be overwritten per tenant. Each tenant can have its own wallet type configuration.
+
+**Upgrading existing wallets:** For existing wallets with the `askar` type, you can upgrade to `askar-anoncreds` using the wallet upgrade endpoint:
+
+```
+POST /anoncreds/wallet/upgrade?wallet_name=<wallet_name>
+```
+
+> **⚠️ Warning:** This upgrade is irreversible. You cannot downgrade from `askar-anoncreds` back to `askar`. It is highly recommended to back up your wallet and test the upgrade in a development environment before upgrading a production wallet.
 
 **Benefits of upgrading to `askar-anoncreds`:**
 - Improved performance and efficiency
