@@ -554,22 +554,22 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#150rc0" class="md-nav__link">
+  <a href="#150rc1" class="md-nav__link">
     <span class="md-ellipsis">
       
-        1.5.0rc0
+        1.5.0rc1
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="1.5.0rc0">
+    <nav class="md-nav" aria-label="1.5.0rc1">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#january-7-2026" class="md-nav__link">
+  <a href="#january-22-2026" class="md-nav__link">
     <span class="md-ellipsis">
       
-        January 7, 2026
+        January 22, 2026
       
     </span>
   </a>
@@ -2548,6 +2548,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../demo/WebVH-Workshop/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ACA-Py / AnonCreds / did:webvh Workshop
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../demo/" class="md-nav__link">
         
   
@@ -4211,22 +4239,22 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#150rc0" class="md-nav__link">
+  <a href="#150rc1" class="md-nav__link">
     <span class="md-ellipsis">
       
-        1.5.0rc0
+        1.5.0rc1
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="1.5.0rc0">
+    <nav class="md-nav" aria-label="1.5.0rc1">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#january-7-2026" class="md-nav__link">
+  <a href="#january-22-2026" class="md-nav__link">
     <span class="md-ellipsis">
       
-        January 7, 2026
+        January 22, 2026
       
     </span>
   </a>
@@ -5420,11 +5448,11 @@
 
 
 <h1 id="aca-py-changelog">ACA-Py Changelog<a class="headerlink" href="#aca-py-changelog" title="Permanent link">&para;</a></h1>
-<h2 id="150rc0">1.5.0rc0<a class="headerlink" href="#150rc0" title="Permanent link">&para;</a></h2>
-<h3 id="january-7-2026">January 7, 2026<a class="headerlink" href="#january-7-2026" title="Permanent link">&para;</a></h3>
-<p>ACA-Py 1.5.0 is a significant release that advances the platform’s modernization and modularization goals. The most substantial changes are the upgrade to <strong>Python 3.13</strong> and the continued evolution of ACA-Py toward a <strong>plugin-oriented architecture</strong>, including the removal of the legacy v1.0 credential exchange protocols (issue credential and present proof) from the core agent.</p>
+<h2 id="150rc1">1.5.0rc1<a class="headerlink" href="#150rc1" title="Permanent link">&para;</a></h2>
+<h3 id="january-22-2026">January 22, 2026<a class="headerlink" href="#january-22-2026" title="Permanent link">&para;</a></h3>
+<p>ACA-Py 1.5.0 is a significant release that advances the platform’s modernization and modularization goals. The most substantial changes are the upgrade to <strong>Python 3.13</strong> and the continued evolution of ACA-Py toward a <strong>plugin-oriented architecture</strong>, including the removal of the legacy v1.0 credential exchange protocols (issue credential and present proof) from the core agent. The release also includes some important fixes to the wallet migration process to the <code>askar-anoncreds</code> wallet type, and to the webhooks associated with the use of the <code>askar-anoncreds</code> wallet type.</p>
 <p>With this release, the v1.0 credential exchange protocols have been fully removed from ACA-Py core and are now expected to be provided via plugins where required. This aligns with earlier deprecation signals and reinforces a cleaner separation between the core agent and optional protocol implementations.</p>
-<p>This release also includes important fixes to the migration process from the <code>askar</code> wallet type to <code>askar-anoncreds</code>, necessary for upgrades of deployments adopting the newest AnonCreds libraries. Several follow-on fixes and cleanups were also made to the <strong>Kanon Storage</strong> capability added in <a href="#140">Release 1.4.0</a>, addressing connection management/pooling behavior.</p>
+<p>This release includes some follow-on fixes and cleanups to the <strong>Kanon Storage</strong> capability added in <a href="#140">Release 1.4.0</a>, addressing connection management/pooling behavior.</p>
 <p>Additional improvements include enhanced scenario test logging and diagnostics, recoverable and event-driven revocation registry management, improvements to Docker image versioning, the introduction of a <strong>plugin installer</strong> to simplify deployment and management of external ACA-Py plugins, and the usual dependabot updates.</p>
 <h3 id="150-breaking-changes">1.5.0 Breaking Changes<a class="headerlink" href="#150-breaking-changes" title="Permanent link">&para;</a></h3>
 <p>This release includes <strong>intentional breaking changes</strong> as part of ACA-Py’s ongoing modernization:</p>
@@ -5441,6 +5469,7 @@
 <p>While not breaking at the API level, implementers should also be aware of behavioral and configuration changes related to:</p>
 <ul>
 <li>Migration from <code>askar</code> to <code>askar-anoncreds</code></li>
+<li>The addition of some webhooks missing since the introduction of the <code>askar-anoncreds</code> wallet type</li>
 <li>Kanon Storage connection handling and pooling behavior</li>
 </ul>
 <p>These areas should be explicitly tested when upgrading to 1.5.0.</p>
@@ -5451,18 +5480,24 @@
 <h3 id="150-categorized-pr-list">1.5.0 Categorized PR List<a class="headerlink" href="#150-categorized-pr-list" title="Permanent link">&para;</a></h3>
 <ul>
 <li><strong>Core Platform and Architecture</strong><ul>
+<li>Fix plugin installer hardcoded version <a href="https://github.com/openwallet-foundation/acapy/pull/4015">#4015</a> <a href="https://github.com/PatStLouis">PatStLouis</a></li>
 <li>Upgrade python to 3.13 <a href="https://github.com/openwallet-foundation/acapy/pull/3911">#3911</a> <a href="https://github.com/jamshale">jamshale</a></li>
 <li>Feature: Add plugin installer <a href="https://github.com/openwallet-foundation/acapy/pull/3955">#3955</a> <a href="https://github.com/PatStLouis">PatStLouis</a></li>
 <li>Feature: semantic image versioning for released images <a href="https://github.com/openwallet-foundation/acapy/pull/3976">#3976</a> <a href="https://github.com/esune">esune</a></li>
 </ul>
 </li>
 <li><strong>Protocol Changes and Credential Exchange</strong><ul>
+<li>Issue <a class="magiclink magiclink-github magiclink-issue" href="https://github.com/squidfunk/mkdocs-material/issues/3845" title="GitHub Issue: squidfunk/mkdocs-material #3845">#3845</a> fix :  auto-store failure going to done state <a href="https://github.com/openwallet-foundation/acapy/pull/3999">#3999</a> <a href="https://github.com/sonivijayk">sonivijayk</a></li>
 <li>Remove present proof v1 <a href="https://github.com/openwallet-foundation/acapy/pull/3981">#3981</a> <a href="https://github.com/jamshale">jamshale</a></li>
 <li>feat: Remove issuance v1 protocols <a href="https://github.com/openwallet-foundation/acapy/pull/3923">#3923</a> <a href="https://github.com/jamshale">jamshale</a></li>
 <li>feat: Add option to remove credex on failure <a href="https://github.com/openwallet-foundation/acapy/pull/3947">#3947</a> <a href="https://github.com/TheTechmage">TheTechmage</a></li>
 </ul>
 </li>
 <li><strong>AnonCreds, Revocation, and Wallet Migration</strong><ul>
+<li>Synchronously store the revocation registry  <a href="https://github.com/openwallet-foundation/acapy/pull/4028">#4028</a> <a href="https://github.com/PatStLouis">PatStLouis</a></li>
+<li>Sonivijayk/fix/issue 3990 revoke indy cred post askar anoncres upgrade <a href="https://github.com/openwallet-foundation/acapy/pull/4017">#4017</a> <a href="https://github.com/sonivijayk">sonivijayk</a></li>
+<li>Update AnonCreds events <a href="https://github.com/openwallet-foundation/acapy/pull/4016">#4016</a> <a href="https://github.com/PatStLouis">PatStLouis</a></li>
+<li>Fetch schemaId on legacy cred def <a href="https://github.com/openwallet-foundation/acapy/pull/3988">#3988</a> <a href="https://github.com/PatStLouis">PatStLouis</a></li>
 <li>chore: Remove some more indy refs from anoncreds module <a href="https://github.com/openwallet-foundation/acapy/pull/4004">#4004</a> <a href="https://github.com/jamshale">jamshale</a></li>
 <li>Recoverable, event-driven revocation registry management <a href="https://github.com/openwallet-foundation/acapy/pull/3831">#3831</a> <a href="https://github.com/ff137">ff137</a></li>
 <li>Fix issues with anoncreds upgrade <a href="https://github.com/openwallet-foundation/acapy/pull/3991">#3991</a> <a href="https://github.com/jamshale">jamshale</a></li>
@@ -5476,20 +5511,24 @@
 </ul>
 </li>
 <li><strong>Testing, Logging, and Diagnostics</strong><ul>
+<li>Add citizenship context to document downloader <a href="https://github.com/openwallet-foundation/acapy/pull/4027">#4027</a> <a href="https://github.com/PatStLouis">PatStLouis</a></li>
+<li>DIF presentation debug logging <a href="https://github.com/openwallet-foundation/acapy/pull/4019">#4019</a> <a href="https://github.com/nodlesh">nodlesh</a></li>
 <li>feat: Only log failing scenarios <a href="https://github.com/openwallet-foundation/acapy/pull/4005">#4005</a> <a href="https://github.com/jamshale">jamshale</a></li>
 <li>chore: Lower scenario test logging to info level <a href="https://github.com/openwallet-foundation/acapy/pull/4000">#4000</a> <a href="https://github.com/jamshale">jamshale</a></li>
 <li>feat: Add logging to scenario tests <a href="https://github.com/openwallet-foundation/acapy/pull/3983">#3983</a> <a href="https://github.com/jamshale">jamshale</a></li>
 </ul>
 </li>
 <li><strong>Documentation and Cleanup</strong><ul>
+<li>WebVH Workshop (traction / openapi) <a href="https://github.com/openwallet-foundation/acapy/pull/4013">#4013</a> <a href="https://github.com/PatStLouis">PatStLouis</a></li>
 <li>Sonivijayk/fix/issue 2319 docs update to remove indy usage <a href="https://github.com/openwallet-foundation/acapy/pull/3997">#3997</a> <a href="https://github.com/sonivijayk">sonivijayk</a></li>
 </ul>
 </li>
 <li><strong>Dependabot PRs</strong><ul>
-<li><a href="https://github.com/openwallet-foundation/acapy/pulls?q=is%3Apr+is%3Amerged+merged%3A2025-11-15..2026-01-06+author%3Aapp%2Fdependabot+">Link to list of Dependabot PRs in this release</a></li>
+<li><a href="https://github.com/openwallet-foundation/acapy/pulls?q=is%3Apr+is%3Amerged+merged%3A2025-11-15..2026-01-22+author%3Aapp%2Fdependabot+">Link to list of Dependabot PRs in this release</a></li>
 </ul>
 </li>
 <li><strong>Release management pull requests</strong>:<ul>
+<li>1.5.0rc1 <a href="https://github.com/openwallet-foundation/acapy/pull/4026">#4026</a> <a href="https://github.com/swcurran">swcurran</a></li>
 <li>1.5.0rc0 <a href="https://github.com/openwallet-foundation/acapy/pull/4011">#4011</a> <a href="https://github.com/swcurran">swcurran</a></li>
 </ul>
 </li>
