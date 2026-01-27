@@ -130,8 +130,8 @@ jobs:
           
           # Validate semantic versioning format (semver 2.0)
           if ! echo "$RELEASE_TAG" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?(\+[0-9A-Za-z.-]+)?$'; then
-            echo "Error: Release tag '$RELEASE_TAG' does not match semantic versioning format (X.Y.Z[-prerelease][+build])"
-            exit 1
+            echo "Warning: Release tag '$RELEASE_TAG' does not match semantic versioning format - skipping"
+            exit 0
           fi
           
           echo "release_tag=$RELEASE_TAG" >> "$GITHUB_OUTPUT"
