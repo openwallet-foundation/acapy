@@ -33,6 +33,7 @@ from ...core.event_bus import Event, MockEventBus
 from ...tests import mock
 from ...utils.testing import create_test_profile
 from .. import issuer as test_module
+from ..events import SchemaFinishedEvent
 
 
 class MockSchemaEntry:
@@ -386,13 +387,45 @@ class TestAnonCredsIssuer(IsolatedAsyncioTestCase):
         assert isinstance(result, SchemaResult)
         assert mock_store_schema.called
 
-    async def test_finish_schema(self):
-        self.profile.transaction = mock.Mock(
-            return_value=mock.MagicMock(
-                commit=mock.CoroutineMock(return_value=None),
-            )
+    @mock.patch.object(test_module.AnonCredsIssuer, "notify")
+    async def test_finish_schema(self, mock_notify):
+        # Create a mock entry with a valid schema JSON value
+        mock_entry = mock.MagicMock()
+        mock_entry.value = json.dumps(
+            {
+                "issuerId": "issuer-id",
+                "name": "test-schema",
+                "version": "1.0",
+                "attrNames": ["attr1", "attr2"],
+            }
         )
+        mock_entry.tags = {}
+
+        # Mock the transaction context manager
+        mock_txn = mock.MagicMock()
+        mock_handle = mock.MagicMock()
+        mock_handle.fetch = mock.CoroutineMock(return_value=mock_entry)
+        mock_handle.insert = mock.CoroutineMock(return_value=None)
+        mock_handle.remove = mock.CoroutineMock(return_value=None)
+        mock_txn.handle = mock_handle
+        mock_txn.commit = mock.CoroutineMock(return_value=None)
+        mock_txn.__aenter__ = mock.CoroutineMock(return_value=mock_txn)
+        mock_txn.__aexit__ = mock.CoroutineMock(return_value=None)
+
+        self.profile.transaction = mock.Mock(return_value=mock_txn)
+
         await self.issuer.finish_schema(job_id="job-id", schema_id="schema-id")
+
+        # Verify that SchemaFinishedEvent was emitted
+        mock_notify.assert_called_once()
+        call_args = mock_notify.call_args
+        assert isinstance(call_args[0][0], SchemaFinishedEvent)
+        event = call_args[0][0]
+        assert event.payload.schema_id == "schema-id"
+        assert event.payload.issuer_id == "issuer-id"
+        assert event.payload.name == "test-schema"
+        assert event.payload.version == "1.0"
+        assert event.payload.attr_names == ["attr1", "attr2"]
 
     @mock.patch.object(AskarAnonCredsProfileSession, "handle")
     async def test_get_created_schemas(self, mock_session_handle):

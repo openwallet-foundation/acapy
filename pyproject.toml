@@ -42,6 +42,7 @@ python-json-logger = "^3.2.1"
 pyyaml = "~6.0.2"
 qrcode = { version = "^8.1", extras = ["pil"] }
 requests = "~2.32.3"
+urllib3 = ">=2.6.0,<3"
 rlp = "^4.1.0"
 sd-jwt = "^0.10.3"
 unflatten = "~0.2"
@@ -53,7 +54,7 @@ did-peer-4 = "^0.1.4"
 did-webvh = ">=1.0.0"
 
 # Verifiable Credentials
-anoncreds = "~0.2.0"
+anoncreds = "~0.2.3"
 indy-credx = "~1.1.1"
 
 # askar

@@ -41,6 +41,7 @@ class TestAnonCredsRevocationSetup(IsolatedAsyncioTestCase):
                 issuer_id="issuer_id",
                 support_revocation=True,
                 max_cred_num=100,
+                tag="default",
                 options={},
             )
         )
@@ -63,6 +64,7 @@ class TestAnonCredsRevocationSetup(IsolatedAsyncioTestCase):
                 issuer_id="issuer_id",
                 support_revocation=False,
                 max_cred_num=100,
+                tag="default",
                 options={},
             )
         )
