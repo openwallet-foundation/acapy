@@ -391,14 +391,16 @@ class TestAnonCredsIssuer(IsolatedAsyncioTestCase):
     async def test_finish_schema(self, mock_notify):
         # Create a mock entry with a valid schema JSON value
         mock_entry = mock.MagicMock()
-        mock_entry.value = json.dumps({
-            "issuerId": "issuer-id",
-            "name": "test-schema",
-            "version": "1.0",
-            "attrNames": ["attr1", "attr2"]
-        })
+        mock_entry.value = json.dumps(
+            {
+                "issuerId": "issuer-id",
+                "name": "test-schema",
+                "version": "1.0",
+                "attrNames": ["attr1", "attr2"],
+            }
+        )
         mock_entry.tags = {}
-        
+
         # Mock the transaction context manager
         mock_txn = mock.MagicMock()
         mock_handle = mock.MagicMock()
@@ -409,11 +411,11 @@ class TestAnonCredsIssuer(IsolatedAsyncioTestCase):
         mock_txn.commit = mock.CoroutineMock(return_value=None)
         mock_txn.__aenter__ = mock.CoroutineMock(return_value=mock_txn)
         mock_txn.__aexit__ = mock.CoroutineMock(return_value=None)
-        
+
         self.profile.transaction = mock.Mock(return_value=mock_txn)
-        
+
         await self.issuer.finish_schema(job_id="job-id", schema_id="schema-id")
-        
+
         # Verify that SchemaFinishedEvent was emitted
         mock_notify.assert_called_once()
         call_args = mock_notify.call_args
