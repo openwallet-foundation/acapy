@@ -23,7 +23,7 @@ from ..core.event_bus import Event, EventBus
 from ..core.profile import Profile
 from .base import AnonCredsSchemaAlreadyExists, BaseAnonCredsError
 from .error_messages import ANONCREDS_PROFILE_REQUIRED_MSG
-from .events import CredDefFinishedEvent
+from .events import CredDefFinishedEvent, SchemaFinishedEvent
 from .models.credential_definition import CredDef, CredDefResult
 from .models.schema import AnonCredsSchema, SchemaResult, SchemaState
 from .registry import AnonCredsRegistry
@@ -152,6 +152,17 @@ class AnonCredsIssuer:
                         "state": result.schema_state.state,
                     },
                 )
+            if result.schema_state.state == STATE_FINISHED:
+                await self.notify(
+                    SchemaFinishedEvent.with_payload(
+                        schema_id=result.schema_state.schema_id,
+                        issuer_id=result.schema_state.schema.issuer_id,
+                        name=result.schema_state.schema.name,
+                        version=result.schema_state.schema.version,
+                        attr_names=result.schema_state.schema.attr_names,
+                        options={},
+                    )
+                )
         except AskarError as err:
             raise AnonCredsIssuerError("Error storing schema") from err
 
@@ -236,8 +247,22 @@ class AnonCredsIssuer:
     async def finish_schema(self, job_id: str, schema_id: str):
         """Mark a schema as finished."""
         async with self.profile.transaction() as txn:
-            await self._finish_registration(txn, CATEGORY_SCHEMA, job_id, schema_id)
+            entry = await self._finish_registration(
+                txn, CATEGORY_SCHEMA, job_id, schema_id
+            )
             await txn.commit()
+
+        schema = AnonCredsSchema.from_json(entry.value)
+        await self.notify(
+            SchemaFinishedEvent.with_payload(
+                schema_id=schema_id,
+                issuer_id=schema.issuer_id,
+                name=schema.name,
+                version=schema.version,
+                attr_names=schema.attr_names,
+                options={},
+            )
+        )
 
     async def get_created_schemas(
         self,
@@ -413,14 +438,18 @@ class AnonCredsIssuer:
                 )
                 await txn.commit()
             if cred_def_result.credential_definition_state.state == STATE_FINISHED:
+                cred_def = (
+                    cred_def_result.credential_definition_state.credential_definition
+                )
                 await self.notify(
                     CredDefFinishedEvent.with_payload(
-                        schema_result.schema_id,
-                        identifier,
-                        cred_def_result.credential_definition_state.credential_definition.issuer_id,
-                        support_revocation,
-                        max_cred_num,
-                        options,
+                        schema_id=schema_result.schema_id,
+                        cred_def_id=identifier,
+                        issuer_id=cred_def.issuer_id,
+                        support_revocation=support_revocation,
+                        max_cred_num=max_cred_num,
+                        tag=cred_def.tag,
+                        options=options,
                     )
                 )
         except AskarError as err:
@@ -453,6 +482,7 @@ class AnonCredsIssuer:
                 issuer_id=cred_def.issuer_id,
                 support_revocation=support_revocation,
                 max_cred_num=max_cred_num,
+                tag=cred_def.tag,
                 options=options,
             )
         )
