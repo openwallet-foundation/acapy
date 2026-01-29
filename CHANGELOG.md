@@ -2,7 +2,7 @@
 
 ## 1.2.6rc0
 
-### Jan 29, 2025
+### Jan 29, 2026
 
 This patch is being released to address some issues in the migration of the `askar` wallet-type to `askar-anoncreds`, and in to restore some webhooks that were lost when `askar-anoncreds` support was added. The fixes are necessary to enable the both the migration of an existing ACA-Py wallet-type to `askar-anoncreds` using ACA-Py 1.2 and to see the same events after the migration as before.
 
