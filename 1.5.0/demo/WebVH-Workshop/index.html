@@ -1,0 +1,5228 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+        <link rel="prev" href="../ACA-Py-Workshop/">
+      
+      
+        <link rel="next" href="../">
+      
+      
+        
+      
+      
+      <link rel="icon" href="https://raw.githubusercontent.com/hyperledger/aries-rfcs/main/collateral/favicon.ico">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.0">
+    
+    
+      
+        <title>ACA-Py / AnonCreds / did:webvh Workshop - ACA-Py Docs</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.618322db.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#webvh-and-anoncreds-workshop-using-traction-sandbox" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      <div data-md-color-scheme="default" data-md-component="outdated" hidden>
+        
+          <aside class="md-banner md-banner--warning">
+            <div class="md-banner__inner md-grid md-typeset">
+              
+  You are viewing the documentation for ACA-Py Release 1.5.0.
+
+            </div>
+            <script>var el=document.querySelector("[data-md-component=outdated]"),base=new URL("../.."),outdated=__md_get("__outdated",sessionStorage,base);!0===outdated&&el&&(el.hidden=!1)</script>
+          </aside>
+        
+      </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="ACA-Py Docs" class="md-header__button md-logo" aria-label="ACA-Py Docs" data-md-component="logo">
+      
+  <img src="https://raw.githubusercontent.com/hyperledger/aries-rfcs/main/collateral/Hyperledger_Aries_Logo_White.png" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            ACA-Py Docs
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              ACA-Py / AnonCreds / did:webvh Workshop
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/openwallet-foundation/acapy" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    openwallet-foundation/acapy
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../.." class="md-tabs__link">
+          
+  
+  
+  Welcome!
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../features/DevReadMe/" class="md-tabs__link">
+          
+  
+  
+  Features
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../ACA-Py-Workshop/" class="md-tabs__link">
+          
+  
+  
+  Demos
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../gettingStarted/" class="md-tabs__link">
+          
+  
+  
+  Getting Started
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../deploying/deploymentModel/" class="md-tabs__link">
+          
+  
+  
+  Deploying
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../testing/UnitTests/" class="md-tabs__link">
+          
+  
+  
+  Testing/Troubleshooting
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../CONTRIBUTING/" class="md-tabs__link">
+          
+  
+  
+  Contributing
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="ACA-Py Docs" class="md-nav__button md-logo" aria-label="ACA-Py Docs" data-md-component="logo">
+      
+  <img src="https://raw.githubusercontent.com/hyperledger/aries-rfcs/main/collateral/Hyperledger_Aries_Logo_White.png" alt="logo">
+
+    </a>
+    ACA-Py Docs
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/openwallet-foundation/acapy" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    openwallet-foundation/acapy
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_1" >
+        
+          
+          <label class="md-nav__link" for="__nav_1" id="__nav_1_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Welcome!
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_1_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_1">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Welcome!
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ACA-Py README
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../CHANGELOG/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Release Notes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../LTS-Strategy/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ACA-Py Long Term Support (LTS) Policy
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Features
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Features
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../features/DevReadMe/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Developer Introduction
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../features/devcontainer/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DevContainer Support
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../features/SupportedRFCs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Supported Aries Interop Profiles and RFCs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../features/AdminAPI/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    The Admin API
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../features/KanonStorage/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Kanon Storage
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../features/PlugIns/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ACA-Py Plugins
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../features/Multitenancy/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Multitenant ACA-Py
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../features/QualifiedDIDs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Qualified DIDs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../features/DIDMethods/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DID Methods
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../features/DIDResolution/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DID Resolution
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../features/ReuseConnection/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reusing DIDComm Connections Between Agents
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../features/AnonCredsMethods/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Publishing AnonCreds Objects To Other Ledgers/Verifiable Data Registries
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../features/Multiledger/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Configuring Multiple Indy Ledgers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../features/Endorser/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automatically Endorsing Indy Transactions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../features/JsonLdCredentials/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Using W3C JSON-LD Signed Credentials
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../features/W3cCredentials/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Issuing and Presenting W3C Data Integrity VCs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../features/SelectiveDisclosureJWTs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Using SD-JWTs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../features/AnonCredsProofValidation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    AnonCreds Presentation Validation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../features/AnonCredsRevocationAutoRecovery/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    AnonCreds Revocation Auto Recovery
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../features/Multicredentials/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Multiple Credential Types
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../features/UsingOpenAPI/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Code Generation with the Open API
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../features/Mediation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ACA-Py as a DIDComm Mediator
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Demos
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Demos
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ACA-Py-Workshop/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ACA-Py / AnonCreds Workshop
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ACA-Py / AnonCreds / did:webvh Workshop
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ACA-Py / AnonCreds / did:webvh Workshop
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#introduction" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Introduction
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Introduction">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#workshop-structure" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Workshop Structure
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#what-youll-need" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What You'll Need
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#what-is-webvh" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What is WebVH?
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#workshop-labs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Workshop Labs
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#next-steps" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Next Steps
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#resources" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Resources
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#lab-1-getting-a-traction-tenant-agent-and-mobile-wallet" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Lab 1: Getting a Traction Tenant Agent and Mobile Wallet
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Lab 1: Getting a Traction Tenant Agent and Mobile Wallet">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#lab-1-steps-to-follow" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Lab 1: Steps to Follow
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#lab-2-configuring-webvh-and-creating-a-webvh-did" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Lab 2: Configuring WebVH and Creating a WebVH DID
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Lab 2: Configuring WebVH and Creating a WebVH DID">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#lab-2-steps-to-follow" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Lab 2: Steps to Follow
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#lab-3-creating-schemas-and-credential-definitions-with-webvh" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Lab 3: Creating Schemas and Credential Definitions with WebVH
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Lab 3: Creating Schemas and Credential Definitions with WebVH">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#lab-3-steps-to-follow" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Lab 3: Steps to Follow
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#lab-4-issuing-credentials-to-a-mobile-wallet" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Lab 4: Issuing Credentials to a Mobile Wallet
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Lab 4: Issuing Credentials to a Mobile Wallet">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#lab-4-steps-to-follow" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Lab 4: Steps to Follow
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#lab-5-requesting-and-verifying-presentations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Lab 5: Requesting and Verifying Presentations
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Lab 5: Requesting and Verifying Presentations">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#lab-5-steps-to-follow" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Lab 5: Steps to Follow
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#lab-5a-revoking-credentials-and-exploring-revocation-entries-bonus-lab" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Lab 5A: Revoking Credentials and Exploring Revocation Entries (Bonus Lab)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#what-youve-learned-in-lab-5a" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What You've Learned in Lab 5A
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#part-2-openapi-swagger-demo-programmatic-webvh-operations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Part 2: OpenAPI (Swagger) Demo - Programmatic WebVH Operations
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Part 2: OpenAPI (Swagger) Demo - Programmatic WebVH Operations">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#prerequisites-for-part-2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Prerequisites for Part 2
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#lab-6-accessing-the-openapi-interface" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Lab 6: Accessing the OpenAPI Interface
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#lab-7-using-the-api-to-issue-credentials-programmatically" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Lab 7: Using the API to Issue Credentials Programmatically
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#lab-8-using-the-api-to-request-presentations-programmatically" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Lab 8: Using the API to Request Presentations Programmatically
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#lab-9-revoking-credentials-and-exploring-revocation-entries-bonus-lab" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Lab 9: Revoking Credentials and Exploring Revocation Entries (Bonus Lab)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#what-youve-learned-in-lab-9" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What You've Learned in Lab 9
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#what-youve-learned" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What You've Learned
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#next-steps_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Next Steps
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#whats-next" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What's Next
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="What&#39;s Next">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#whats-next-the-aca-py-openapi" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What's Next: The ACA-Py OpenAPI
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#whats-next-understanding-webvh-resolution" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What's Next: Understanding WebVH Resolution
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#whats-next-experiment-with-an-issuer-web-app" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What's Next: Experiment With an Issuer Web App
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    The Alice-Faber Demo
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../OpenAPIDemo/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Open API Tutorial
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AliceGetsAPhone/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Alice Gets a Phone
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Endorser/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Hyperledger Indy Endorser In Action
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AliceWantsAJsonCredential/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Using W3C JSON-LD Credentials
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AcmeDemoWorkshop/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DIY -- ACME Controller Workshop
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../PostmanDemo/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ACA-Py Using Postman Demo
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ReusingAConnection/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reusing a Connection Between Agents
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Getting Started
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../gettingStarted/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Becoming an ACA-Py Developer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../gettingStarted/IndyBasics/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Hyperledger Indy Basics
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../gettingStarted/ACA-PyBasics/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ACA-Py Basics
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../gettingStarted/DecentralizedIdentityDemos/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Decentralized Identity Demos
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../gettingStarted/ACA-PyBigPicture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ACA-Py - The Big Picture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../gettingStarted/ACA-PyAgentArchitecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ACA-Py Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../gettingStarted/DIDCommMessaging/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ACA-Py Messaging
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../gettingStarted/ACA-PyDeveloperDemos/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ACA-Py Developer Demos
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../gettingStarted/AgentConnections/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Agent Connections
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../gettingStarted/IssuingAnonCredsCredentials/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Issuing AnonCreds Credentials
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../gettingStarted/PresentingAnonCredsProofs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Presenting AnonCreds Proofs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../gettingStarted/YourOwnACA-PyAgent/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Making Your Own ACA-Py Agent
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../gettingStarted/IndyACA-PyDevOptions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ACA-Py Developer Options
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../gettingStarted/DIDcommMsgs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DIDComm Messaging
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../gettingStarted/RoutingEncryption/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DIDComm Message Routing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../gettingStarted/DIDCommRoutingExample/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DIDComm Message Routing Example
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../gettingStarted/ConnectIndyNetwork/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    TODO Connecting to an Indy Network
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../gettingStarted/CredentialRevocation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    AnonCreds Credential Revocation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Deploying
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Deploying
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../deploying/deploymentModel/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Deployment Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../deploying/UpgradingACA-Py/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Upgrading ACA-Py
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../deploying/BBSSignatures/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Enabling BBS Signatures support
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../deploying/IndySDKtoAskarMigration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Indy SDK to Askar Migration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../deploying/AnonCredsControllerMigration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Controller Migration to use the askar-anoncreds Wallet Type
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../deploying/Poetry/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    The Use of Poetry in ACA-Py
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../deploying/ContainerImagesAndGithubActions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ACA-Py Container Images
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../deploying/Databases/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Databases
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../deploying/RedisPlugins/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Persistent Queues and Caching
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../deploying/AnonCredsWalletType/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    The askar-anoncreds Wallet Type
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Testing/Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Testing/Troubleshooting
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../testing/UnitTests/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Running and Creating Unit Tests
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../testing/IntegrationTests/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Integration Tests
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../testing/Logging/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Managing Logging
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../testing/BDDTests/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ACA-Py Integration BDD Tests
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../testing/AgentTracing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Protocol Tracing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../testing/Troubleshooting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Contributing
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Contributing
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../CONTRIBUTING/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    How to Contribute
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../MAINTAINERS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Maintainers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../GOVERNANCE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Governance
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../CODE_OF_CONDUCT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Code of Conduct
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../SECURITY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security Vulnerability Reporting
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../PUBLISHING/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Publishing an ACA-Py Release
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../Managing-ACA-Py-Doc-Site/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Managing the ACA-Py Documentation Site
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../UpdateRTD/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Updating the ACA-Py ReadTheDocs Site
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#introduction" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Introduction
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Introduction">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#workshop-structure" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Workshop Structure
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#what-youll-need" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What You'll Need
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#what-is-webvh" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What is WebVH?
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#workshop-labs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Workshop Labs
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#next-steps" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Next Steps
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#resources" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Resources
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#lab-1-getting-a-traction-tenant-agent-and-mobile-wallet" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Lab 1: Getting a Traction Tenant Agent and Mobile Wallet
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Lab 1: Getting a Traction Tenant Agent and Mobile Wallet">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#lab-1-steps-to-follow" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Lab 1: Steps to Follow
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#lab-2-configuring-webvh-and-creating-a-webvh-did" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Lab 2: Configuring WebVH and Creating a WebVH DID
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Lab 2: Configuring WebVH and Creating a WebVH DID">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#lab-2-steps-to-follow" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Lab 2: Steps to Follow
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#lab-3-creating-schemas-and-credential-definitions-with-webvh" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Lab 3: Creating Schemas and Credential Definitions with WebVH
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Lab 3: Creating Schemas and Credential Definitions with WebVH">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#lab-3-steps-to-follow" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Lab 3: Steps to Follow
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#lab-4-issuing-credentials-to-a-mobile-wallet" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Lab 4: Issuing Credentials to a Mobile Wallet
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Lab 4: Issuing Credentials to a Mobile Wallet">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#lab-4-steps-to-follow" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Lab 4: Steps to Follow
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#lab-5-requesting-and-verifying-presentations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Lab 5: Requesting and Verifying Presentations
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Lab 5: Requesting and Verifying Presentations">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#lab-5-steps-to-follow" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Lab 5: Steps to Follow
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#lab-5a-revoking-credentials-and-exploring-revocation-entries-bonus-lab" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Lab 5A: Revoking Credentials and Exploring Revocation Entries (Bonus Lab)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#what-youve-learned-in-lab-5a" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What You've Learned in Lab 5A
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#part-2-openapi-swagger-demo-programmatic-webvh-operations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Part 2: OpenAPI (Swagger) Demo - Programmatic WebVH Operations
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Part 2: OpenAPI (Swagger) Demo - Programmatic WebVH Operations">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#prerequisites-for-part-2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Prerequisites for Part 2
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#lab-6-accessing-the-openapi-interface" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Lab 6: Accessing the OpenAPI Interface
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#lab-7-using-the-api-to-issue-credentials-programmatically" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Lab 7: Using the API to Issue Credentials Programmatically
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#lab-8-using-the-api-to-request-presentations-programmatically" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Lab 8: Using the API to Request Presentations Programmatically
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#lab-9-revoking-credentials-and-exploring-revocation-entries-bonus-lab" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Lab 9: Revoking Credentials and Exploring Revocation Entries (Bonus Lab)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#what-youve-learned-in-lab-9" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What You've Learned in Lab 9
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#what-youve-learned" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What You've Learned
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#next-steps_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Next Steps
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#whats-next" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What's Next
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="What&#39;s Next">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#whats-next-the-aca-py-openapi" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What's Next: The ACA-Py OpenAPI
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#whats-next-understanding-webvh-resolution" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What's Next: Understanding WebVH Resolution
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#whats-next-experiment-with-an-issuer-web-app" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What's Next: Experiment With an Issuer Web App
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="webvh-and-anoncreds-workshop-using-traction-sandbox">WebVH and AnonCreds Workshop Using Traction Sandbox<a class="headerlink" href="#webvh-and-anoncreds-workshop-using-traction-sandbox" title="Permanent link">&para;</a></h1>
+<h2 id="introduction">Introduction<a class="headerlink" href="#introduction" title="Permanent link">&para;</a></h2>
+<p>Welcome! This workshop will guide you through issuing, receiving, holding, requesting, presenting, and verifying AnonCreds Verifiable Credentials using the <strong>WebVH (Web Verifiable History)</strong> DID method.</p>
+<h3 id="workshop-structure">Workshop Structure<a class="headerlink" href="#workshop-structure" title="Permanent link">&para;</a></h3>
+<p>This workshop is divided into two parts:</p>
+<h4 id="part-1-webvh-basics">Part 1: WebVH Basics<a class="headerlink" href="#part-1-webvh-basics" title="Permanent link">&para;</a></h4>
+<p>A hands-on sequence of labs that gets you from nothing to a working credential system. <strong>No technical experience required!</strong></p>
+<ul>
+<li>Complete the basic labs in about 20 minutes</li>
+<li>Includes a bonus lab on credential revocation</li>
+<li>Learn through step-by-step instructions</li>
+</ul>
+<h4 id="part-2-openapi-swagger-integration">Part 2: OpenAPI (Swagger) Integration<a class="headerlink" href="#part-2-openapi-swagger-integration" title="Permanent link">&para;</a></h4>
+<p>Learn how to programmatically interact with your Traction tenant and WebVH resources using REST APIs.</p>
+<ul>
+<li>Automate credential issuance and verification</li>
+<li>Requires basic knowledge of HTTP APIs</li>
+<li>Optional: Python or JavaScript experience helpful</li>
+</ul>
+<h3 id="what-youll-need">What You'll Need<a class="headerlink" href="#what-youll-need" title="Permanent link">&para;</a></h3>
+<p>To run the labs, you'll need:</p>
+<ol>
+<li><strong>A mobile wallet</strong> - A compatible mobile wallet app to receive and hold credentials. We recommend:</li>
+<li><a href="https://digital.gov.bc.ca/design/digital-trust/digital-credentials/bc-wallet/">BC Wallet</a> from the Government of British Columbia</li>
+<li>
+<p><a href="https://github.com/openwallet-foundation-labs/PyDentity-Wallet">PyDentity Wallet</a> from OpenWallet Foundation Labs</p>
+</li>
+<li>
+<p><strong>A Traction tenant</strong> - We're providing you with your very own tenant in a BC Gov <strong>sandbox</strong> deployment of <a href="https://digital.gov.bc.ca/digital-trust/technical-resources/traction/">Traction</a>, a managed, production-ready, multi-tenant decentralized trust agent built on <a href="https://aca-py.org">ACA-Py</a>. You'll create this in Lab 1.</p>
+</li>
+</ol>
+<blockquote>
+<p><strong>⚠️ Important Sandbox Notice</strong></p>
+<p>This is a <strong>sandbox environment</strong>:</p>
+<ul>
+<li>You can experiment freely with your tenant agent</li>
+<li>The environment is generally stable, but no guarantees are made</li>
+<li><strong>On the 1<sup>st</sup> and 15<sup>th</sup> of each month, the entire sandbox is reset and all your work will be deleted</strong></li>
+</ul>
+<p><strong>Recommendations:</strong></p>
+<ul>
+<li>Keep a notebook to track important learnings</li>
+<li>Save your Wallet ID and Wallet Key securely (you'll need them to access your tenant)</li>
+<li>If you create code, use simple-to-update configurations</li>
+<li>After a reset, you can quickly recreate your tenant and objects</li>
+</ul>
+</blockquote>
+<h3 id="what-is-webvh">What is WebVH?<a class="headerlink" href="#what-is-webvh" title="Permanent link">&para;</a></h3>
+<p><strong>WebVH (Web Verifiable History)</strong> is a DID method that enables issuers to publish AnonCreds objects (schemas, credential definitions, revocation registries) as <strong>Attested Resources</strong> on a web server.</p>
+<p>Unlike traditional blockchain-based ledgers, WebVH uses HTTP-based resolution, making it easier to deploy and maintain while still providing cryptographic integrity through digital signatures.</p>
+<h4 id="key-advantages">Key Advantages<a class="headerlink" href="#key-advantages" title="Permanent link">&para;</a></h4>
+<ul>
+<li><strong>No blockchain required</strong> - Uses standard web infrastructure</li>
+<li><strong>Cryptographic integrity</strong> - All resources are signed with Data Integrity Proofs</li>
+<li><strong>Privacy-preserving</strong> - Supports the same AnonCreds privacy features as blockchain-based systems</li>
+<li><strong>Easier deployment</strong> - Can be hosted on any web server</li>
+<li><strong>Witness-based trust</strong> - Uses witness services for attestation instead of blockchain consensus</li>
+</ul>
+<h3 id="workshop-labs">Workshop Labs<a class="headerlink" href="#workshop-labs" title="Permanent link">&para;</a></h3>
+<h4 id="part-1-webvh-basics_1">Part 1: WebVH Basics<a class="headerlink" href="#part-1-webvh-basics_1" title="Permanent link">&para;</a></h4>
+<ol>
+<li><a href="#lab-1-getting-a-traction-tenant-agent-and-mobile-wallet">Getting a Traction Tenant Agent and Mobile Wallet</a></li>
+<li><a href="#lab-2-configuring-webvh-and-creating-a-webvh-did">Configuring WebVH and Creating a WebVH DID</a></li>
+<li><a href="#lab-3-creating-schemas-and-credential-definitions-with-webvh">Creating Schemas and Credential Definitions with WebVH</a></li>
+<li><a href="#lab-4-issuing-credentials-to-a-mobile-wallet">Issuing Credentials to a Mobile Wallet</a></li>
+<li><a href="#lab-5-requesting-and-verifying-presentations">Requesting and Verifying Presentations</a></li>
+<li><a href="#lab-5a-revoking-credentials-and-exploring-revocation-entries">Revoking Credentials and Exploring Revocation Entries</a> <em>(Bonus Lab)</em></li>
+</ol>
+<h4 id="part-2-openapi-swagger-integration_1">Part 2: OpenAPI (Swagger) Integration<a class="headerlink" href="#part-2-openapi-swagger-integration_1" title="Permanent link">&para;</a></h4>
+<ol>
+<li><a href="#lab-6-accessing-the-openapi-interface">Accessing the OpenAPI Interface</a></li>
+<li><a href="#lab-7-using-the-api-to-issue-credentials-programmatically">Using the API to Issue Credentials Programmatically</a></li>
+<li><a href="#lab-8-using-the-api-to-request-presentations-programmatically">Using the API to Request Presentations Programmatically</a></li>
+<li><a href="#lab-9-revoking-credentials-and-exploring-revocation-entries">Revoking Credentials and Exploring Revocation Entries</a> <em>(Bonus Lab)</em></li>
+</ol>
+<h3 id="next-steps">Next Steps<a class="headerlink" href="#next-steps" title="Permanent link">&para;</a></h3>
+<p>Once you complete the labs, check out the <a href="#whats-next">suggestions for next steps</a> section for developers, including:</p>
+<ul>
+<li>Experimenting with the Traction/ACA-Py API</li>
+<li>Building your own applications</li>
+<li>Understanding WebVH resolution</li>
+<li>Exploring example web applications</li>
+</ul>
+<h3 id="resources">Resources<a class="headerlink" href="#resources" title="Permanent link">&para;</a></h3>
+<ul>
+<li><a href="https://digital.gov.bc.ca/digital-trust/technical-resources/traction/">Traction</a> - Managed, production-ready, multi-tenant decentralized trust agent</li>
+<li><a href="https://aca-py.org">ACA-Py</a> - Cloud Agent Python framework</li>
+<li><a href="https://identity.foundation/did-webvh/">WebVH</a> - Web Verifiable History DID method specification</li>
+<li><a href="https://github.com/bcgov/traction/issues/927">Traction Sandbox Workshop FAQ and Questions</a> - Get help and ask questions</li>
+</ul>
+<hr />
+<p><strong>Ready to get started?</strong> Jump into <a href="#lab-1-getting-a-traction-tenant-agent-and-mobile-wallet">Lab 1</a>!</p>
+<h2 id="lab-1-getting-a-traction-tenant-agent-and-mobile-wallet">Lab 1: Getting a Traction Tenant Agent and Mobile Wallet<a class="headerlink" href="#lab-1-getting-a-traction-tenant-agent-and-mobile-wallet" title="Permanent link">&para;</a></h2>
+<p><a id="lab-1-getting-a-traction-tenant-agent-and-mobile-wallet"></a></p>
+<p>Let's start by getting your two agents — a Mobile Wallet and an Issuer/Verifier agent.</p>
+<h3 id="lab-1-steps-to-follow">Lab 1: Steps to Follow<a class="headerlink" href="#lab-1-steps-to-follow" title="Permanent link">&para;</a></h3>
+<ol>
+<li>Get a compatible mobile wallet to use with your Traction tenant. There are a number to choose from.  We suggest that you use one of these:<ol>
+<li><a href="https://digital.gov.bc.ca/design/digital-trust/digital-credentials/bc-wallet/">BC Wallet</a> from the <a href="https://digital.gov.bc.ca/design/digital-trust/">Government of British Columbia</a></li>
+<li><a href="https://github.com/openwallet-foundation-labs/PyDentity-Wallet">PyDentity Wallet</a> from <a href="https://openwallet.foundation/">OpenWallet Foundation Labs</a></li>
+</ol>
+</li>
+<li>Click this <a href="https://traction-sandbox-tenant-ui.apps.silver.devops.gov.bc.ca/">Traction Sandbox</a> link to go to the Sandbox login page to create your own Traction Tenant agent. Once there, do the following:<ol>
+<li>Click "Create Request!", fill in at least the required form fields, and click "Submit".</li>
+<li>Your new Traction Tenant's Wallet ID and Wallet Key will be displayed. <strong>SAVE THOSE IMMEDIATELY SO THAT YOU HAVE THEM TO ACCESS YOUR TENANT</strong>. You only get to see/save them once!<ol>
+<li>You will need those each time you open your Traction Tenant agent. Putting them into a Password Manager is a great idea!</li>
+<li>We can't recover your Wallet ID and Wallet Key, so if you lose them you have to start the entire process again.</li>
+</ol>
+</li>
+</ol>
+</li>
+<li>Go back to the <a href="https://traction-sandbox-tenant-ui.apps.silver.devops.gov.bc.ca/">Traction Sandbox</a> login and this time, use your Wallet ID/Key to log in to your brand new Traction Tenant agent. You might want to bookmark the site.</li>
+<li>Connect from your Traction Tenant to your mobile Wallet app by:<ol>
+<li>Selecting on the left menu "Connections" and then "Invitations"</li>
+<li>Click the "Single Use Connection" button, give the connection an alias (maybe "My Wallet"), and click "Submit."</li>
+<li>Scan the resulting QR code with your initialized mobile Wallet and follow the prompts. Once you connect, type a quick "Hi!" message to the Traction Agent and you should get an automated message back.</li>
+<li>Check the Traction Tenant menu item "Connections→Connections" to see the status of your connection – it should be <code>active</code>.</li>
+<li>If anything didn't work in the sequence, here are some things to try:</li>
+<li>If the Traction Tenant connection is not <code>active</code>, it's possible that
+      your wallet was not able to message back to your Traction Tenant.
+      Check your wallet internet connection.</li>
+<li>We've created a [Traction Sandbox Workshop FAQ and Questions] GitHub
+      issue that you can check to see if your question is already answered,
+      and if not, you can add your question as comment on the issue, and
+      we'll get back to you.</li>
+</ol>
+</li>
+</ol>
+<p>That's it--you should be ready to start configuring WebVH and issuing verifiable credentials.</p>
+<h2 id="lab-2-configuring-webvh-and-creating-a-webvh-did">Lab 2: Configuring WebVH and Creating a WebVH DID<a class="headerlink" href="#lab-2-configuring-webvh-and-creating-a-webvh-did" title="Permanent link">&para;</a></h2>
+<p><a id="lab-2-configuring-webvh-and-creating-a-webvh-did"></a></p>
+<p>In this lab we will configure your Traction Tenant to use WebVH as the registry
+for AnonCreds objects, and create a WebVH DID that will serve as your issuer
+identifier. Unlike traditional blockchain-based ledgers, WebVH uses a witness-based
+attestation model where a witness service signs and attests to your DID creation
+and updates.</p>
+<h3 id="lab-2-steps-to-follow">Lab 2: Steps to Follow<a class="headerlink" href="#lab-2-steps-to-follow" title="Permanent link">&para;</a></h3>
+<ol>
+<li>If necessary, log into your <a href="https://traction-sandbox-tenant-ui.apps.silver.devops.gov.bc.ca/">Traction Sandbox</a> with your Wallet ID and Key.</li>
+<li>Upgrade your wallet to support AnonCreds (if needed):<ol>
+<li>Click on the "User" (folder icon) menu (top right), and choose "Settings"</li>
+<li>Scroll down to the "Wallet Type" section. You should see your current wallet type displayed (e.g., <code>askar</code> or <code>askar-anoncreds</code>).</li>
+<li>If your wallet type is <code>askar</code> (not <code>askar-anoncreds</code>), you'll see an "Upgrade Wallet" button with a warning icon. <strong>WebVH requires AnonCreds support, so you must upgrade your wallet first.</strong></li>
+<li>Click the "Upgrade Wallet" button. You'll see a confirmation dialog warning that this is a <strong>non-reversible operation</strong>. Make sure you understand this before proceeding.</li>
+<li>Confirm the upgrade. The upgrade process will run in the background. You should see a success message indicating that the upgrade has been triggered.</li>
+<li>Wait a few moments for the upgrade to complete. You may need to refresh the Settings page to see the wallet type change to <code>askar-anoncreds</code>.</li>
+<li><strong>Important</strong>: If your wallet is already <code>askar-anoncreds</code>, you can skip this step and proceed directly to configuring WebVH.</li>
+</ol>
+</li>
+<li>Configure WebVH in your Traction Tenant:<ol>
+<li>Click on the "User" (folder icon) menu (top right), and choose "Profile"</li>
+<li>Scroll down to the "WebVH Servers" section. You should see a table with WebVH server information.</li>
+<li>Click the "Connect" button (the user-plus icon) next to the WebVH server entry. This will configure your tenant to use WebVH as an AnonCreds registry.</li>
+<li>Wait for the configuration to complete. You should see a success message indicating that WebVH has been configured.</li>
+</ol>
+</li>
+<li>Create a WebVH DID:<ol>
+<li>Navigate to the "Identifiers" menu item in the left sidebar.</li>
+<li>If you see a warning message about WebVH configuration, make sure you completed step 3 above.</li>
+<li>Click the "Create DID" button (or "Create WebVH DID" if labeled).</li>
+<li>In the dialog that appears:<ul>
+<li><strong>Server URL</strong>: This should be pre-populated with the configured WebVH server URL (e.g., <code>sandbox.bcvh.vonx.io</code>)</li>
+<li><strong>Namespace</strong>: You can leave this as <code>default</code> or enter a custom namespace if you want to organize your DIDs</li>
+<li><strong>Alias</strong>: Enter a unique label for your identifier (e.g., <code>my-issuer</code> or <code>workshop-demo</code>)</li>
+</ul>
+</li>
+<li>Click "Submit" to create your WebVH DID.</li>
+<li>The DID creation process will:<ul>
+<li>Generate a new DID with the format <code>did:webvh:{SCID}:{domain}:{namespace}:{identifier}</code></li>
+<li>Request attestation from the witness service</li>
+<li>Wait for the witness to sign and attest to your DID</li>
+</ul>
+</li>
+<li>Initially, your DID will show a status of "Pending". Once the witness completes attestation (usually within a few seconds), the status will change to "Active".</li>
+<li>Your new WebVH DID will be displayed in the Identifiers table. <strong>Copy and save your DID</strong> - you'll need it for the next lab!</li>
+</ol>
+</li>
+<li>Verify your WebVH DID:<ol>
+<li>Once your DID status shows as "Active", you can click on it to view details.</li>
+<li>You should see your full DID string (e.g., <code>did:webvh:{SCID}:sandbox.bcvh.vonx.io:default:my-issuer</code>)</li>
+<li>This DID is now your issuer identifier and will be used when publishing AnonCreds schemas and credential definitions.</li>
+</ol>
+</li>
+<li>Resolve your WebVH DID using the Universal Resolver:<ol>
+<li>The Universal Resolver is a service that can resolve DIDs from various methods, including WebVH. This allows you to verify that your DID is publicly resolvable and view its DID Document.</li>
+<li>Open your web browser and navigate to the <a href="https://uniresolver.io/">Universal Resolver</a> web interface.</li>
+<li>In the input field, paste your WebVH DID (the full DID string you copied earlier).</li>
+<li>Click "Resolve" (or press Enter).</li>
+<li>The Universal Resolver will fetch and display your DID Document, which includes:<ul>
+<li>Your DID identifier</li>
+<li>Verification methods (public keys)</li>
+<li>Service endpoints</li>
+<li>Other metadata</li>
+</ul>
+</li>
+<li><strong>Alternative: Using the API directly</strong>: You can also resolve your DID programmatically using the Universal Resolver API:
+    <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>curl<span class="w"> </span>-X<span class="w"> </span>GET<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="s2">&quot;https://dev.uniresolver.io/1.0/identifiers/did:webvh:{SCID}:sandbox.bcvh.vonx.io:default:my-issuer&quot;</span>
+</code></pre></div>
+    Replace the DID in the URL with your actual DID. This will return the DID Document in JSON format.</li>
+<li>Verifying that your DID resolves successfully confirms that:<ul>
+<li>Your DID is properly published on the WebVH server</li>
+<li>The witness attestation was successful</li>
+<li>Other parties (including wallets) can resolve your DID to find your public keys and services</li>
+</ul>
+</li>
+</ol>
+</li>
+</ol>
+<p>Completed all the steps? Great! You now have a WebVH DID that can be used to publish AnonCreds objects. Unlike blockchain-based DIDs, your WebVH DID is resolved via HTTP, making it easier to work with while still maintaining cryptographic integrity. The Universal Resolver provides a convenient way to verify that your DID is publicly accessible and correctly formatted.</p>
+<h2 id="lab-3-creating-schemas-and-credential-definitions-with-webvh">Lab 3: Creating Schemas and Credential Definitions with WebVH<a class="headerlink" href="#lab-3-creating-schemas-and-credential-definitions-with-webvh" title="Permanent link">&para;</a></h2>
+<p><a id="lab-3-creating-schemas-and-credential-definitions-with-webvh"></a></p>
+<p>In this lab we will use our Traction Tenant agent to create and publish an
+AnonCreds Schema object, and then use that Schema to create and publish
+a Credential Definition. All of the AnonCreds objects will be published as
+Attested Resources on the WebVH server. For those new to AnonCreds:</p>
+<ul>
+<li>A <em>Schema</em> defines the list of attributes (<code>claims</code>) in a credential. An
+ issuer often publishes their own schema, but they may also use one published
+ by someone else. For example, a group of universities all might use the schema
+ published by the "Association of Universities and Colleges" to which they
+ belong.</li>
+<li>A <em>Credential Definition</em> (<code>CredDef</code>) is published by the issuer, linking
+ together Issuer's DID with the schema upon which the credentials will be
+ issued, and containing the public key material needed to verify presentations
+ of the credential. Revocation Registries are also linked to the Credential
+ Definition, enabling an issuer to revoke credentials when necessary.</li>
+</ul>
+<p>With WebVH, schemas and credential definitions are published as <strong>Attested Resources</strong>,
+which are cryptographically signed and linked to your WebVH DID. These resources
+can be resolved via HTTP using your DID.</p>
+<h3 id="lab-3-steps-to-follow">Lab 3: Steps to Follow<a class="headerlink" href="#lab-3-steps-to-follow" title="Permanent link">&para;</a></h3>
+<ol>
+<li>If necessary, log into your <a href="https://traction-sandbox-tenant-ui.apps.silver.devops.gov.bc.ca/">Traction Sandbox</a> with your Wallet ID and Key.</li>
+<li>Create a Schema:<ol>
+<li>Click the menu item "Configuration" and then "Schema Storage".</li>
+<li>Click "Create Schema" button.</li>
+<li>Fill in the schema details:<ul>
+<li><strong>Schema Name</strong>: Enter a name for your schema (e.g., <code>Student ID</code> or <code>Workshop Credential</code>)</li>
+<li><strong>Schema Version</strong>: Enter a version (e.g., <code>1.0.0</code>)</li>
+<li><strong>Attributes</strong>: Add the attributes you want in your credential. For example:<ul>
+<li><code>student_id</code> (text)</li>
+<li><code>name</code> (text)</li>
+<li><code>date_of_birth</code> (text, format: YYYYMMDD for predicate support)</li>
+<li><code>expiry_date</code> (text, format: YYYYMMDD)</li>
+</ul>
+</li>
+<li><strong>Issuer DID</strong>: Select your WebVH DID from the dropdown (it should show your <code>did:webvh:...</code> identifier)</li>
+</ul>
+</li>
+<li>Click "Submit" to create and publish the schema.</li>
+<li>Wait for the schema to be published. The schema will be:<ul>
+<li>Created as an AnonCreds Schema object</li>
+<li>Signed with a Data Integrity Proof</li>
+<li>Published as an Attested Resource on the WebVH server</li>
+<li>Linked to your WebVH DID</li>
+</ul>
+</li>
+<li>Once published, you'll see your schema in the Schema Storage table with a schema ID that includes your WebVH DID (e.g., <code>did:webvh:{SCID}:.../resources/{digest}</code>).</li>
+<li>Click the Expand (<code>&gt;</code>) link to view schema details, and then click <code>&gt;</code> again to "View Raw Content" to see the full schema object.</li>
+</ol>
+</li>
+<li>Create a Credential Definition:<ol>
+<li>With your schema created, it's time to become an issuer. To do that, you have
+   to create a Credential Definition. Click on the "+" icon in the
+   "Credential Definition" column of your schema to create the Credential
+   Definition (CredDef) for the Schema.</li>
+<li>In the dialog that appears:<ul>
+<li><strong>Tag</strong>: Enter any value you want (e.g., <code>default</code> or <code>workshop</code>) — it
+  is an issuer-defined part of the identifier for the Credential Definition.</li>
+<li><strong>Support Revocation</strong>: Enable revocation support by checking this option. This will create a revocation registry that allows you to revoke credentials if needed.</li>
+<li><strong>Revocation Registry Size</strong>: Set this to <code>4</code>. This determines the maximum number of credentials that can be revoked in this registry. For this workshop, a small registry size is sufficient.</li>
+</ul>
+</li>
+<li>Click "Submit" and wait for the operation to complete.</li>
+<li>The Credential Definition will be:<ul>
+<li>Created with your WebVH DID as the issuer</li>
+<li>Linked to your schema</li>
+<li>Created with a revocation registry (size 4) for revocable credentials</li>
+<li>Signed and published as an Attested Resource on the WebVH server</li>
+</ul>
+</li>
+<li>Click the "Refresh" button if needed to see the Create icon has been replaced with the identifier for your CredDef.</li>
+</ol>
+</li>
+<li>Review your AnonCreds objects:<ol>
+<li>Move to the menu item "Configuration → Credential Definition Storage" to see
+   the CredDef you created. If you want, expand it to view the raw data.</li>
+<li>Both your Schema and Credential Definition are now published on the WebVH server
+   and can be resolved using your WebVH DID. Unlike blockchain-based registries,
+   these objects are accessible via HTTP resolution of your DID.</li>
+</ol>
+</li>
+<li>Browse your resources in the WebVH Explorer:<ol>
+<li>The WebVH server provides a web-based explorer interface that allows you to
+   browse and view all DIDs, resources, and credentials published on the server.</li>
+<li>Open your web browser and navigate to the WebVH Explorer. For the sandbox server,
+   the URL is: <code>https://sandbox.bcvh.vonx.io/explorer</code>.</li>
+<li>In the explorer interface, you can:<ul>
+<li><strong>View DIDs</strong>: Click on "DIDs" or navigate to the DIDs section to see all published DIDs.
+  You can filter by namespace (e.g., <code>default</code>) or by the SCID value to find your DID.</li>
+<li><strong>View Resources</strong>: Click on "Resources" to see all published AnonCreds resources
+  (schemas, credential definitions, revocation registries). Your schema and credential
+  definition should appear in this list.</li>
+<li><strong>Search</strong>: Use the search/filter functionality to find your specific resources by:</li>
+<li>Your DID identifier</li>
+<li>Resource type (e.g., "anonCredsSchema" or "anonCredsCredDef")</li>
+<li>Namespace</li>
+</ul>
+</li>
+<li>Click on your schema or credential definition in the explorer to view its details:<ul>
+<li>The full resource content</li>
+<li>The resource metadata</li>
+<li>The cryptographic proof (Data Integrity Proof)</li>
+<li>The resource ID (which matches the schema ID or credential definition ID you saw in Traction)</li>
+</ul>
+</li>
+<li>This demonstrates that your AnonCreds objects are publicly accessible and can be
+   discovered and resolved by anyone who knows your DID or the resource ID.</li>
+</ol>
+</li>
+</ol>
+<p>Completed all the steps? Great! Feel free to create a second Schema and Cred
+Def, ideally one related to your first. That way you can try out a presentation
+request that pulls data from both credentials! When you create the second
+schema, use the "Create Schema" button, and add the claims you want to have in
+your new type of credential.</p>
+<h2 id="lab-4-issuing-credentials-to-a-mobile-wallet">Lab 4: Issuing Credentials to a Mobile Wallet<a class="headerlink" href="#lab-4-issuing-credentials-to-a-mobile-wallet" title="Permanent link">&para;</a></h2>
+<p><a id="lab-4-issuing-credentials-to-a-mobile-wallet"></a></p>
+<p>In this lab we will use our Traction Tenant agent to issue instances of the
+credentials we created in <a href="#lab-3-creating-schemas-and-credential-definitions-with-webvh">Lab 3</a> to our
+Mobile Wallet we downloaded in <a href="#lab-1-getting-a-traction-tenant-agent-and-mobile-wallet">Lab
+1</a>.</p>
+<h3 id="lab-4-steps-to-follow">Lab 4: Steps to Follow<a class="headerlink" href="#lab-4-steps-to-follow" title="Permanent link">&para;</a></h3>
+<ol>
+<li>If necessary, log into your <a href="https://traction-sandbox-tenant-ui.apps.silver.devops.gov.bc.ca/">Traction Sandbox</a> with your Wallet ID and Key.</li>
+<li>Issue a Credential:<ol>
+<li>Click the menu item "Issuance" and then "Offer a Credential".</li>
+<li>Select the Credential Definition of the credential you want to issue (the one you created in Lab 3).</li>
+<li>Select the Contact Name to whom you are issuing the credential—the alias of the connection you made to your mobile Wallet.</li>
+<li>Click the "Enter Credential Value" to popup a data entry form for the attributes to populate.<ol>
+<li>When you enter the date values that you want to use in predicates
+   (e.g., "Older than 19"), put the date into the following format:
+   <strong><code>YYYYMMDD</code></strong>, e.g., <strong><code>20231001</code></strong>. You cannot use a string date
+   format, such as "YYYY-MM-DD" if you want to use the attribute for
+   predicate checking -- the value must be an integer.</li>
+<li>We suggest you use realistic dates for Date of Birth (DOB) (e.g., 20-ish
+   years in the past) and expiry (e.g., 3 years in the future) to make
+   using them in predicates easier.</li>
+</ol>
+</li>
+<li>Click "Save" when you are finished entering the attributes and review the
+   information you have entered.</li>
+<li>When you are ready, click "Send Offer" to initiate the issuance of the
+   credential.</li>
+</ol>
+</li>
+<li>Receive the Credential:<ol>
+<li>Open up your mobile Wallet and look for a notification about the credential offer. Where that appears may vary based on the Wallet you are using.</li>
+<li>Review the offer and then click the "Accept" button.</li>
+<li>Your new credential should be saved to your wallet. The credential is an AnonCreds credential that references your WebVH-published schema and credential definition.</li>
+</ol>
+</li>
+<li>Review the Issuance Data:<ol>
+<li>Back in your Traction Tenant, refresh the list to see the updated status of the issuance you just completed (should be "credential_issued" or "done", depending on the Wallet you are using).</li>
+<li>Expand the issuance and again to "View Raw Content." to see the data that was exchanged between the Traction Issuer and the Wallet.</li>
+</ol>
+</li>
+<li>If you want, repeat the process for other credentials types your Traction Tenant is capable of issuing.</li>
+</ol>
+<p>That's it! Pretty easy, eh? Of course, in a real issuer, the data would (very,
+very) likely not be hand-entered, but instead come from a backend system.
+Traction has an HTTP API (protected by the same Wallet ID and Key) that can be
+used from an application, to do things like this automatically. The Traction API
+embeds the ACA-Py API, so everything you can do in "plain ACA-Py" can also be
+done in Traction.</p>
+<h2 id="lab-5-requesting-and-verifying-presentations">Lab 5: Requesting and Verifying Presentations<a class="headerlink" href="#lab-5-requesting-and-verifying-presentations" title="Permanent link">&para;</a></h2>
+<p><a id="lab-5-requesting-and-verifying-presentations"></a></p>
+<p>In this lab we will use our Traction Tenant agent as a verifier, requesting
+presentations, and your mobile Wallet as the holder responding with
+presentations that satisfy the requests. The user interface is a little rougher
+for this lab (you'll be dealing with JSON), but it should still be easy enough
+to do.</p>
+<h3 id="lab-5-steps-to-follow">Lab 5: Steps to Follow<a class="headerlink" href="#lab-5-steps-to-follow" title="Permanent link">&para;</a></h3>
+<ol>
+<li>If necessary, log into your <a href="https://traction-sandbox-tenant-ui.apps.silver.devops.gov.bc.ca/">Traction Sandbox</a> with your Wallet ID and Key.</li>
+<li>Create and send a presentation request:<ol>
+<li>Click the menu item "Verification" and then the button "Create Presentation Request".</li>
+<li>Select the Connection to whom you are sending the request—the alias of the connection you made to your mobile Wallet.</li>
+<li>Update the example Presentation Request to match the credential that you want to request. Keep it simple for your first request—it's easy to iterate in Traction to make your request more complicated. If you used the schema we suggested in Lab 3, update the presentation request:<ol>
+<li>Update the value of "schema_name" to the name of the schema for the credential you issued.</li>
+<li>Update the group name(s) to something that makes sense for your credential(s) and make sure the attributes listed match your credential(s).</li>
+<li>Update (or perhaps remove) the "request_predicates" JSON item, if it is not applicable to your credential.</li>
+</ol>
+</li>
+<li><strong>Sample Presentation Request JSON</strong> (for reference):
+   <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="p">{</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">  </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Student ID Verification&quot;</span><span class="p">,</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">  </span><span class="nt">&quot;version&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;1.0&quot;</span><span class="p">,</span>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="w">  </span><span class="nt">&quot;requested_attributes&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="w">    </span><span class="nt">&quot;student_id_group&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="w">      </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;student_id&quot;</span><span class="p">,</span>
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="w">      </span><span class="nt">&quot;names&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;student_id&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;name&quot;</span><span class="p">],</span>
+<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="w">      </span><span class="nt">&quot;restrictions&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[{</span>
+<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="w">        </span><span class="nt">&quot;cred_def_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;YOUR_CRED_DEF_ID&quot;</span>
+<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="w">      </span><span class="p">}]</span>
+<a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a><span class="w">  </span><span class="p">},</span>
+<a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a><span class="w">  </span><span class="nt">&quot;requested_predicates&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{}</span>
+<a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a><span class="p">}</span>
+</code></pre></div>
+   Or with predicates:
+   <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="p">{</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="w">  </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Student ID Verification with Age Check&quot;</span><span class="p">,</span>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="w">  </span><span class="nt">&quot;version&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;1.0&quot;</span><span class="p">,</span>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="w">  </span><span class="nt">&quot;requested_attributes&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="w">    </span><span class="nt">&quot;student_id_group&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="w">      </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;student_id&quot;</span><span class="p">,</span>
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="w">      </span><span class="nt">&quot;names&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;student_id&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;name&quot;</span><span class="p">],</span>
+<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="w">      </span><span class="nt">&quot;restrictions&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[{</span>
+<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="w">        </span><span class="nt">&quot;cred_def_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;YOUR_CRED_DEF_ID&quot;</span>
+<a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a><span class="w">      </span><span class="p">}]</span>
+<a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a><span class="w">  </span><span class="p">},</span>
+<a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a><span class="w">  </span><span class="nt">&quot;requested_predicates&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a><span class="w">    </span><span class="nt">&quot;age_check&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-2-15" name="__codelineno-2-15" href="#__codelineno-2-15"></a><span class="w">      </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;date_of_birth&quot;</span><span class="p">,</span>
+<a id="__codelineno-2-16" name="__codelineno-2-16" href="#__codelineno-2-16"></a><span class="w">      </span><span class="nt">&quot;p_type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;&gt;=&quot;</span><span class="p">,</span>
+<a id="__codelineno-2-17" name="__codelineno-2-17" href="#__codelineno-2-17"></a><span class="w">      </span><span class="nt">&quot;p_value&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">20030527</span><span class="p">,</span>
+<a id="__codelineno-2-18" name="__codelineno-2-18" href="#__codelineno-2-18"></a><span class="w">      </span><span class="nt">&quot;restrictions&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[{</span>
+<a id="__codelineno-2-19" name="__codelineno-2-19" href="#__codelineno-2-19"></a><span class="w">        </span><span class="nt">&quot;cred_def_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;YOUR_CRED_DEF_ID&quot;</span>
+<a id="__codelineno-2-20" name="__codelineno-2-20" href="#__codelineno-2-20"></a><span class="w">      </span><span class="p">}]</span>
+<a id="__codelineno-2-21" name="__codelineno-2-21" href="#__codelineno-2-21"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-2-22" name="__codelineno-2-22" href="#__codelineno-2-22"></a><span class="w">  </span><span class="p">}</span>
+<a id="__codelineno-2-23" name="__codelineno-2-23" href="#__codelineno-2-23"></a><span class="p">}</span>
+</code></pre></div>
+   Replace <code>YOUR_CRED_DEF_ID</code> with your actual credential definition ID. The <code>names</code> array lists all attributes that will be revealed from the same credential. Predicates allow you to prove relationships (like age &gt;= 19) without revealing the exact value.</li>
+<li>Update the optional fields ("Auto Verify" and "Optional Comment") as you see fit. The "Optional Comment" goes into the list of Verifications so you can keep track of the different presentation requests you create.</li>
+<li>Click "Submit" when your presentation request is ready.</li>
+</ol>
+</li>
+<li>Respond to the Presentation Request:<ol>
+<li>Open up your mobile Wallet and look for a notification about receiving a presentation request. Where that appears may vary based on the Wallet you are using.</li>
+<li>Review the information you are being asked to share, and then click the "Share" button to send the presentation.</li>
+<li>The wallet will resolve your WebVH DID to find the schema and credential definition, create an AnonCreds presentation, and send it back to your Traction Tenant.</li>
+</ol>
+</li>
+<li>Review the Presentation Request Result:<ol>
+<li>Back in your Traction Tenant, refresh the Verifications list to see the updated status of the presentation request you just completed. It should be something positive, like "presentation_received" or "done" if all went well. It may be different depending on the Wallet you are using.</li>
+<li>If you want, expand the presentation request and "View Raw Content." to see the presentation request, and presentation data exchanged between the Traction Verifier and the Wallet.</li>
+<li>The verification process will resolve your WebVH DID to retrieve the schema and credential definition, then verify the AnonCreds presentation against those objects.</li>
+</ol>
+</li>
+<li>Repeat the process, making the presentation request more complicated:<ol>
+<li>From the list of presentations, use the arrow icon action to copy an existing presentation request and just re-run it, or evolve it.</li>
+<li>Ideas:</li>
+<li>Add predicates using date of birth ("older than") and expiry ("not expired today").<ol>
+<li>The <strong><code>p_value</code></strong> should be a relevant date — e.g., 19 (or whatever) years ago today for "older than", and today for "not expired", both in the <strong><code>YYYYMMDD</code></strong> format (the integer form of the date).</li>
+<li>The <strong><code>p_type</code></strong> should be <strong><code>&gt;=</code></strong> for the "older than", and <strong><code>=&lt;</code></strong> for "not expired".  See the table below for the form of the expression form.</li>
+</ol>
+</li>
+<li>Add a second credential group with a restriction for a different credential to the request, so the presentation is derived from two source credentials.</li>
+</ol>
+</li>
+</ol>
+<table>
+<thead>
+<tr>
+<th>p_value</th>
+<th>p_type</th>
+<th>credential_data</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>20230527</td>
+<td>&lt;=</td>
+<td>expiry_dateint</td>
+</tr>
+<tr>
+<td>20030527</td>
+<td>&gt;=</td>
+<td>dob_dateint</td>
+</tr>
+</tbody>
+</table>
+<p>That completes this lab — although feel free to continue to play with all of the steps (setup, issuing and presenting). You should have a pretty solid handle on exactly what you can and can't do with AnonCreds using WebVH!</p>
+<h3 id="lab-5a-revoking-credentials-and-exploring-revocation-entries-bonus-lab">Lab 5A: Revoking Credentials and Exploring Revocation Entries (Bonus Lab)<a class="headerlink" href="#lab-5a-revoking-credentials-and-exploring-revocation-entries-bonus-lab" title="Permanent link">&para;</a></h3>
+<p><a id="lab-5a-revoking-credentials-and-exploring-revocation-entries"></a></p>
+<p>In this bonus lab, we'll explore credential revocation—an important feature that allows issuers to revoke credentials when necessary (e.g., if a credential is lost, compromised, or no longer valid). With WebVH, revocation registry entries are published as Attested Resources, making them publicly verifiable.</p>
+<h4 id="lab-5a-steps-to-follow">Lab 5A: Steps to Follow<a class="headerlink" href="#lab-5a-steps-to-follow" title="Permanent link">&para;</a></h4>
+<ol>
+<li><strong>Navigate to Issued Credentials</strong>:</li>
+<li>In your Traction Tenant UI, navigate to "Profile" → "Issuance" → "Credentials"</li>
+<li>You should see a table listing all credentials you've issued (from Lab 4)</li>
+<li>Find a credential that was successfully issued (Status should be "Done")</li>
+<li>Note: The credential must have been issued with revocation support (which we enabled in Lab 3)</li>
+<li>Expand the row by clicking the expander arrow to see detailed information</li>
+<li>
+<p>Note the <code>rev_reg_id</code> (Revocation Registry ID) and <code>cred_rev_id</code> (Credential Revocation ID) from the expanded details - you'll need these later</p>
+</li>
+<li>
+<p><strong>Revoke a Credential Using the Traction UI</strong>:</p>
+</li>
+<li>In the "Actions" column for your selected credential, click the revoke button (circle with an X icon)</li>
+<li>A modal dialog will open showing:<ul>
+<li>Connection information</li>
+<li>Revocation ID (<code>cred_rev_id</code>)</li>
+<li>Revocation Registry ID (<code>rev_reg_id</code>)</li>
+</ul>
+</li>
+<li>Enter a comment explaining why you're revoking (e.g., "Credential revoked for testing purposes")</li>
+<li>Click the "Revoke" button</li>
+<li>The revocation will be:<ul>
+<li>Published to the WebVH registry automatically (<code>publish: true</code>)</li>
+<li>A notification will be sent to the holder (<code>notify: true</code>)</li>
+</ul>
+</li>
+<li>You should see a success message confirming the credential has been revoked</li>
+<li>
+<p>The credential status may update to reflect the revocation</p>
+</li>
+<li>
+<p><strong>Verify Revocation Status</strong>:</p>
+</li>
+<li>Refresh the credentials table to see updated information</li>
+<li>Expand the revoked credential row again to see the updated details</li>
+<li>The credential should now show revocation information</li>
+<li>
+<p>You can also check the WebVH Explorer (step 5) to see the published revocation entry</p>
+</li>
+<li>
+<p><strong>Request a Presentation to Verify Revocation Check</strong>:</p>
+</li>
+<li>Navigate to "Profile" → "Verification" → "Presentations"</li>
+<li>Create a new presentation request (as in Lab 5) that includes revocation checking</li>
+<li>When creating the presentation request:<ul>
+<li>Select the connection with your mobile wallet</li>
+<li>Select the credential definition for the credential you just revoked</li>
+<li>In the presentation request options, ensure revocation checking is enabled</li>
+<li>The presentation request should include a <code>non_revoked</code> time range check</li>
+</ul>
+</li>
+<li>Send this request to your wallet</li>
+<li>The wallet should check revocation status and either:<ul>
+<li>Reject the presentation if the credential is revoked (which it should be)</li>
+<li>Accept it if the credential is still valid (which shouldn't happen in this case)</li>
+</ul>
+</li>
+<li>
+<p>Try creating another presentation request for a credential that hasn't been revoked - it should be accepted</p>
+</li>
+<li>
+<p><strong>Explore Revocation Entries on WebVH Server</strong>:</p>
+</li>
+<li>Navigate to the WebVH Explorer: <code>https://sandbox.bcvh.vonx.io/explorer</code></li>
+<li>Click on "Resources" to see all published resources</li>
+<li>Filter by resource type to find revocation-related resources:<ul>
+<li>Look for resources with type <code>anonCredsRevRegDef</code> (Revocation Registry Definition)</li>
+<li>Look for resources with type <code>anonCredsRevList</code> (Revocation List/State)</li>
+</ul>
+</li>
+<li>You can also filter by your WebVH DID to see resources associated with your issuer</li>
+<li>Click on a revocation registry definition to see:<ul>
+<li>The registry ID (should match the <code>rev_reg_id</code> from your credential)</li>
+<li>Maximum number of credentials (should be 4, as we set in Lab 3)</li>
+<li>Public keys for revocation</li>
+</ul>
+</li>
+<li>Click on a revocation list/state to see:<ul>
+<li>The current revocation accumulator</li>
+<li>Timestamp of the last update</li>
+<li>Links to previous revocation states (showing the history)</li>
+</ul>
+</li>
+<li>Notice how revocation entries are linked together, creating a verifiable history</li>
+<li>
+<p>If you've revoked a credential, you should see an updated revocation state entry</p>
+</li>
+<li>
+<p><strong>Understand Revocation Registry Structure</strong>:</p>
+</li>
+<li>Each revocation registry has a definition (published when the credential definition was created in Lab 3)</li>
+<li>Revocation states are published as separate resources, linked together</li>
+<li>Each revocation state update includes:<ul>
+<li>The current accumulator (cryptographic structure)</li>
+<li>Timestamp of the update</li>
+<li>Links to previous states</li>
+</ul>
+</li>
+<li>This allows verifiers to check revocation status without revealing which specific credential they're checking</li>
+<li>
+<p>The revocation registry can hold up to 4 credentials (as we configured), and you can see how many have been issued and revoked</p>
+</li>
+<li>
+<p><strong>Try Revoking Another Credential</strong>:</p>
+</li>
+<li>Issue a new credential (using Lab 4 steps) if you haven't already</li>
+<li>Navigate back to "Profile" → "Issuance" → "Credentials"</li>
+<li>Find the newly issued credential</li>
+<li>Revoke it using the revoke button in the Actions column</li>
+<li>Add a comment and confirm the revocation</li>
+<li>Check the WebVH Explorer again - you should see the revocation count increase</li>
+<li>Explore the new revocation state entry in the WebVH Explorer to see the updated accumulator</li>
+</ol>
+<h3 id="what-youve-learned-in-lab-5a">What You've Learned in Lab 5A<a class="headerlink" href="#what-youve-learned-in-lab-5a" title="Permanent link">&para;</a></h3>
+<p>In this bonus lab, you've learned:</p>
+<ol>
+<li><strong>Revoke Credentials</strong>: How to revoke credentials using the Traction UI</li>
+<li><strong>Check Revocation Status</strong>: How to verify if a credential has been revoked</li>
+<li><strong>Revocation Registry Structure</strong>: Understanding how revocation registries work</li>
+<li><strong>WebVH Revocation Resources</strong>: How revocation entries are published as Attested Resources on WebVH</li>
+<li><strong>Revocation History</strong>: How revocation states are linked together, creating a verifiable history</li>
+<li><strong>Privacy-Preserving Revocation</strong>: How revocation checks can be done without revealing which credential is being checked</li>
+<li><strong>Presentation with Revocation Checks</strong>: How to verify that revoked credentials are properly rejected in presentation requests</li>
+</ol>
+<h2 id="part-2-openapi-swagger-demo-programmatic-webvh-operations">Part 2: OpenAPI (Swagger) Demo - Programmatic WebVH Operations<a class="headerlink" href="#part-2-openapi-swagger-demo-programmatic-webvh-operations" title="Permanent link">&para;</a></h2>
+<p>In this second part of the workshop, we'll explore how to use the OpenAPI (Swagger) interface to programmatically interact with your Traction tenant and WebVH resources. This demonstrates how to automate credential issuance, verification, and WebVH operations using REST APIs.</p>
+<h3 id="prerequisites-for-part-2">Prerequisites for Part 2<a class="headerlink" href="#prerequisites-for-part-2" title="Permanent link">&para;</a></h3>
+<p>Before starting this demo, you'll need:</p>
+<ol>
+<li>Completed Part 1 (Labs 1-5) - You should have:</li>
+<li>A Traction tenant with WebVH configured</li>
+<li>A WebVH DID created</li>
+<li>At least one schema and credential definition published</li>
+<li>A connection to your mobile wallet</li>
+<li>Basic familiarity with web browsers and JSON</li>
+<li>Your Traction tenant API credentials (JWT token from Developer menu)</li>
+</ol>
+<h3 id="lab-6-accessing-the-openapi-interface">Lab 6: Accessing the OpenAPI Interface<a class="headerlink" href="#lab-6-accessing-the-openapi-interface" title="Permanent link">&para;</a></h3>
+<p><a id="lab-6-accessing-the-openapi-interface"></a></p>
+<p>In this lab, we'll learn how to access and use the OpenAPI (Swagger) interface for your Traction tenant to interact with WebVH resources programmatically.</p>
+<h4 id="lab-6-steps-to-follow">Lab 6: Steps to Follow<a class="headerlink" href="#lab-6-steps-to-follow" title="Permanent link">&para;</a></h4>
+<ol>
+<li><strong>Get Your API Credentials</strong>:</li>
+<li>In your Traction Tenant, click the User icon (top right) and choose "Developer"</li>
+<li>Scroll to the bottom and expand the "Encoded JWT", and click the "Copy" icon to the right to get the JWT into your clipboard.</li>
+<li><strong>Important</strong>: By using the "copy" icon, the JWT is prefixed with "Bearer ", which is needed in the OpenAPI authorization. If you just highlight and copy the JWT, you don't get the prefix.</li>
+<li>
+<p>Save this JWT token - you'll need it for API calls.</p>
+</li>
+<li>
+<p><strong>Access the Swagger UI</strong>:</p>
+</li>
+<li>Click on "About" from the left menu and then click "Traction."</li>
+<li>Click on the link with the "Swagger URL" label to open up the OpenAPI (Swagger) API.</li>
+<li>The URL is: <code>https://traction-sandbox-tenant-proxy.apps.silver.devops.gov.bc.ca/api/doc</code></li>
+<li>
+<p>Bookmark this page for easy access.</p>
+</li>
+<li>
+<p><strong>Authorize in Swagger</strong>:</p>
+</li>
+<li>Click "Authorize" in the top right of the Swagger UI</li>
+<li>Click in the second box "AuthorizationHeader (apiKey)" </li>
+<li>Paste your previously copied encoded JWT (with "Bearer " prefix)</li>
+<li>
+<p>Click "Authorize" and then "Close"</p>
+</li>
+<li>
+<p><strong>Explore WebVH Endpoints</strong>:</p>
+</li>
+<li>Search for "webvh" in the Swagger search box</li>
+<li>
+<p>Try these endpoints:</p>
+<ul>
+<li><code>GET /did/webvh/configuration</code> - Get your WebVH configuration</li>
+<li><code>GET /did/webvh/identifiers</code> - List your WebVH DIDs</li>
+<li><code>POST /did/webvh/create</code> - Create a new WebVH DID</li>
+<li><code>GET /anoncreds/registries</code> - List available AnonCreds registries (should include WebVH)</li>
+</ul>
+</li>
+<li>
+<p><strong>Test an Endpoint</strong>:</p>
+</li>
+<li>Click on <code>GET /did/webvh/identifiers</code> to expand it</li>
+<li>Click "Try it out"</li>
+<li>Click "Execute"</li>
+<li>
+<p>You should see a list of your WebVH DIDs in the response</p>
+</li>
+<li>
+<p><strong>Explore AnonCreds Endpoints</strong>:</p>
+</li>
+<li>Search for "anoncreds" or "schema" in Swagger</li>
+<li>Try <code>GET /anoncreds/registry/{registry_id}/schemas</code> to see your published schemas</li>
+<li>Try <code>GET /anoncreds/registry/{registry_id}/credential-definitions</code> to see your credential definitions</li>
+<li>Note: The <code>registry_id</code> for WebVH will be your WebVH DID</li>
+</ol>
+<h3 id="lab-7-using-the-api-to-issue-credentials-programmatically">Lab 7: Using the API to Issue Credentials Programmatically<a class="headerlink" href="#lab-7-using-the-api-to-issue-credentials-programmatically" title="Permanent link">&para;</a></h3>
+<p><a id="lab-7-using-the-api-to-issue-credentials-programmatically"></a></p>
+<p>In this lab, we'll use the Swagger UI to issue credentials directly through the API interface.</p>
+<h4 id="lab-7-steps-to-follow">Lab 7: Steps to Follow<a class="headerlink" href="#lab-7-steps-to-follow" title="Permanent link">&para;</a></h4>
+<ol>
+<li><strong>Get Your Connection ID</strong>:</li>
+<li>In Swagger UI, find and expand <code>GET /connections</code></li>
+<li>Click "Try it out"</li>
+<li>Click "Execute"</li>
+<li>Find your mobile wallet connection in the response</li>
+<li>Copy the <code>connection_id</code> value - you'll need this to issue credentials</li>
+<li>
+<p>Note: The connection should have <code>state: "active"</code> for issuance to work</p>
+</li>
+<li>
+<p><strong>Get Your Credential Definition ID</strong>:</p>
+</li>
+<li>First, get your WebVH registry ID (your WebVH DID):<ul>
+<li>Expand <code>GET /did/webvh/identifiers</code></li>
+<li>Click "Try it out" → "Execute"</li>
+<li>Copy one of the <code>did</code> values from the results</li>
+</ul>
+</li>
+<li>
+<p>Now get your credential definitions:</p>
+<ul>
+<li>Expand <code>GET /anoncreds/registry/{registry_id}/credential-definitions</code></li>
+<li>Click "Try it out"</li>
+<li>Paste your WebVH DID into the <code>registry_id</code> parameter</li>
+<li>Click "Execute"</li>
+<li>Copy one of the <code>credential_definition_ids</code> from the response</li>
+</ul>
+</li>
+<li>
+<p><strong>Issue a Credential Using Swagger</strong>:</p>
+</li>
+<li>Find and expand <code>POST /issue-credential-2.0/send-offer</code></li>
+<li>Click "Try it out"</li>
+<li>In the request body, replace the example JSON with (replace the placeholder values):
+   <div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="p">{</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="w">  </span><span class="nt">&quot;connection_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;YOUR_CONNECTION_ID&quot;</span><span class="p">,</span>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="w">  </span><span class="nt">&quot;credential_preview&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="w">    </span><span class="nt">&quot;@type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;https://didcomm.org/issue-credential/2.0/credential-preview&quot;</span><span class="p">,</span>
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="w">    </span><span class="nt">&quot;attributes&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="w">      </span><span class="p">{</span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;student_id&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;value&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ST-2024-001&quot;</span><span class="p">},</span>
+<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="w">      </span><span class="p">{</span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;name&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;value&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Alice Smith&quot;</span><span class="p">},</span>
+<a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a><span class="w">      </span><span class="p">{</span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;date_of_birth&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;value&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;20030527&quot;</span><span class="p">},</span>
+<a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a><span class="w">      </span><span class="p">{</span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;expiry_date&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;value&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;20271231&quot;</span><span class="p">}</span>
+<a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a><span class="w">    </span><span class="p">]</span>
+<a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a><span class="w">  </span><span class="p">},</span>
+<a id="__codelineno-3-12" name="__codelineno-3-12" href="#__codelineno-3-12"></a><span class="w">  </span><span class="nt">&quot;filter&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-3-13" name="__codelineno-3-13" href="#__codelineno-3-13"></a><span class="w">    </span><span class="nt">&quot;anoncreds&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-3-14" name="__codelineno-3-14" href="#__codelineno-3-14"></a><span class="w">      </span><span class="nt">&quot;cred_def_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;YOUR_CRED_DEF_ID&quot;</span>
+<a id="__codelineno-3-15" name="__codelineno-3-15" href="#__codelineno-3-15"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-3-16" name="__codelineno-3-16" href="#__codelineno-3-16"></a><span class="w">  </span><span class="p">}</span>
+<a id="__codelineno-3-17" name="__codelineno-3-17" href="#__codelineno-3-17"></a><span class="p">}</span>
+</code></pre></div></li>
+<li>Replace <code>YOUR_CONNECTION_ID</code> with the connection ID you copied in step 1</li>
+<li>Replace <code>YOUR_CRED_DEF_ID</code> with the credential definition ID you copied in step 2</li>
+<li>Update the attribute values to match your schema</li>
+<li>Click "Execute"</li>
+<li>You should see a successful response with a credential exchange record</li>
+<li>
+<p>Check your mobile wallet - you should receive a credential offer notification</p>
+</li>
+<li>
+<p><strong>Check the Credential Exchange Status</strong>:</p>
+</li>
+<li>Find and expand <code>GET /issue-credential-2.0/records</code></li>
+<li>Click "Try it out" → "Execute"</li>
+<li>Find your credential exchange in the list</li>
+<li>The <code>state</code> field shows the current status (e.g., "offer_sent", "credential_issued")</li>
+<li>Expand the record to see all the details</li>
+<li>
+<p>Wait for the wallet to accept the credential - the state should change to "credential_issued" or "done"</p>
+</li>
+<li>
+<p><strong>Verify Credential Issuance</strong>:</p>
+</li>
+<li>Once the credential is issued, check your mobile wallet to confirm it was received</li>
+<li>You can also check the credential exchange record again to see the updated state</li>
+<li>The response will include details about the issued credential</li>
+</ol>
+<h3 id="lab-8-using-the-api-to-request-presentations-programmatically">Lab 8: Using the API to Request Presentations Programmatically<a class="headerlink" href="#lab-8-using-the-api-to-request-presentations-programmatically" title="Permanent link">&para;</a></h3>
+<p><a id="lab-8-using-the-api-to-request-presentations-programmatically"></a></p>
+<p>In this lab, we'll use the Swagger UI to create and send presentation requests directly through the API interface.</p>
+<h4 id="lab-8-steps-to-follow">Lab 8: Steps to Follow<a class="headerlink" href="#lab-8-steps-to-follow" title="Permanent link">&para;</a></h4>
+<ol>
+<li><strong>Get Your Connection ID</strong> (if you don't have it from Lab 7):</li>
+<li>In Swagger UI, find and expand <code>GET /connections</code></li>
+<li>Click "Try it out" → "Execute"</li>
+<li>Find your mobile wallet connection in the response</li>
+<li>
+<p>Copy the <code>connection_id</code> value</p>
+</li>
+<li>
+<p><strong>Get Your Credential Definition ID</strong> (if you don't have it from Lab 7):</p>
+</li>
+<li>Expand <code>GET /did/webvh/identifiers</code> → "Try it out" → "Execute"</li>
+<li>Copy your WebVH DID</li>
+<li>Expand <code>GET /anoncreds/registry/{registry_id}/credential-definitions</code></li>
+<li>Paste your WebVH DID into <code>registry_id</code> → "Execute"</li>
+<li>
+<p>Copy one of the <code>credential_definition_ids</code></p>
+</li>
+<li>
+<p><strong>Create a Presentation Request Using Swagger</strong>:</p>
+</li>
+<li>Find and expand <code>POST /present-proof-2.0/send-request</code></li>
+<li>Click "Try it out"</li>
+<li>In the request body, use this JSON (replace placeholder values):</li>
+</ol>
+<p><strong>Basic Presentation Request Example:</strong>
+   <div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="p">{</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="w">  </span><span class="nt">&quot;connection_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;YOUR_CONNECTION_ID&quot;</span><span class="p">,</span>
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="w">  </span><span class="nt">&quot;comment&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Please share your student ID credential&quot;</span><span class="p">,</span>
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="w">  </span><span class="nt">&quot;presentation_request&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="w">    </span><span class="nt">&quot;anoncreds&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="w">      </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Proof Request&quot;</span><span class="p">,</span>
+<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="w">      </span><span class="nt">&quot;version&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;1.0&quot;</span><span class="p">,</span>
+<a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a><span class="w">      </span><span class="nt">&quot;requested_attributes&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a><span class="w">        </span><span class="nt">&quot;student_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a><span class="w">          </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;student_id&quot;</span><span class="p">,</span>
+<a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a><span class="w">          </span><span class="nt">&quot;restrictions&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[{</span>
+<a id="__codelineno-4-12" name="__codelineno-4-12" href="#__codelineno-4-12"></a><span class="w">            </span><span class="nt">&quot;cred_def_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;YOUR_CRED_DEF_ID&quot;</span>
+<a id="__codelineno-4-13" name="__codelineno-4-13" href="#__codelineno-4-13"></a><span class="w">          </span><span class="p">}]</span>
+<a id="__codelineno-4-14" name="__codelineno-4-14" href="#__codelineno-4-14"></a><span class="w">        </span><span class="p">}</span>
+<a id="__codelineno-4-15" name="__codelineno-4-15" href="#__codelineno-4-15"></a><span class="w">      </span><span class="p">},</span>
+<a id="__codelineno-4-16" name="__codelineno-4-16" href="#__codelineno-4-16"></a><span class="w">      </span><span class="nt">&quot;requested_predicates&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{}</span>
+<a id="__codelineno-4-17" name="__codelineno-4-17" href="#__codelineno-4-17"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-4-18" name="__codelineno-4-18" href="#__codelineno-4-18"></a><span class="w">  </span><span class="p">},</span>
+<a id="__codelineno-4-19" name="__codelineno-4-19" href="#__codelineno-4-19"></a><span class="w">  </span><span class="nt">&quot;auto_verify&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span>
+<a id="__codelineno-4-20" name="__codelineno-4-20" href="#__codelineno-4-20"></a><span class="p">}</span>
+</code></pre></div></p>
+<p><strong>Complete Presentation Request Example (with multiple attributes and predicates):</strong>
+   <div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="p">{</span>
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="w">  </span><span class="nt">&quot;connection_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;YOUR_CONNECTION_ID&quot;</span><span class="p">,</span>
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="w">  </span><span class="nt">&quot;comment&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Please share your student credential&quot;</span><span class="p">,</span>
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="w">  </span><span class="nt">&quot;presentation_request&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="w">    </span><span class="nt">&quot;anoncreds&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a><span class="w">      </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Student ID Verification&quot;</span><span class="p">,</span>
+<a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a><span class="w">      </span><span class="nt">&quot;version&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;1.0&quot;</span><span class="p">,</span>
+<a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a><span class="w">      </span><span class="nt">&quot;requested_attributes&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a><span class="w">        </span><span class="nt">&quot;student_info&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a><span class="w">          </span><span class="nt">&quot;names&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;student_id&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;name&quot;</span><span class="p">],</span>
+<a id="__codelineno-5-11" name="__codelineno-5-11" href="#__codelineno-5-11"></a><span class="w">          </span><span class="nt">&quot;restrictions&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[{</span>
+<a id="__codelineno-5-12" name="__codelineno-5-12" href="#__codelineno-5-12"></a><span class="w">            </span><span class="nt">&quot;cred_def_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;YOUR_CRED_DEF_ID&quot;</span>
+<a id="__codelineno-5-13" name="__codelineno-5-13" href="#__codelineno-5-13"></a><span class="w">          </span><span class="p">}]</span>
+<a id="__codelineno-5-14" name="__codelineno-5-14" href="#__codelineno-5-14"></a><span class="w">        </span><span class="p">}</span>
+<a id="__codelineno-5-15" name="__codelineno-5-15" href="#__codelineno-5-15"></a><span class="w">      </span><span class="p">},</span>
+<a id="__codelineno-5-16" name="__codelineno-5-16" href="#__codelineno-5-16"></a><span class="w">      </span><span class="nt">&quot;requested_predicates&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-5-17" name="__codelineno-5-17" href="#__codelineno-5-17"></a><span class="w">        </span><span class="nt">&quot;age_check&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-5-18" name="__codelineno-5-18" href="#__codelineno-5-18"></a><span class="w">          </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;date_of_birth&quot;</span><span class="p">,</span>
+<a id="__codelineno-5-19" name="__codelineno-5-19" href="#__codelineno-5-19"></a><span class="w">          </span><span class="nt">&quot;p_type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;&gt;=&quot;</span><span class="p">,</span>
+<a id="__codelineno-5-20" name="__codelineno-5-20" href="#__codelineno-5-20"></a><span class="w">          </span><span class="nt">&quot;p_value&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">20030527</span><span class="p">,</span>
+<a id="__codelineno-5-21" name="__codelineno-5-21" href="#__codelineno-5-21"></a><span class="w">          </span><span class="nt">&quot;restrictions&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[{</span>
+<a id="__codelineno-5-22" name="__codelineno-5-22" href="#__codelineno-5-22"></a><span class="w">            </span><span class="nt">&quot;cred_def_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;YOUR_CRED_DEF_ID&quot;</span>
+<a id="__codelineno-5-23" name="__codelineno-5-23" href="#__codelineno-5-23"></a><span class="w">          </span><span class="p">}]</span>
+<a id="__codelineno-5-24" name="__codelineno-5-24" href="#__codelineno-5-24"></a><span class="w">        </span><span class="p">},</span>
+<a id="__codelineno-5-25" name="__codelineno-5-25" href="#__codelineno-5-25"></a><span class="w">        </span><span class="nt">&quot;expiry_check&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-5-26" name="__codelineno-5-26" href="#__codelineno-5-26"></a><span class="w">          </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;expiry_date&quot;</span><span class="p">,</span>
+<a id="__codelineno-5-27" name="__codelineno-5-27" href="#__codelineno-5-27"></a><span class="w">          </span><span class="nt">&quot;p_type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;&gt;=&quot;</span><span class="p">,</span>
+<a id="__codelineno-5-28" name="__codelineno-5-28" href="#__codelineno-5-28"></a><span class="w">          </span><span class="nt">&quot;p_value&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">20240101</span><span class="p">,</span>
+<a id="__codelineno-5-29" name="__codelineno-5-29" href="#__codelineno-5-29"></a><span class="w">          </span><span class="nt">&quot;restrictions&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[{</span>
+<a id="__codelineno-5-30" name="__codelineno-5-30" href="#__codelineno-5-30"></a><span class="w">            </span><span class="nt">&quot;cred_def_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;YOUR_CRED_DEF_ID&quot;</span>
+<a id="__codelineno-5-31" name="__codelineno-5-31" href="#__codelineno-5-31"></a><span class="w">          </span><span class="p">}]</span>
+<a id="__codelineno-5-32" name="__codelineno-5-32" href="#__codelineno-5-32"></a><span class="w">        </span><span class="p">}</span>
+<a id="__codelineno-5-33" name="__codelineno-5-33" href="#__codelineno-5-33"></a><span class="w">      </span><span class="p">},</span>
+<a id="__codelineno-5-34" name="__codelineno-5-34" href="#__codelineno-5-34"></a><span class="w">      </span><span class="nt">&quot;non_revoked&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-5-35" name="__codelineno-5-35" href="#__codelineno-5-35"></a><span class="w">        </span><span class="nt">&quot;from&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1735689600</span><span class="p">,</span>
+<a id="__codelineno-5-36" name="__codelineno-5-36" href="#__codelineno-5-36"></a><span class="w">        </span><span class="nt">&quot;to&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1735689600</span>
+<a id="__codelineno-5-37" name="__codelineno-5-37" href="#__codelineno-5-37"></a><span class="w">      </span><span class="p">}</span>
+<a id="__codelineno-5-38" name="__codelineno-5-38" href="#__codelineno-5-38"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-5-39" name="__codelineno-5-39" href="#__codelineno-5-39"></a><span class="w">  </span><span class="p">},</span>
+<a id="__codelineno-5-40" name="__codelineno-5-40" href="#__codelineno-5-40"></a><span class="w">  </span><span class="nt">&quot;auto_verify&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span>
+<a id="__codelineno-5-41" name="__codelineno-5-41" href="#__codelineno-5-41"></a><span class="p">}</span>
+</code></pre></div></p>
+<p><strong>Field Explanations:</strong>
+   - <code>connection_id</code>: The connection ID of the wallet you're requesting from
+   - <code>comment</code>: Optional human-readable message for the wallet holder
+   - <code>presentation_request.anoncreds.name</code>: Name of the proof request
+   - <code>presentation_request.anoncreds.version</code>: Version of the proof request format
+   - <code>presentation_request.anoncreds.requested_attributes</code>: Attributes to be revealed (each needs a unique key)
+     - <code>name</code>: The attribute name from your schema
+     - <code>names</code>: Array of attribute names from your schema (for revealing multiple attributes from the same credential)
+     - <code>restrictions</code>: Array of restrictions (credential definition IDs that can satisfy this)
+   - <code>presentation_request.anoncreds.requested_predicates</code>: Predicate proofs for privacy-preserving checks
+     - <code>name</code>: The attribute name to check
+     - <code>p_type</code>: Predicate type (<code>&gt;=</code>, <code>&gt;</code>, <code>&lt;=</code>, <code>&lt;</code>)
+     - <code>p_value</code>: The value to compare against (must be an integer, use YYYYMMDD format for dates)
+     - <code>restrictions</code>: Array of restrictions (credential definition IDs that can satisfy this)
+   - <code>presentation_request.anoncreds.non_revoked</code>: Optional time range to check revocation status
+     - <code>from</code>: Start timestamp (Unix epoch time)
+     - <code>to</code>: End timestamp (Unix epoch time)
+   - <code>auto_verify</code>: Automatically verify the presentation when received</p>
+<ul>
+<li>Replace <code>YOUR_CONNECTION_ID</code> with your connection ID</li>
+<li>Replace <code>YOUR_CRED_DEF_ID</code> with your credential definition ID</li>
+<li>Adjust attribute names to match your schema</li>
+<li>Update predicate values (dates should be in YYYYMMDD integer format)</li>
+<li>Click "Execute"</li>
+<li>You should see a successful response with a presentation exchange record</li>
+<li>
+<p>Check your mobile wallet - you should receive a presentation request notification</p>
+</li>
+<li>
+<p><strong>Check the Presentation Exchange Status</strong>:</p>
+</li>
+<li>Find and expand <code>GET /present-proof-2.0/records</code></li>
+<li>Click "Try it out" → "Execute"</li>
+<li>Find your presentation exchange in the list</li>
+<li>The <code>state</code> field shows the current status (e.g., "request_sent", "presentation_received")</li>
+<li>
+<p>Wait for the wallet to share the presentation - the state should change to "presentation_received" or "done"</p>
+</li>
+<li>
+<p><strong>Verify Presentation</strong>:</p>
+</li>
+<li>Once the presentation is received, expand the exchange record to see the details</li>
+<li>The response will include the revealed attributes from the credential</li>
+<li>
+<p>If you set <code>auto_verify</code> to true (or verify manually), you'll see verification results</p>
+</li>
+<li>
+<p><strong>Try a More Complex Presentation Request</strong>:</p>
+</li>
+<li>Create another presentation request with predicates:
+   <div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="p">{</span>
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="w">  </span><span class="nt">&quot;connection_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;YOUR_CONNECTION_ID&quot;</span><span class="p">,</span>
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="w">  </span><span class="nt">&quot;comment&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Please prove your age&quot;</span><span class="p">,</span>
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="w">  </span><span class="nt">&quot;presentation_request&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="w">    </span><span class="nt">&quot;anoncreds&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a><span class="w">      </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Proof Request with Predicates&quot;</span><span class="p">,</span>
+<a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a><span class="w">      </span><span class="nt">&quot;version&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;1.0&quot;</span><span class="p">,</span>
+<a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a><span class="w">      </span><span class="nt">&quot;requested_attributes&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a><span class="w">        </span><span class="nt">&quot;student_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a><span class="w">          </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;student_id&quot;</span><span class="p">,</span>
+<a id="__codelineno-6-11" name="__codelineno-6-11" href="#__codelineno-6-11"></a><span class="w">          </span><span class="nt">&quot;restrictions&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[{</span>
+<a id="__codelineno-6-12" name="__codelineno-6-12" href="#__codelineno-6-12"></a><span class="w">            </span><span class="nt">&quot;cred_def_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;YOUR_CRED_DEF_ID&quot;</span>
+<a id="__codelineno-6-13" name="__codelineno-6-13" href="#__codelineno-6-13"></a><span class="w">          </span><span class="p">}]</span>
+<a id="__codelineno-6-14" name="__codelineno-6-14" href="#__codelineno-6-14"></a><span class="w">        </span><span class="p">}</span>
+<a id="__codelineno-6-15" name="__codelineno-6-15" href="#__codelineno-6-15"></a><span class="w">      </span><span class="p">},</span>
+<a id="__codelineno-6-16" name="__codelineno-6-16" href="#__codelineno-6-16"></a><span class="w">      </span><span class="nt">&quot;requested_predicates&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-6-17" name="__codelineno-6-17" href="#__codelineno-6-17"></a><span class="w">        </span><span class="nt">&quot;age_check&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-6-18" name="__codelineno-6-18" href="#__codelineno-6-18"></a><span class="w">          </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;date_of_birth&quot;</span><span class="p">,</span>
+<a id="__codelineno-6-19" name="__codelineno-6-19" href="#__codelineno-6-19"></a><span class="w">          </span><span class="nt">&quot;p_type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;&gt;=&quot;</span><span class="p">,</span>
+<a id="__codelineno-6-20" name="__codelineno-6-20" href="#__codelineno-6-20"></a><span class="w">          </span><span class="nt">&quot;p_value&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">20030527</span><span class="p">,</span>
+<a id="__codelineno-6-21" name="__codelineno-6-21" href="#__codelineno-6-21"></a><span class="w">          </span><span class="nt">&quot;restrictions&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[{</span>
+<a id="__codelineno-6-22" name="__codelineno-6-22" href="#__codelineno-6-22"></a><span class="w">            </span><span class="nt">&quot;cred_def_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;YOUR_CRED_DEF_ID&quot;</span>
+<a id="__codelineno-6-23" name="__codelineno-6-23" href="#__codelineno-6-23"></a><span class="w">          </span><span class="p">}]</span>
+<a id="__codelineno-6-24" name="__codelineno-6-24" href="#__codelineno-6-24"></a><span class="w">        </span><span class="p">}</span>
+<a id="__codelineno-6-25" name="__codelineno-6-25" href="#__codelineno-6-25"></a><span class="w">      </span><span class="p">}</span>
+<a id="__codelineno-6-26" name="__codelineno-6-26" href="#__codelineno-6-26"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-6-27" name="__codelineno-6-27" href="#__codelineno-6-27"></a><span class="w">  </span><span class="p">},</span>
+<a id="__codelineno-6-28" name="__codelineno-6-28" href="#__codelineno-6-28"></a><span class="w">  </span><span class="nt">&quot;auto_verify&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span>
+<a id="__codelineno-6-29" name="__codelineno-6-29" href="#__codelineno-6-29"></a><span class="p">}</span>
+</code></pre></div></li>
+<li>This requests the student_id attribute and proves the date_of_birth is &gt;= 20030527 (without revealing the exact date)</li>
+<li>Replace <code>YOUR_CONNECTION_ID</code> and <code>YOUR_CRED_DEF_ID</code> with your actual values</li>
+<li>
+<p>Click "Execute" to send the request</p>
+</li>
+<li>
+<p><strong>Explore More Endpoints</strong>:</p>
+</li>
+<li>Try <code>GET /anoncreds/registry/{registry_id}/schemas</code> to see your published schemas</li>
+<li>Try <code>GET /did/webvh/configuration</code> to see your WebVH configuration</li>
+<li>Browse other endpoints to understand the full API capabilities</li>
+</ul>
+<h3 id="lab-9-revoking-credentials-and-exploring-revocation-entries-bonus-lab">Lab 9: Revoking Credentials and Exploring Revocation Entries (Bonus Lab)<a class="headerlink" href="#lab-9-revoking-credentials-and-exploring-revocation-entries-bonus-lab" title="Permanent link">&para;</a></h3>
+<p><a id="lab-9-revoking-credentials-and-exploring-revocation-entries"></a></p>
+<p>In this bonus lab, we'll explore credential revocation—an important feature that allows issuers to revoke credentials when necessary (e.g., if a credential is lost, compromised, or no longer valid). With WebVH, revocation registry entries are published as Attested Resources, making them publicly verifiable.</p>
+<h4 id="lab-9-steps-to-follow">Lab 9: Steps to Follow<a class="headerlink" href="#lab-9-steps-to-follow" title="Permanent link">&para;</a></h4>
+<ol>
+<li><strong>Get Credential Exchange Information</strong>:</li>
+<li>In Swagger UI, find and expand <code>GET /issue-credential-2.0/records</code></li>
+<li>Click "Try it out" → "Execute"</li>
+<li>Find a credential that was issued (from Lab 7) and copy its <code>cred_ex_id</code></li>
+<li>Note: The credential must have been issued with revocation support (which we enabled in Lab 3)</li>
+<li>
+<p>Also note the <code>rev_reg_id</code> and <code>cred_rev_id</code> from the credential exchange record - you'll need these</p>
+</li>
+<li>
+<p><strong>Revoke a Credential Using Swagger</strong>:</p>
+</li>
+</ol>
+<p>There are two ways to revoke a credential, depending on whether the credential exchange record still exists:</p>
+<p><strong>Option A: Revoke Using Credential Exchange ID</strong> (when the exchange record exists):</p>
+<ul>
+<li>Find and expand <code>POST /anoncreds/revocation/revoke</code></li>
+<li>Click "Try it out"</li>
+<li>In the request body, use this JSON:
+   <div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="p">{</span>
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="w">  </span><span class="nt">&quot;cred_ex_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;YOUR_CRED_EX_ID&quot;</span><span class="p">,</span>
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="w">  </span><span class="nt">&quot;publish&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="w">  </span><span class="nt">&quot;notify&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a><span class="w">  </span><span class="nt">&quot;comment&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Credential revoked for testing purposes&quot;</span>
+<a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a><span class="p">}</span>
+</code></pre></div></li>
+<li>Replace <code>YOUR_CRED_EX_ID</code> with the credential exchange ID you copied in step 1</li>
+<li>The <code>publish: true</code> flag ensures the revocation is published to the WebVH registry</li>
+<li>The <code>notify: true</code> flag sends a revocation notification to the holder</li>
+<li>Click "Execute"</li>
+<li>You should see a successful response indicating the credential has been revoked</li>
+</ul>
+<p><strong>Option B: Revoke Using Connection ID and Credential Definition ID</strong> (when the exchange record has been deleted):</p>
+<p>If the credential exchange record has been deleted, you'll need to look up the revocation information first:</p>
+<p>a. <strong>Find the Revocation Registry ID and Credential Revocation ID</strong>:
+      - Find and expand <code>GET /issue-credential-2.0/records</code>
+      - Click "Try it out" → "Execute"
+      - In the response, find a credential that matches:
+        - <code>connection_id</code>: The connection ID of the holder
+        - <code>credential_definition_id</code>: The credential definition ID (check the <code>anoncreds.cred_def_id</code> field)
+      - From that credential record, copy:
+        - <code>rev_reg_id</code> (from <code>anoncreds.rev_reg_id</code>)
+        - <code>cred_rev_id</code> (from <code>anoncreds.cred_rev_id</code>)
+        - <code>connection_id</code> (from <code>cred_ex_record.connection_id</code>)</p>
+<p>b. <strong>Revoke Using the Revocation Information</strong>:
+      - Find and expand <code>POST /anoncreds/revocation/revoke</code>
+      - Click "Try it out"
+      - In the request body, use this JSON:
+      <div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="p">{</span>
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="w">  </span><span class="nt">&quot;rev_reg_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;YOUR_REV_REG_ID&quot;</span><span class="p">,</span>
+<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="w">  </span><span class="nt">&quot;cred_rev_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;YOUR_CRED_REV_ID&quot;</span><span class="p">,</span>
+<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="w">  </span><span class="nt">&quot;connection_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;YOUR_CONNECTION_ID&quot;</span><span class="p">,</span>
+<a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a><span class="w">  </span><span class="nt">&quot;publish&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a><span class="w">  </span><span class="nt">&quot;notify&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a><span class="w">  </span><span class="nt">&quot;comment&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Credential revoked for testing purposes&quot;</span>
+<a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a><span class="p">}</span>
+</code></pre></div>
+      - Replace <code>YOUR_REV_REG_ID</code> with the revocation registry ID you found
+      - Replace <code>YOUR_CRED_REV_ID</code> with the credential revocation ID you found
+      - Replace <code>YOUR_CONNECTION_ID</code> with the connection ID (required when <code>notify: true</code>)
+      - The <code>publish: true</code> flag ensures the revocation is published to the WebVH registry
+      - The <code>notify: true</code> flag sends a revocation notification to the holder (requires <code>connection_id</code>)
+      - Click "Execute"
+      - You should see a successful response indicating the credential has been revoked</p>
+<p><strong>Note:</strong> If you don't have the credential exchange record and can't find it in the issued credentials list, you can also query the revocation registry directly:
+   - Use <code>GET /anoncreds/revocation/registry/{rev_reg_id}/issued/details</code> to see all credentials issued against a revocation registry
+   - Find the credential you want to revoke by matching the connection or other identifying information
+   - Extract the <code>cred_rev_id</code> from the results</p>
+<ol>
+<li><strong>Verify Revocation Status</strong>:</li>
+<li>Find and expand <code>GET /anoncreds/revocation/registry/{rev_reg_id}</code></li>
+<li>Click "Try it out"</li>
+<li>Paste your <code>rev_reg_id</code> into the parameter</li>
+<li>Click "Execute"</li>
+<li>
+<p>Review the revocation registry details, including:</p>
+<ul>
+<li>Total credentials issued</li>
+<li>Total credentials revoked</li>
+<li>Current state of the revocation registry</li>
+</ul>
+</li>
+<li>
+<p><strong>Check Revoked Credentials</strong>:</p>
+</li>
+<li>Find and expand <code>GET /anoncreds/revocation/registry/{rev_reg_id}/issued/details</code></li>
+<li>Click "Try it out"</li>
+<li>Paste your <code>rev_reg_id</code> into the parameter</li>
+<li>Click "Execute"</li>
+<li>You should see a list of all credentials issued against this registry</li>
+<li>
+<p>Find your revoked credential in the list - it should show as revoked</p>
+</li>
+<li>
+<p><strong>Request a Presentation to Verify Revocation Check</strong>:</p>
+</li>
+<li>Create a new presentation request (as in Lab 8) that includes revocation checking</li>
+<li>Find and expand <code>POST /present-proof-2.0/send-request</code></li>
+<li>Click "Try it out"</li>
+<li>The presentation request should include <code>non_revoked</code> in the request:
+   <div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="p">{</span>
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="w">  </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Proof Request with Revocation Check&quot;</span><span class="p">,</span>
+<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="w">  </span><span class="nt">&quot;version&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;1.0&quot;</span><span class="p">,</span>
+<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a><span class="w">  </span><span class="nt">&quot;requested_attributes&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a><span class="w">    </span><span class="nt">&quot;student_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a><span class="w">      </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;student_id&quot;</span><span class="p">,</span>
+<a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a><span class="w">      </span><span class="nt">&quot;restrictions&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[{</span>
+<a id="__codelineno-9-8" name="__codelineno-9-8" href="#__codelineno-9-8"></a><span class="w">        </span><span class="nt">&quot;cred_def_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;YOUR_CRED_DEF_ID&quot;</span>
+<a id="__codelineno-9-9" name="__codelineno-9-9" href="#__codelineno-9-9"></a><span class="w">      </span><span class="p">}]</span>
+<a id="__codelineno-9-10" name="__codelineno-9-10" href="#__codelineno-9-10"></a><span class="w">    </span><span class="p">}</span>
+<a id="__codelineno-9-11" name="__codelineno-9-11" href="#__codelineno-9-11"></a><span class="w">  </span><span class="p">},</span>
+<a id="__codelineno-9-12" name="__codelineno-9-12" href="#__codelineno-9-12"></a><span class="w">  </span><span class="nt">&quot;requested_predicates&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{},</span>
+<a id="__codelineno-9-13" name="__codelineno-9-13" href="#__codelineno-9-13"></a><span class="w">  </span><span class="nt">&quot;non_revoked&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-9-14" name="__codelineno-9-14" href="#__codelineno-9-14"></a><span class="w">    </span><span class="nt">&quot;from&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span>
+<a id="__codelineno-9-15" name="__codelineno-9-15" href="#__codelineno-9-15"></a><span class="w">    </span><span class="nt">&quot;to&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1735689600</span>
+<a id="__codelineno-9-16" name="__codelineno-9-16" href="#__codelineno-9-16"></a><span class="w">  </span><span class="p">}</span>
+<a id="__codelineno-9-17" name="__codelineno-9-17" href="#__codelineno-9-17"></a><span class="p">}</span>
+</code></pre></div>
+   <strong>Note:</strong> When using this in the Swagger UI, wrap this JSON in a <code>presentation_request</code> object with an <code>anoncreds</code> key, and include <code>connection_id</code> and <code>auto_verify</code>:
+   <div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="p">{</span>
+<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="w">  </span><span class="nt">&quot;connection_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;YOUR_CONNECTION_ID&quot;</span><span class="p">,</span>
+<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a><span class="w">  </span><span class="nt">&quot;presentation_request&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a><span class="w">    </span><span class="nt">&quot;anoncreds&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="err">...</span><span class="kc">t</span><span class="err">he</span><span class="w"> </span><span class="err">JSON</span><span class="w"> </span><span class="err">above...</span><span class="w"> </span><span class="p">}</span>
+<a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a><span class="w">  </span><span class="p">},</span>
+<a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a><span class="w">  </span><span class="nt">&quot;auto_verify&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span>
+<a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a><span class="p">}</span>
+</code></pre></div></li>
+<li>Replace <code>YOUR_CONNECTION_ID</code> with your connection ID</li>
+<li>Replace <code>YOUR_CRED_DEF_ID</code> with your credential definition ID</li>
+<li>Click "Execute"</li>
+<li>Send this request to your wallet</li>
+<li>
+<p>The wallet should check revocation status and either:</p>
+<ul>
+<li>Reject the presentation if the credential is revoked</li>
+<li>Accept it if the credential is still valid</li>
+</ul>
+</li>
+<li>
+<p><strong>Explore Revocation Entries on WebVH Server</strong>:</p>
+</li>
+<li>Navigate to the WebVH Explorer: <code>https://sandbox.bcvh.vonx.io/explorer</code></li>
+<li>Click on "Resources" to see all published resources</li>
+<li>Filter by resource type to find revocation-related resources:<ul>
+<li>Look for resources with type <code>anonCredsRevRegDef</code> (Revocation Registry Definition)</li>
+<li>Look for resources with type <code>anonCredsRevList</code> (Revocation List/State)</li>
+</ul>
+</li>
+<li>Click on a revocation registry definition to see:<ul>
+<li>The registry ID</li>
+<li>Maximum number of credentials</li>
+<li>Public keys for revocation</li>
+</ul>
+</li>
+<li>Click on a revocation list to see:<ul>
+<li>The current revocation accumulator</li>
+<li>Timestamp of the last update</li>
+<li>Links to previous revocation states (showing the history)</li>
+</ul>
+</li>
+<li>
+<p>Notice how revocation entries are linked together, creating a verifiable history</p>
+</li>
+<li>
+<p><strong>Understand Revocation Registry Structure</strong>:</p>
+</li>
+<li>Each revocation registry has a definition (published when the credential definition was created)</li>
+<li>Revocation states are published as separate resources, linked together</li>
+<li>Each revocation state update includes:<ul>
+<li>The current accumulator (cryptographic structure)</li>
+<li>Timestamp of the update</li>
+<li>Links to previous states</li>
+</ul>
+</li>
+<li>
+<p>This allows verifiers to check revocation status without revealing which specific credential they're checking</p>
+</li>
+<li>
+<p><strong>Try Revoking Another Credential</strong>:</p>
+</li>
+<li>Issue a new credential (using Lab 7 steps)</li>
+<li>Revoke it using the Swagger UI</li>
+<li>Check the revocation registry again - you should see the revoked count increase</li>
+<li>Explore the new revocation state entry in the WebVH Explorer</li>
+</ol>
+<h3 id="what-youve-learned-in-lab-9">What You've Learned in Lab 9<a class="headerlink" href="#what-youve-learned-in-lab-9" title="Permanent link">&para;</a></h3>
+<p>In this bonus lab, you've learned:</p>
+<ol>
+<li><strong>Revoke Credentials</strong>: How to revoke credentials programmatically using the API</li>
+<li><strong>Check Revocation Status</strong>: How to verify if a credential has been revoked</li>
+<li><strong>Revocation Registry Structure</strong>: Understanding how revocation registries work</li>
+<li><strong>WebVH Revocation Resources</strong>: How revocation entries are published as Attested Resources on WebVH</li>
+<li><strong>Revocation History</strong>: How revocation states are linked together, creating a verifiable history</li>
+<li><strong>Privacy-Preserving Revocation</strong>: How revocation checks can be done without revealing which credential is being checked</li>
+</ol>
+<h3 id="what-youve-learned">What You've Learned<a class="headerlink" href="#what-youve-learned" title="Permanent link">&para;</a></h3>
+<p>In Part 2, you've learned how to:</p>
+<ol>
+<li><strong>Access the OpenAPI Interface</strong>: Use the Swagger UI to explore and test API endpoints</li>
+<li><strong>Authenticate API Calls</strong>: Use JWT tokens to authenticate with the Traction API</li>
+<li><strong>Query WebVH Resources</strong>: Retrieve DIDs, schemas, and credential definitions through the API</li>
+<li><strong>Issue Credentials Programmatically</strong>: Issue credentials directly through the Swagger UI using the API</li>
+<li><strong>Request Presentations Programmatically</strong>: Create and send presentation requests using the API interface</li>
+<li><strong>Monitor Exchanges</strong>: Check the status of credential and presentation exchanges through the API</li>
+<li><strong>Use Predicates</strong>: Create presentation requests with predicate proofs for privacy-preserving verification</li>
+</ol>
+<h3 id="next-steps_1">Next Steps<a class="headerlink" href="#next-steps_1" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Explore more endpoints in the Swagger UI (connections, messages, wallet operations)</li>
+<li>Try issuing credentials with different attribute values</li>
+<li>Experiment with presentation requests that include predicates</li>
+<li>Use the API to automate your credential issuance workflow</li>
+<li>Integrate these API calls into your own applications using the same endpoints</li>
+</ul>
+<h2 id="whats-next">What's Next<a class="headerlink" href="#whats-next" title="Permanent link">&para;</a></h2>
+<p><a id="whats-next"></a></p>
+<p>The following are a couple of things that you might want to do next--if you are
+a developer. Unlike the labs you have just completed, these "next steps" are
+geared towards developers, providing details about building the use of
+verifiable credentials (issuing, verifying) into your own application.</p>
+<p>Want to use <a href="https://digital.gov.bc.ca/digital-trust/technical-resources/traction/">Traction</a> in your own environment? Feel free! It's open source, and
+comes with Helm Charts for easy deployment in container-orchestrated
+environments. Contributions back to the project are always welcome!</p>
+<h3 id="whats-next-the-aca-py-openapi">What's Next: The ACA-Py OpenAPI<a class="headerlink" href="#whats-next-the-aca-py-openapi" title="Permanent link">&para;</a></h3>
+<p>Are you going to build an app that uses Traction or an instance of <a href="https://aca-py.org/">ACA-Py</a>? If so, your next step is to try out the ACA-Py OpenAPI (aka Swagger)—by hand at first, and then from your application. This is a VERY high level overview, assuming a developer is following this, and knows a bunch about verifiable credential protocols, using HTTP APIs, and using OpenAPI interfaces.</p>
+<p>To access and use your Tenant's OpenAPI (aka Swagger) interface:</p>
+<ul>
+<li>In your Traction Tenant, click the User icon (top right) and choose "Developer"</li>
+<li>Scroll to the bottom and expand the "Encoded JWT", and click the "Copy" icon to the right to get the JWT into your clipboard.</li>
+<li>By using the "copy" icon, the JWT is prefixed with "Bearer ", which is needed in the OpenAPI authorization. If you just highlight and copy the JWT, you don't get the prefix.</li>
+<li>Click on "About" from the left menu and then click "Traction."</li>
+<li>Click on the link with the "Swagger URL" label to open up the OpenAPI (Swagger) API.</li>
+<li>The URL is just the normal <a href="https://traction-sandbox-tenant-proxy.apps.silver.devops.gov.bc.ca/api/doc">Traction Tenant API with `"api/doc"</a> added to it.</li>
+<li>Click Authorize in the top right, click in the second box "AuthorizationHeader (apiKey)" and paste in your previously copied encoded JWT.</li>
+<li>Close the authorization window and try out an Endpoint. For example, scroll down to the "GET /connections" endpoint, "Try It Out" and "Execute".  You should get back a list of the connections you have established in your Tenant.</li>
+</ul>
+<p>The ACA-Py/Traction API is pretty large, but it is reasonably well organized, and you should recognize from the Traction API a lot of the items. Try some of the "GET" endpoints to see if you recognize the items. You can also explore the WebVH-specific endpoints:</p>
+<ul>
+<li><code>GET /did/webvh/configuration</code> - Get your WebVH configuration</li>
+<li><code>POST /did/webvh/create</code> - Create a new WebVH DID</li>
+<li><code>GET /anoncreds/registries</code> - List available AnonCreds registries (should include WebVH)</li>
+</ul>
+<p>We're still working on a good demo for the OpenAPI from Traction, but <a href="https://aca-py.org/main/demo/OpenAPIDemo/#using-the-openapiswagger-user-interface">this one
+from
+ACA-Py</a>
+is a good outline of the process. It doesn't use your Traction Tenant, but you
+should get the idea about the sequence of calls to make to accomplish verifiable credential
+activities. For example, see if you can carry out the steps to do the <a href="#lab-4-issuing-and-verifying-credentials">Lab
+4</a> with your mobile agent by
+invoking the right sequence of OpenAPI calls.</p>
+<h3 id="whats-next-understanding-webvh-resolution">What's Next: Understanding WebVH Resolution<a class="headerlink" href="#whats-next-understanding-webvh-resolution" title="Permanent link">&para;</a></h3>
+<p>One of the key differences between WebVH and blockchain-based registries is how
+objects are resolved. With WebVH:</p>
+<ol>
+<li>
+<p><strong>DID Resolution</strong>: Your WebVH DID (e.g., <code>did:webvh:{SCID}:sandbox.bcvh.vonx.io:default:my-issuer</code>)
+   is resolved via HTTP by fetching <code>https://{domain}/{namespace}/{identifier}/did.json</code>
+   or <code>https://{domain}/{namespace}/{identifier}/did.jsonl</code></p>
+</li>
+<li>
+<p><strong>Resource Resolution</strong>: AnonCreds objects (schemas, credential definitions) are
+   published as Attested Resources and can be resolved using the resource ID
+   (e.g., <code>did:webvh:{SCID}:.../resources/{digest}</code>) by fetching from the WebVH server.</p>
+</li>
+<li>
+<p><strong>Witness Attestation</strong>: The witness service signs DID creation and updates,
+   providing cryptographic attestation without requiring blockchain consensus.</p>
+</li>
+</ol>
+<p>You can explore WebVH resolution by:
+- Viewing your DID document: <code>https://sandbox.bcvh.vonx.io/{namespace}/{identifier}/did.json</code>
+- Inspecting published resources via the WebVH server API
+- Understanding how wallets resolve your DID to find schemas and credential definitions</p>
+<h3 id="whats-next-experiment-with-an-issuer-web-app">What's Next: Experiment With an Issuer Web App<a class="headerlink" href="#whats-next-experiment-with-an-issuer-web-app" title="Permanent link">&para;</a></h3>
+<p>If you are challenged to use Traction or <a href="https://aca-py.org">ACA-Py</a> to become an
+issuer, you will likely be building API calls into your Line of Business web
+application. To get an idea of what that will entail, we're delighted to direct
+you to a very simple Web App that one of your predecessors on this same journey
+created (and contributed!) to learn more about using the Traction OpenAPI in a
+very simple Web App. Checkout this <a href="https://github.com/openwallet-foundation/acapy-controllers/tree/main/TractionIssuanceDemo">Traction Issuance Demo</a> and try it out
+yourself, with your Sandbox tenant. Once you review the code, you should have an
+excellent idea of how you can add these same capabilities to your line of
+business application.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="../ACA-Py-Workshop/" class="md-footer__link md-footer__link--prev" aria-label="Previous: ACA-Py / AnonCreds Workshop">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                ACA-Py / AnonCreds Workshop
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="../" class="md-footer__link md-footer__link--next" aria-label="Next: The Alice-Faber Demo">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              <div class="md-ellipsis">
+                The Alice-Faber Demo
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11z"/></svg>
+            </div>
+          </a>
+        
+      </nav>
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["content.code.copy", "navigation.expand", "navigation.footer", "navigation.instant", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "navigation.tracking", "toc.follow"], "search": "../../assets/javascripts/workers/search.7a47a382.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.e71a0d61.min.js"></script>
+      
+    
+  </body>
+</html>
