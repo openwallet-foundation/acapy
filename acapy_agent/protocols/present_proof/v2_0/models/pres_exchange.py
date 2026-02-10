@@ -206,6 +206,10 @@ class V20PresExRecord(BaseExchangeRecord):
         if not session.profile.settings.get("debug.webhooks"):
             payload = V20PresExRecordWebhook(**payload)
             payload = payload.__dict__
+            # BUG #3802: remove legacy fields when by_format is present
+        elif payload.get("by_format"):
+            for key in ("pres_proposal", "pres_request", "pres"):
+                payload.pop(key, None)
 
         await session.emit_event(topic, payload)
 
