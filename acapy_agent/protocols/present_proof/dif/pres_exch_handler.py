@@ -1067,6 +1067,12 @@ class DIFPresExchHandler:
         result = {}
         # Get all input_descriptors attached to the PresentationDefinition
         descriptor_list = req.input_descriptors or []
+        LOGGER.debug(
+            "DIF-PRES apply_requirements: descriptors=%s creds=%s records_filter=%s",
+            len(descriptor_list),
+            len(credentials),
+            list(records_filter.keys()) if records_filter else None,
+        )
         for descriptor in descriptor_list:
             # Filter credentials to apply filtering
             # upon by matching each credentialSchema.id
@@ -1089,6 +1095,13 @@ class DIFPresExchHandler:
             filtered = await self.filter_constraints(
                 constraints=descriptor.constraint,
                 credentials=filtered_by_schema,
+            )
+            LOGGER.debug(
+                "DIF-PRES apply_requirements: descriptor=%s schema_filtered=%s "
+                "constraints_filtered=%s",
+                descriptor.id,
+                len(filtered_by_schema),
+                len(filtered),
             )
             if len(filtered) != 0:
                 result[descriptor.id] = filtered

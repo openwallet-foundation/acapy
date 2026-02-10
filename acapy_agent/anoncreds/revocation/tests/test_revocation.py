@@ -927,6 +927,9 @@ class TestAnonCredsRevocation(IsolatedAsyncioTestCase):
                 )
             )
         )
+        self.revocation.store_revocation_registry_definition = mock.CoroutineMock(
+            return_value=None
+        )
         self.revocation.set_active_registry = mock.CoroutineMock(return_value=None)
         mock_handle.replace = mock.CoroutineMock(return_value=None)
 
@@ -938,6 +941,8 @@ class TestAnonCredsRevocation(IsolatedAsyncioTestCase):
         assert result[0].tags["state"] == RevRegDefState.STATE_DECOMMISSIONED
         assert mock_handle.fetch_all.called
         assert mock_handle.replace.called
+        # Verify store_revocation_registry_definition was called before set_active_registry
+        self.revocation.store_revocation_registry_definition.assert_called_once()
         # # One for backup
         assert (
             self.revocation.create_and_register_revocation_registry_definition.call_count

@@ -15,7 +15,6 @@ Subpackages
    acapy_agent.protocols.present_proof.anoncreds
    acapy_agent.protocols.present_proof.dif
    acapy_agent.protocols.present_proof.indy
-   acapy_agent.protocols.present_proof.v1_0
    acapy_agent.protocols.present_proof.v2_0
 
 Submodules

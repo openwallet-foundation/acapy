@@ -46,8 +46,8 @@ from ...common.utils import (
 from .. import REVOCATION_TAG_TITLE
 from .models import (
     AnonCredsRevRegIdMatchInfoSchema,
-    CredRevIndyRecordsResultSchemaAnonCreds,
     CredRevRecordDetailsResultSchemaAnonCreds,
+    CredRevRecordsResultSchemaAnonCreds,
     RevocationCredDefIdMatchInfoSchema,
     RevRegCreateRequestSchemaAnonCreds,
     RevRegIssuedResultSchemaAnonCreds,
@@ -387,7 +387,7 @@ async def get_rev_reg_issued(request: web.BaseRequest):
     summary="Get details of revoked credentials from ledger",
 )
 @match_info_schema(AnonCredsRevRegIdMatchInfoSchema())
-@response_schema(CredRevIndyRecordsResultSchemaAnonCreds(), 200, description="")
+@response_schema(CredRevRecordsResultSchemaAnonCreds(), 200, description="")
 @tenant_authentication
 async def get_rev_reg_indy_recs(request: web.BaseRequest):
     """Request handler to get details of revoked credentials from ledger.

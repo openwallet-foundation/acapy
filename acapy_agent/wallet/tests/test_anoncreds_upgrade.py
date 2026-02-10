@@ -1,4 +1,5 @@
 import asyncio
+import json
 from time import time
 from unittest import IsolatedAsyncioTestCase
 
@@ -6,6 +7,7 @@ from anoncreds import CredentialDefinitionPrivate, KeyCorrectnessProof
 from aries_askar import AskarError
 
 from ...anoncreds.issuer import CATEGORY_CRED_DEF_PRIVATE
+from ...anoncreds.models.revocation import RevList
 from ...askar.profile import AskarProfileSession
 from ...cache.base import BaseCache
 from ...indy.credx.issuer import CATEGORY_CRED_DEF_KEY_PROOF
@@ -14,6 +16,7 @@ from ...messaging.credential_definitions.util import CRED_DEF_SENT_RECORD_TYPE
 from ...messaging.schemas.util import SCHEMA_SENT_RECORD_TYPE
 from ...multitenant.base import BaseMultitenantManager
 from ...multitenant.manager import MultitenantManager
+from ...revocation.models.issuer_cred_rev_record import IssuerCredRevRecord
 from ...storage.base import BaseStorage
 from ...storage.record import StorageRecord
 from ...storage.type import (
@@ -403,3 +406,42 @@ class TestAnonCredsUpgrade(IsolatedAsyncioTestCase):
                 )
                 # Storage type should not be updated
                 assert storage_type_record.value == "askar"
+
+    async def test_upgrade_preserves_issuer_cred_rev_records(self):
+        cred_ex_id = "legacy-cred-ex-1"
+        rev_reg_id = "rev-reg-1"
+        cred_rev_id = "1"
+        async with self.profile.session() as session:
+            record = IssuerCredRevRecord(
+                cred_ex_id=cred_ex_id,
+                rev_reg_id=rev_reg_id,
+                cred_rev_id=cred_rev_id,
+            )
+            await record.save(session)
+            storage_record = StorageRecord(
+                IssuerCredRevRecord.RECORD_TYPE,
+                json.dumps(record.serialize()),
+                tags={"cred_rev_id": cred_rev_id},
+                id=record.record_id,
+            )
+            rev_list = RevList(
+                issuer_id="issuer",
+                rev_reg_def_id=rev_reg_id,
+                revocation_list=[0],
+                current_accumulator="accum",
+            )
+            rev_list_upgrade_obj = anoncreds_upgrade.RevListUpgradeObj(
+                rev_list=rev_list,
+                pending=None,
+                rev_reg_def_id=rev_reg_id,
+                cred_rev_records=[storage_record],
+            )
+            await anoncreds_upgrade.upgrade_and_delete_rev_entry_records(
+                session, rev_list_upgrade_obj
+            )
+
+        async with self.profile.session() as session:
+            retrieved = await IssuerCredRevRecord.retrieve_by_cred_ex_id(
+                session, cred_ex_id
+            )
+            assert retrieved.cred_rev_id == cred_rev_id

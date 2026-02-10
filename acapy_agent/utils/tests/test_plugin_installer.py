@@ -5,6 +5,7 @@ from importlib.metadata import PackageNotFoundError
 from unittest import TestCase
 from unittest.mock import MagicMock, Mock, mock_open, patch
 
+from ...version import __version__
 from ..plugin_installer import (
     PluginInstaller,
     _detect_package_manager,
@@ -225,12 +226,11 @@ class TestPluginInstaller(TestCase):
     def test_get_plugin_source_default_version(self):
         """Test plugin source URL construction with default version."""
         installer = PluginInstaller()
-        with patch("acapy_agent.utils.plugin_installer.__version__", "1.4.0"):
-            result = installer._get_plugin_source("webvh")
-            self.assertIn(
-                "git+https://github.com/openwallet-foundation/acapy-plugins", result
-            )
-            self.assertIn("@1.4.0#subdirectory=webvh", result)
+        result = installer._get_plugin_source("webvh")
+        self.assertIn(
+            "git+https://github.com/openwallet-foundation/acapy-plugins", result
+        )
+        self.assertIn(f"@{__version__}#subdirectory=webvh", result)
 
     def test_get_plugin_source_custom_version(self):
         """Test plugin source URL construction with custom version."""

@@ -107,9 +107,9 @@ When plugins are installed, ACA-Py logs detailed information including:
 
 Example log output:
 ```
-INFO: Auto-installing plugins from acapy-plugins repository: webvh, connection_update (current ACA-Py version (1.4.0))
-INFO: Installing plugin: webvh (version: 1.4.0)
-INFO: Successfully installed plugin: webvh (version: 1.4.0)
+INFO: Auto-installing plugins from acapy-plugins repository: webvh, connection_update (current ACA-Py version (1.5.0))
+INFO: Installing plugin: webvh (version: 1.5.0)
+INFO: Successfully installed plugin: webvh (version: 1.5.0)
 ```
 
 ### Checking Installed Plugin Versions

@@ -101,11 +101,13 @@ nav:
     - Issuing and Presenting W3C Data Integrity VCs: features/W3cCredentials.md
     - Using SD-JWTs: features/SelectiveDisclosureJWTs.md
     - AnonCreds Presentation Validation: features/AnonCredsProofValidation.md
+    - AnonCreds Revocation Auto Recovery: features/AnonCredsRevocationAutoRecovery.md
     - Multiple Credential Types: features/Multicredentials.md
     - Code Generation with the Open API: features/UsingOpenAPI.md
     - ACA-Py as a DIDComm Mediator: features/Mediation.md
 - Demos:
     - ACA-Py / AnonCreds Workshop: demo/ACA-Py-Workshop.md
+    - ACA-Py / AnonCreds / did:webvh Workshop: demo/WebVH-Workshop.md
     - The Alice-Faber Demo: demo/README.md
     - Open API Tutorial: demo/OpenAPIDemo.md
     - Alice Gets a Phone: demo/AliceGetsAPhone.md

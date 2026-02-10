@@ -50,6 +50,7 @@ class StaticCacheJsonLdDownloader:
         "https://identity.foundation/presentation-exchange/submission/v1": (
             "dif-presentation-exchange-submission-v1.jsonld"
         ),
+        "https://w3id.org/citizenship/v1": "citizenship_v1_context.jsonld",
     }
 
     def __init__(

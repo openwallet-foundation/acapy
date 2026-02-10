@@ -75,10 +75,12 @@ class TestCredentialIssueHandler(IsolatedAsyncioTestCase):
         with mock.patch.object(
             test_module, "V20CredManager", autospec=True
         ) as mock_cred_mgr:
+            mock_cred_ex = mock.MagicMock(
+                save_error_state=mock.CoroutineMock(),
+                save=mock.CoroutineMock(),
+            )
             mock_cred_mgr.return_value = mock.MagicMock(
-                receive_credential=mock.CoroutineMock(
-                    return_value=mock.MagicMock(save_error_state=mock.CoroutineMock())
-                ),
+                receive_credential=mock.CoroutineMock(return_value=mock_cred_ex),
                 store_credential=mock.CoroutineMock(
                     side_effect=[
                         test_module.IndyHolderError,
@@ -92,18 +94,25 @@ class TestCredentialIssueHandler(IsolatedAsyncioTestCase):
             self.request_context.connection_ready = True
             handler_inst = test_module.V20CredIssueHandler()
             responder = MockResponder()
+            self.request_context.settings["debug.auto_store_credential"] = True
 
             await handler_inst.handle(self.request_context, responder)  # holder error
             await handler_inst.handle(self.request_context, responder)  # storage error
+
+        assert mock_cred_mgr.return_value.send_cred_ack.call_count == 0
+        assert mock_cred_ex.save_error_state.call_count == 1
+        assert mock_cred_ex.save.call_count == 1
 
     async def test_called_auto_store_x_anoncreds(self):
         with mock.patch.object(
             test_module, "V20CredManager", autospec=True
         ) as mock_cred_mgr:
+            mock_cred_ex = mock.MagicMock(
+                save_error_state=mock.CoroutineMock(),
+                save=mock.CoroutineMock(),
+            )
             mock_cred_mgr.return_value = mock.MagicMock(
-                receive_credential=mock.CoroutineMock(
-                    return_value=mock.MagicMock(save_error_state=mock.CoroutineMock())
-                ),
+                receive_credential=mock.CoroutineMock(return_value=mock_cred_ex),
                 store_credential=mock.CoroutineMock(
                     side_effect=[
                         test_module.AnonCredsHolderError,
@@ -117,9 +126,14 @@ class TestCredentialIssueHandler(IsolatedAsyncioTestCase):
             self.request_context.connection_ready = True
             handler_inst = test_module.V20CredIssueHandler()
             responder = MockResponder()
+            self.request_context.settings["debug.auto_store_credential"] = True
 
             await handler_inst.handle(self.request_context, responder)  # holder error
             await handler_inst.handle(self.request_context, responder)  # storage error
+
+        assert mock_cred_mgr.return_value.send_cred_ack.call_count == 0
+        assert mock_cred_ex.save_error_state.call_count == 1
+        assert mock_cred_ex.save.call_count == 1
 
     async def test_called_not_ready(self):
         with mock.patch.object(

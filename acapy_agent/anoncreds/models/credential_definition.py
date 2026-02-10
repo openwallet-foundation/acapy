@@ -392,7 +392,6 @@ class CredDefResultSchema(BaseModelSchema):
     job_id = fields.Str()
     credential_definition_state = fields.Nested(CredDefStateSchema())
     registration_metadata = fields.Dict()
-    # For indy, credential_definition_metadata will contain the seqNo
     credential_definition_metadata = fields.Dict()
 
 
