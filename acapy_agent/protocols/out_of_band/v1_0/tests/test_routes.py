@@ -75,6 +75,87 @@ class TestOutOfBandRoutes(IsolatedAsyncioTestCase):
             )
             mock_json_response.assert_called_once_with({"abc": "123"})
 
+    async def test_oob_records_list(self):
+        with (
+            mock.patch.object(
+                test_module.OobRecord, "query", mock.CoroutineMock()
+            ) as mock_query,
+            mock.patch.object(
+                test_module.web, "json_response", mock.Mock()
+            ) as mock_json_response,
+        ):
+            mock_query.return_value = [
+                mock.MagicMock(serialize=mock.MagicMock(return_value={"oob_id": "1"})),
+                mock.MagicMock(serialize=mock.MagicMock(return_value={"oob_id": "2"})),
+            ]
+
+            await test_module.oob_records_list(self.request)
+            mock_query.assert_called_once()
+            mock_json_response.assert_called_once_with(
+                {"results": [{"oob_id": "1"}, {"oob_id": "2"}]}
+            )
+
+    async def test_oob_records_list_with_filters(self):
+        self.request.query = {
+            "state": "initial",
+            "role": "sender",
+            "connection_id": "test-conn-id",
+            "invi_msg_id": "test-invi-id",
+        }
+
+        with (
+            mock.patch.object(
+                test_module.OobRecord, "query", mock.CoroutineMock()
+            ) as mock_query,
+            mock.patch.object(
+                test_module.web, "json_response", mock.Mock()
+            ) as mock_json_response,
+        ):
+            mock_query.return_value = []
+
+            await test_module.oob_records_list(self.request)
+            mock_query.assert_called_once()
+            call_kwargs = mock_query.call_args
+            # tag_filter is the second positional arg
+            tag_filter = call_kwargs[0][1]
+            assert tag_filter == {
+                "connection_id": "test-conn-id",
+                "invi_msg_id": "test-invi-id",
+            }
+            assert call_kwargs[1]["post_filter_positive"] == {
+                "state": "initial",
+                "role": "sender",
+            }
+            mock_json_response.assert_called_once_with({"results": []})
+
+    async def test_oob_records_list_with_pagination(self):
+        self.request.query = {
+            "limit": "10",
+            "offset": "5",
+        }
+
+        with (
+            mock.patch.object(
+                test_module.OobRecord, "query", mock.CoroutineMock()
+            ) as mock_query,
+            mock.patch.object(test_module.web, "json_response", mock.Mock()),
+        ):
+            mock_query.return_value = []
+
+            await test_module.oob_records_list(self.request)
+            call_kwargs = mock_query.call_args[1]
+            assert call_kwargs["limit"] == 10
+            assert call_kwargs["offset"] == 5
+
+    async def test_oob_records_list_storage_error(self):
+        with mock.patch.object(
+            test_module.OobRecord,
+            "query",
+            mock.CoroutineMock(side_effect=test_module.StorageError("test error")),
+        ):
+            with self.assertRaises(test_module.web.HTTPBadRequest):
+                await test_module.oob_records_list(self.request)
+
     async def test_invitation_fetch(self):
         self.request.query = {"oob_id": "dummy"}
 
