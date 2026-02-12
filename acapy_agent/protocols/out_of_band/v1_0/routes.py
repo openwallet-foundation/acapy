@@ -336,7 +336,7 @@ async def oob_records_list(request: web.BaseRequest):
                 offset=offset,
                 order_by=order_by,
                 descending=descending,
-                post_filter_positive=post_filter
+                post_filter_positive=post_filter,
             )
         results = [record.serialize() for record in records]
     except (StorageError, BaseModelError) as err:
