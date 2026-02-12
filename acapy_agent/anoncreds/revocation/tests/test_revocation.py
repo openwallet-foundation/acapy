@@ -995,6 +995,84 @@ class TestAnonCredsRevocation(IsolatedAsyncioTestCase):
         self.assertIn("No backup registry available", str(cm.exception))
 
     @mock.patch.object(AskarAnonCredsProfileSession, "handle")
+    async def test_decommission_registry_new_backup_creation_fails(self, mock_handle):
+        """When creating the new backup fails, we still promote backup to active and decommission old."""
+        backup_entry = MockEntry(
+            name="backup-reg-reg",
+            tags={
+                "cred_def_id": "test-rev-reg-def-id",
+                "state": RevRegDefState.STATE_FINISHED,
+                "active": "false",
+            },
+        )
+        mock_handle.fetch_all = mock.CoroutineMock(
+            side_effect=[
+                [backup_entry],
+                [
+                    MockEntry(
+                        name="active-reg-reg",
+                        tags={
+                            "cred_def_id": "test-rev-reg-def-id",
+                            "state": RevRegDefState.STATE_FINISHED,
+                            "active": "true",
+                        },
+                    ),
+                    backup_entry,
+                ],
+            ]
+        )
+        mock_handle.replace = mock.CoroutineMock(return_value=None)
+        self.revocation.get_or_create_active_registry = mock.CoroutineMock(
+            return_value=RevRegDefResult(
+                job_id="test-job-id",
+                revocation_registry_definition_state=RevRegDefState(
+                    state=RevRegDefState.STATE_FINISHED,
+                    revocation_registry_definition_id="active-reg-reg",
+                    revocation_registry_definition=rev_reg_def,
+                ),
+                registration_metadata={},
+                revocation_registry_definition_metadata={},
+            )
+        )
+        self.revocation.create_and_register_revocation_registry_definition = (
+            mock.CoroutineMock(return_value="Failed to create new registry")
+        )
+        self.revocation.set_active_registry = mock.CoroutineMock(return_value=None)
+
+        result = await self.revocation.decommission_registry("test-rev-reg-def-id")
+
+        self.revocation.set_active_registry.assert_called_once_with("backup-reg-reg")
+        assert mock_handle.replace.call_count == 1
+        assert len(result) == 2
+        assert result[0].tags["state"] == RevRegDefState.STATE_DECOMMISSIONED
+
+    @mock.patch.object(AskarAnonCredsProfileSession, "handle")
+    async def test_get_backup_registry_id_raises_when_no_backup(self, mock_handle):
+        """_get_backup_registry_id raises when no finished backup exists."""
+        mock_handle.fetch_all = mock.CoroutineMock(return_value=[])
+        with self.assertRaises(test_module.AnonCredsRevocationError) as cm:
+            await self.revocation._get_backup_registry_id("test-cred-def-id")
+        self.assertIn("No backup registry available", str(cm.exception))
+
+    @mock.patch.object(AskarAnonCredsProfileSession, "handle")
+    async def test_get_backup_registry_id_returns_first_backup(self, mock_handle):
+        """_get_backup_registry_id returns the name of the first matching backup."""
+        mock_handle.fetch_all = mock.CoroutineMock(
+            return_value=[
+                MockEntry(
+                    name="backup-id-123",
+                    tags={
+                        "cred_def_id": "test-cred-def-id",
+                        "state": RevRegDefState.STATE_FINISHED,
+                        "active": "false",
+                    },
+                ),
+            ]
+        )
+        result = await self.revocation._get_backup_registry_id("test-cred-def-id")
+        assert result == "backup-id-123"
+
+    @mock.patch.object(AskarAnonCredsProfileSession, "handle")
     async def test_get_or_create_active_registry(self, mock_handle):
         mock_handle.fetch_all = mock.CoroutineMock(
             side_effect=[

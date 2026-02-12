@@ -1489,18 +1489,10 @@ class AnonCredsRevocation:
             )
             await self.notify(event)
 
-    async def decommission_registry(self, cred_def_id: str) -> list:
-        """Decommission post-init registries and start the next registry generation.
-
-        With endorsement, the newly created registry is sent to the endorser and is not
-        on the ledger yet. So we set the existing backup as active and treat the newly
-        created registry as the new backup (it will become available after endorsement).
-        """
-        active_reg = await self.get_or_create_active_registry(cred_def_id)
-
-        # Find the current backup (finished, not active) - it will become the new active
+    async def _get_backup_registry_id(self, cred_def_id: str) -> str:
+        """Return the rev reg def id of the current backup (finished, not active)."""
         async with self.profile.session() as session:
-            backup_entries = await session.handle.fetch_all(
+            entries = await session.handle.fetch_all(
                 CATEGORY_REV_REG_DEF,
                 {
                     "active": "false",
@@ -1509,14 +1501,23 @@ class AnonCredsRevocation:
                 },
                 limit=1,
             )
-        if not backup_entries:
+        if not entries:
             raise AnonCredsRevocationError(
                 "No backup registry available for rotation. "
                 "Ensure the credential definition was created with a backup registry."
             )
-        backup_rev_reg_def_id = backup_entries[0].name
+        return entries[0].name
 
-        # Create new registry (will be the new backup after endorsement/write)
+    async def decommission_registry(self, cred_def_id: str) -> list:
+        """Rotate: set backup active, create new backup, decommission old active.
+
+        Works with endorsement: the new registry is sent to the endorser and may not be
+        on the ledger yet, so we promote the existing backup to active (it is already
+        on the ledger) and treat the newly created registry as the new backup.
+        """
+        active_reg = await self.get_or_create_active_registry(cred_def_id)
+        backup_rev_reg_def_id = await self._get_backup_registry_id(cred_def_id)
+
         LOGGER.debug("Creating new backup registry")
         new_backup_reg = await asyncio.shield(
             self.create_and_register_revocation_registry_definition(
@@ -1530,57 +1531,41 @@ class AnonCredsRevocation:
         new_rev_reg_def_id = None
         if new_backup_reg and not isinstance(new_backup_reg, str):
             new_rev_reg_def_id = new_backup_reg.rev_reg_def_id
-            # Store the new backup so it is available in the wallet when the
-            # endorser writes it (avoids race with async event processing)
             await self.store_revocation_registry_definition(new_backup_reg)
+        elif isinstance(new_backup_reg, str):
+            LOGGER.error("Failed to create new backup registry: %s", new_backup_reg)
         else:
-            if isinstance(new_backup_reg, str):
-                LOGGER.error(f"Failed to create new backup registry: {new_backup_reg}")
-            else:
-                LOGGER.warning(
-                    "No new backup registry created while decommissioning registry"
-                )
+            LOGGER.warning("No new backup registry created while decommissioning")
 
-        # Set the previous backup as active (it is already on ledger and in storage)
         await self.set_active_registry(backup_rev_reg_def_id)
 
-        # Decommission everything except init/wait, and except the new active and new backup
+        keep_ids = {backup_rev_reg_def_id}
+        if new_rev_reg_def_id:
+            keep_ids.add(new_rev_reg_def_id)
+
         async with self.profile.transaction() as txn:
             registries = await txn.handle.fetch_all(
                 CATEGORY_REV_REG_DEF,
-                {
-                    "cred_def_id": cred_def_id,
-                },
+                {"cred_def_id": cred_def_id},
                 for_update=True,
             )
-
-            def filter_registries(registry: Entry) -> bool:
-                return registry.tags.get("state") != RevRegDefState.STATE_WAIT
-
-            recs = list(filter(filter_registries, registries))
-            keep_ids = {backup_rev_reg_def_id}
-            if new_rev_reg_def_id:
-                keep_ids.add(new_rev_reg_def_id)
-
+            recs = [
+                r for r in registries if r.tags.get("state") != RevRegDefState.STATE_WAIT
+            ]
             for rec in recs:
-                if rec.name not in keep_ids:
-                    tags = rec.tags
-                    tags["active"] = "false"
-                    tags["state"] = RevRegDefState.STATE_DECOMMISSIONED
-                    await txn.handle.replace(
-                        CATEGORY_REV_REG_DEF,
-                        rec.name,
-                        rec.value,
-                        tags,
-                    )
+                if rec.name in keep_ids:
+                    continue
+                tags = rec.tags
+                tags["active"] = "false"
+                tags["state"] = RevRegDefState.STATE_DECOMMISSIONED
+                await txn.handle.replace(CATEGORY_REV_REG_DEF, rec.name, rec.value, tags)
             await txn.commit()
 
         LOGGER.debug(
-            "Previous backup %s set as active. New backup registry = %s. "
-            "Decommissioned registries = %s",
+            "Rotation done: backup %s set active, new backup=%s, decommissioned=%s",
             backup_rev_reg_def_id,
-            new_backup_reg,
-            recs,
+            new_rev_reg_def_id,
+            [r.name for r in recs if r.name not in keep_ids],
         )
         return recs
 
