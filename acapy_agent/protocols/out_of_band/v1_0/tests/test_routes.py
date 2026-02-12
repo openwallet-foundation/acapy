@@ -119,11 +119,11 @@ class TestOutOfBandRoutes(IsolatedAsyncioTestCase):
             # tag_filter is the second positional arg
             tag_filter = call_kwargs[0][1]
             assert tag_filter == {
+                "state": "initial",
                 "connection_id": "test-conn-id",
                 "invi_msg_id": "test-invi-id",
             }
             assert call_kwargs[1]["post_filter_positive"] == {
-                "state": "initial",
                 "role": "sender",
             }
             mock_json_response.assert_called_once_with({"results": []})
