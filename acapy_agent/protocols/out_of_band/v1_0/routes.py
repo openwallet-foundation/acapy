@@ -315,13 +315,13 @@ async def oob_records_list(request: web.BaseRequest):
     context: AdminRequestContext = request["context"]
 
     tag_filter = {}
-    for param_name in ("connection_id", "invi_msg_id"):
+    for param_name in ("state", "connection_id", "invi_msg_id"):
         if param_name in request.query and request.query[param_name] != "":
             tag_filter[param_name] = request.query[param_name]
 
     post_filter = {}
-    for param_name in ("state", "role"):
-        if request.query.get(param_name):
+    for param_name in ("role",):
+        if param_name in request.query and request.query[param_name] != "":
             post_filter[param_name] = request.query[param_name]
 
     limit, offset, order_by, descending = get_paginated_query_params(request)
@@ -336,8 +336,7 @@ async def oob_records_list(request: web.BaseRequest):
                 offset=offset,
                 order_by=order_by,
                 descending=descending,
-                post_filter_positive=post_filter,
-                alt=True,
+                post_filter_positive=post_filter
             )
         results = [record.serialize() for record in records]
     except (StorageError, BaseModelError) as err:
