@@ -314,15 +314,14 @@ async def oob_records_list(request: web.BaseRequest):
     """
     context: AdminRequestContext = request["context"]
 
-    tag_filter = {}
-    for param_name in ("state", "connection_id", "invi_msg_id"):
-        if param_name in request.query and request.query[param_name] != "":
-            tag_filter[param_name] = request.query[param_name]
-
-    post_filter = {}
-    for param_name in ("role",):
-        if param_name in request.query and request.query[param_name] != "":
-            post_filter[param_name] = request.query[param_name]
+    tag_filter = {
+        k: request.query[k]
+        for k in ("state", "connection_id", "invi_msg_id")
+        if request.query.get(k, "") != ""
+    }
+    post_filter = {
+        k: request.query[k] for k in ("role",) if request.query.get(k, "") != ""
+    }
 
     limit, offset, order_by, descending = get_paginated_query_params(request)
 
