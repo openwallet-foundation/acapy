@@ -28,7 +28,7 @@ services:
         --admin 0.0.0.0 3001
         --admin-insecure-mode
         --tails-server-base-url http://tails:6543
-        --genesis-url http://test.bcovrin.vonx.io/genesis
+        --genesis-url https://test.bcovrin.vonx.io/genesis
         --wallet-type askar
         --wallet-name alice
         --wallet-key insecure
@@ -36,7 +36,7 @@ services:
         --wallet-storage-config "{\"url\":\"wallet-db:5432\",\"max_connections\":5}"
         --wallet-storage-creds "{\"account\":\"DB_USER\",\"password\":\"DB_PASSWORD\",\"admin_account\":\"DB_USER\",\"admin_password\":\"DB_PASSWORD\"}"
         --auto-provision
-        --log-level debug
+        --log-level info
         --debug-webhooks
         --notify-revocation
         --preserve-exchange-records
@@ -67,7 +67,7 @@ services:
         --admin 0.0.0.0 3001
         --admin-insecure-mode
         --tails-server-base-url http://tails:6543
-        --genesis-url http://test.bcovrin.vonx.io/genesis
+        --genesis-url https://test.bcovrin.vonx.io/genesis
         --wallet-type askar
         --wallet-name bob-askar
         --wallet-key insecure
@@ -75,7 +75,7 @@ services:
         --wallet-storage-config "{\"url\":\"wallet-db:5432\",\"max_connections\":5}"
         --wallet-storage-creds "{\"account\":\"DB_USER\",\"password\":\"DB_PASSWORD\",\"admin_account\":\"DB_USER\",\"admin_password\":\"DB_PASSWORD\"}"
         --auto-provision
-        --log-level debug
+        --log-level info
         --debug-webhooks
         --monitor-revocation-notification
         --preserve-exchange-records
@@ -106,7 +106,7 @@ services:
         --admin 0.0.0.0 3001
         --admin-insecure-mode
         --tails-server-base-url http://tails:6543
-        --genesis-url http://test.bcovrin.vonx.io/genesis
+        --genesis-url https://test.bcovrin.vonx.io/genesis
         --wallet-type askar-anoncreds
         --wallet-name bob-anoncreds
         --wallet-key insecure
@@ -114,7 +114,7 @@ services:
         --wallet-storage-config "{\"url\":\"wallet-db:5432\",\"max_connections\":5}"
         --wallet-storage-creds "{\"account\":\"DB_USER\",\"password\":\"DB_PASSWORD\",\"admin_account\":\"DB_USER\",\"admin_password\":\"DB_PASSWORD\"}"
         --auto-provision
-        --log-level debug
+        --log-level info
         --debug-webhooks
         --monitor-revocation-notification
         --preserve-exchange-records
@@ -145,7 +145,7 @@ services:
         --admin 0.0.0.0 3001
         --admin-insecure-mode
         --tails-server-base-url http://tails:6543
-        --genesis-url http://test.bcovrin.vonx.io/genesis
+        --genesis-url https://test.bcovrin.vonx.io/genesis
         --wallet-type askar
         --wallet-name bob-askar-anon
         --wallet-key insecure
@@ -153,7 +153,7 @@ services:
         --wallet-storage-config "{\"url\":\"wallet-db:5432\",\"max_connections\":5}"
         --wallet-storage-creds "{\"account\":\"DB_USER\",\"password\":\"DB_PASSWORD\",\"admin_account\":\"DB_USER\",\"admin_password\":\"DB_PASSWORD\"}"
         --auto-provision
-        --log-level debug
+        --log-level info
         --debug-webhooks
         --monitor-revocation-notification
         --preserve-exchange-records
@@ -174,13 +174,13 @@ services:
     ports:
       - 6543:6543
     environment:
-      - GENESIS_URL=http://test.bcovrin.vonx.io/genesis
+      - GENESIS_URL=https://test.bcovrin.vonx.io/genesis
     command: >
       tails-server
       --host 0.0.0.0
       --port 6543
       --storage-path /tmp/tails-files
-      --log-level INFO
+      --log-level info
 
   example:
     container_name: controller

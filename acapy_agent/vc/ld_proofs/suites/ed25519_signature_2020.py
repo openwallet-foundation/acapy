@@ -32,6 +32,7 @@ class Ed25519Signature2020(LinkedDataSignature):
                 using a context different from security-v2).
             verification_method (str, optional): A key id URL to the paired public key.
             date (datetime, optional): Signing date to use.
+
         """
         super().__init__(
             verification_method=verification_method,
@@ -79,7 +80,6 @@ class Ed25519Signature2020(LinkedDataSignature):
             bool: Whether the signature is valid for the data
 
         """
-
         if not (isinstance(proof.get("proofValue"), str)):
             raise LinkedDataProofException(
                 'The proof does not contain a valid "proofValue" property.'

@@ -40,6 +40,7 @@ class Service(BaseModel):
             recipient_keys: A list of recipient keys in W3C did:key format
             routing_keys: A list of routing keys in W3C did:key format
             service_endpoint: An endpoint for the connection
+
         """
         self._id = _id
         self._type = _type
@@ -105,7 +106,6 @@ class ServiceSchema(BaseModelSchema):
     @post_dump
     def post_dump(self, data, **kwargs):
         """Post dump hook."""
-
         if "routingKeys" in data and not data["routingKeys"]:
             del data["routingKeys"]
 

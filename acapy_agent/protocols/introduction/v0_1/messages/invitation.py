@@ -37,6 +37,7 @@ class Invitation(AgentMessage):
             invitation: The connection invitation
             message: Comments on the introduction
             kwargs: Additional key word arguments for the message
+
         """
         super().__init__(**kwargs)
         self.invitation = invitation

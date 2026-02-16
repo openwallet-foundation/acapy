@@ -19,6 +19,8 @@ from ..config import argparse as arg
 from ..config.default_context import DefaultContextBuilder
 from ..config.util import common_config
 from ..core.conductor import Conductor
+from ..utils.plugin_installer import install_plugins_from_config
+from ..version import __version__ as acapy_version
 from . import PROG
 
 LOGGER = logging.getLogger(__name__)
@@ -49,12 +51,50 @@ def init_argument_parser(parser: ArgumentParser):
 
 async def run_app(argv: Sequence[str] = None):
     """Main async runner for the app."""
+    # Preprocess argv to handle --arg-file-url
+    if argv:
+        argv = arg.preprocess_args_for_remote_config(list(argv))
+
     parser = arg.create_argument_parser(prog=PROG)
     parser.prog += " start"
     get_settings = init_argument_parser(parser)
     args = parser.parse_args(argv)
     settings = get_settings(args)
     common_config(settings)
+
+    # Install plugins if auto-install is enabled and plugins are specified
+    external_plugins = settings.get("external_plugins", [])
+    if external_plugins:
+        auto_install = settings.get("auto_install_plugins", False)
+        plugin_version = settings.get("plugin_install_version")
+
+        if auto_install:
+            version_info = (
+                f"version {plugin_version}"
+                if plugin_version
+                else f"current ACA-Py version ({acapy_version})"
+            )
+            LOGGER.info(
+                "Auto-installing plugins from acapy-plugins repository: %s (%s)",
+                ", ".join(external_plugins),
+                version_info,
+            )
+
+            failed_plugins = install_plugins_from_config(
+                plugin_names=external_plugins,
+                auto_install=auto_install,
+                plugin_version=plugin_version,
+            )
+
+            if failed_plugins:
+                LOGGER.error(
+                    "Failed to install the following plugins: %s. "
+                    "Please ensure these plugins are available in the "
+                    "acapy-plugins repository or install them manually before "
+                    "starting ACA-Py.",
+                    ", ".join(failed_plugins),
+                )
+                sys.exit(1)
 
     # Set ledger to read-only if explicitly specified
     settings["ledger.read_only"] = settings.get("read_only_ledger", False)

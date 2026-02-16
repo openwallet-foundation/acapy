@@ -1466,6 +1466,48 @@ class TestV20CredManager(IsolatedAsyncioTestCase):
             with self.assertRaises(test_module.StorageNotFoundError):
                 await self.manager.receive_problem_report(problem, connection_id)
 
+    async def test_receive_problem_report_removal(self):
+        connection_id = "connection-id"
+        stored_exchange = V20CredExRecord(
+            cred_ex_id="dummy-cxid",
+            connection_id=connection_id,
+            initiator=V20CredExRecord.INITIATOR_SELF,
+            role=V20CredExRecord.ROLE_ISSUER,
+            auto_remove_on_failure=True,
+        )
+        problem = V20CredProblemReport(
+            description={
+                "code": test_module.ProblemReportReason.ISSUANCE_ABANDONED.value,
+                "en": "Insufficient privilege",
+            }
+        )
+
+        with (
+            mock.patch.object(V20CredExRecord, "save", autospec=True) as save_ex,
+            mock.patch.object(
+                V20CredExRecord,
+                "retrieve_by_conn_and_thread",
+                mock.CoroutineMock(),
+            ) as retrieve_ex,
+            mock.patch.object(
+                V20CredExRecord, "retrieve_by_id", mock.CoroutineMock()
+            ) as mock_retrieve,
+            mock.patch.object(
+                V20CredExRecord, "delete_record", autospec=True
+            ) as delete_ex,
+        ):
+            retrieve_ex.return_value = stored_exchange
+            mock_retrieve.return_value = stored_exchange
+
+            ret_exchange = await self.manager.receive_problem_report(
+                problem, connection_id
+            )
+            retrieve_ex.assert_called()
+            save_ex.assert_called_once()
+            delete_ex.assert_called_once()
+
+            assert ret_exchange.state == V20CredExRecord.STATE_ABANDONED
+
     async def test_retrieve_records(self):
         self.profile.context.injector.bind_instance(InMemoryCache, InMemoryCache())
 

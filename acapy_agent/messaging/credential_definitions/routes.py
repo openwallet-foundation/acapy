@@ -45,6 +45,7 @@ from ...revocation.indy import IndyRevocation
 from ...storage.base import BaseStorage, StorageRecord
 from ...storage.error import StorageError, StorageNotFoundError
 from ...utils.profiles import is_anoncreds_profile_raise_web_exception
+from ...utils.wait_for_active_registry import wait_for_active_revocation_registry
 from ..models.base import BaseModelError
 from ..models.openapi import OpenAPISchema
 from ..valid import (
@@ -93,6 +94,13 @@ class CredentialDefinitionSendRequestSchema(OpenAPISchema):
         metadata={
             "description": "Credential definition identifier tag",
             "example": "default",
+        },
+    )
+    wait_for_revocation_setup = fields.Boolean(
+        required=False,
+        load_default=True,
+        metadata={
+            "description": "Wait for revocation registry setup to complete before returning"  # noqa: E501
         },
     )
 
@@ -215,6 +223,7 @@ async def credential_definitions_send_credential_definition(request: web.BaseReq
     support_revocation = bool(body.get("support_revocation"))
     tag = body.get("tag")
     rev_reg_size = body.get("revocation_registry_size")
+    wait_for_revocation_setup = body.get("wait_for_revocation_setup", True)
 
     # Don't allow revocable cred def to be created without tails server base url
     if not profile.settings.get("tails_server_base_url") and support_revocation:
@@ -324,6 +333,12 @@ async def credential_definitions_send_credential_definition(request: web.BaseReq
         # Notify event
         meta_data["processing"]["auto_create_rev_reg"] = True
         await notify_cred_def_event(profile, cred_def_id, meta_data)
+
+        if support_revocation and wait_for_revocation_setup:
+            try:
+                await wait_for_active_revocation_registry(profile, cred_def_id)
+            except TimeoutError as err:
+                raise web.HTTPGatewayTimeout(reason=str(err)) from err
 
         return web.json_response(
             {
@@ -633,7 +648,6 @@ async def register(app: web.Application):
 
 def post_process_routes(app: web.Application):
     """Amend swagger API."""
-
     # Add top-level tags description
     if "tags" not in app._state["swagger_dict"]:
         app._state["swagger_dict"]["tags"] = []

@@ -29,9 +29,7 @@ from ...coordinate_mediation.v1_0.models.mediation_record import MediationRecord
 from ...coordinate_mediation.v1_0.route_manager import RouteManager
 from ...didcomm_prefix import DIDCommPrefix
 from ...didexchange.v1_0.manager import DIDXManager
-from ...issue_credential.v1_0.models.credential_exchange import V10CredentialExchange
 from ...issue_credential.v2_0.models.cred_ex_record import V20CredExRecord
-from ...present_proof.v1_0.models.presentation_exchange import V10PresentationExchange
 from ...present_proof.v2_0.models.pres_exchange import V20PresExRecord
 from .message_types import DEFAULT_VERSION
 from .messages.invitation import HSProto, InvitationMessage
@@ -187,58 +185,43 @@ class InvitationCreator:
         self.mediation_id = mediation_id
         self.metadata = metadata
 
-    async def create_attachment(self, attachment: Mapping, pthid: str) -> AttachDecorator:
-        """Create attachment for OOB invitation."""
+    # to use a single session for all attachments, reducing session overhead
+    async def create_attachment(
+        self, attachment: Mapping, pthid: str, session
+    ) -> AttachDecorator:
+        """Create an attachment decorator from attachment mapping."""
         a_type = attachment.get("type")
         a_id = attachment.get("id")
-
         if not a_type or not a_id:
             raise OutOfBandManagerError("Attachment must include type and id")
-
-        async with self.profile.session() as session:
-            if a_type == "credential-offer":
-                try:
-                    cred_ex_rec = await V10CredentialExchange.retrieve_by_id(
-                        session,
-                        a_id,
-                    )
-                    message = cred_ex_rec.credential_offer_dict
-
-                except StorageNotFoundError:
-                    cred_ex_rec = await V20CredExRecord.retrieve_by_id(
-                        session,
-                        a_id,
-                    )
-                    message = cred_ex_rec.cred_offer
-            elif a_type == "present-proof":
-                try:
-                    pres_ex_rec = await V10PresentationExchange.retrieve_by_id(
-                        session,
-                        a_id,
-                    )
-                    message = pres_ex_rec.presentation_request_dict
-                except StorageNotFoundError:
-                    pres_ex_rec = await V20PresExRecord.retrieve_by_id(
-                        session,
-                        a_id,
-                    )
-                    message = pres_ex_rec.pres_request
-            else:
-                raise OutOfBandManagerError(f"Unknown attachment type: {a_type}")
-
+        if a_type == "credential-offer":
+            cred_ex_rec = await V20CredExRecord.retrieve_by_id(
+                session,
+                a_id,
+            )
+            message = cred_ex_rec.cred_offer
+        elif a_type == "present-proof":
+            pres_ex_rec = await V20PresExRecord.retrieve_by_id(session, a_id)
+            message = pres_ex_rec.pres_request
+        else:
+            raise OutOfBandManagerError(f"Unknown attachment type: {a_type}")
         message.assign_thread_id(pthid=pthid)
         return InvitationMessage.wrap_message(message.serialize())
 
+    # to use a single session for all attachments, reducing session overhead
     async def create_attachments(
-        self,
-        invitation_msg_id: str,
-        attachments: Optional[Sequence[Mapping]] = None,
+        self, invitation_msg_id: str, attachments: Optional[Sequence[Mapping]] = None
     ) -> List[AttachDecorator]:
-        """Create attachments for OOB invitation."""
-        return [
-            await self.create_attachment(attachment, invitation_msg_id)
-            for attachment in attachments or []
-        ]
+        """Create attachment decorators for an OOB invitation."""
+        results = []
+        if attachments:
+            async with self.profile.session() as session:
+                for attachment in attachments:
+                    result = await self.create_attachment(
+                        attachment, invitation_msg_id, session
+                    )
+                    results.append(result)
+        return results
 
     async def create(self) -> InvitationRecord:
         """Create the invitation, returning the result as an InvitationRecord."""
@@ -569,6 +552,7 @@ class OutOfBandManager(BaseConnectionManager):
 
         Args:
             profile: The profile for this out of band manager
+
         """
         self._profile = profile
         super().__init__(self._profile)

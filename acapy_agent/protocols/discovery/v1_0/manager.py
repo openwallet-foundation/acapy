@@ -26,6 +26,7 @@ class V10DiscoveryMgr:
 
         Args:
             profile: The profile for this manager
+
         """
         self._profile = profile
         self._logger = logging.getLogger(__name__)

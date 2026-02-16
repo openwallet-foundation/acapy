@@ -29,6 +29,7 @@ class AskarStorage(BaseStorage):
 
         Args:
             session: The Askar profile session to use
+
         """
         self._session = session
 
@@ -148,6 +149,7 @@ class AskarStorage(BaseStorage):
             type_filter: Filter string
             tag_query: Tags to query
             options: Dictionary of backend-specific options
+
         """
         for_update = bool(options and options.get("forUpdate"))
         try:
@@ -189,6 +191,7 @@ class AskarStorage(BaseStorage):
 
         Returns:
             A sequence of StorageRecord matching the filter and query parameters.
+
         """
         results = []
 
@@ -256,6 +259,7 @@ class AskarStorageSearch(BaseStorageSearch):
 
         Args:
             profile: The Askar profile instance to use
+
         """
         self._profile = profile
 

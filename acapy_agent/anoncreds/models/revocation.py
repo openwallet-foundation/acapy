@@ -41,6 +41,7 @@ class RevRegDefValue(BaseModel):
             tails_location: Tails file location
             tails_hash: Tails file hash
             kwargs: Keyword arguments
+
         """
         super().__init__(**kwargs)
         self.public_keys = public_keys
@@ -100,6 +101,7 @@ class RevRegDef(BaseModel):
             tag: Tag
             value: Rev Reg Def Value
             kwargs: Keyword arguments
+
         """
         super().__init__(**kwargs)
         self.issuer_id = issuer_id
@@ -178,6 +180,7 @@ class RevRegDefState(BaseModel):
             state: State
             revocation_registry_definition_id: Rev Reg Definition ID
             revocation_registry_definition: Rev Reg Definition
+
         """
         self.state = state
         self.revocation_registry_definition_id = revocation_registry_definition_id
@@ -240,6 +243,7 @@ class RevRegDefResult(BaseModel):
             registration_metadata: Registration metadata
             revocation_registry_definition_metadata: Rev Reg Def metadata
             kwargs: Keyword arguments
+
         """
         super().__init__(**kwargs)
         self.job_id = job_id
@@ -272,7 +276,6 @@ class RevRegDefResultSchema(BaseModelSchema):
     job_id = fields.Str()
     revocation_registry_definition_state = fields.Nested(RevRegDefStateSchema())
     registration_metadata = fields.Dict()
-    # For indy, revocation_registry_definition_metadata will contain the seqNo
     revocation_registry_definition_metadata = fields.Dict()
 
 
@@ -300,6 +303,7 @@ class GetRevRegDefResult(BaseModel):
             resolution_metadata: Resolution metadata
             revocation_registry_metadata: Revocation Registry metadata
             kwargs: Keyword arguments
+
         """
         super().__init__(**kwargs)
         self.revocation_registry = revocation_registry
@@ -349,6 +353,7 @@ class RevList(BaseModel):
             current_accumulator: Current accumulator
             timestamp: Timestamp
             kwargs: Keyword arguments
+
         """
         super().__init__(**kwargs)
         self.issuer_id = issuer_id
@@ -437,6 +442,7 @@ class RevListState(BaseModel):
         Args:
             state: State
             revocation_list: Revocation list
+
         """
         self.state = state
         self.revocation_list = revocation_list
@@ -490,6 +496,7 @@ class RevListResult(BaseModel):
             registration_metadata: Registration metadata
             revocation_list_metadata: Revocation list metadata
             kwargs: Keyword arguments
+
         """
         super().__init__(**kwargs)
         self.job_id = job_id
@@ -515,7 +522,6 @@ class RevListResultSchema(BaseModelSchema):
     job_id = fields.Str()
     revocation_list_state = fields.Nested(RevListStateSchema())
     registration_metadata = fields.Dict()
-    # For indy, revocation_list_metadata will contain the seqNo
     revocation_list_metadata = fields.Dict()
 
 
@@ -541,6 +547,7 @@ class GetRevListResult(BaseModel):
             resolution_metadata: Resolution metadata
             revocation_registry_metadata: Rev Reg metadata
             kwargs: Keyword arguments
+
         """
         super().__init__(**kwargs)
         self.revocation_list = revocation_list

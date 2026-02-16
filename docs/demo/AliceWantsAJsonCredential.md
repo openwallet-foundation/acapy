@@ -16,13 +16,13 @@ cd acapy/demo
 Open up a second shell (so you have 2 shells open in the `demo` directory) and in one shell:
 
 ```bash
-LEDGER_URL=http://test.bcovrin.vonx.io ./run_demo faber --did-exchange --aip 20 --cred-type json-ld
+LEDGER_URL=https://test.bcovrin.vonx.io ./run_demo faber --did-exchange --aip 20 --cred-type json-ld
 ```
 
 ... and in the other:
 
 ```bash
-LEDGER_URL=http://test.bcovrin.vonx.io ./run_demo alice
+LEDGER_URL=https://test.bcovrin.vonx.io ./run_demo alice
 ```
 
 Note that you start the `faber` agent with AIP2.0 options.  (When you specify `--cred-type json-ld` faber will set aip to `20` automatically,
@@ -41,13 +41,10 @@ Now open up two browser windows to the [Faber](http://localhost:8021/api/doc) an
 
 Using the Faber admin api, you have to create a DID with the appropriate:
 
-- DID method ("key" or "sov")
-  - if you use DID method "sov" you must use key type "ed25519"
+- DID method ("key")
 - Either one of the following key types:
   - "ed25519" (corresponding to signature types "Ed25519Signature2018" or "Ed25519Signature2020")
   - "bls12381g2" (corresponding to signature type "BbsBlsSignature2020")
-
-Note that "did:sov" must be a public DID (i.e. registered on the ledger) but "did:key" is not.
 
 For example, in Faber's swagger page call the `/wallet/did/create` endpoint with the following payload:
 

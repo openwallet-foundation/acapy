@@ -231,7 +231,7 @@ async def credentials_get(request: web.BaseRequest):
     context: AdminRequestContext = request["context"]
     credential_id = request.match_info["credential_id"]
 
-    if context.settings.get(wallet_type_config) == "askar-anoncreds":
+    if context.settings.get(wallet_type_config) in ("askar-anoncreds", "kanon-anoncreds"):
         holder = AnonCredsHolder(context.profile)
     else:
         holder = context.profile.inject(IndyHolder)
@@ -295,7 +295,7 @@ async def credentials_revoked(request: web.BaseRequest):
                     raise web.HTTPBadRequest(reason=err.roll_up) from err
 
     try:
-        if wallet_type == "askar-anoncreds":
+        if wallet_type in ("askar-anoncreds", "kanon-anoncreds"):
             revoked = await get_revoked_using_anoncreds(profile)
         else:
             revoked = await get_revoked_using_indy(profile)
@@ -322,7 +322,7 @@ async def credentials_attr_mime_types_get(request: web.BaseRequest):
     context: AdminRequestContext = request["context"]
     credential_id = request.match_info["credential_id"]
 
-    if context.settings.get(wallet_type_config) == "askar-anoncreds":
+    if context.settings.get(wallet_type_config) in ("askar-anoncreds", "kanon-anoncreds"):
         holder = AnonCredsHolder(context.profile)
         mime_types = await holder.get_mime_type(credential_id)
     else:
@@ -380,7 +380,7 @@ async def credentials_remove(request: web.BaseRequest):
                 # Raise original anoncreds error if neither found
                 raise web.HTTPNotFound(reason=anoncreds_err.reason) from anoncreds_err
 
-    if context.settings.get(wallet_type_config) == "askar-anoncreds":
+    if context.settings.get(wallet_type_config) in ("askar-anoncreds", "kanon-anoncreds"):
         await delete_using_anoncreds_or_indy()
     else:
         await delete_credential_using_indy()
@@ -426,7 +426,7 @@ async def credentials_list(request: web.BaseRequest):
     encoded_wql = request.query.get("wql") or "{}"
     wql = json.loads(encoded_wql)
 
-    if context.settings.get(wallet_type_config) == "askar-anoncreds":
+    if context.settings.get(wallet_type_config) in ("askar-anoncreds", "kanon-anoncreds"):
         holder = AnonCredsHolder(context.profile)
         credentials = await holder.get_credentials(limit=limit, offset=offset, wql=wql)
     else:
@@ -562,7 +562,6 @@ async def w3c_creds_list(request: web.BaseRequest):
 
 async def register(app: web.Application):
     """Register routes."""
-
     app.add_routes(
         [
             web.get("/credential/{credential_id}", credentials_get, allow_head=False),
@@ -591,7 +590,6 @@ async def register(app: web.Application):
 
 def post_process_routes(app: web.Application):
     """Amend swagger API."""
-
     # Add top-level tags description
     if "tags" not in app._state["swagger_dict"]:
         app._state["swagger_dict"]["tags"] = []

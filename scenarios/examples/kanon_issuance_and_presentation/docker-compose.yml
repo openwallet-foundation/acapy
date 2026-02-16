@@ -1,0 +1,130 @@
+services:
+  kanon-postgres:
+    image: acapy-test
+    ports:
+      - "8031:8031"
+      - "8030:8030"
+    environment:
+      - RUST_LOG=aries-askar::log::target=error
+    command: >
+      start
+        --endpoint http://kanon-postgres:8030
+        --label kanon_postgres_normalized
+        --inbound-transport http 0.0.0.0 8030
+        --outbound-transport http
+        --admin 0.0.0.0 8031
+        --admin-insecure-mode
+        --wallet-type kanon-anoncreds
+        --wallet-storage-type postgres
+        --wallet-name kanon-postgres-normalized
+        --wallet-key insecure
+        --wallet-storage-config '{"url":"wallet-db:5432","max_connections":100,"min_idle_count":5,"max_idle":10.0,"max_lifetime":7200.0}'
+        --wallet-storage-creds '{"account":"myuser","password":"mypass","admin_account":"myuser","admin_password":"mypass"}'
+        --dbstore-storage-type postgres
+        --dbstore-storage-config '{"url":"wallet-db:5432","connection_timeout":30.0,"max_connections":100,"min_idle_count":5,"max_idle":10.0,"max_lifetime":7200.0}'
+        --dbstore-storage-creds '{"account":"myuser","password":"mypass","admin_account":"myuser","admin_password":"mypass"}'
+        --dbstore-schema-config normalize
+        --recreate-wallet
+        --preserve-exchange-records
+        --genesis-url http://test.bcovrin.vonx.io/genesis
+        --tails-server-base-url http://tails:6543
+        --auto-ping-connection
+        --auto-respond-messages
+        --auto-accept-invites
+        --auto-accept-requests
+        --auto-respond-credential-proposal
+        --auto-respond-credential-offer
+        --auto-respond-credential-request
+        --auto-store-credential
+        --log-level debug
+        --trace-target log
+        --trace-tag acapy.events
+        --trace-label kanon_issuer_normalized_postgres.trace
+        --auto-provision
+        --wallet-allow-insecure-seed
+        --debug-webhooks
+        --notify-revocation
+    healthcheck:
+      test: curl -s -o /dev/null -w '%{http_code}' "http://localhost:8031/status/live" | grep "200" > /dev/null
+      start_period: 30s
+      interval: 7s
+      timeout: 5s
+      retries: 5
+    depends_on:
+      tails:
+        condition: service_started
+      wallet-db:
+        condition: service_healthy
+
+  bob:
+    image: acapy-test
+    ports:
+      - "3002:3001"
+    environment:
+      - RUST_LOG=aries-askar::log::target=error
+    command: >
+      start
+        --label Bob
+        --inbound-transport http 0.0.0.0 3000
+        --outbound-transport http
+        --endpoint http://bob:3000
+        --admin 0.0.0.0 3001
+        --admin-insecure-mode
+        --tails-server-base-url http://tails:6543
+        --genesis-url https://test.bcovrin.vonx.io/genesis
+        --wallet-type askar
+        --wallet-name bob
+        --wallet-key insecure
+        --auto-provision
+        --log-level info
+        --debug-webhooks
+        --monitor-revocation-notification
+    healthcheck:
+      test: curl -s -o /dev/null -w '%{http_code}' "http://localhost:3001/status/live" | grep "200" > /dev/null
+      start_period: 30s
+      interval: 7s
+      timeout: 5s
+      retries: 5
+
+  example:
+    container_name: controller
+    build:
+      context: ../..
+    environment:
+      - KANON_POSTGRES=http://kanon-postgres:8031
+      - BOB=http://bob:3001
+    volumes:
+      - ./example.py:/usr/src/app/example.py:ro,z
+    command: python -m example
+    depends_on:
+      kanon-postgres:
+        condition: service_healthy
+      bob:
+        condition: service_healthy
+
+  tails:
+    image: ghcr.io/bcgov/tails-server:latest
+    ports:
+      - 6543:6543
+    environment:
+      - GENESIS_URL=https://test.bcovrin.vonx.io/genesis
+    command: >
+      tails-server
+      --host 0.0.0.0
+      --port 6543
+      --storage-path /tmp/tails-files
+      --log-level info
+
+  wallet-db:
+    image: postgres:12
+    environment:
+      - POSTGRES_USER=myuser
+      - POSTGRES_PASSWORD=mypass
+    ports:
+      - 5433:5432
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U myuser"]
+      interval: 10s
+      retries: 5
+      start_period: 30s
+      timeout: 10s

@@ -31,7 +31,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.12"]
+        python-version: ["3.13"]
         arch: ["amd64", "arm64"]
         include:
           - arch: amd64
@@ -46,13 +46,13 @@ jobs:
       packages: write
     steps:
       - name: Checkout Code
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
         with:
           ref: ${{ inputs.ref || '' }}
           persist-credentials: false
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@e468171a9de216ec08956ac3ada2f0791b6bd435 # v3.11.1
+        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
         with:
           cache-binary: false
           install: true
@@ -75,7 +75,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.12"]
+        python-version: ["3.13"]
         image-type: ["standard", "bbs"]
         include:
           - image-type: standard
@@ -101,20 +101,20 @@ jobs:
 
     steps:
       - name: Checkout Code
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
         with:
           ref: ${{ inputs.ref || '' }}
           persist-credentials: false
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@e468171a9de216ec08956ac3ada2f0791b6bd435 # v3.11.1
+        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
         with:
           cache-binary: false
           install: true
           version: latest
 
       - name: Log in to the GitHub Container Registry
-        uses: docker/login-action@184bdaa0721073962dff0199f1fb9940f07167d1 # v3.5.0
+        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3.7.0
         with:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
@@ -125,14 +125,46 @@ jobs:
         id: lower
         run: echo "owner=${GITHUB_REPOSITORY_OWNER,,}" >> $GITHUB_OUTPUT
 
+      - name: Check if Highest Semantic Version
+        id: check_latest
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CURRENT_TAG: ${{ inputs.tag || github.event.release.tag_name }}
+        run: |
+          # Skip if this is an RC release
+          if [[ "$CURRENT_TAG" =~ rc ]]; then
+            echo "is_latest=false" >> "$GITHUB_OUTPUT"
+            echo "Skipping latest tag for RC release"
+            exit 0
+          fi
+          
+          # Get all non-RC release tags and sort by semantic version
+          HIGHEST_TAG=$(gh api /repos/${{ github.repository }}/releases --paginate \
+            | jq -r '[.[] | select(.prerelease == false and (.tag_name | test("rc") | not)) | .tag_name] | .[]' \
+            | sort -V | tail -1)
+          
+          echo "Current tag: $CURRENT_TAG"
+          echo "Highest semantic version: $HIGHEST_TAG"
+          
+          if [ "$CURRENT_TAG" == "$HIGHEST_TAG" ]; then
+            echo "is_latest=true" >> "$GITHUB_OUTPUT"
+            echo "This is the highest semantic version - will tag as latest"
+          else
+            echo "is_latest=false" >> "$GITHUB_OUTPUT"
+            echo "Not the highest semantic version - skipping latest tag"
+          fi
+
       - name: Setup Image Metadata
         id: meta
-        uses: docker/metadata-action@c1e51972afc2121e065aed6d45c65596fe445f3f # v5.8.0
+        uses: docker/metadata-action@c299e40c65443455700f0fdfc63efafe5b349051 # v5.10.0
         with:
           images: |
             ghcr.io/${{ steps.lower.outputs.owner }}/${{ matrix.image-name }}
           tags: |
             type=raw,value=py${{ matrix.python-version }}-${{ inputs.tag || github.event.release.tag_name }}
+            type=semver,pattern={{version}},value=${{ inputs.tag || github.event.release.tag_name }}
+            type=semver,pattern={{major}}.{{minor}},value=${{ inputs.tag || github.event.release.tag_name }},enable=${{ !contains(github.event.release.tag_name || inputs.tag, 'rc') }}
+            type=raw,value=latest,enable=${{ steps.check_latest.outputs.is_latest == 'true' }}
 
       - name: Publish Image to GHCR.io
         uses: docker/build-push-action@471d1dc4e07e5cdedd4c2171150001c434f0b7a4 # v6.15.0

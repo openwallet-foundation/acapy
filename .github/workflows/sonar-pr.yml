@@ -16,11 +16,11 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event.workflow_run.conclusion == 'success' && github.repository == 'openwallet-foundation/acapy'
     steps:
-      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
         with:
             fetch-depth: 0
       - name: Download PR number artifact
-        uses: dawidd6/action-download-artifact@ac66b43f0e6a346234dd65d4d0c8fbb31cb316e5 # v11
+        uses: dawidd6/action-download-artifact@5c98f0b039f36ef966fdb7dfa9779262785ecb05 # v14
         with:
           workflow: Tests
           run_id: ${{ github.event.workflow_run.id }}
@@ -31,7 +31,7 @@ jobs:
         with:
           path: ./PR_NUMBER
       - name: Download Test Coverage
-        uses: dawidd6/action-download-artifact@ac66b43f0e6a346234dd65d4d0c8fbb31cb316e5 # v11
+        uses: dawidd6/action-download-artifact@5c98f0b039f36ef966fdb7dfa9779262785ecb05 # v14
         with:
           workflow: Tests
           run_id: ${{ github.event.workflow_run.id }}
@@ -57,7 +57,7 @@ jobs:
 
           git checkout -B temp-branch-for-scanning upstream/${{ fromJson(steps.get_pr_data.outputs.data).head.ref }}
       - name: SonarCloud Scan
-        uses: SonarSource/sonarqube-scan-action@1a6d90ebcb0e6a6b1d87e37ba693fe453195ae25 # master
+        uses: SonarSource/sonarqube-scan-action@a31c9398be7ace6bbfaf30c0bd5d415f843d45e9 # master
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} 
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}

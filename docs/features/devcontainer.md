@@ -44,7 +44,7 @@ To open ACA-Py in a devcontainer, we open the *root* of this repository. We can 
 
 #### devcontainer.json
 
-When the [.devcontainer/devcontainer.json](https://github.com/openwallet-foundation/acapy/blob/main/.devcontainer/devcontainer.json) is opened, you will see it building... it is building a Python 3.12 image (bash shell) and loading it with all the ACA-Py requirements. We also load a few Visual Studio settings (for running Pytests and formatting with Ruff).
+When the [.devcontainer/devcontainer.json](https://github.com/openwallet-foundation/acapy/blob/main/.devcontainer/devcontainer.json) is opened, you will see it building... it is building a Python 3.13 image (bash shell) and loading it with all the ACA-Py requirements. We also load a few Visual Studio settings (for running Pytests and formatting with Ruff).
 
 ### Poetry
 
@@ -167,7 +167,7 @@ For all the agents if you don't want to support revocation you need to remove or
 
 To run your ACA-Py code in debug mode, go to the `Run and Debug` view, select the agent(s) you want to start and click `Start Debugging (F5)`.
 
-This will start your source code as a running ACA-Py instance, all configuration is in the `*.yml` files. This is just a sample of a configuration. Note that we are not using a database and are joining to a local VON Network (by default, it would be `http://localhost:9000`). You could change this or another ledger such as `http://test.bcovrin.vonx.io`. These are purposefully, very simple configurations.
+This will start your source code as a running ACA-Py instance, all configuration is in the `*.yml` files. This is just a sample of a configuration. Note that we are not using a database and are joining to a local VON Network (by default, it would be `http://localhost:9000`). You could change this or another ledger such as `https://test.bcovrin.vonx.io`. These are purposefully, very simple configurations.
 
 For example, open `acapy_agent/admin/server.py` and set a breakpoint in `async def status_handler(self, request: web.BaseRequest):`, then call `GET /status` at `http://localhost:9061/api/doc#/server/get_status` in the Admin Console and hit your breakpoint.
 

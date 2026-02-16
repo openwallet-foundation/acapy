@@ -41,7 +41,6 @@ class ClassLoader:
             ModuleLoadError: If there was an error loading the module
 
         """
-
         if package:
             # preload parent package
             if not cls.load_module(package):
@@ -98,7 +97,6 @@ class ClassLoader:
             ModuleLoadError: If there was an error loading the module
 
         """
-
         if "." in class_name:
             # import module and find class
             mod_path, class_name = class_name.rsplit(".", 1)
@@ -154,7 +152,6 @@ class ClassLoader:
             ModuleLoadError: If there was an error loading the module
 
         """
-
         mod = cls.load_module(mod_path, package)
         if not mod:
             LOGGER.warning(

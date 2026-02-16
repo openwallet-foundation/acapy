@@ -188,72 +188,6 @@ class AriesAgent(DemoAgent):
                         params={"transaction_my_job": connection_job_role},
                     )
 
-    async def handle_issue_credential(self, message):
-        state = message.get("state")
-        credential_exchange_id = message["credential_exchange_id"]
-        prev_state = self.cred_state.get(credential_exchange_id)
-        if prev_state == state:
-            return  # ignore
-        self.cred_state[credential_exchange_id] = state
-
-        self.log(
-            "Credential: state = {}, credential_exchange_id = {}".format(
-                state,
-                credential_exchange_id,
-            )
-        )
-
-        if state == "offer_received":
-            log_status("#15 After receiving credential offer, send credential request")
-            await self.admin_POST(
-                f"/issue-credential/records/{credential_exchange_id}/send-request"
-            )
-
-        elif state == "credential_acked":
-            cred_id = message["credential_id"]
-            self.log(f"Stored credential {cred_id} in wallet")
-            log_status(f"#18.1 Stored credential {cred_id} in wallet")
-            resp = await self.admin_GET(f"/credential/{cred_id}")
-            log_json(resp, label="Credential details:")
-            log_json(
-                message["credential_request_metadata"],
-                label="Credential request metadata:",
-            )
-            self.log("credential_id", message["credential_id"])
-            self.log("credential_definition_id", message["credential_definition_id"])
-            self.log("schema_id", message["schema_id"])
-
-        elif state == "request_received":
-            log_status("#17 Issue credential to X")
-            # issue credentials based on the credential_definition_id
-            cred_attrs = self.cred_attrs[message["credential_definition_id"]]
-            cred_preview = {
-                "@type": CRED_PREVIEW_TYPE,
-                "attributes": [{"name": n, "value": v} for (n, v) in cred_attrs.items()],
-            }
-            try:
-                cred_ex_rec = await self.admin_POST(
-                    f"/issue-credential/records/{credential_exchange_id}/issue",
-                    {
-                        "comment": (
-                            f"Issuing credential, exchange {credential_exchange_id}"
-                        ),
-                        "credential_preview": cred_preview,
-                    },
-                )
-                rev_reg_id = cred_ex_rec.get("revoc_reg_id")
-                cred_rev_id = cred_ex_rec.get("revocation_id")
-                if rev_reg_id:
-                    self.log(f"Revocation registry ID: {rev_reg_id}")
-                if cred_rev_id:
-                    self.log(f"Credential revocation ID: {cred_rev_id}")
-            except ClientError:
-                pass
-
-        elif state == "abandoned":
-            log_status("Credential exchange abandoned")
-            self.log("Problem report message:", message.get("error_msg"))
-
     async def handle_issue_credential_v2_0(self, message):
         state = message.get("state")
         cred_ex_id = message["cred_ex_id"]
@@ -833,7 +767,6 @@ class AgentContainer:
         create_endorser_agent: bool = False,
     ):
         """Startup agent(s), register DID, schema, cred def as appropriate."""
-
         if not the_agent:
             log_status(
                 "#1 Provision an agent and wallet, get back configuration details"
@@ -1179,7 +1112,6 @@ class AgentContainer:
 
     async def terminate(self):
         """Shut down any running agents."""
-
         terminated = True
         try:
             if self.endorser_agent:
@@ -1443,7 +1375,7 @@ def arg_parser(ident: str = None, port: int = 8020):
         "--arg-file",
         type=str,
         metavar="<arg-file>",
-        help="Specify a file containing additional aca-py parameters",
+        help="Specify a file or URL containing additional aca-py parameters",
     )
     parser.add_argument(
         "--taa-accept",
@@ -1547,7 +1479,9 @@ async def create_agent_with_args(args, ident: str = None, extra_args: list = Non
     if "aip" in args:
         aip = int(args.aip)
         if aip == 10:  # helpful message to flag legacy usage
-            raise Exception("Invalid value for aip, 10 is no longer supported. Use 20 instead.")
+            raise Exception(
+                "Invalid value for aip, 10 is no longer supported. Use 20 instead."
+            )
         if aip != 20:
             raise Exception("Invalid value for aip, should be 20")
     else:
@@ -1642,7 +1576,6 @@ async def test_main(
     aip: str = 20,
 ):
     """Test to startup a couple of agents."""
-
     faber_container = None
     alice_container = None
     try:

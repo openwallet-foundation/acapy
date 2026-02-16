@@ -109,7 +109,6 @@ class DefaultContextBuilder(ContextBuilder):
 
     async def load_plugins(self, context: InjectionContext):
         """Set up plugin registry and load plugins."""
-
         LOGGER.debug("Initializing plugin registry")
         plugin_registry = PluginRegistry(
             blocklist=self.settings.get("blocked_plugins", [])
@@ -171,7 +170,7 @@ class DefaultContextBuilder(ContextBuilder):
             # Register both askar and anoncreds plugins for multitenancy
             register_askar_plugins()
             register_anoncreds_plugins()
-        elif self.settings.get("wallet.type") == "askar-anoncreds":
+        elif self.settings.get("wallet.type") in ("askar-anoncreds", "kanon-anoncreds"):
             register_anoncreds_plugins()
         else:
             register_askar_plugins()

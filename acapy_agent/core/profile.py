@@ -10,6 +10,7 @@ from ..config.injection_context import InjectionContext
 from ..config.injector import BaseInjector, InjectType
 from ..config.provider import BaseProvider
 from ..config.settings import BaseSettings
+from ..database_manager.db_types import Entry, EntryList
 from ..utils.classloader import ClassLoader, ClassNotFoundError
 from .error import ProfileSessionInactiveError
 from .event_bus import Event, EventBus
@@ -41,7 +42,12 @@ class Profile(ABC):
     @property
     def backend(self) -> str:
         """Accessor for the backend implementation name."""
-        return self.__class__.BACKEND_NAME
+        return self.__class__.BACKEND_NAME or ""
+
+    @property
+    def is_anoncreds(self) -> bool:
+        """Check if this profile uses an AnonCreds-compatible backend."""
+        return "anoncreds" in self.backend.lower()
 
     @property
     def context(self) -> InjectionContext:
@@ -114,6 +120,10 @@ class Profile(ABC):
 
     async def close(self):
         """Close the profile instance."""
+        # Shutdown the EventBus to clean up background tasks
+        event_bus = self.inject_or(EventBus)
+        if event_bus:
+            await event_bus.shutdown()
 
     async def remove(self):
         """Remove the profile."""
@@ -123,6 +133,8 @@ class Profile(ABC):
         event_bus = self.inject_or(EventBus)
         if event_bus:
             await event_bus.notify(self, Event(topic, payload))
+        else:
+            LOGGER.warning("No event bus found for profile %s", self.name)
 
     def __repr__(self) -> str:
         """Get a human readable string."""
@@ -163,6 +175,94 @@ class ProfileManager(ABC):
         self, context: InjectionContext, config: Mapping[str, Any] = None
     ) -> Profile:
         """Open an instance of an existing profile."""
+
+
+class ProfileSessionHandle(ABC):
+    """Abstract interface for profile session handles.
+
+    This interface defines the common methods that are available across different
+    session handle implementations (aries_askar.Session and DBStoreSession).
+    """
+
+    @property
+    @abstractmethod
+    def is_transaction(self) -> bool:
+        """Check if the session supports commit and rollback operations."""
+
+    @abstractmethod
+    async def count(self, category: str, tag_filter: str | dict = None) -> int:
+        """Count the records matching a category and tag filter."""
+
+    @abstractmethod
+    async def fetch(
+        self, category: str, name: str, *, for_update: bool = False
+    ) -> Optional[Entry]:
+        """Fetch a record from the store by category and name."""
+
+    @abstractmethod
+    async def fetch_all(
+        self,
+        category: str = None,
+        tag_filter: str | dict = None,
+        limit: int = None,
+        *,
+        order_by: Optional[str] = None,
+        descending: bool = False,
+        for_update: bool = False,
+    ) -> EntryList:
+        """Fetch all records matching a category and tag filter."""
+
+    @abstractmethod
+    async def insert(
+        self,
+        category: str,
+        name: str,
+        value: str | bytes = None,
+        tags: dict = None,
+        expiry_ms: int = None,
+        value_json=None,
+    ) -> None:
+        """Insert a new record into the store."""
+
+    @abstractmethod
+    async def replace(
+        self,
+        category: str,
+        name: str,
+        value: str | bytes = None,
+        tags: dict = None,
+        expiry_ms: int = None,
+        value_json=None,
+    ) -> None:
+        """Replace a record in the store matching a category and name."""
+
+    @abstractmethod
+    async def remove(
+        self,
+        category: str,
+        name: str,
+    ) -> None:
+        """Remove a record by category and name."""
+
+    @abstractmethod
+    async def remove_all(
+        self,
+        category: str = None,
+        tag_filter: str | dict = None,
+    ) -> int:
+        """Remove all records matching a category and tag filter."""
+
+    @abstractmethod
+    async def commit(self) -> None:
+        """Commit any updates performed within the transaction."""
+
+    @abstractmethod
+    async def rollback(self) -> None:
+        """Roll back any updates performed within the transaction."""
+
+    @abstractmethod
+    async def close(self) -> None:
+        """Close the session."""
 
 
 class ProfileSession(ABC):
@@ -246,6 +346,10 @@ class ProfileSession(ABC):
         """Accessor for the associated profile instance."""
         return self._profile
 
+    @property
+    def handle(self) -> ProfileSessionHandle:
+        """Accessor for the session handle."""
+
     async def commit(self):
         """Commit any updates performed within the transaction.
 
@@ -286,8 +390,8 @@ class ProfileSession(ABC):
             payload (Any): The payload of the event.
             force_emit (bool, optional): If True, force the event to be emitted even
                 if there is an active transaction. Defaults to False.
-        """
 
+        """
         if force_emit or (not self.is_transaction):
             # just emit directly
             await self.profile.notify(topic, payload)
@@ -357,6 +461,7 @@ class ProfileManagerProvider(BaseProvider):
     MANAGER_TYPES = {
         "askar": "acapy_agent.askar.profile.AskarProfileManager",
         "askar-anoncreds": "acapy_agent.askar.profile_anon.AskarAnonProfileManager",
+        "kanon-anoncreds": "acapy_agent.kanon.profile_anon_kanon.KanonAnonProfileManager",
     }
 
     def __init__(self):

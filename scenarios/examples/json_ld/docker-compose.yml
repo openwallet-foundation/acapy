@@ -9,8 +9,8 @@
         -ot http
         -e http://alice:3000
         --admin 0.0.0.0 3001 --admin-insecure-mode
-        --log-level debug
-        --genesis-url http://test.bcovrin.vonx.io/genesis
+        --log-level info
+        --genesis-url https://test.bcovrin.vonx.io/genesis
         --wallet-type askar
         --wallet-name alice
         --wallet-key insecure
@@ -34,8 +34,8 @@
         -ot http
         -e http://bob:3000
         --admin 0.0.0.0 3001 --admin-insecure-mode
-        --log-level debug
-        --genesis-url http://test.bcovrin.vonx.io/genesis
+        --log-level info
+        --genesis-url https://test.bcovrin.vonx.io/genesis
         --wallet-type askar
         --wallet-name bob
         --wallet-key insecure

@@ -37,7 +37,6 @@ async def verify_signed_anoncredspresentation(
             indicates whether the verification was successful
 
     """
-
     # TODO: I think we should add some sort of options to authenticate the subject id
     # to the presentation verification method controller
     anoncreds_verifier = AnonCredsVerifier(profile)

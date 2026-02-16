@@ -21,9 +21,16 @@ class MultitenantManagerProvider(BaseProvider):
         "acapy_agent.multitenant."
         "single_wallet_askar_manager.SingleWalletAskarMultitenantManager"
     )
+
+    single_wallet_kanon_manager_path = (
+        "acapy_agent.multitenant."
+        "single_wallet_kanon_manager.SingleWalletKanonMultitenantManager"
+    )
+
     MANAGER_TYPES = {
         "basic": "acapy_agent.multitenant.manager.MultitenantManager",
         "single-wallet-askar": single_wallet_askar_manager_path,
+        "single-wallet-kanon": single_wallet_kanon_manager_path,
     }
 
     def __init__(self, root_profile):
@@ -33,7 +40,6 @@ class MultitenantManagerProvider(BaseProvider):
 
     def provide(self, settings: BaseSettings, injector: BaseInjector):
         """Create the multitenant manager instance."""
-
         manager_type = settings.get_value(
             "multitenant.wallet_type", default="basic"
         ).lower()

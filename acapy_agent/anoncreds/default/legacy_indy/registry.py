@@ -53,6 +53,11 @@ from ...base import (
     BaseAnonCredsRegistrar,
     BaseAnonCredsResolver,
 )
+from ...constants import (
+    CATEGORY_REV_LIST,
+    CATEGORY_REV_REG_DEF,
+    CATEGORY_REV_REG_DEF_PRIVATE,
+)
 from ...events import RevListFinishedEvent
 from ...issuer import CATEGORY_CRED_DEF, AnonCredsIssuer, AnonCredsIssuerError
 from ...models.credential_definition import (
@@ -76,11 +81,6 @@ from ...models.revocation import (
 )
 from ...models.schema import AnonCredsSchema, GetSchemaResult, SchemaResult, SchemaState
 from ...models.schema_info import AnonCredsSchemaInfo
-from ...revocation import (
-    CATEGORY_REV_LIST,
-    CATEGORY_REV_REG_DEF,
-    CATEGORY_REV_REG_DEF_PRIVATE,
-)
 from .recover import generate_ledger_rrrecovery_txn
 
 LOGGER = logging.getLogger(__name__)
@@ -175,7 +175,6 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
 
     async def get_schema(self, profile: Profile, schema_id: str) -> GetSchemaResult:
         """Get a schema from the registry."""
-
         multitenant_mgr = profile.inject_or(BaseMultitenantManager)
         if multitenant_mgr:
             ledger_exec_inst = IndyLedgerRequestsExecutor(profile)
@@ -333,7 +332,6 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
         self, profile: Profile, cred_def_id: str
     ) -> GetCredDefResult:
         """Get a credential definition from the registry."""
-
         async with profile.session() as session:
             multitenant_mgr = session.inject_or(BaseMultitenantManager)
             if multitenant_mgr:
@@ -360,10 +358,25 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
                     {"ledger_id": ledger_id},
                 )
 
+            # Convert seqNo to schema_id if needed
+            schema_id_from_cred_def = cred_def["schemaId"]
+            if schema_id_from_cred_def.isdigit():
+                # schemaId is a seqNo, fetch the actual schema to get its ID
+                try:
+                    schema = await ledger.fetch_schema_by_seq_no(
+                        int(schema_id_from_cred_def)
+                    )
+                    if schema and schema.get("id"):
+                        schema_id_from_cred_def = schema["id"]
+                    # If schema is None or missing id, fall back to seqNo
+                except LedgerError:
+                    # If fetching fails, fall back to using seqNo as schemaId
+                    pass
+
             cred_def_value = CredDefValue.deserialize(cred_def["value"])
             anoncreds_credential_definition = CredDef(
                 issuer_id=cred_def["id"].split(":")[0],
-                schema_id=cred_def["schemaId"],
+                schema_id=schema_id_from_cred_def,
                 type=cred_def["type"],
                 tag=cred_def["tag"],
                 value=cred_def_value,
@@ -1211,7 +1224,6 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
         write_ledger: bool = True,
     ) -> str:
         """Submit a transaction to the ledger."""
-
         try:
             async with ledger:
                 return await shield(

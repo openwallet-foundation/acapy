@@ -100,7 +100,6 @@ class RevRegId(OpenAPISchema):
     @validates_schema
     def validate_fields(self, data: dict, **kwargs) -> None:
         """Validate schema fields - must have either rr-id or cr-id."""
-
         rev_reg_id = data.get("rev_reg_id")
         cred_def_id = data.get("cred_def_id")
 
@@ -137,11 +136,11 @@ class CredRevRecordDetailsResultSchemaAnonCreds(OpenAPISchema):
     results = fields.List(fields.Nested(IssuerCredRevRecordSchemaAnonCreds()))
 
 
-class CredRevIndyRecordsResultSchemaAnonCreds(OpenAPISchema):
+class CredRevRecordsResultSchemaAnonCreds(OpenAPISchema):
     """Result schema for revoc reg delta."""
 
     rev_reg_delta = fields.Dict(
-        metadata={"description": "Indy revocation registry delta"}
+        metadata={"description": "AnonCreds revocation registry delta"}
     )
 
 
@@ -171,7 +170,7 @@ class RevRegWalletUpdatedResultSchemaAnonCreds(OpenAPISchema):
     """Number of wallet revocation entries status updated."""
 
     rev_reg_delta = fields.Dict(
-        metadata={"description": "Indy revocation registry delta"}
+        metadata={"description": "AnonCreds revocation registry delta"}
     )
     accum_calculated = fields.Dict(
         metadata={"description": "Calculated accumulator for phantom revocations"}

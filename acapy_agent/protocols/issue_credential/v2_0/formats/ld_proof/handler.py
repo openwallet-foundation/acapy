@@ -80,7 +80,6 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
 
     async def get_detail_record(self, cred_ex_id: str) -> V20CredExRecordLDProof:
         """Retrieve credential exchange detail record by cred_ex_id."""
-
         async with self.profile.session() as session:
             records = await LDProofCredFormatHandler.format.detail.query_by_cred_ex_id(
                 session, cred_ex_id

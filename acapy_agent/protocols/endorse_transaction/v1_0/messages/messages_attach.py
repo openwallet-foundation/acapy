@@ -44,8 +44,8 @@ class MessagesAttach(AgentMessage):
             taaDigest: The digest of the latest TAA present on the ledger
             time: The time when the latest TAA was set/enabled
             kwargs: Additional keyword arguments for the message
-        """
 
+        """
         super().__init__(**kwargs)
 
         transaction_message = transaction_message or {}

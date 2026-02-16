@@ -13,7 +13,9 @@ from marshmallow import ValidationError, fields, validate, validates_schema
 from ...admin.decorators.auth import admin_authentication
 from ...admin.request_context import AdminRequestContext
 from ...core.error import BaseError
+from ...core.event_bus import Event, EventBus
 from ...core.profile import ProfileManagerProvider
+from ...core.util import MULTITENANT_WALLET_CREATED_TOPIC
 from ...messaging.models.base import BaseModelError
 from ...messaging.models.openapi import OpenAPISchema
 from ...messaging.models.paginated_query import (
@@ -51,6 +53,7 @@ ACAPY_LIFECYCLE_CONFIG_FLAG_MAP = {
     "ACAPY_PRESERVE_EXCHANGE_RECORDS": "preserve_exchange_records",
     "ACAPY_PUBLIC_INVITES": "public_invites",
     "ACAPY_REQUESTS_THROUGH_PUBLIC_DID": "requests_through_public_did",
+    "ACAPY_ENABLE_AUTO_REVOCATION_RECOVERY": "anoncreds.revocation.auto_recovery_enabled",
 }
 
 ACAPY_LIFECYCLE_CONFIG_FLAG_ARGS_MAP = {
@@ -90,7 +93,6 @@ ACAPY_ENDORSER_FLAGS_DEPENDENT_ON_AUTHOR_ROLE = [
 
 def format_wallet_record(wallet_record: WalletRecord):
     """Serialize a WalletRecord object."""
-
     wallet_info = wallet_record.serialize()
 
     # Hide wallet wallet key
@@ -102,7 +104,6 @@ def format_wallet_record(wallet_record: WalletRecord):
 
 def get_extra_settings_dict_per_tenant(tenant_settings: dict) -> dict:
     """Get per tenant settings to be applied when creating wallet."""
-
     endorser_role_flag = tenant_settings.get(
         "ACAPY_ENDORSER_ROLE"
     ) or tenant_settings.get("endorser-protocol-role")
@@ -243,7 +244,6 @@ class CreateWalletRequestSchema(OpenAPISchema):
             ValidationError: If any of the fields do not validate
 
         """
-
         if data.get("wallet_type") == "indy":
             for field in ("wallet_key", "wallet_name"):
                 if field not in data:
@@ -373,8 +373,8 @@ async def wallets_list(request: web.BaseRequest):
 
     Args:
         request: aiohttp request object
-    """
 
+    """
     context: AdminRequestContext = request["context"]
     profile = context.profile
 
@@ -416,7 +416,6 @@ async def wallet_get(request: web.BaseRequest):
         HTTPNotFound: if wallet_id does not match any known wallets
 
     """
-
     context: AdminRequestContext = request["context"]
     profile = context.profile
     wallet_id = request.match_info["wallet_id"]
@@ -442,8 +441,8 @@ async def wallet_create(request: web.BaseRequest):
 
     Args:
         request: aiohttp request object
-    """
 
+    """
     context: AdminRequestContext = request["context"]
     body = await request.json()
 
@@ -462,6 +461,7 @@ async def wallet_create(request: web.BaseRequest):
         "wallet.type": sub_wallet_type,
         "wallet.name": body.get("wallet_name"),
         "wallet.key": wallet_key,
+        "dbstore.key": body.get("dbstore_key"),
         "wallet.webhook_urls": wallet_webhook_urls,
         "wallet.dispatch_type": wallet_dispatch_type,
     }
@@ -489,6 +489,20 @@ async def wallet_create(request: web.BaseRequest):
             context, wallet_record, extra_settings=settings
         )
         await attempt_auto_author_with_endorser_setup(wallet_profile)
+
+        event_bus = context.profile.inject_or(EventBus)
+        if event_bus:
+            await event_bus.notify(
+                context.profile,
+                Event(
+                    f"{MULTITENANT_WALLET_CREATED_TOPIC}::{wallet_record.wallet_id}",
+                    {
+                        "wallet_id": wallet_record.wallet_id,
+                        "wallet_name": wallet_record.wallet_name,
+                        "settings": wallet_record.settings,
+                    },
+                ),
+            )
     except BaseError as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
 
@@ -509,8 +523,8 @@ async def wallet_update(request: web.BaseRequest):
 
     Args:
         request: aiohttp request object
-    """
 
+    """
     context: AdminRequestContext = request["context"]
     wallet_id = request.match_info["wallet_id"]
 
@@ -574,8 +588,8 @@ async def wallet_create_token(request: web.BaseRequest):
 
     Args:
         request: aiohttp request object
-    """
 
+    """
     context: AdminRequestContext = request["context"]
     wallet_id = request.match_info["wallet_id"]
     wallet_key = None
@@ -621,7 +635,6 @@ async def wallet_remove(request: web.BaseRequest):
         request: aiohttp request object.
 
     """
-
     context: AdminRequestContext = request["context"]
     wallet_id = request.match_info["wallet_id"]
     wallet_key = None
@@ -659,7 +672,6 @@ async def wallet_remove(request: web.BaseRequest):
 
 async def register(app: web.Application):
     """Register routes."""
-
     app.add_routes(
         [
             web.get("/multitenancy/wallets", wallets_list, allow_head=False),
@@ -674,7 +686,6 @@ async def register(app: web.Application):
 
 def post_process_routes(app: web.Application):
     """Amend swagger API."""
-
     # Add top-level tags description
     if "tags" not in app._state["swagger_dict"]:
         app._state["swagger_dict"]["tags"] = []

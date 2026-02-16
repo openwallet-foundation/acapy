@@ -38,13 +38,42 @@ Standard image is outside of the scope of this document.
 The ACA-Py images built by this project are tagged to indicate which of the
 above variants it is. Other tags may also be generated for use by developers.
 
-Click [here](https://github.com/openwallet-foundation/acapy/pkgs/container/acapy-agent/versions?filters%5Bversion_type%5D=tagged) to see a current list of the tagged images available for ACA-Py in.
+Click [here](https://github.com/openwallet-foundation/acapy/pkgs/container/acapy-agent/versions?filters%5Bversion_type%5D=tagged) to see a current list of the tagged images available for ACA-Py.
 
-The following is the ACA-Py comntainer images tagging format. In each of the following, `pyV.vv` is the base Python image being used (e.g. `py3.12`):
+The following is the ACA-Py container images tagging format:
 
-- Regular Releases: `pyV.vv-X.Y.Z` where `X.Y.Z` is the ACA-Py release.  The `Z` component may have an `rcN` appended when the tag is for a Release Candidate.
-- Nightlies: `pyV-vv-nightly-YYYY-MM-DD` and `pyV-vv-nightly`
-- LTS ([Long Term Support](../LTS-Strategy.md)): `pyV-vv-X.Y-lts`, where the `X.Y` are the major and minor components of the LTS (e.g. `0.12`, `1.2`). This tag moves to always be on latest release of each line of LTS releases (e.g. from `0.12.4` to `0.12.5` when the latter is released).
+**Regular Releases** (e.g., `1.5.0`):
+ - `py3.12-1.5.0` - Python version specific tag
+ - `1.5.0` - Semantic version tag
+ - `1.5` - Major.minor tag (moves to latest patch release)
+ - `latest` - Only assigned if this is the highest semantic version
+
+**Release Candidates** (e.g., `1.5.0rc1`):
+ - `py3.12-1.5.0rc1` - Python version specific RC tag
+ - `1.5.0rc1` - Semantic version RC tag
+ - **Note**: RC releases do NOT receive major.minor (`1.5`) or `latest` tags
+
+**Nightly Builds**:
+- `pyV.vv-nightly-YYYY-MM-DD` - Date-stamped nightly build
+- `pyV.vv-nightly` - Latest nightly build
+
+**LTS ([Long Term Support](../../LTS-Strategy.md)) Releases**:
+- `pyV.vv-X.Y-lts` - LTS tag (e.g., `py3.12-0.12-lts`)
+- This tag automatically moves to the latest patch release in the LTS line (e.g., from `0.12.4` to `0.12.5`)
+- LTS versions are managed via the `.github/lts-versions.txt` configuration file
+- See `.github/LTS-README.md` for details on configuring LTS versions
+
+**Tagging Behavior:**
+
+The `latest` tag is determined by comparing all release versions semantically. The workflow
+checks all non-RC releases and only applies the `latest` tag if the current release is the
+highest semantic version. This ensures:
+- Publishing `0.12.5` after `1.3.0` will NOT move `latest` to `0.12.5` (1.3.0 > 0.12.5)
+- Publishing `1.3.1` after `1.3.0` WILL move `latest` to `1.3.1` (1.3.1 > 1.3.0)
+- Release candidates never receive the `latest` tag
+
+The major.minor tags (e.g., `1.4`) automatically track the latest patch release, so publishing
+`1.4.1` will move the `1.4` tag from `1.4.0` to `1.4.1`.
 
 ### Image Comparison
 
@@ -58,9 +87,9 @@ variants and between the BC Gov ACA-Py images.
   - Uses container's system python environment rather than `pyenv`
   - Askar and Indy Shared libraries are installed as dependencies of ACA-Py through pip from pre-compiled binaries included in the python wrappers
   - Built from repo contents
-- Indy Image (no longer produced but included here for clarity)
+- Indy Image (no longer produced; legacy reference only)
   - Based on slim variant of Debian
-  - Built from multi-stage build step (`indy-base` in the Dockerfile) which includes Indy dependencies; this could be replaced with an explicit `indy-python` image from the Indy SDK repo
+  - Built from multi-stage build step (`indy-base` in the Dockerfile) which includes Indy dependencies
   - Includes `libindy` but does **NOT** include the Indy CLI
   - Default user is `indy`
   - Uses container's system python environment rather than `pyenv`

@@ -25,6 +25,7 @@ class VCDIIndyCredential(BaseModel):
         Args:
             credential: credential object
             kwargs: additional keyword arguments
+
         """
         super().__init__(**kwargs)
         self.credential = credential

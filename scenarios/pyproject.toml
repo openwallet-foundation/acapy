@@ -10,9 +10,9 @@ package-mode = false
 python = "^3.10"
 acapy-controller = {git = "https://github.com/openwallet-foundation/acapy-minimal-example.git", rev = "main"}
 docker = "7.1.0"
-pytest = "^8.4.0"
+pytest = "^8.4.2"
 pytest-asyncio = "^0.26.0"
-pydantic = "^2.11.3"
+pydantic = "^2.12.2"
 
 [tool.pytest.ini_options]
 markers = "examples: test the examples"

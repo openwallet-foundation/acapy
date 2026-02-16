@@ -49,21 +49,30 @@ class ResolutionMetadata(NamedTuple):
 class ResolutionResult:
     """Resolution Class to pack the DID Doc and the resolution information."""
 
-    def __init__(self, did_document: dict, metadata: ResolutionMetadata):
+    def __init__(
+        self,
+        did_document: dict,
+        metadata: ResolutionMetadata,
+        document_metadata: Optional[dict] = None,
+    ):
         """Initialize Resolution.
 
         Args:
             did_document: DID Document resolved
             metadata: Resolving details
+            document_metadata: Metadata about the DID document
+
         """
         self.did_document = did_document
         self.metadata = metadata
+        self.document_metadata = document_metadata or {}
 
     def serialize(self) -> dict:
         """Return serialized resolution result."""
         return {
             "did_document": self.did_document,
             "metadata": self.metadata.serialize(),
+            "document_metadata": self.document_metadata,
         }
 
 
@@ -77,6 +86,7 @@ class BaseDIDResolver(ABC):
 
         Args:
             type_ (Type): Type of resolver, native or non-native
+
         """
         self.type = type_ or ResolverType.NON_NATIVE
 

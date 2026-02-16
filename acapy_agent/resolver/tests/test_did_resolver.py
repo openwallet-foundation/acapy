@@ -13,6 +13,7 @@ from ..base import (
     DIDMethodNotSupported,
     DIDNotFound,
     ResolutionMetadata,
+    ResolutionResult,
     ResolverError,
     ResolverType,
 )
@@ -178,6 +179,7 @@ async def test_resolve_with_metadata(resolver, profile, did):
     result = await resolver.resolve_with_metadata(profile, did)
     assert isinstance(result.did_document, dict)
     assert isinstance(result.metadata, ResolutionMetadata)
+    assert isinstance(result.document_metadata, dict)
 
 
 @pytest.mark.asyncio
@@ -208,3 +210,127 @@ async def test_resolve_did_x_not_found(profile):
     resolver = DIDResolver([cowsay_resolver_not_found])
     with pytest.raises(DIDNotFound):
         await resolver.resolve(profile, py_did)
+
+
+@pytest.mark.asyncio
+async def test_resolve_with_metadata_extracts_document_metadata(profile):
+    """Test that document_metadata is extracted from resolver response."""
+    # Create a mock document with document_metadata embedded
+    mock_doc = {
+        "@context": "https://www.w3.org/ns/did/v1",
+        "id": "did:test:123",
+        "verificationMethod": [],
+        "document_metadata": {
+            "created": "2024-01-01T00:00:00Z",
+            "updated": "2024-01-02T00:00:00Z",
+            "versionId": "1",
+        },
+    }
+
+    mock_resolver = MockResolver(["test"], resolved=mock_doc)
+    test_resolver = DIDResolver([mock_resolver])
+
+    result = await test_resolver.resolve_with_metadata(profile, "did:test:123")
+
+    # Verify document_metadata was extracted
+    assert result.document_metadata == {
+        "created": "2024-01-01T00:00:00Z",
+        "updated": "2024-01-02T00:00:00Z",
+        "versionId": "1",
+    }
+    # Verify document_metadata was removed from did_document
+    assert "document_metadata" not in result.did_document
+    # Verify the document still has its other fields
+    assert result.did_document["id"] == "did:test:123"
+
+
+@pytest.mark.asyncio
+async def test_resolve_with_metadata_no_document_metadata(profile):
+    """Test that empty document_metadata is returned when not present."""
+    mock_doc = {
+        "@context": "https://www.w3.org/ns/did/v1",
+        "id": "did:test:456",
+        "verificationMethod": [],
+    }
+
+    mock_resolver = MockResolver(["test"], resolved=mock_doc)
+    test_resolver = DIDResolver([mock_resolver])
+
+    result = await test_resolver.resolve_with_metadata(profile, "did:test:456")
+
+    # Verify empty document_metadata is returned
+    assert result.document_metadata == {}
+    # Verify did_document is unchanged
+    assert result.did_document == mock_doc
+
+
+def test_resolution_result_serialize_with_document_metadata():
+    """Test that ResolutionResult.serialize() includes document_metadata."""
+    did_doc = {"id": "did:test:789", "verificationMethod": []}
+    metadata = ResolutionMetadata(
+        ResolverType.NATIVE, "TestResolver", "2024-01-01T00:00:00Z", 100
+    )
+    doc_metadata = {"created": "2024-01-01", "updated": "2024-01-02"}
+
+    result = ResolutionResult(did_doc, metadata, doc_metadata)
+    serialized = result.serialize()
+
+    # Verify all three fields are in serialized output
+    assert "did_document" in serialized
+    assert "metadata" in serialized
+    assert "document_metadata" in serialized
+
+    # Verify document_metadata content
+    assert serialized["document_metadata"] == doc_metadata
+
+    # Verify did_document is preserved
+    assert serialized["did_document"] == did_doc
+
+
+@pytest.mark.asyncio
+async def test_resolve_with_metadata_with_document_metadata(resolver, profile):
+    """Test that resolve_with_metadata extracts document_metadata from response."""
+    result = await resolver.resolve_with_metadata(profile, TEST_DID0)
+    assert isinstance(result.document_metadata, dict)
+    # Should be empty for most resolvers
+    assert result.document_metadata == {}
+
+    # Test with a resolver that returns document_metadata
+    mock_doc_with_metadata = {
+        "@context": "test",
+        "id": TEST_DID0,
+        "document_metadata": {"created": "2024-01-01"},
+    }
+    resolver_with_meta = MockResolver(["test"], resolved=mock_doc_with_metadata)
+
+    test_resolver = DIDResolver([resolver_with_meta])
+    result_with_meta = await test_resolver.resolve_with_metadata(profile, "did:test:test")
+
+    # document_metadata should have been extracted
+    assert isinstance(result_with_meta.document_metadata, dict)
+    # The document should not contain document_metadata anymore
+    assert "document_metadata" not in result_with_meta.did_document
+
+
+@pytest.mark.asyncio
+async def test_resolver_caching_with_document_metadata(profile):
+    """Test that resolver caches results including document_metadata."""
+    # Create a resolver that returns document_metadata
+    mock_doc_with_metadata = {
+        "@context": "test",
+        "id": TEST_DID0,
+        "document_metadata": {"cached": True},
+    }
+    resolver_with_meta = MockResolver(["test"], resolved=mock_doc_with_metadata)
+
+    test_resolver = DIDResolver([resolver_with_meta])
+
+    # First call - should cache
+    result1 = await test_resolver.resolve_with_metadata(profile, "did:test:test")
+
+    # Second call - should use cache
+    result2 = await test_resolver.resolve_with_metadata(profile, "did:test:test")
+
+    # Both should have document_metadata
+    assert isinstance(result1.document_metadata, dict)
+    assert isinstance(result2.document_metadata, dict)

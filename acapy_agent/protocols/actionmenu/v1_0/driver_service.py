@@ -27,6 +27,7 @@ class DriverMenuService(BaseMenuService):
             profile: The profile
             connection: The active connection record
             thread_id: The thread identifier from the requesting message.
+
         """
         await profile.notify(
             "acapy::actionmenu::get-active-menu",
@@ -53,6 +54,7 @@ class DriverMenuService(BaseMenuService):
             action_params: A collection of parameters for the action
             connection: The active connection record
             thread_id: The thread identifier from the requesting message.
+
         """
         await profile.notify(
             "acapy::actionmenu::perform-menu-action",

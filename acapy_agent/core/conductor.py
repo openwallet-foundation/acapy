@@ -58,6 +58,8 @@ from ..storage.type import (
     RECORD_TYPE_ACAPY_STORAGE_TYPE,
     STORAGE_TYPE_VALUE_ANONCREDS,
     STORAGE_TYPE_VALUE_ASKAR,
+    STORAGE_TYPE_VALUE_KANON,
+    STORAGE_TYPE_VALUE_KANON_ANONCREDS,
 )
 from ..transport.inbound.manager import InboundTransportManager
 from ..transport.inbound.message import InboundMessage
@@ -126,11 +128,19 @@ class Conductor:
         LOGGER.debug("Context built successfully")
 
         if self.force_agent_anoncreds:
-            LOGGER.debug(
-                "Force agent anoncreds is enabled. "
-                "Setting wallet type to 'askar-anoncreds'."
-            )
-            context.settings.set_value("wallet.type", "askar-anoncreds")
+            if self.root_profile.BACKEND_NAME == "askar-anoncreds":
+                LOGGER.debug(
+                    "Force agent anoncreds is enabled. "
+                    "Setting wallet type to 'askar-anoncreds'."
+                )
+                context.settings.set_value("wallet.type", "askar-anoncreds")
+
+            elif self.root_profile.BACKEND_NAME == "kanon-anoncreds":
+                LOGGER.debug(
+                    "Force agent anoncreds is enabled. "
+                    "Setting wallet type to 'kanon-anoncreds'."
+                )
+                context.settings.set_value("wallet.type", "kanon-anoncreds")
 
         # Fetch genesis transactions if necessary
         if context.settings.get("ledger.ledger_config_list"):
@@ -183,8 +193,8 @@ class Conductor:
                     )
                 elif (
                     self.root_profile.BACKEND_NAME == "askar-anoncreds"
-                    and ledger.BACKEND_NAME == "indy-vdr"
-                ):
+                    or self.root_profile.BACKEND_NAME == "kanon-anoncreds"
+                ) and ledger.BACKEND_NAME == "indy-vdr":
                     LOGGER.debug(
                         "Binding IndyCredxVerifier for 'askar-anoncreds' backend."
                     )
@@ -600,7 +610,7 @@ class Conductor:
 
         LOGGER.info("Listening...")
 
-    async def stop(self, timeout=1.0):
+    async def stop(self, timeout=30.0):
         """Stop the agent."""
         LOGGER.info("Stopping the Conductor agent.")
         # notify protocols that we are shutting down
@@ -652,7 +662,6 @@ class Conductor:
             can_respond: If the session supports return routing
 
         """
-
         if message.receipt.direct_response_requested and not can_respond:
             LOGGER.warning(
                 "Direct response requested, but not supported by transport: %s",
@@ -732,6 +741,7 @@ class Conductor:
             profile: The active profile for the request
             outbound: An outbound message to be sent
             inbound: The inbound message that produced this response, if available
+
         """
         status: OutboundSendStatus = await self._outbound_message_router(
             profile=profile, outbound=outbound, inbound=inbound
@@ -751,6 +761,7 @@ class Conductor:
             profile: The active profile for the request
             outbound: An outbound message to be sent
             inbound: The inbound message that produced this response, if available
+
         """
         if not outbound.target and outbound.reply_to_verkey:
             if not outbound.reply_from_verkey and inbound:
@@ -784,6 +795,7 @@ class Conductor:
             profile: The active profile
             outbound: The outbound message to be sent
             inbound: The inbound message that produced this response, if available
+
         """
         has_target = outbound.target or outbound.target_list
 
@@ -851,6 +863,7 @@ class Conductor:
             endpoint: The endpoint of the webhook target
             max_attempts: The maximum number of attempts
             metadata: Additional metadata associated with the payload
+
         """
         try:
             self.outbound_transport_manager.enqueue_webhook(
@@ -911,6 +924,9 @@ class Conductor:
                 if (
                     storage_type_from_config == STORAGE_TYPE_VALUE_ASKAR
                     and storage_type_from_storage == STORAGE_TYPE_VALUE_ANONCREDS
+                ) or (
+                    storage_type_from_config == STORAGE_TYPE_VALUE_KANON
+                    and storage_type_from_storage == STORAGE_TYPE_VALUE_KANON_ANONCREDS
                 ):
                     LOGGER.warning(
                         "The agent has been upgrade to use anoncreds wallet. Please update the wallet.type in the config file to 'askar-anoncreds'"  # noqa: E501
@@ -919,12 +935,19 @@ class Conductor:
                     # wallet type config by stopping conductor and reloading context
                     await self.stop()
                     self.force_agent_anoncreds = True
-                    self.context.settings.set_value("wallet.type", "askar-anoncreds")
+
+                    if storage_type_from_storage == STORAGE_TYPE_VALUE_ANONCREDS:
+                        self.context.settings.set_value("wallet.type", "askar-anoncreds")
+                    else:
+                        self.context.settings.set_value("wallet.type", "kanon-anoncreds")
+
                     self.context_builder = DefaultContextBuilder(self.context.settings)
                     await self.setup()
                 else:
                     raise StartupError(
-                        f"Wallet type config [{storage_type_from_config}] doesn't match with the wallet type in storage [{storage_type_record.value}]"  # noqa: E501
+                        "The provided wallet type config "
+                        f"[{storage_type_from_config}] doesn't match the wallet type "
+                        f"in storage [{storage_type_record.value}]"
                     )
 
     async def check_for_wallet_upgrades_in_progress(self):

@@ -15,10 +15,13 @@ from anoncreds import (
 from aries_askar import AskarError
 from indy_credx import LinkSecret
 
-from ..anoncreds.issuer import (
+from ..anoncreds.constants import (
     CATEGORY_CRED_DEF,
     CATEGORY_CRED_DEF_KEY_PROOF,
     CATEGORY_CRED_DEF_PRIVATE,
+    CATEGORY_REV_LIST,
+    CATEGORY_REV_REG_DEF,
+    CATEGORY_REV_REG_DEF_PRIVATE,
     CATEGORY_SCHEMA,
 )
 from ..anoncreds.models.credential_definition import CredDef, CredDefState
@@ -30,13 +33,8 @@ from ..anoncreds.models.revocation import (
     RevRegDefValue,
 )
 from ..anoncreds.models.schema import SchemaState
-from ..anoncreds.revocation import (
-    CATEGORY_REV_LIST,
-    CATEGORY_REV_REG_DEF,
-    CATEGORY_REV_REG_DEF_PRIVATE,
-)
 from ..cache.base import BaseCache
-from ..core.profile import Profile
+from ..core.profile import Profile, ProfileSession
 from ..indy.credx.holder import CATEGORY_LINK_SECRET, IndyCredxHolder
 from ..ledger.multiple_ledger.ledger_requests_executor import (
     GET_CRED_DEF,
@@ -55,6 +53,7 @@ from ..storage.type import (
     RECORD_TYPE_ACAPY_STORAGE_TYPE,
     RECORD_TYPE_ACAPY_UPGRADING,
     STORAGE_TYPE_VALUE_ANONCREDS,
+    STORAGE_TYPE_VALUE_KANON_ANONCREDS,
 )
 from .singletons import IsAnonCredsSingleton, UpgradeInProgressSingleton
 
@@ -98,7 +97,7 @@ class CredDefUpgradeObj:
         cred_def_private: CredentialDefinitionPrivate,
         key_proof: KeyCorrectnessProof,
         revocation: Optional[bool] = None,
-        askar_cred_def: Optional[any] = None,
+        askar_cred_def: Optional[StorageRecord] = None,
         max_cred_num: Optional[int] = None,
     ):
         """Initialize cred def upgrade object."""
@@ -136,7 +135,7 @@ class RevListUpgradeObj:
         rev_list: RevList,
         pending: list,
         rev_reg_def_id: str,
-        cred_rev_records: list,
+        cred_rev_records: list[StorageRecord],
     ):
         """Initialize rev entry upgrade object."""
         self.rev_list = rev_list
@@ -146,10 +145,9 @@ class RevListUpgradeObj:
 
 
 async def get_schema_upgrade_object(
-    profile: Profile, schema_id: str, askar_schema
+    profile: Profile, schema_id: str, askar_schema: StorageRecord
 ) -> SchemaUpgradeObj:
     """Get schema upgrade object."""
-
     async with profile.session() as session:
         schema_id = askar_schema.tags.get("schema_id")
         issuer_did = askar_schema.tags.get("schema_issuer_did")
@@ -184,7 +182,7 @@ async def get_schema_upgrade_object(
 
 
 async def get_cred_def_upgrade_object(
-    profile: Profile, askar_cred_def
+    profile: Profile, askar_cred_def: StorageRecord
 ) -> CredDefUpgradeObj:
     """Get cred def upgrade object."""
     cred_def_id = askar_cred_def.tags.get("cred_def_id")
@@ -233,7 +231,7 @@ async def get_cred_def_upgrade_object(
 async def get_rev_reg_def_upgrade_object(
     profile: Profile,
     cred_def_upgrade_obj: CredDefUpgradeObj,
-    askar_issuer_rev_reg_def,
+    askar_issuer_rev_reg_def: StorageRecord,
     is_active: bool,
 ) -> RevRegDefUpgradeObj:
     """Get rev reg def upgrade object."""
@@ -255,7 +253,7 @@ async def get_rev_reg_def_upgrade_object(
     )
 
     rev_reg_def = RevRegDef(
-        issuer_id=askar_issuer_rev_reg_def.tags.get("issuer_did"),
+        issuer_id=cred_def_upgrade_obj.cred_def.issuer_id,
         cred_def_id=cred_def_upgrade_obj.cred_def_id,
         tag=revoc_reg_def_values["tag"],
         type=revoc_reg_def_values["revoc_def_type"],
@@ -302,7 +300,7 @@ async def get_rev_list_upgrade_object(
 
 
 async def upgrade_and_delete_schema_records(
-    txn, schema_upgrade_obj: SchemaUpgradeObj
+    txn: ProfileSession, schema_upgrade_obj: SchemaUpgradeObj
 ) -> None:
     """Upgrade and delete schema records."""
     schema_anoncreds = schema_upgrade_obj.schema
@@ -321,7 +319,7 @@ async def upgrade_and_delete_schema_records(
 
 
 async def upgrade_and_delete_cred_def_records(
-    txn, anoncreds_schema, cred_def_upgrade_obj: CredDefUpgradeObj
+    txn: ProfileSession, anoncreds_schema: Schema, cred_def_upgrade_obj: CredDefUpgradeObj
 ) -> None:
     """Upgrade and delete cred def records."""
     cred_def_id = cred_def_upgrade_obj.cred_def_id
@@ -372,7 +370,7 @@ rev_reg_states_mapping = {
 
 
 async def upgrade_and_delete_rev_reg_def_records(
-    txn, rev_reg_def_upgrade_obj: RevRegDefUpgradeObj
+    txn: ProfileSession, rev_reg_def_upgrade_obj: RevRegDefUpgradeObj
 ) -> None:
     """Upgrade and delete rev reg def records."""
     rev_reg_def_id = rev_reg_def_upgrade_obj.rev_reg_def_id
@@ -399,14 +397,13 @@ async def upgrade_and_delete_rev_reg_def_records(
 
 
 async def upgrade_and_delete_rev_entry_records(
-    txn, rev_list_upgrade_obj: RevListUpgradeObj
+    txn: ProfileSession, rev_list_upgrade_obj: RevListUpgradeObj
 ) -> None:
     """Upgrade and delete revocation entry records."""
     next_index = 0
     for cred_rev_record in rev_list_upgrade_obj.cred_rev_records:
         if int(cred_rev_record.tags.get("cred_rev_id")) > next_index:
             next_index = int(cred_rev_record.tags.get("cred_rev_id"))
-        await txn.handle.remove(IssuerCredRevRecord.RECORD_TYPE, cred_rev_record.id)
 
     await txn.handle.insert(
         CATEGORY_REV_LIST,
@@ -424,7 +421,7 @@ async def upgrade_and_delete_rev_entry_records(
 
 
 async def upgrade_all_records_with_transaction(
-    txn: any,
+    txn: ProfileSession,
     schema_upgrade_objs: list[SchemaUpgradeObj],
     cred_def_upgrade_objs: list[CredDefUpgradeObj],
     rev_reg_def_upgrade_objs: list[RevRegDefUpgradeObj],
@@ -459,7 +456,6 @@ async def get_rev_reg_def_upgrade_objs(
     rev_list_upgrade_objs: list[RevListUpgradeObj],
 ) -> list[RevRegDefUpgradeObj]:
     """Get rev reg def upgrade objects."""
-
     rev_reg_def_upgrade_objs = []
     async with profile.session() as session:
         storage = session.inject(BaseStorage)
@@ -501,7 +497,7 @@ async def get_rev_reg_def_upgrade_objs(
     return rev_reg_def_upgrade_objs
 
 
-async def convert_records_to_anoncreds(profile) -> None:
+async def convert_records_to_anoncreds(profile: Profile) -> None:
     """Convert and delete old askar records."""
     async with profile.session() as session:
         storage = session.inject(BaseStorage)
@@ -588,8 +584,8 @@ async def retry_converting_records(
             )
         else:
             LOGGER.error(
-                f"""Failed to upgrade wallet: {profile.name} after 5 retries. 
-                Try fixing any connection issues and re-running the update"""
+                f"Failed to upgrade wallet: {profile.name} after 5 retries. "
+                "Try fixing any connection issues and re-running the update"
             )
             await fail_upgrade()
 
@@ -627,17 +623,34 @@ async def finish_upgrade(profile: Profile):
             storage_type_record = await storage.find_record(
                 type_filter=RECORD_TYPE_ACAPY_STORAGE_TYPE, tag_query={}
             )
-            await storage.update_record(
-                storage_type_record, STORAGE_TYPE_VALUE_ANONCREDS, {}
-            )
+
+            if storage_type_record.value == STORAGE_TYPE_VALUE_KANON_ANONCREDS:
+                await storage.update_record(
+                    storage_type_record, STORAGE_TYPE_VALUE_KANON_ANONCREDS, {}
+                )
+            else:
+                await storage.update_record(
+                    storage_type_record, STORAGE_TYPE_VALUE_ANONCREDS, {}
+                )
+
         # This should only happen for subwallets
         except StorageNotFoundError:
-            await storage.add_record(
-                StorageRecord(
-                    RECORD_TYPE_ACAPY_STORAGE_TYPE,
-                    STORAGE_TYPE_VALUE_ANONCREDS,
+            # Check if this is a Kanon-based profile to determine storage type
+            if hasattr(profile, "backend") and "kanon" in profile.backend.lower():
+                await storage.add_record(
+                    StorageRecord(
+                        RECORD_TYPE_ACAPY_STORAGE_TYPE,
+                        STORAGE_TYPE_VALUE_KANON_ANONCREDS,
+                    )
                 )
-            )
+            else:
+                await storage.add_record(
+                    StorageRecord(
+                        RECORD_TYPE_ACAPY_STORAGE_TYPE,
+                        STORAGE_TYPE_VALUE_ANONCREDS,
+                    )
+                )
+
     await finish_upgrading_record(profile)
     IsAnonCredsSingleton().set_wallet(profile.name)
     UpgradeInProgressSingleton().remove_wallet(profile.name)

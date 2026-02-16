@@ -23,6 +23,7 @@ class PluginSettings(BaseSettings):
 
         Args:
             values: An optional dictionary of settings
+
         """
         self._values = {}
         if values:
@@ -67,6 +68,7 @@ class PluginSettings(BaseSettings):
         Args:
             var_names: A list of variable name alternatives
             default: The default value to return if none are defined
+
         """
         for k in var_names:
             if k in self._values:

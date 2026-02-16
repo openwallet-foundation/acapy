@@ -175,6 +175,7 @@ class VCDICredAbstract(BaseModel):
             binding_method: required if binding_required is true
             credential: credential object
             kwargs: additional key-value arguments to map into message class properties
+
         """
         super().__init__(**kwargs)
         self.data_model_versions_supported = data_model_versions_supported

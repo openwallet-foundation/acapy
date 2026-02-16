@@ -32,7 +32,6 @@ class LDProofVCOptions(BaseModel):
         credential_status: Optional[dict] = None,
     ) -> None:
         """Initialize the LDProofVCDetailOptions instance."""
-
         self.verification_method = verification_method
         self.proof_type = proof_type
         self.proof_purpose = proof_purpose

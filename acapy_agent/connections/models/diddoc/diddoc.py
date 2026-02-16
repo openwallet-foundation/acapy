@@ -50,7 +50,6 @@ class DIDDoc:
             ValueError: for bad input DID.
 
         """
-
         self._did = canon_did(did) if did else None  # allow specification post-hoc
         self._pubkey = {}
         self._service = {}
@@ -58,7 +57,6 @@ class DIDDoc:
     @property
     def did(self) -> str:
         """Accessor for DID."""
-
         return self._did
 
     @did.setter
@@ -72,25 +70,21 @@ class DIDDoc:
             ValueError: for bad input DID.
 
         """
-
         self._did = canon_did(value) if value else None
 
     @property
     def pubkey(self) -> dict:
         """Accessor for public keys by identifier."""
-
         return self._pubkey
 
     @property
     def authnkey(self) -> dict:
         """Accessor for public keys marked as authentication keys, by identifier."""
-
         return {k: self._pubkey[k] for k in self._pubkey if self._pubkey[k].authn}
 
     @property
     def service(self) -> dict:
         """Accessor for services by identifier."""
-
         return self._service
 
     def set(self, item: Union[Service, PublicKey]) -> "DIDDoc":
@@ -105,7 +99,6 @@ class DIDDoc:
         Returns: the current DIDDoc
 
         """
-
         if isinstance(item, Service):
             self.service[item.id] = item
         elif isinstance(item, PublicKey):
@@ -123,6 +116,7 @@ class DIDDoc:
             service: service dict
 
         Returns: service dict with routing keys normalized
+
         """
         routing_keys = service.get("routingKeys")
         if routing_keys:
@@ -170,7 +164,6 @@ class DIDDoc:
             json representation of current DIDDoc
 
         """
-
         return json.dumps(self.serialize())
 
     def add_service_pubkeys(
@@ -189,7 +182,6 @@ class DIDDoc:
         Returns: list of public keys from the document service specification
 
         """
-
         rv = []
         for tag in [tags] if isinstance(tags, str) else list(tags):
             for svc_key in service.get(tag, {}):
@@ -241,7 +233,6 @@ class DIDDoc:
         Returns: DIDDoc from input json
 
         """
-
         rv = None
         if "id" in did_doc:
             rv = DIDDoc(did_doc["id"])
@@ -325,15 +316,12 @@ class DIDDoc:
         Returns: DIDDoc from input json
 
         """
-
         return cls.deserialize(json.loads(did_doc_json))
 
     def __str__(self) -> str:
         """Return string representation for abbreviated display."""
-
         return f"DIDDoc({self.did})"
 
     def __repr__(self) -> str:
         """Format DIDDoc for logging."""
-
         return f"<DIDDoc did={self.did}>"

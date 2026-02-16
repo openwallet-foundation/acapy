@@ -187,6 +187,16 @@ class V20PresProposalRequestSchema(AdminAPIMessageTracingSchema):
             )
         },
     )
+    auto_remove_on_failure = fields.Bool(
+        required=False,
+        dump_default=False,
+        metadata={
+            "description": (
+                "Whether to remove the presentation exchange record on failure"
+                " (overrides --no-preserve-failed-exchange-records configuration setting)"
+            )
+        },
+    )
     trace = fields.Bool(
         required=False,
         metadata={
@@ -256,6 +266,16 @@ class V20PresCreateRequestRequestSchema(AdminAPIMessageTracingSchema):
             )
         },
     )
+    auto_remove_on_failure = fields.Bool(
+        required=False,
+        dump_default=False,
+        metadata={
+            "description": (
+                "Whether to remove the presentation exchange record on failure"
+                " (overrides --no-preserve-failed-exchange-records configuration setting)"
+            )
+        },
+    )
     trace = fields.Bool(
         required=False,
         metadata={
@@ -291,6 +311,16 @@ class V20PresentationSendRequestToProposalSchema(AdminAPIMessageTracingSchema):
             "description": (
                 "Whether to remove the presentation exchange record on completion"
                 " (overrides --preserve-exchange-records configuration setting)"
+            )
+        },
+    )
+    auto_remove_on_failure = fields.Bool(
+        required=False,
+        dump_default=False,
+        metadata={
+            "description": (
+                "Whether to remove the presentation exchange record on failure"
+                " (overrides --no-preserve-failed-exchange-records configuration setting)"
             )
         },
     )
@@ -333,6 +363,16 @@ class V20PresSpecByFormatRequestSchema(AdminAPIMessageTracingSchema):
             "description": (
                 "Whether to remove the presentation exchange record on completion"
                 " (overrides --preserve-exchange-records configuration setting)"
+            )
+        },
+    )
+    auto_remove_on_failure = fields.Bool(
+        required=False,
+        dump_default=False,
+        metadata={
+            "description": (
+                "Whether to remove the presentation exchange record on failure"
+                " (overrides --no-preserve-failed-exchange-records configuration setting)"
             )
         },
     )
@@ -428,7 +468,6 @@ class V20PresExIdMatchInfoSchema(OpenAPISchema):
 
 async def _add_nonce(indy_proof_request: Mapping) -> Mapping:
     """Add nonce to indy proof request if need be."""
-
     if not indy_proof_request.get("nonce"):
         indy_proof_request["nonce"] = await generate_pr_nonce()
     return indy_proof_request
@@ -597,7 +636,7 @@ async def present_proof_credentials_list(request: web.BaseRequest):
     extra_query = json.loads(encoded_extra_query)
 
     wallet_type = profile.settings.get_value("wallet.type")
-    if wallet_type == "askar-anoncreds":
+    if wallet_type in ("askar-anoncreds", "kanon-anoncreds"):
         holder = AnonCredsHolder(profile)
     else:
         holder = profile.inject(IndyHolder)
@@ -916,6 +955,7 @@ async def present_proof_send_proposal(request: web.BaseRequest):
         "auto_present", context.settings.get("debug.auto_respond_presentation_request")
     )
     auto_remove = body.get("auto_remove")
+    auto_remove_on_failure = body.get("auto_remove_on_failure")
 
     pres_manager = V20PresManager(profile)
     pres_ex_record = None
@@ -925,6 +965,7 @@ async def present_proof_send_proposal(request: web.BaseRequest):
             pres_proposal_message=pres_proposal_message,
             auto_present=auto_present,
             auto_remove=auto_remove,
+            auto_remove_on_failure=auto_remove_on_failure,
         )
         result = pres_ex_record.serialize()
     except (BaseModelError, StorageError) as err:
@@ -991,6 +1032,7 @@ async def present_proof_create_request(request: web.BaseRequest):
         "auto_verify", context.settings.get("debug.auto_verify_presentation")
     )
     auto_remove = body.get("auto_remove")
+    auto_remove_on_failure = body.get("auto_remove_on_failure")
     trace_msg = body.get("trace")
     pres_request_message.assign_trace_decorator(
         context.settings,
@@ -1005,6 +1047,7 @@ async def present_proof_create_request(request: web.BaseRequest):
             pres_request_message=pres_request_message,
             auto_verify=auto_verify,
             auto_remove=auto_remove,
+            auto_remove_on_failure=auto_remove_on_failure,
         )
         result = pres_ex_record.serialize()
     except (BaseModelError, StorageError) as err:
@@ -1169,6 +1212,11 @@ async def present_proof_send_bound_request(request: web.BaseRequest):
         "auto_verify", context.settings.get("debug.auto_verify_presentation")
     )
     pres_ex_record.auto_remove = body.get("auto_remove")
+    config_remove_failed = profile.settings.get("no_preserve_failed_exchange_records")
+    if config_remove_failed is None:
+        pres_ex_record.auto_remove_on_failure = config_remove_failed
+    else:
+        pres_ex_record.auto_remove_on_failure = body.get("auto_remove_on_failure")
     pres_manager = V20PresManager(profile)
     try:
         (
@@ -1256,10 +1304,15 @@ async def present_proof_send_presentation(request: web.BaseRequest):
         )
 
     auto_remove = body.get("auto_remove")
+    auto_remove_on_failure = body.get("auto_remove_on_failure")
+    config_remove_failed = profile.settings.get("no_preserve_failed_exchange_records")
     if auto_remove is None:
         auto_remove = not profile.settings.get("preserve_exchange_records")
+    if auto_remove_on_failure is None:
+        auto_remove_on_failure = config_remove_failed
 
     pres_ex_record.auto_remove = auto_remove
+    pres_ex_record.auto_remove_on_failure = auto_remove_on_failure
 
     # Fetch connection if exchange has record
     conn_record = None
@@ -1465,7 +1518,6 @@ async def present_proof_remove(request: web.BaseRequest):
 
 async def register(app: web.Application):
     """Register routes."""
-
     app.add_routes(
         [
             web.get(
@@ -1521,7 +1573,6 @@ async def register(app: web.Application):
 
 def post_process_routes(app: web.Application):
     """Amend swagger API."""
-
     # Add top-level tags description
     if "tags" not in app._state["swagger_dict"]:
         app._state["swagger_dict"]["tags"] = []

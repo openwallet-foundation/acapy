@@ -16,15 +16,14 @@ from anoncreds import (
     W3cPresentation,
     create_link_secret,
 )
-from aries_askar import AskarError, AskarErrorCode
 from marshmallow import INCLUDE
 from pyld import jsonld
 from pyld.jsonld import JsonLdProcessor
 from uuid_utils import uuid4
 
-from ..askar.profile_anon import AskarAnonCredsProfile
 from ..core.error import BaseError
 from ..core.profile import Profile
+from ..database_manager.db_errors import DBCode, DBError
 from ..storage.vc_holder.base import VCHolder
 from ..storage.vc_holder.vc_record import VCRecord
 from ..vc.ld_proofs import DocumentLoader
@@ -77,25 +76,27 @@ class AnonCredsHolder:
 
         """
         self._profile = profile
+        self._profile_validated = False  # Lazy validation of profile backend
 
     @property
-    def profile(self) -> AskarAnonCredsProfile:
+    def profile(self) -> Profile:
         """Accessor for the profile instance."""
-        if not isinstance(self._profile, AskarAnonCredsProfile):
-            raise ValueError(ANONCREDS_PROFILE_REQUIRED_MSG)
+        if not self._profile_validated:
+            if not isinstance(self._profile, Profile) or not self._profile.is_anoncreds:
+                raise ValueError(ANONCREDS_PROFILE_REQUIRED_MSG)
+            self._profile_validated = True
 
         return self._profile
 
     async def get_master_secret(self) -> str:
         """Get or create the default master secret."""
-
         while True:
             async with self.profile.session() as session:
                 try:
                     record = await session.handle.fetch(
                         CATEGORY_MASTER_SECRET, AnonCredsHolder.MASTER_SECRET_ID
                     )
-                except AskarError as err:
+                except DBError as err:
                     raise AnonCredsHolderError("Error fetching master secret") from err
                 if record:
                     try:
@@ -118,8 +119,8 @@ class AnonCredsHolder:
                             AnonCredsHolder.MASTER_SECRET_ID,
                             secret,
                         )
-                    except AskarError as err:
-                        if err.code != AskarErrorCode.DUPLICATE:
+                    except DBError as err:
+                        if err.code not in DBCode.DUPLICATE:
                             raise AnonCredsHolderError(
                                 "Error saving master secret"
                             ) from err
@@ -272,7 +273,7 @@ class AnonCredsHolder:
                         value_json=mime_types,
                     )
                 await txn.commit()
-        except AskarError as err:
+        except DBError as err:
             raise AnonCredsHolderError("Error storing credential") from err
 
         return credential_id
@@ -382,7 +383,6 @@ class AnonCredsHolder:
             wql: wql query dict
 
         """
-
         result = []
 
         try:
@@ -396,7 +396,7 @@ class AnonCredsHolder:
             async for row in rows:
                 cred = Credential.load(row.raw_value)
                 result.append(_make_cred_info(row.name, cred))
-        except AskarError as err:
+        except DBError as err:
             raise AnonCredsHolderError("Error retrieving credentials") from err
         except AnoncredsError as err:
             raise AnonCredsHolderError("Error loading stored credential") from err
@@ -592,7 +592,7 @@ class AnonCredsHolder:
         try:
             async with self.profile.session() as session:
                 cred = await session.handle.fetch(CATEGORY_CREDENTIAL, credential_id)
-        except AskarError as err:
+        except DBError as err:
             raise AnonCredsHolderError("Error retrieving credential") from err
 
         if not cred:
@@ -623,6 +623,7 @@ class AnonCredsHolder:
 
         Returns:
             bool: True if the credential is revoked, False otherwise.
+
         """
         cred = await self._get_credential(credential_id)
         rev_reg_id = cred.rev_reg_id
@@ -653,7 +654,7 @@ class AnonCredsHolder:
                 await session.handle.remove(
                     AnonCredsHolder.RECORD_TYPE_MIME_TYPES, credential_id
                 )
-        except AskarError as err:
+        except DBError as err:
             raise AnonCredsHolderError(
                 "Error deleting credential", error_code=err.code
             ) from err
@@ -677,7 +678,7 @@ class AnonCredsHolder:
                     AnonCredsHolder.RECORD_TYPE_MIME_TYPES,
                     credential_id,
                 )
-        except AskarError as err:
+        except DBError as err:
             raise AnonCredsHolderError("Error retrieving credential mime types") from err
         values = mime_types_record and mime_types_record.value_json
         if values:
@@ -694,14 +695,13 @@ class AnonCredsHolder:
         """Get credentials stored in the wallet.
 
         Args:
-            presentation_request: Valid indy format presentation request
+            presentation_request: AnonCreds format presentation request
             requested_credentials: AnonCreds format requested credentials
             schemas: AnonCreds formatted schemas JSON
             credential_definitions: AnonCreds formatted credential definitions JSON
             rev_states: AnonCreds format revocation states JSON
 
         """
-
         creds: Dict[str, Credential] = {}
 
         def get_rev_state(cred_id: str, detail: dict):
@@ -785,7 +785,7 @@ class AnonCredsHolder:
         """Get credentials stored in the wallet.
 
         Args:
-            presentation_request: Valid indy format presentation request
+            presentation_request: AnonCreds format presentation request
             requested_credentials_w3c: W3C format requested credentials
             credentials_w3c_metadata: W3C format credential metadata
             schemas: AnonCreds formatted schemas JSON
@@ -847,7 +847,6 @@ class AnonCredsHolder:
             the revocation state
 
         """
-
         try:
             rev_state = await asyncio.get_event_loop().run_in_executor(
                 None,

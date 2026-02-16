@@ -1,10 +1,163 @@
-# Aries Cloud Agent Python Changelog
+# ACA-Py Changelog
+
+## 1.5.0
+
+### January 29, 2026
+
+ACA-Py 1.5.0 is a significant release that advances the platform’s modernization and modularization goals. The most substantial changes are the upgrade to **Python 3.13** and the continued evolution of ACA-Py toward a **plugin-oriented architecture**, including the removal of the legacy v1.0 credential exchange protocols (issue credential and present proof) from the core agent. The release also includes some important fixes to the wallet migration process to the `askar-anoncreds` wallet type, and to the webhooks associated with the use of the `askar-anoncreds` wallet type.
+
+With this release, the v1.0 credential exchange protocols have been fully removed from ACA-Py core and are now expected to be provided via plugins where required. This aligns with earlier deprecation signals and reinforces a cleaner separation between the core agent and optional protocol implementations.
+
+This release includes some follow-on fixes and cleanups to the **Kanon Storage** capability added in [Release 1.4.0](#140), addressing connection management/pooling behavior.
+
+Additional improvements include enhanced scenario test logging and diagnostics, recoverable and event-driven revocation registry management, improvements to Docker image versioning, the introduction of a **plugin installer** to simplify deployment and management of external ACA-Py plugins, and the usual dependabot updates.
+
+### 1.5.0 Breaking Changes
+
+This release includes **intentional breaking changes** as part of ACA-Py’s ongoing modernization:
+
+- **Removal of v1.0 credential exchange protocols from core**
+  - The v1.0 *issue credential* and *present proof* protocols have been removed from ACA-Py core. Deployments that still depend on these protocols must transition to plugin-based implementations or migrate to newer protocol versions. This change is part of the broader move toward a plugin-driven protocol architecture.
+- **Python runtime upgrade to 3.13**
+  - ACA-Py now targets **Python 3.13**. Environments pinned to earlier Python versions will need to upgrade their runtime and validate third-party dependency compatibility.
+
+While not breaking at the API level, implementers should also be aware of behavioral and configuration changes related to:
+
+- Migration from `askar` to `askar-anoncreds`
+- The addition of some webhooks missing since the introduction of the `askar-anoncreds` wallet type
+- Kanon Storage connection handling and pooling behavior
+
+These areas should be explicitly tested when upgrading to 1.5.0.
+
+### 1.5.0 Deprecation Notices
+
+The `acapy_agent.revocation_anoncreds` package has been deprecated and relocated to `acapy_agent.anoncreds.revocation` for improved consistency across the codebase. The change should only affect [ACA-Py Plugins] that implement AnonCreds, but other developers should also take note.
+
+The `wallet-type` configuration value `askar` is now deprecated and all deployments still using that wallet type should migrate to either the `askar-anoncreds` or (ideally) `kanon-anoncreds` wallet types.
+
+AIP 1.0 protocols that were [previously announced as deprecated](#140-deprecation-notices) have now been removed from ACA-Py core. Implementers still using those protocols **MUST** adjust their configuration to load those protocols from the respective plugins, or better, upgrade to their AIP 2.0 equivalents.
+
+### 1.5.0 Categorized PR List
+
+- **Core Platform and Architecture**
+  - Fix plugin installer hardcoded version [\#4015](https://github.com/openwallet-foundation/acapy/pull/4015) [PatStLouis](https://github.com/PatStLouis)
+  - Feature: semantic image versioning for released images [#3976](https://github.com/openwallet-foundation/acapy/pull/3976) [esune](https://github.com/esune)
+  - Feature: Add plugin installer [#3955](https://github.com/openwallet-foundation/acapy/pull/3955) [PatStLouis](https://github.com/PatStLouis)
+  - Upgrade python to 3.13 [#3911](https://github.com/openwallet-foundation/acapy/pull/3911) [jamshale](https://github.com/jamshale)
+- **Protocol Changes and Credential Exchange**
+  - Issue #3845 fix :  auto-store failure going to done state [\#3999](https://github.com/openwallet-foundation/acapy/pull/3999) [sonivijayk](https://github.com/sonivijayk)
+  - Remove present proof v1 [#3981](https://github.com/openwallet-foundation/acapy/pull/3981) [jamshale](https://github.com/jamshale)
+  - feat: Add option to remove credex on failure [#3947](https://github.com/openwallet-foundation/acapy/pull/3947) [TheTechmage](https://github.com/TheTechmage)
+  - feat: Remove issuance v1 protocols [#3923](https://github.com/openwallet-foundation/acapy/pull/3923) [jamshale](https://github.com/jamshale)
+- **AnonCreds, Revocation, and Wallet Migration**
+  - Synchronously store the revocation registry  [\#4028](https://github.com/openwallet-foundation/acapy/pull/4028) [PatStLouis](https://github.com/PatStLouis)
+  - Sonivijayk/fix/issue 3990 revoke indy cred post askar anoncres upgrade [\#4017](https://github.com/openwallet-foundation/acapy/pull/4017) [sonivijayk](https://github.com/sonivijayk)
+  - Update AnonCreds events [\#4016](https://github.com/openwallet-foundation/acapy/pull/4016) [PatStLouis](https://github.com/PatStLouis)
+  - chore: Remove some more indy refs from anoncreds module [#4004](https://github.com/openwallet-foundation/acapy/pull/4004) [jamshale](https://github.com/jamshale)
+  - fix: encode revocation tag in tails upload URL (issue 1580) [#3996](https://github.com/openwallet-foundation/acapy/pull/3996) [sonivijayk](https://github.com/sonivijayk)
+  - Fix issues with anoncreds upgrade [#3991](https://github.com/openwallet-foundation/acapy/pull/3991) [jamshale](https://github.com/jamshale)
+  - Fetch schemaId on legacy cred def [\#3988](https://github.com/openwallet-foundation/acapy/pull/3988) [PatStLouis](https://github.com/PatStLouis)
+  - Recoverable, event-driven revocation registry management [#3831](https://github.com/openwallet-foundation/acapy/pull/3831) [ff137](https://github.com/ff137)
+- **Kanon Storage and Database Stability**
+  - Fix for handler for postgres [#3992](https://github.com/openwallet-foundation/acapy/pull/3992) [vinaysingh8866](https://github.com/vinaysingh8866)
+  - fix(kanon):updated connection cleanup to share 1 thread and added logging to detect connection leakage [#3963](https://github.com/openwallet-foundation/acapy/pull/3963) [vinaysingh8866](https://github.com/vinaysingh8866)
+  - fix: minor fix to avoid pool exhaustion and deadlocks [#3958](https://github.com/openwallet-foundation/acapy/pull/3958) [vinaysingh8866](https://github.com/vinaysingh8866)
+- **Testing, Logging, and Diagnostics**
+  - Gracefully handle non-LTS releases [\#4034](https://github.com/openwallet-foundation/acapy/pull/4034) [esune](https://github.com/esune)
+  - Add citizenship context to document downloader [\#4027](https://github.com/openwallet-foundation/acapy/pull/4027) [PatStLouis](https://github.com/PatStLouis)
+  - DIF presentation debug logging [\#4019](https://github.com/openwallet-foundation/acapy/pull/4019) [nodlesh](https://github.com/nodlesh)
+  - feat: Only log failing scenarios [#4005](https://github.com/openwallet-foundation/acapy/pull/4005) [jamshale](https://github.com/jamshale)
+  - chore: Lower scenario test logging to info level [#4000](https://github.com/openwallet-foundation/acapy/pull/4000) [jamshale](https://github.com/jamshale)
+  - feat: Add logging to scenario tests [#3983](https://github.com/openwallet-foundation/acapy/pull/3983) [jamshale](https://github.com/jamshale)
+- **Documentation and Cleanup**
+  - Add aipv2 migration doc [\#4030](https://github.com/openwallet-foundation/acapy/pull/4030) [PatStLouis](https://github.com/PatStLouis)
+  - WebVH Workshop (traction / openapi) [\#4013](https://github.com/openwallet-foundation/acapy/pull/4013) [PatStLouis](https://github.com/PatStLouis)
+  - Sonivijayk/fix/issue 2319 docs update to remove indy usage [#3997](https://github.com/openwallet-foundation/acapy/pull/3997) [sonivijayk](https://github.com/sonivijayk)
+- **Dependabot PRs**
+  - [Link to list of Dependabot PRs in this release](https://github.com/openwallet-foundation/acapy/pulls?q=is%3Apr+is%3Amerged+merged%3A2025-11-15..2026-01-29+author%3Aapp%2Fdependabot+)
+- **Release management pull requests**:
+  - 1.5.0 [\#4035](https://github.com/openwallet-foundation/acapy/pull/4035) [swcurran](https://github.com/swcurran)
+  - 1.5.0rc1 [\#4026](https://github.com/openwallet-foundation/acapy/pull/4026) [swcurran](https://github.com/swcurran)
+  - 1.5.0rc0 [\#4011](https://github.com/openwallet-foundation/acapy/pull/4011) [swcurran](https://github.com/swcurran)
+
+## 1.4.0
+
+### November 15, 2025
+
+ACA-Py 1.4.0 delivers a major internal upgrade centered on the introduction of **Kanon Storage**, a new modular storage architecture that separates cryptographic key management from general data persistence. Kanon moves ACA-Py’s non-key data (connections, credentials, protocol records, etc.) out of the encrypted Askar wallet into a dedicated, database-native storage layer that is encrypted at rest. Askar now functions purely as a **Key Management Service (KMS)**, responsible for secure creation and use of keys and secrets. This shift enables ACA-Py deployments to leverage the full capabilities of their database engines—better indexing, analytics, and scalability—while preserving strong security boundaries around key material.
+
+Kanon Storage is **optional and fully backward compatible**. Developed by the team at **VeriDID** ([https://verid.id](https://verid.id)), this contribution represents a major advancement in ACA-Py's modular architecture and storage flexibility, and we extend our thanks to the VeriDID developers (notably [dave-promulgare](https://github.com/dave-promulgare) and [vinaysingh8866](https://github.com/vinaysingh8866)) for their work in designing and implementing this foundational change. Existing ACA-Py deployments using Askar for all storage continue to function unchanged and can migrate to Kanon at any time. New deployments are encouraged to adopt Kanon for improved performance and operational flexibility. See the [Kanon Storage documentation](https://aca-py.org/latest/features/KanonStorage/) for details on configuration, migration, and best practices.
+
+Alongside Kanon, this release includes significant refactoring in the **AnonCreds revocation** subsystem, modernization of **event handling** via an updated EventBus, and improvements to **credential signing** for SD-JWT to ensure correct verification-method key usage. Developers will also notice lint rule revisions, post-Kanon cleanup, and smaller enhancements to demos and test infrastructure such as the `--debug-webhooks` flag and interop test fixes. Together, these updates improve maintainability, observability, and readiness for large-scale production use.
+
+### 1.4.0 Deprecation Notices
+
+In an upcoming ACA-Py release, we will be dropping from the core ACA-Py repository the [AIP 1.0] [RFC 0036 Issue Credentials v1.0] and [RFC 0037 Present Proof v1.0] DIDComm protocols. Each of the protocols will be moved to the [ACA-Py Plugins] repo. All ACA-Py implementers that use those protocols **SHOULD** update as soon as possible to the [AIP 2.0] versions of those protocols ([RFC 0453 Issue Credential v2.0] and [RFC 0454 Present Proof v2.0], respectively). Once the protocols are removed from ACA-Py, anyone still using those protocols **MUST** adjust their configuration to load those protocols from the respective plugins.
+
+[ACA-Py Plugins]: https://plugins.aca-py.org
+[RFC 0036 Issue Credentials v1.0]: https://identity.foundation/aries-rfcs/latest/features/0036-issue-credential/
+[RFC 0037 Present Proof v1.0]: https://identity.foundation/aries-rfcs/latest/features/0037-present-proof/
+[AIP 1.0]: https://github.com/decentralized-identity/aries-rfcs/tree/main/concepts/0302-aries-interop-profile#aries-interop-profile-version-10
+[AIP 2.0]: https://identity.foundation/aries-rfcs/latest/aip2/0003-protocols/
+[RFC 0453 Issue Credential v2.0]: https://identity.foundation/aries-rfcs/latest/aip2/0453-issue-credential-v2/
+[RFC 0454 Present Proof v2.0]: https://identity.foundation/aries-rfcs/latest/aip2/0454-present-proof-v2/
+
+The `acapy_agent.revocation_anoncreds` package has been deprecated and relocated to `acapy_agent.anoncreds.revocation` for improved consistency across the codebase. The change should only affect [ACA-Py Plugins] that implement AnonCreds, but other developers should also take note.
+
+The `wallet-type` configuration value `askar` is now deprecated and all deployments still using that wallet type should migrate to either the `askar-anoncreds` or (ideally) `kanon-anoncreds` wallet types.
+
+### 1.4.0 Breaking Changes
+
+This release introduces **no breaking changes** for existing ACA-Py deployments. Existing instances can continue to use Askar for both key and data storage by default.
+
+Implementers are encouraged to evaluate Kanon as the preferred approach for new deployments or planned upgrades. Kanon provides better scalability, performance, and integration with database-native capabilities such as indexing, analytics, and external management tools — while maintaining secure handling of cryptographic keys within Askar.
+
+### 1.4.0 Categorized PR List
+
+- **Storage and Architecture**
+  - fix: removed redundant SET client_encoding calls [\#3951](https://github.com/openwallet-foundation/acapy/pull/3951) [vinaysingh8866](https://github.com/vinaysingh8866)
+  - Timeout issue fix [\#3950](https://github.com/openwallet-foundation/acapy/pull/3950) [vinaysingh8866](https://github.com/vinaysingh8866)
+  - Add sub wallet created event [\#3946](https://github.com/openwallet-foundation/acapy/pull/3946) [PatStLouis](https://github.com/PatStLouis)
+  - Disable kanon profile scenario tests [\#3943](https://github.com/openwallet-foundation/acapy/pull/3943) [jamshale](https://github.com/jamshale)
+  - feat: Add kanon profile sqlite issuance/presentation/revocation scena… [\#3934](https://github.com/openwallet-foundation/acapy/pull/3934) [jamshale](https://github.com/jamshale)
+  - fix(kanon):storage postgres provisioning issues [\#3931](https://github.com/openwallet-foundation/acapy/pull/3931) [vinaysingh8866](https://github.com/vinaysingh8866)
+  - fix(kanon):fixed password bug and tests for kanon postgres [\#3922](https://github.com/openwallet-foundation/acapy/pull/3922) [vinaysingh8866](https://github.com/vinaysingh8866)
+  - Documentation for Kanon Storage under Features/Kanon Storage [\#3918](https://github.com/openwallet-foundation/acapy/pull/3918) [dave-promulgare](https://github.com/dave-promulgare)
+  - :art: Post-Kanon cleanup [#3901](https://github.com/openwallet-foundation/acapy/pull/3901) [ff137](https://github.com/ff137)
+  - Kanon Storage [#3850](https://github.com/openwallet-foundation/acapy/pull/3850) [dave-promulgare](https://github.com/dave-promulgare)
+- **Code Quality and Maintenance**
+  - :sparkles: Implement ProfileSessionHandle [\#3914](https://github.com/openwallet-foundation/acapy/pull/3914) [ff137](https://github.com/ff137)
+  - :recycle: :boom: Refactor EventBus notify method [#3690](https://github.com/openwallet-foundation/acapy/pull/3690) [ff137](https://github.com/ff137)
+  - :wrench: :art: Revise lint rules [#3900](https://github.com/openwallet-foundation/acapy/pull/3900) [ff137](https://github.com/ff137)
+- **AnonCreds and Credential Handling**
+  - feat: Upgrade anoncreds to version 0.2.3 [\#3949](https://github.com/openwallet-foundation/acapy/pull/3949) [jamshale](https://github.com/jamshale)
+  - Add skip verification option for credential storage [\#3928](https://github.com/openwallet-foundation/acapy/pull/3928) [PatStLouis](https://github.com/PatStLouis)
+  - 🎨 Move AnonCreds set_active_registry route [#3915](https://github.com/openwallet-foundation/acapy/pull/3915) [ff137](https://github.com/ff137)
+  - (fix) Properly use VM key when signing [SD-]JWT [#3892](https://github.com/openwallet-foundation/acapy/pull/3892) [gmulhearn](https://github.com/gmulhearn)
+  - :recycle: Refactor and modularize anoncreds revocation package [#3861](https://github.com/openwallet-foundation/acapy/pull/3861) [ff137](https://github.com/ff137)
+- **Testing and Interoperability**
+  - Update bcovrin test genesis url [\#3926](https://github.com/openwallet-foundation/acapy/pull/3926) [PatStLouis](https://github.com/PatStLouis)
+  - fix: Repair Interop tests url [#3881](https://github.com/openwallet-foundation/acapy/pull/3881) [jamshale](https://github.com/jamshale)
+- **Developer Tools and Demos**
+  - Enable remote config [\#3927](https://github.com/openwallet-foundation/acapy/pull/3927) [PatStLouis](https://github.com/PatStLouis)
+  - Add document metadata to response [\#3925](https://github.com/openwallet-foundation/acapy/pull/3925) [PatStLouis](https://github.com/PatStLouis)
+  - Upgrade demo dockerfile acapy images to 1.3.2 [\#3910](https://github.com/openwallet-foundation/acapy/pull/3910) [jamshale](https://github.com/jamshale)
+  - Add --debug-webhooks config to demo agents [#3865](https://github.com/openwallet-foundation/acapy/pull/3865) [jamshale](https://github.com/jamshale)
+- **Deployment and Documentation**
+  - Update AdminAPI.md [\#3936](https://github.com/openwallet-foundation/acapy/pull/3936) [Jsyro](https://github.com/Jsyro)
+  - Chore(chart): delete chart files and add chart relocation notice [#3883](https://github.com/openwallet-foundation/acapy/pull/3883) [i5okie](https://github.com/i5okie)
+- **Dependabot PRs**
+  - [Link to list of Dependabot PRs in this release](https://github.com/openwallet-foundation/acapy/pulls?q=is%3Apr+is%3Amerged+merged%3A2025-08-26..2025-11-15+author%3Aapp%2Fdependabot+)
+- **Release management pull requests**:
+  - 1.4.0 [\#3948](https://github.com/openwallet-foundation/acapy/pull/3948) [swcurran](https://github.com/swcurran)
+  - 1.4.0rc1 [\#3933](https://github.com/openwallet-foundation/acapy/pull/3933) [swcurran](https://github.com/swcurran)
+  - 1.4.0rc0 [\#3911](https://github.com/openwallet-foundation/acapy/pull/3911) [swcurran](https://github.com/swcurran)
 
 ## 1.3.2
 
 ### August 26, 2025
 
-ACA-Py 1.3.2 is a maintenance and enhancement release with a mix of bug fixes, dependency updates, documentation improvements, and operational enhancements. It focuses on improving reliability in credential revocation handling, refining webhook payload structures, modernizing async task management, and ensuring better resilience when opening the Askar store. Developers will also find several documentation updates and dependency cleanups. See the [Categorized List of Changes]() below for more details about the changes in this release.
+ACA-Py 1.3.2 is a maintenance and enhancement release with a mix of bug fixes, dependency updates, documentation improvements, and operational enhancements. It focuses on improving reliability in credential revocation handling, refining webhook payload structures, modernizing async task management, and ensuring better resilience when opening the Askar store. Developers will also find several documentation updates and dependency cleanups. See the [Categorized List of Changes](#132-categorized-list-of-pull-requests) below for more details about the changes in this release.
 
 The release includes a fix for a change ([#3081](https://github.com/openwallet-foundation/acapy/pull/3081) added in [Release 1.0.0](https://github.com/openwallet-foundation/acapy/releases/tag/1.0.0)) that introduced a PII leakage possibility. See the [1.3.2 Breaking Changes](#132-breaking-changes) section below for details.
 
@@ -28,12 +181,12 @@ In an upcoming ACA-Py release, we will be dropping from the core ACA-Py reposito
 
 Release 1.3.2 includes a privacy-related change that also introduces a breaking change for some deployments -- including those using [acapy-vc-authn-oidc](https://github.com/openwallet-foundation/acapy-vc-authn-oidc).
 
-- **Removal of `by_format` from webhook payloads** ([#3837](https://github.com/openwallet-foundation/acapy/pull/3837))  
-  In a recent update, ACA-Py webhook events for credential and presentation v2.0 exchanges included a `by_format` field by default, instead of only when used with the `ACAPY_DEBUG_WEBHOOKS` configuration parameter. `by_format` contains sensitive protocol payload data and, in some cases, could result in **personally identifiable information (PII) being logged**. This behavior has been reverted. 
+- **Removal of `by_format` from webhook payloads** ([#3837](https://github.com/openwallet-foundation/acapy/pull/3837))
+  In a recent update, ACA-Py webhook events for credential and presentation v2.0 exchanges included a `by_format` field by default, instead of only when used with the `ACAPY_DEBUG_WEBHOOKS` configuration parameter. `by_format` contains sensitive protocol payload data and, in some cases, could result in **personally identifiable information (PII) being logged**. This behavior has been reverted.
 
-  **Impact when upgrading:**  
+  **Impact when upgrading:**
   - If your deployment relies on the `by_format` field in webhook events you need to ensure the startup parameter `ACAPY_DEBUG_WEBHOOKS` is activated.
-  - Most applications that simply respond to the state of v2.0 credential exchanges (e.g., `credential_issued`, `presentation_verified`) are not affected.  
+  - Most applications that simply respond to the state of v2.0 credential exchanges (e.g., `credential_issued`, `presentation_verified`) are not affected.
   - Applications that parsed or logged the `by_format` contents must ensure the `ACAPY_DEBUG_WEBHOOKS` configuration is set, or better, update their logic to not require that information.
 
 Because this change addresses a **privacy issue** (PII leakage), it is being included in the 1.3.x patch series rather than requiring a minor release increment.
@@ -722,7 +875,7 @@ With the focus of the pull requests for this release on stabilizing the implemen
 - The webhook sent after receipt of presentation by a verifier has been updated to include all of the information needed by the verifier so that the controller does not have to call the "Verify Presentation" endpoint. The issue with calling that endpoint after the presentation has been received is that there is a race condition between the controller and the ACA-Py cleanup process deleting completed Present Proof protocol instances. See [\#3081](https://github.com/hyperledger/aries-cloudagent-python/pull/3081) for additional details.
 - A fix to an obscure bug includes a change to the data sent to the controller after publishing multiple, endorsed credential definition revocation registries in a single call. The bug fix was to properly process the publishing. The breaking change is that when the process (now successfully) completes, the controller is sent the list of published credential definitions. Previously only a single value was being sent. See PR [\#3107](https://github.com/hyperledger/aries-cloudagent-python/pull/3107) for additional details.
 - The configuration settings around whether a multitenant wallet uses a single database vs. a database per tenant has been made more explicit. The previous settings were not clear, resulting in some deployments that were intended to be a database per tenant actually result in all tenants being in the same database. For details about the change, see [\#3105](https://github.com/hyperledger/aries-cloudagent-python/pull/3105).
- 
+
 #### 1.0.0 Categorized List of Pull Requests
 
 - LTS Support Policy:
@@ -2371,7 +2524,7 @@ stuff needed for a healthy, growing codebase.
 - Multitenacy updates and fixes
   - feat: create new JWT tokens and invalidate older for multitenancy [\#1725](https://github.com/hyperledger/aries-cloudagent-python/pull/1725) ([TimoGlastra](https://github.com/TimoGlastra))
   - Multi-tenancy stale wallet clean up [\#1692](https://github.com/hyperledger/aries-cloudagent-python/pull/1692) ([dbluhm](https://github.com/dbluhm))
-  
+
 - Dependencies and internal code updates/fixes
   - Update pyjwt to 2.4 [\#1829](https://github.com/hyperledger/aries-cloudagent-python/pull/1829) ([andrewwhitehead](https://github.com/andrewwhitehead))
   - Fix external Outbound Transport loading code [\#1812](https://github.com/hyperledger/aries-cloudagent-python/pull/1812) ([frostyfrog](https://github.com/frostyfrog))
@@ -2524,7 +2677,7 @@ The following is an annotated list of PRs in the release, including a link to ea
     - Update docker scripts to use new & improved docker IP detection [#1565](https://github.com/hyperledger/aries-cloudagent-python/pull/1565)
   - Release Adminstration:
     - Changelog and RTD updates for the pending 0.7.3 release [#1553](https://github.com/hyperledger/aries-cloudagent-python/pull/1553)
-  
+
 ## 0.7.2
 
 ### November 15, 2021

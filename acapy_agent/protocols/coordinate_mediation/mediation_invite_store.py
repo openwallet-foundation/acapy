@@ -89,7 +89,6 @@ class MediationInviteStore:
 
     async def __retrieve(self) -> Optional[MediationInviteRecord]:
         """:return: the currently stored mediation invite url."""
-
         invite_record = await self.__retrieve_record(self.MEDIATION_INVITE_ID)
         return (
             MediationInviteRecord.from_json(invite_record.value)
@@ -148,7 +147,6 @@ class MediationInviteStore:
         :return: mediation invite to use/that was used to connect to the mediator. None if
             no invitation was provided/provisioned.
         """
-
         stored_invite = await self.__retrieve()
 
         if stored_invite is None and provided_mediation_invitation is None:

@@ -28,11 +28,11 @@ We can run demos to see agent tracing events and attach them to the `elknet` net
 Assuming the elk stack is running from above... from your demos directory, in two separate bash shells, startup the demo as follows:
 
 ```bash
-DOCKER_NET=elknet TRACE_TARGET_URL=logstash:9700 LEDGER_URL=http://test.bcovrin.vonx.io ./run_demo faber --trace-http
+DOCKER_NET=elknet TRACE_TARGET_URL=logstash:9700 LEDGER_URL=https://test.bcovrin.vonx.io ./run_demo faber --trace-http
 ```
 
 ```bash
-DOCKER_NET=elknet TRACE_TARGET_URL=logstash:9700 LEDGER_URL=http://test.bcovrin.vonx.io ./run_demo alice --trace-http
+DOCKER_NET=elknet TRACE_TARGET_URL=logstash:9700 LEDGER_URL=https://test.bcovrin.vonx.io ./run_demo alice --trace-http
 ```
 
 And run the demo scenarios as you wish.

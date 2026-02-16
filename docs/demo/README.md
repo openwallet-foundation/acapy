@@ -42,7 +42,7 @@ In your browser, go to the docker playground service [Play with Docker](https://
 ```bash
 git clone https://github.com/openwallet-foundation/acapy
 cd acapy/demo
-LEDGER_URL=http://test.bcovrin.vonx.io ./run_demo faber
+LEDGER_URL=https://test.bcovrin.vonx.io ./run_demo faber
 ```
 
 Now to start Alice's agent. Click the "+Add a new instance" button again to open another terminal session. Run the following commands to start Alice's agent:
@@ -50,7 +50,7 @@ Now to start Alice's agent. Click the "+Add a new instance" button again to open
 ```bash
 git clone https://github.com/openwallet-foundation/acapy
 cd acapy/demo
-LEDGER_URL=http://test.bcovrin.vonx.io ./run_demo alice
+LEDGER_URL=https://test.bcovrin.vonx.io ./run_demo alice
 ```
 
 Alice's agent is now running.
@@ -460,7 +460,7 @@ You can also run the demo against a postgres database using the following:
 
 (Obviously you need to be running a postgres database - the command to start postgres is in the yml file provided above.)
 
-You can tweak the number of credentials issued using the `--count` and `--batch` parameters, and you can run against an Askar database using the `--wallet-type askar` option (or run using indy-sdk using `--wallet-type indy`).
+You can tweak the number of credentials issued using the `--count` and `--batch` parameters, and you can run against an Askar database using the `--wallet-type askar` option.
 
 An example full set of options is:
 
@@ -468,11 +468,6 @@ An example full set of options is:
 ./run_demo performance --arg-file demo/postgres-indy-args.yml -c 10000 -b 10 --wallet-type askar
 ```
 
-Or:
-
-``` bash
-./run_demo performance --arg-file demo/postgres-indy-args.yml -c 10000 -b 10 --wallet-type indy
-```
 
 ## Coding Challenge: Adding ACME
 

@@ -97,6 +97,14 @@ acapy\_agent.utils.outofband module
    :undoc-members:
    :show-inheritance:
 
+acapy\_agent.utils.plugin\_installer module
+-------------------------------------------
+
+.. automodule:: acapy_agent.utils.plugin_installer
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 acapy\_agent.utils.profiles module
 ----------------------------------
 
@@ -149,6 +157,14 @@ acapy\_agent.utils.tracing module
 ---------------------------------
 
 .. automodule:: acapy_agent.utils.tracing
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+acapy\_agent.utils.wait\_for\_active\_registry module
+-----------------------------------------------------
+
+.. automodule:: acapy_agent.utils.wait_for_active_registry
    :members:
    :undoc-members:
    :show-inheritance:

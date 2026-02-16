@@ -1028,6 +1028,7 @@ class DIFPresExchHandler:
             schema_id: schema uri to check
         Return:
             bool
+
         """
         if schema_id in credential.schema_ids:
             return True
@@ -1059,12 +1060,19 @@ class DIFPresExchHandler:
             records_filter: dict of input_descriptor ID key to list of credential_json
         Return:
             dict of input_descriptor ID key to list of credential_json
+
         """
         # Dict for storing descriptor_id keys and list of applicable
         # credentials values
         result = {}
         # Get all input_descriptors attached to the PresentationDefinition
         descriptor_list = req.input_descriptors or []
+        LOGGER.debug(
+            "DIF-PRES apply_requirements: descriptors=%s creds=%s records_filter=%s",
+            len(descriptor_list),
+            len(credentials),
+            list(records_filter.keys()) if records_filter else None,
+        )
         for descriptor in descriptor_list:
             # Filter credentials to apply filtering
             # upon by matching each credentialSchema.id
@@ -1087,6 +1095,13 @@ class DIFPresExchHandler:
             filtered = await self.filter_constraints(
                 constraints=descriptor.constraint,
                 credentials=filtered_by_schema,
+            )
+            LOGGER.debug(
+                "DIF-PRES apply_requirements: descriptor=%s schema_filtered=%s "
+                "constraints_filtered=%s",
+                descriptor.id,
+                len(filtered_by_schema),
+                len(filtered),
             )
             if len(filtered) != 0:
                 result[descriptor.id] = filtered
@@ -1176,6 +1191,7 @@ class DIFPresExchHandler:
             exclude: dict containing info about credentials to exclude
         Return:
             dict with input_descriptor.id as keys and merged_credentials_list as values
+
         """
         result = {}
         for res in nested_result:
@@ -1221,6 +1237,7 @@ class DIFPresExchHandler:
 
         Returns:
             Union[Sequence[dict], dict]: VerifiablePresentation.
+
         """
         document_loader = self.profile.inject(DocumentLoader)
         req = await self.make_requirement(
@@ -1357,6 +1374,7 @@ class DIFPresExchHandler:
             and merged_credentials_list
         Return:
             Tuple of applicable credential list and descriptor map
+
         """
         dict_of_creds = {}
         dict_of_descriptors = {}
@@ -1392,6 +1410,7 @@ class DIFPresExchHandler:
         Args:
             pres: received VerifiablePresentation
             pd: PresentationDefinition
+
         """
         input_descriptors = pd.input_descriptors
         if isinstance(pres, Sequence):

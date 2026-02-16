@@ -15,30 +15,30 @@ from anoncreds import (
     Schema,
     W3cCredential,
 )
-from aries_askar import AskarError
 
-from ..askar.profile_anon import AskarAnonCredsProfile, AskarAnonCredsProfileSession
 from ..core.error import BaseError
 from ..core.event_bus import Event, EventBus
-from ..core.profile import Profile
+from ..core.profile import Profile, ProfileSession
+from ..database_manager.db_errors import DBError
 from ..protocols.endorse_transaction.v1_0.util import is_author_role
 from .base import AnonCredsSchemaAlreadyExists, BaseAnonCredsError
+from .constants import (
+    CATEGORY_CRED_DEF,
+    CATEGORY_CRED_DEF_KEY_PROOF,
+    CATEGORY_CRED_DEF_PRIVATE,
+    CATEGORY_SCHEMA,
+    DEFAULT_CRED_DEF_TAG,
+    DEFAULT_MAX_CRED_NUM,
+    DEFAULT_SIGNATURE_TYPE,
+    STATE_FINISHED,
+)
 from .error_messages import ANONCREDS_PROFILE_REQUIRED_MSG
-from .events import CredDefFinishedEvent
+from .events import CredDefFinishedEvent, SchemaFinishedEvent
 from .models.credential_definition import CredDef, CredDefResult
 from .models.schema import AnonCredsSchema, GetSchemaResult, SchemaResult, SchemaState
 from .registry import AnonCredsRegistry
 
 LOGGER = logging.getLogger(__name__)
-
-DEFAULT_CRED_DEF_TAG = "default"
-DEFAULT_SIGNATURE_TYPE = "CL"
-DEFAULT_MAX_CRED_NUM = 1000
-CATEGORY_SCHEMA = "schema"
-CATEGORY_CRED_DEF = "credential_def"
-CATEGORY_CRED_DEF_PRIVATE = "credential_def_private"
-CATEGORY_CRED_DEF_KEY_PROOF = "credential_def_key_proof"
-STATE_FINISHED = "finished"
 
 EVENT_PREFIX = "acapy::anoncreds::"
 EVENT_SCHEMA = EVENT_PREFIX + CATEGORY_SCHEMA
@@ -89,12 +89,15 @@ class AnonCredsIssuer:
 
         """
         self._profile = profile
+        self._profile_validated = False  # Lazy validation of profile backend
 
     @property
-    def profile(self) -> AskarAnonCredsProfile:
+    def profile(self) -> Profile:
         """Accessor for the profile instance."""
-        if not isinstance(self._profile, AskarAnonCredsProfile):
-            raise ValueError(ANONCREDS_PROFILE_REQUIRED_MSG)
+        if not self._profile_validated:
+            if not isinstance(self._profile, Profile) or not self._profile.is_anoncreds:
+                raise ValueError(ANONCREDS_PROFILE_REQUIRED_MSG)
+            self._profile_validated = True
 
         return self._profile
 
@@ -105,7 +108,7 @@ class AnonCredsIssuer:
 
     async def _finish_registration(
         self,
-        txn: AskarAnonCredsProfileSession,
+        txn: ProfileSession,
         category: str,
         job_id: str,
         registered_id: str,
@@ -153,7 +156,19 @@ class AnonCredsIssuer:
                         "state": result.schema_state.state,
                     },
                 )
-        except AskarError as err:
+
+            if result.schema_state.state == STATE_FINISHED:
+                await self.notify(
+                    SchemaFinishedEvent.with_payload(
+                        schema_id=result.schema_state.schema_id,
+                        issuer_id=result.schema_state.schema.issuer_id,
+                        name=result.schema_state.schema.name,
+                        version=result.schema_state.schema.version,
+                        attr_names=result.schema_state.schema.attr_names,
+                        options={},
+                    )
+                )
+        except DBError as err:
             raise AnonCredsIssuerError("Error storing schema") from err
 
     async def create_and_register_schema(
@@ -237,8 +252,24 @@ class AnonCredsIssuer:
     async def finish_schema(self, job_id: str, schema_id: str) -> None:
         """Mark a schema as finished."""
         async with self.profile.transaction() as txn:
-            await self._finish_registration(txn, CATEGORY_SCHEMA, job_id, schema_id)
+            entry = await self._finish_registration(
+                txn, CATEGORY_SCHEMA, job_id, schema_id
+            )
             await txn.commit()
+
+        from .models.schema import AnonCredsSchema
+
+        schema = AnonCredsSchema.from_json(entry.value)
+        await self.notify(
+            SchemaFinishedEvent.with_payload(
+                schema_id=schema_id,
+                issuer_id=schema.issuer_id,
+                name=schema.name,
+                version=schema.version,
+                attr_names=schema.attr_names,
+                options={},
+            )
+        )
 
     async def get_created_schemas(
         self,
@@ -263,7 +294,7 @@ class AnonCredsIssuer:
                 },
             )
         # entry.name was stored as the schema's ID
-        return [entry.name for entry in schemas]
+        return [entry.name for entry in list(schemas)]
 
     async def credential_definition_in_wallet(
         self, credential_definition_id: str
@@ -272,6 +303,7 @@ class AnonCredsIssuer:
 
         Args:
             credential_definition_id: The credential definition ID to check
+
         """
         try:
             async with self.profile.session() as session:
@@ -280,7 +312,7 @@ class AnonCredsIssuer:
                         CATEGORY_CRED_DEF_PRIVATE, credential_definition_id
                     )
                 ) is not None
-        except AskarError as err:
+        except DBError as err:
             raise AnonCredsIssuerError(
                 "Error checking for credential definition"
             ) from err
@@ -389,6 +421,7 @@ class AnonCredsIssuer:
     ) -> None:
         """Store the cred def and it's components in the wallet."""
         options = options or {}
+
         identifier = (
             cred_def_result.job_id
             or cred_def_result.credential_definition_state.credential_definition_id
@@ -427,24 +460,32 @@ class AnonCredsIssuer:
                     CATEGORY_CRED_DEF_KEY_PROOF, identifier, key_proof.to_json_buffer()
                 )
                 await txn.commit()
+
             if cred_def_result.credential_definition_state.state == STATE_FINISHED:
+                cred_def = (
+                    cred_def_result.credential_definition_state.credential_definition
+                )
                 await self.notify(
                     CredDefFinishedEvent.with_payload(
                         schema_id=schema_result.schema_id,
                         cred_def_id=identifier,
-                        issuer_id=cred_def_result.credential_definition_state.credential_definition.issuer_id,
+                        issuer_id=cred_def.issuer_id,
                         support_revocation=support_revocation,
                         max_cred_num=max_cred_num,
+                        tag=cred_def.tag,
                         options=options,
                     )
                 )
-        except AskarError as err:
+
+        except DBError as err:
             raise AnonCredsIssuerError("Error storing credential definition") from err
 
     async def finish_cred_def(
         self, job_id: str, cred_def_id: str, options: Optional[dict] = None
     ) -> None:
         """Finish a cred def."""
+        options = options or {}
+
         async with self.profile.transaction() as txn:
             entry = await self._finish_registration(
                 txn, CATEGORY_CRED_DEF, job_id, cred_def_id
@@ -468,6 +509,7 @@ class AnonCredsIssuer:
                 issuer_id=cred_def.issuer_id,
                 support_revocation=support_revocation,
                 max_cred_num=max_cred_num,
+                tag=cred_def.tag,
                 options=options,
             )
         )
@@ -501,7 +543,7 @@ class AnonCredsIssuer:
                 },
             )
         # entry.name is cred def id when state == finished
-        return [entry.name for entry in credential_definition_entries]
+        return [entry.name for entry in list(credential_definition_entries)]
 
     async def match_created_credential_definitions(
         self,
@@ -573,7 +615,7 @@ class AnonCredsIssuer:
                 key_proof = await session.handle.fetch(
                     CATEGORY_CRED_DEF_KEY_PROOF, credential_definition_id
                 )
-        except AskarError as err:
+        except DBError as err:
             raise AnonCredsIssuerError("Error retrieving credential definition") from err
         if not cred_def or not key_proof:
             raise AnonCredsIssuerError(
@@ -614,7 +656,7 @@ class AnonCredsIssuer:
                 cred_def_private = await session.handle.fetch(
                     CATEGORY_CRED_DEF_PRIVATE, cred_def_id
                 )
-        except AskarError as err:
+        except DBError as err:
             raise AnonCredsIssuerError("Error retrieving credential definition") from err
 
         if not cred_def or not cred_def_private:
@@ -671,7 +713,7 @@ class AnonCredsIssuer:
                 cred_def_private = await session.handle.fetch(
                     CATEGORY_CRED_DEF_PRIVATE, cred_def_id
                 )
-        except AskarError as err:
+        except DBError as err:
             raise AnonCredsIssuerError("Error retrieving credential definition") from err
 
         if not cred_def or not cred_def_private:

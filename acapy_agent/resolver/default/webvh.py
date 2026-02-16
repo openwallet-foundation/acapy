@@ -37,4 +37,9 @@ class WebvhDIDResolver(BaseDIDResolver):
         if response.resolution_metadata and response.resolution_metadata.get("error"):
             return response.resolution_metadata
 
-        return response.document
+        # Include document_metadata if available from the resolver
+        result = response.document
+        if response.document_metadata:
+            result["document_metadata"] = response.document_metadata
+
+        return result

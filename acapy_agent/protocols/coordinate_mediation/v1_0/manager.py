@@ -64,6 +64,7 @@ class MediationManager:
 
         Args:
             profile: The Profile instance for this manager
+
         """
         self._profile = profile
         if not profile:

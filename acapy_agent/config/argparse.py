@@ -3,12 +3,16 @@
 import abc
 import json
 import logging
+import os
+import tempfile
 from functools import reduce
 from itertools import chain
 from os import environ
 from typing import Optional, Type
+from urllib.parse import urlparse
 
 import deepmerge
+import requests
 import yaml
 from configargparse import ArgumentParser, Namespace, YAMLConfigFileParser
 
@@ -26,6 +30,127 @@ CAT_UPGRADE = "upgrade"
 ENDORSER_AUTHOR = "author"
 ENDORSER_ENDORSER = "endorser"
 ENDORSER_NONE = "none"
+
+
+def fetch_remote_config(url: str, timeout: int = 30) -> str:
+    """Fetch a remote configuration file from a URL.
+
+    Args:
+        url: The URL to fetch the configuration from
+        timeout: Request timeout in seconds (default: 30)
+
+    Returns:
+        Path to the temporary file containing the downloaded config
+
+    Raises:
+        ArgsParseError: If the URL is invalid or fetch fails
+
+    """
+    # Validate URL
+    parsed = urlparse(url)
+    if not parsed.scheme or not parsed.netloc:
+        raise ArgsParseError(
+            f"Invalid URL for --arg-file: {url}. "
+            "URL must include scheme (http/https) and hostname."
+        )
+
+    try:
+        # Fetch the remote config
+        LOGGER.info(f"Fetching remote configuration from: {url}")
+        response = requests.get(url, timeout=timeout)
+        response.raise_for_status()
+        text = response.text
+    except requests.RequestException as e:
+        raise ArgsParseError(
+            f"Failed to fetch remote configuration from {url}: {e}"
+        ) from e
+
+    # Validate it's valid YAML
+    try:
+        yaml.safe_load(text)
+    except yaml.YAMLError as e:
+        raise ArgsParseError(
+            f"Remote configuration from {url} is not valid YAML: {e}"
+        ) from e
+
+    # Save to temporary file
+    try:
+        fd, temp_path = tempfile.mkstemp(suffix=".yml", prefix="acapy_remote_config_")
+        try:
+            os.write(fd, text.encode("utf-8"))
+        finally:
+            os.close(fd)
+
+        LOGGER.info(f"Remote configuration saved to temporary file: {temp_path}")
+        return temp_path
+    except (OSError, IOError) as e:
+        raise ArgsParseError(
+            f"Failed to save remote configuration to temporary file: {e}"
+        ) from e
+
+
+def _is_url(file_path: str) -> bool:
+    """Check if a file path is actually a URL.
+
+    Args:
+        file_path: Path to check
+
+    Returns:
+        True if the path is a URL, False otherwise
+
+    """
+    parsed = urlparse(file_path)
+    return bool(parsed.scheme and parsed.netloc)
+
+
+def preprocess_args_for_remote_config(argv: list) -> list:
+    """Preprocess argv to handle --arg-file with URL support.
+
+    Downloads remote config from URLs and converts to local temp file.
+
+    Args:
+        argv: List of command line arguments
+
+    Returns:
+        Modified argv with URLs in --arg-file replaced by local temp file paths
+
+    """
+    if not argv:
+        return argv
+
+    # Check if any --arg-file values are URLs
+    processed_argv = list(argv)
+    i = 0
+
+    while i < len(processed_argv):
+        arg = processed_argv[i]
+
+        # Check for --arg-file <path> format
+        if arg == "--arg-file":
+            if i + 1 >= len(processed_argv):
+                # Missing value, skip (let argument parser handle it)
+                i += 1
+                continue
+
+            file_path = processed_argv[i + 1]
+            if _is_url(file_path):
+                temp_file = fetch_remote_config(file_path)
+                processed_argv[i + 1] = temp_file
+
+            i += 2
+
+        # Handle --arg-file=<path> format
+        elif arg.startswith("--arg-file="):
+            file_path = arg.split("=", 1)[1]
+            if _is_url(file_path):
+                temp_file = fetch_remote_config(file_path)
+                processed_argv[i] = f"--arg-file={temp_file}"
+
+            i += 1
+        else:
+            i += 1
+
+    return processed_argv
 
 
 class ArgumentGroup(abc.ABC):
@@ -522,8 +647,9 @@ class GeneralGroup(ArgumentGroup):
             "--arg-file",
             is_config_file=True,
             help=(
-                "Load aca-py arguments from the specified file.  Note that "
-                "this file *must* be in YAML format."
+                "Load aca-py arguments from the specified file or URL.  Note that "
+                "this file *must* be in YAML format. Local file paths and "
+                "HTTP/HTTPS URLs are supported."
             ),
         )
         parser.add_argument(
@@ -576,6 +702,23 @@ class GeneralGroup(ArgumentGroup):
                 "Set an arbitrary plugin configuration option in the format "
                 "KEY=VALUE. Use dots in KEY to set deeply nested values, as in "
                 '"a.b.c=value". VALUE is parsed as yaml.'
+            ),
+        )
+
+        parser.add_argument(
+            "--auto-install-plugins",
+            dest="auto_install_plugins",
+            nargs="?",
+            const=True,
+            default=False,
+            metavar="<version>",
+            env_var="ACAPY_AUTO_INSTALL_PLUGINS",
+            help=(
+                "Automatically install missing plugins from the "
+                "acapy-plugins repository. If specified without a value, uses "
+                "current ACA-Py version. If a version is provided (e.g., 1.3.2), "
+                "uses that version for plugin installation. "
+                "Default: false (disabled)."
             ),
         )
 
@@ -676,6 +819,26 @@ class GeneralGroup(ArgumentGroup):
                     settings[PLUGIN_CONFIG_KEY],
                     reduce(lambda v, k: {k: v}, key.split(".")[::-1], value),
                 )
+
+        # Auto-install plugins: can be True (use current version),
+        # version string (e.g., "1.3.2"), or False
+        if hasattr(args, "auto_install_plugins"):
+            auto_install_value = args.auto_install_plugins
+            if auto_install_value is True:
+                # Flag present without value - use current ACA-Py version
+                settings["auto_install_plugins"] = True
+                settings["plugin_install_version"] = None  # Use current version
+            elif isinstance(auto_install_value, str):
+                # Flag present with version value
+                settings["auto_install_plugins"] = True
+                settings["plugin_install_version"] = auto_install_value
+            else:
+                # False or None - disabled
+                settings["auto_install_plugins"] = False
+                settings["plugin_install_version"] = None
+        else:
+            settings["auto_install_plugins"] = False
+            settings["plugin_install_version"] = None
 
         if args.storage_type:
             settings["storage_type"] = args.storage_type
@@ -1167,6 +1330,13 @@ class ProtocolGroup(ArgumentGroup):
             "exchange has completed.",
         )
         parser.add_argument(
+            "--no-preserve-failed-exchange-records",
+            action="store_true",
+            env_var="ACAPY_NO_PRESERVE_FAILED_EXCHANGE_RECORDS",
+            help="Remove failed credential and presentation exchange records "
+            "upon failure.",
+        )
+        parser.add_argument(
             "--emit-new-didcomm-prefix",
             action="store_true",
             env_var="ACAPY_EMIT_NEW_DIDCOMM_PREFIX",
@@ -1589,6 +1759,13 @@ class WalletGroup(ArgumentGroup):
             help="Specifies the master key value to use to open the wallet.",
         )
         parser.add_argument(
+            "--dbstore-key",
+            type=str,
+            metavar="<dbstore-key>",
+            env_var="ACAPY_DBSTORE_KEY",
+            help="Specifies the master key value to use to open the DB Store.",
+        )
+        parser.add_argument(
             "--wallet-rekey",
             type=str,
             metavar="<wallet-rekey>",
@@ -1596,6 +1773,16 @@ class WalletGroup(ArgumentGroup):
             help=(
                 "Specifies a new master key value to which to rotate and to "
                 "open the wallet next time."
+            ),
+        )
+        parser.add_argument(
+            "--dbstore-rekey",
+            type=str,
+            metavar="<dbstore-rekey>",
+            env_var="ACAPY_DBSTORE_REKEY",
+            help=(
+                "Specifies a new master key value to which to rotate and to "
+                "open the DB Store next time."
             ),
         )
         parser.add_argument(
@@ -1635,6 +1822,19 @@ class WalletGroup(ArgumentGroup):
             ),
         )
         parser.add_argument(
+            "--dbstore-storage-type",
+            type=str,
+            metavar="<dbstore-storage-type>",
+            default="default",
+            env_var="ACAPY_DBSTORE_STORAGE_TYPE",
+            help=(
+                "Specifies the type of wallet backend to use. "
+                "Supported internal storage types are 'default' (sqlite), "
+                "and 'postgres_storage'.  The default, "
+                "if not specified, is 'default'."
+            ),
+        )
+        parser.add_argument(
             "--wallet-test",
             action="store_true",
             default=False,
@@ -1655,6 +1855,31 @@ class WalletGroup(ArgumentGroup):
                 "Specifies the storage configuration to use for the wallet. "
                 "This is required if you are for using 'postgres_storage' wallet "
                 'storage type. For example, \'{"url":"localhost:5432"}\'.'
+            ),
+        )
+        parser.add_argument(
+            "--dbstore-storage-config",
+            type=str,
+            metavar="<dbstore-storage-config>",
+            env_var="ACAPY_DBSTORE_STORAGE_CONFIG",
+            help=(
+                "Specifies the storage configuration to use for the DB Store. "
+                "This is required if you are for using 'postgres_storage' DB Store "
+                'storage type. For example, \'{"url":"localhost:5432"}\'.'
+            ),
+        )
+        parser.add_argument(
+            "--dbstore-schema-config",
+            type=str,
+            metavar="<dbstore-schema-config>",
+            env_var="ACAPY_DBSTORE_SCHEMA_CONFIG",
+            help=(
+                "Specifies the schema configuration to use for the DB Store "
+                "during provision only "
+                "Optional when using the 'postgres_storage' or 'sqlite' DB Store type. "
+                "Accepted values are 'generic' or 'normalize'. "
+                "If not specified, the default is 'normalize'. "
+                "Example: --dbstore-schema-config generic"
             ),
         )
         parser.add_argument(
@@ -1682,6 +1907,21 @@ class WalletGroup(ArgumentGroup):
             help=(
                 "Specifies the storage credentials to use for the wallet. "
                 "This is required if you are for using 'postgres_storage' wallet "
+                'For example, \'{"account":"postgres","password": '
+                '"mysecretpassword","admin_account":"postgres", '
+                '"admin_password":"mysecretpassword"}\'.'
+                "NOTE: admin_user must have the CREATEDB role or else initialization "
+                "will fail."
+            ),
+        )
+        parser.add_argument(
+            "--dbstore-storage-creds",
+            type=str,
+            metavar="<dbstore-storage-creds>",
+            env_var="ACAPY_DBSTORE_STORAGE_CREDS",
+            help=(
+                "Specifies the DB Store credentials to use for the DB Store. "
+                "This is required if you are for using 'postgres_storage' DB Store "
                 'For example, \'{"account":"postgres","password": '
                 '"mysecretpassword","admin_account":"postgres", '
                 '"admin_password":"mysecretpassword"}\'.'
@@ -1720,12 +1960,18 @@ class WalletGroup(ArgumentGroup):
             settings["wallet.allow_insecure_seed"] = True
         if args.wallet_key:
             settings["wallet.key"] = args.wallet_key
+        if args.dbstore_key:
+            settings["dbstore.key"] = args.dbstore_key
         if args.wallet_rekey:
             settings["wallet.rekey"] = args.wallet_rekey
+        if args.dbstore_rekey:
+            settings["dbstore.rekey"] = args.dbstore_rekey
         if args.wallet_name:
             settings["wallet.name"] = args.wallet_name
         if args.wallet_storage_type:
             settings["wallet.storage_type"] = args.wallet_storage_type
+        if args.dbstore_storage_type:
+            settings["dbstore.storage_type"] = args.dbstore_storage_type
         if args.wallet_type:
             settings["wallet.type"] = args.wallet_type
         if args.wallet_test:
@@ -1738,14 +1984,22 @@ class WalletGroup(ArgumentGroup):
             )
         if args.wallet_storage_config:
             settings["wallet.storage_config"] = args.wallet_storage_config
+        if args.dbstore_storage_config:
+            settings["dbstore.storage_config"] = args.dbstore_storage_config
         if args.wallet_storage_creds:
             settings["wallet.storage_creds"] = args.wallet_storage_creds
+        if args.dbstore_storage_creds:
+            settings["dbstore.storage_creds"] = args.dbstore_storage_creds
+
+        if args.dbstore_schema_config:
+            settings["dbstore.schema_config"] = args.dbstore_schema_config
+
         if args.replace_public_did:
             settings["wallet.replace_public_did"] = True
         if args.recreate_wallet:
             settings["wallet.recreate"] = True
         # check required settings for persistent wallets
-        if settings["wallet.type"] in ["askar", "askar-anoncreds"]:
+        if settings["wallet.type"] in ["askar", "askar-anoncreds", "kanon-anoncreds"]:
             # requires name, key
             if not args.wallet_test and (not args.wallet_name or not args.wallet_key):
                 raise ArgsParseError(
@@ -1762,6 +2016,7 @@ class WalletGroup(ArgumentGroup):
                         "Parameters --wallet-storage-config and --wallet-storage-creds "
                         "must be provided for postgres wallets"
                     )
+
         return settings
 
 
@@ -2105,7 +2360,6 @@ class UpgradeGroup(ArgumentGroup):
 
     def add_arguments(self, parser: ArgumentParser):
         """Add ACA-Py upgrade process specific arguments to the parser."""
-
         parser.add_argument(
             "--upgrade-config-path",
             type=str,

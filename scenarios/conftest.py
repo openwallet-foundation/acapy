@@ -14,7 +14,6 @@ class ExampleFailedException(Exception):
 
     def __init__(self, message: str, exit_status: int):
         """Initialize ExampleFailedException."""
-
         super().__init__(message)
         self.exit_status = exit_status
 
@@ -24,7 +23,6 @@ class ExampleRunner:
 
     def __init__(self, compose_file: str):
         """Initialize ExampleRunner."""
-
         self.compose_file = compose_file
 
     def compose(self, *command: str) -> int:
@@ -57,6 +55,7 @@ class ExampleRunner:
         try:
             exit_status = self.compose(*command)
             if exit_status != 0:
+                self.compose("logs")
                 raise ExampleFailedException(
                     f"Command failed with exit status: {exit_status}",
                     exit_status=exit_status,

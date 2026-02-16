@@ -67,6 +67,7 @@ class V20PresExRecord(BaseExchangeRecord):
         trace: bool = False,  # backward compat: BaseRecord.FromStorage()
         by_format: Optional[Mapping] = None,  # backward compat: BaseRecord.FromStorage()
         auto_remove: bool = False,
+        auto_remove_on_failure: bool = False,
         **kwargs,
     ):
         """Initialize a new PresExRecord."""
@@ -85,6 +86,7 @@ class V20PresExRecord(BaseExchangeRecord):
         self.auto_verify = auto_verify
         self.error_msg = error_msg
         self.auto_remove = auto_remove
+        self.auto_remove_on_failure = auto_remove_on_failure
 
     @property
     def pres_ex_id(self) -> str:
@@ -162,8 +164,8 @@ class V20PresExRecord(BaseExchangeRecord):
             reason: A reason to add to the log
             log_params: Additional parameters to log
             log_override: Override configured logging regimen, print to stderr instead
-        """
 
+        """
         if self._last_state == state:  # already done
             return
 
@@ -188,8 +190,8 @@ class V20PresExRecord(BaseExchangeRecord):
         Args:
             session: The profile session to use
             payload: The event payload
-        """
 
+        """
         if not self.RECORD_TOPIC:
             return
 
@@ -225,6 +227,7 @@ class V20PresExRecord(BaseExchangeRecord):
                     "error_msg",
                     "trace",
                     "auto_remove",
+                    "auto_remove_on_failure",
                 )
             },
             **{
@@ -241,6 +244,20 @@ class V20PresExRecord(BaseExchangeRecord):
     def __eq__(self, other: Any) -> bool:
         """Comparison between records."""
         return super().__eq__(other)
+
+    def get_ac_proof_request(self):
+        """Retrieve Indy Proof request from record."""
+        proof_request = self.pres_request.attachment(V20PresFormat.Format.INDY)
+        # If indy filter fails try anoncreds filter format. This is for a
+        # non-anoncreds agent that gets a anoncreds format proof request and
+        # should removed when indy format is fully retired.
+        if not proof_request:
+            proof_request = self.pres_request.attachment(V20PresFormat.Format.ANONCREDS)
+
+        if not proof_request:
+            raise ValueError("No AnonCreds proof request on this record")
+
+        return proof_request
 
 
 class V20PresExRecordSchema(BaseExchangeSchema):
@@ -362,6 +379,16 @@ class V20PresExRecordSchema(BaseExchangeSchema):
             "description": (
                 "Verifier choice to remove this presentation exchange record when"
                 " complete"
+            ),
+            "example": False,
+        },
+    )
+    auto_remove_on_failure = fields.Bool(
+        required=False,
+        dump_default=True,
+        metadata={
+            "description": (
+                "Verifier choice to remove this presentation exchange record when failed"
             ),
             "example": False,
         },

@@ -1,6 +1,7 @@
 """Credential exchange admin routes."""
 
 import logging
+import re
 from json.decoder import JSONDecodeError
 from typing import Mapping, Optional
 
@@ -18,7 +19,9 @@ from ....admin.decorators.auth import tenant_authentication
 from ....admin.request_context import AdminRequestContext
 from ....anoncreds.holder import AnonCredsHolderError
 from ....anoncreds.issuer import AnonCredsIssuerError
+from ....anoncreds.revocation.revocation import AnonCredsRevocationError
 from ....connections.models.conn_record import ConnRecord
+from ....core.event_bus import EventBus, EventWithMetadata
 from ....core.profile import Profile
 from ....indy.holder import IndyHolderError
 from ....indy.issuer import IndyIssuerError
@@ -45,6 +48,7 @@ from ....messaging.valid import (
     UUID4_EXAMPLE,
     UUID4_VALIDATE,
 )
+from ....revocation.models.issuer_cred_rev_record import IssuerCredRevRecord
 from ....storage.error import StorageError, StorageNotFoundError
 from ....utils.tracing import AdminAPIMessageTracingSchema, get_timer, trace_event
 from ....vc.ld_proofs.error import LinkedDataProofException
@@ -331,6 +335,15 @@ class V20IssueCredSchemaCore(AdminAPIMessageTracingSchema):
             )
         },
     )
+    auto_remove_on_failure = fields.Bool(
+        required=False,
+        metadata={
+            "description": (
+                "Whether to remove the credential exchange record on failure"
+                " (overrides --no-preserve-failed-exchange-records configuration setting)"
+            )
+        },
+    )
     comment = fields.Str(
         required=False,
         allow_none=True,
@@ -351,7 +364,6 @@ class V20IssueCredSchemaCore(AdminAPIMessageTracingSchema):
     @validates_schema
     def validate(self, data, **kwargs):
         """Make sure preview is present when indy/vc_di format is present."""
-
         if (
             data.get("filter", {}).get("indy") or data.get("filter", {}).get("vc_di")
         ) and not data.get("credential_preview"):
@@ -390,6 +402,15 @@ class V20CredRequestFreeSchema(AdminAPIMessageTracingSchema):
             "description": (
                 "Whether to remove the credential exchange record on completion"
                 " (overrides --preserve-exchange-records configuration setting)"
+            )
+        },
+    )
+    auto_remove_on_failure = fields.Bool(
+        required=False,
+        metadata={
+            "description": (
+                "Whether to remove the credential exchange record on failure"
+                " (overrides --no-preserve-failed-exchange-records configuration setting)"
             )
         },
     )
@@ -512,6 +533,16 @@ class V20CredRequestRequestSchema(OpenAPISchema):
             )
         },
     )
+    auto_remove_on_failure = fields.Bool(
+        required=False,
+        dump_default=False,
+        metadata={
+            "description": (
+                "Whether to remove the credential exchange record on failure"
+                " (overrides --no-preserve-failed-exchange-records configuration setting)"
+            )
+        },
+    )
 
 
 class V20CredIssueRequestSchema(OpenAPISchema):
@@ -554,7 +585,6 @@ class V20CredExIdMatchInfoSchema(OpenAPISchema):
 
 def _formats_filters(filt_spec: Mapping) -> Mapping:
     """Break out formats and filters for v2.0 cred proposal messages."""
-
     return (
         {
             "formats": [
@@ -736,6 +766,10 @@ async def credential_exchange_create(request: web.BaseRequest):
     auto_remove = body.get(
         "auto_remove", not profile.settings.get("preserve_exchange_records")
     )
+    auto_remove_on_failure = body.get(
+        "auto_remove_on_failure",
+        profile.settings.get("no_preserve_failed_exchange_records"),
+    )
     if not filt_spec:
         raise web.HTTPBadRequest(reason="Missing filter")
     trace_msg = body.get("trace")
@@ -764,6 +798,7 @@ async def credential_exchange_create(request: web.BaseRequest):
             connection_id=None,
             cred_proposal=cred_proposal,
             auto_remove=auto_remove,
+            auto_remove_on_failure=auto_remove_on_failure,
         )
     except (StorageError, BaseModelError) as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
@@ -991,7 +1026,6 @@ async def _create_free_offer(
     trace_msg: Optional[bool] = None,
 ):
     """Create a credential offer and related exchange record."""
-
     cred_preview = V20CredPreview.deserialize(preview_spec) if preview_spec else None
     cred_proposal = V20CredProposal(
         comment=comment,
@@ -1340,6 +1374,10 @@ async def credential_exchange_send_free_request(request: web.BaseRequest):
     auto_remove = body.get(
         "auto_remove", not profile.settings.get("preserve_exchange_records")
     )
+    auto_remove_on_failure = body.get(
+        "auto_remove_on_failure",
+        profile.settings.get("no_preserve_failed_exchange_records"),
+    )
     trace_msg = body.get("trace")
     holder_did = body.get("holder_did")
 
@@ -1364,6 +1402,7 @@ async def credential_exchange_send_free_request(request: web.BaseRequest):
         cred_ex_record = V20CredExRecord(
             connection_id=connection_id,
             auto_remove=auto_remove,
+            auto_remove_on_failure=auto_remove_on_failure,
             cred_proposal=cred_proposal.serialize(),
             initiator=V20CredExRecord.INITIATOR_SELF,
             role=V20CredExRecord.ROLE_HOLDER,
@@ -1435,9 +1474,16 @@ async def credential_exchange_send_bound_request(request: web.BaseRequest):
         auto_remove = body.get(
             "auto_remove", not profile.settings.get("preserve_exchange_records")
         )
+        auto_remove_on_failure = body.get(
+            "auto_remove_on_failure",
+            profile.settings.get("no_preserve_failed_exchange_records"),
+        )
     except JSONDecodeError:
         holder_did = None
         auto_remove = not profile.settings.get("preserve_exchange_records")
+        auto_remove_on_failure = profile.settings.get(
+            "no_preserve_failed_exchange_records"
+        )
 
     cred_ex_id = request.match_info["cred_ex_id"]
 
@@ -1481,6 +1527,7 @@ async def credential_exchange_send_bound_request(request: web.BaseRequest):
 
         # assign the auto_remove flag from above...
         cred_ex_record.auto_remove = auto_remove
+        cred_ex_record.auto_remove_on_failure = auto_remove_on_failure
 
         cred_manager = V20CredManager(profile)
         cred_ex_record, cred_request_message = await cred_manager.create_request(
@@ -1588,6 +1635,7 @@ async def credential_exchange_issue(request: web.BaseRequest):
     except (
         BaseModelError,
         AnonCredsIssuerError,
+        AnonCredsRevocationError,
         IndyIssuerError,
         LedgerError,
         StorageError,
@@ -1794,7 +1842,6 @@ async def credential_exchange_problem_report(request: web.BaseRequest):
 
 async def register(app: web.Application):
     """Register routes."""
-
     app.add_routes(
         [
             web.get(
@@ -1853,7 +1900,6 @@ async def register(app: web.Application):
 
 def post_process_routes(app: web.Application):
     """Amend swagger API."""
-
     # Add top-level tags description
     if "tags" not in app._state["swagger_dict"]:
         app._state["swagger_dict"]["tags"] = []
@@ -1864,3 +1910,35 @@ def post_process_routes(app: web.Application):
             "externalDocs": {"description": "Specification", "url": SPEC_URI},
         }
     )
+
+
+def register_events(bus: EventBus):
+    """Register event listeners."""
+    bus.subscribe(re.compile(r"^acapy::cred-revoked$"), cred_revoked)
+
+
+async def cred_revoked(profile: Profile, event: EventWithMetadata):
+    """Handle cred revoked event."""
+    assert isinstance(event.payload, IssuerCredRevRecord)
+    rev_rec: IssuerCredRevRecord = event.payload
+
+    if rev_rec.cred_ex_id is None:
+        return
+
+    if (
+        rev_rec.cred_ex_version
+        and rev_rec.cred_ex_version != IssuerCredRevRecord.VERSION_2
+    ):
+        return
+
+    async with profile.transaction() as txn:
+        try:
+            cred_ex_record = await V20CredExRecord.retrieve_by_id(
+                txn, rev_rec.cred_ex_id, for_update=True
+            )
+            cred_ex_record.state = V20CredExRecord.STATE_CREDENTIAL_REVOKED
+            await cred_ex_record.save(txn, reason="revoke credential")
+            await txn.commit()
+        except StorageNotFoundError:
+            # ignore if no such record
+            pass

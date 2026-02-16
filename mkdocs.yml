@@ -79,7 +79,6 @@ extra:
     provider: mike
 nav:
 - Welcome!:
-    - Welcome: aca-py.org.md
     - ACA-Py README: README.md
     - Release Notes: CHANGELOG.md
     - ACA-Py Long Term Support (LTS) Policy: LTS-Strategy.md
@@ -88,6 +87,7 @@ nav:
     - DevContainer Support: features/devcontainer.md
     - Supported Aries Interop Profiles and RFCs: features/SupportedRFCs.md
     - The Admin API: features/AdminAPI.md
+    - Kanon Storage: features/KanonStorage.md
     - ACA-Py Plugins: features/PlugIns.md
     - Multitenant ACA-Py: features/Multitenancy.md
     - Qualified DIDs: features/QualifiedDIDs.md
@@ -96,16 +96,18 @@ nav:
     - Reusing DIDComm Connections Between Agents: features/ReuseConnection.md
     - Publishing AnonCreds Objects To Other Ledgers/Verifiable Data Registries: features/AnonCredsMethods.md
     - Configuring Multiple Indy Ledgers: features/Multiledger.md
-    - Automatically Endorsing Indy Transations: features/Endorser.md
+    - Automatically Endorsing Indy Transactions: features/Endorser.md
     - Using W3C JSON-LD Signed Credentials: features/JsonLdCredentials.md
     - Issuing and Presenting W3C Data Integrity VCs: features/W3cCredentials.md
     - Using SD-JWTs: features/SelectiveDisclosureJWTs.md
     - AnonCreds Presentation Validation: features/AnonCredsProofValidation.md
+    - AnonCreds Revocation Auto Recovery: features/AnonCredsRevocationAutoRecovery.md
     - Multiple Credential Types: features/Multicredentials.md
     - Code Generation with the Open API: features/UsingOpenAPI.md
     - ACA-Py as a DIDComm Mediator: features/Mediation.md
 - Demos:
     - ACA-Py / AnonCreds Workshop: demo/ACA-Py-Workshop.md
+    - ACA-Py / AnonCreds / did:webvh Workshop: demo/WebVH-Workshop.md
     - The Alice-Faber Demo: demo/README.md
     - Open API Tutorial: demo/OpenAPIDemo.md
     - Alice Gets a Phone: demo/AliceGetsAPhone.md

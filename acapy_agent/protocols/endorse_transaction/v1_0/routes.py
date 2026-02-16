@@ -131,8 +131,8 @@ async def transactions_list(request: web.BaseRequest):
         request: aiohttp request object
     Returns:
         The transaction list response
-    """
 
+    """
     context: AdminRequestContext = request["context"]
 
     tag_filter = {}
@@ -161,8 +161,8 @@ async def transactions_retrieve(request: web.BaseRequest):
         request: aiohttp request object
     Returns:
         The transaction record response
-    """
 
+    """
     context: AdminRequestContext = request["context"]
     transaction_id = request.match_info["tran_id"]
 
@@ -195,8 +195,8 @@ async def transaction_create_request(request: web.BaseRequest):
         request: aiohttp request object
     Returns:
         The transaction record
-    """
 
+    """
     context: AdminRequestContext = request["context"]
     outbound_handler = request["outbound_message_router"]
     transaction_id = request.query.get("tran_id")
@@ -286,8 +286,8 @@ async def endorse_transaction_response(request: web.BaseRequest):
         request: aiohttp request object
     Returns:
         The updated transaction record details
-    """
 
+    """
     context: AdminRequestContext = request["context"]
     outbound_handler = request["outbound_message_router"]
 
@@ -356,8 +356,8 @@ async def refuse_transaction_response(request: web.BaseRequest):
         request: aiohttp request object
     Returns:
         The updated transaction record details
-    """
 
+    """
     context: AdminRequestContext = request["context"]
     outbound_handler = request["outbound_message_router"]
 
@@ -421,8 +421,8 @@ async def cancel_transaction(request: web.BaseRequest):
         request: aiohttp request object
     Returns:
         The updated transaction record details
-    """
 
+    """
     context: AdminRequestContext = request["context"]
     outbound_handler = request["outbound_message_router"]
     transaction_id = request.match_info["tran_id"]
@@ -484,8 +484,8 @@ async def transaction_resend(request: web.BaseRequest):
         request: aiohttp request object
     Returns:
         The updated transaction record details
-    """
 
+    """
     context: AdminRequestContext = request["context"]
     outbound_handler = request["outbound_message_router"]
     transaction_id = request.match_info["tran_id"]
@@ -547,8 +547,8 @@ async def set_endorser_role(request: web.BaseRequest):
         request: aiohttp request object
     Returns:
         The assigned transaction jobs
-    """
 
+    """
     context: AdminRequestContext = request["context"]
     outbound_handler = request["outbound_message_router"]
     connection_id = request.match_info["conn_id"]
@@ -588,8 +588,8 @@ async def set_endorser_info(request: web.BaseRequest):
         request: aiohttp request object
     Returns:
         The assigned endorser information
-    """
 
+    """
     context: AdminRequestContext = request["context"]
     connection_id = request.match_info["conn_id"]
     endorser_did = request.query.get("endorser_did")
@@ -652,8 +652,8 @@ async def transaction_write(request: web.BaseRequest):
         request: aiohttp request object
     Returns:
         The returned ledger response
-    """
 
+    """
     context: AdminRequestContext = request["context"]
     outbound_handler = request["outbound_message_router"]
     transaction_id = request.match_info["tran_id"]
@@ -698,7 +698,6 @@ def register_events(event_bus: EventBus):
 
 async def on_startup_event(profile: Profile, event: Event):
     """Handle any events we need to support."""
-
     await attempt_auto_author_with_endorser_setup(profile)
 
 
@@ -710,7 +709,6 @@ async def on_shutdown_event(profile: Profile, event: Event):
 
 async def register(app: web.Application):
     """Register routes."""
-
     app.add_routes(
         [
             web.get("/transactions", transactions_list, allow_head=False),
@@ -729,7 +727,6 @@ async def register(app: web.Application):
 
 def post_process_routes(app: web.Application):
     """Amend swagger API."""
-
     # Add top-level tags description
     if "tags" not in app._state["swagger_dict"]:
         app._state["swagger_dict"]["tags"] = []

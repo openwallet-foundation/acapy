@@ -11,6 +11,7 @@ from aiohttp_apispec import (
 
 from ....admin.decorators.auth import tenant_authentication
 from ....admin.request_context import AdminRequestContext
+from ....protocols.endorse_transaction.v1_0.util import is_author_role
 from ....utils.profiles import is_not_anoncreds_profile_raise_web_exception
 from ...base import AnonCredsObjectNotFound, AnonCredsResolutionError
 from ...issuer import AnonCredsIssuer, AnonCredsIssuerError
@@ -50,8 +51,17 @@ async def cred_def_post(request: web.BaseRequest):
     is_not_anoncreds_profile_raise_web_exception(profile)
 
     body = await request.json()
-    options = body.get("options", {})
     cred_def = body.get("credential_definition")
+    options = body.get("options") or {}
+    wait_for_revocation_setup = body.get("wait_for_revocation_setup", True)
+
+    if wait_for_revocation_setup and is_author_role(profile):
+        # Override setting; for authors it should only be True if auto-create flag is True
+        wait_for_revocation_setup = profile.settings.get(
+            "endorser.auto_create_rev_reg", False
+        )
+
+    options["wait_for_revocation_setup"] = wait_for_revocation_setup
 
     if cred_def is None:
         raise web.HTTPBadRequest(reason="cred_def object is required")
@@ -152,7 +162,6 @@ async def cred_defs_get(request: web.BaseRequest):
 
 async def register(app: web.Application) -> None:
     """Register routes."""
-
     app.add_routes(
         [
             web.post("/anoncreds/credential-definition", cred_def_post),
@@ -172,7 +181,6 @@ async def register(app: web.Application) -> None:
 
 def post_process_routes(app: web.Application) -> None:
     """Amend swagger API."""
-
     # Add top-level tags description
     if "tags" not in app._state["swagger_dict"]:
         app._state["swagger_dict"]["tags"] = []
