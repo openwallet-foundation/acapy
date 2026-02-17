@@ -1404,7 +1404,7 @@ class TestConductor(IsolatedAsyncioTestCase, Config, TestDIDs):
 
         test_topic = "test-topic"
         test_payload = {"test": "payload"}
-        test_endpoint = "http://example"
+        test_endpoint = "https://example"
         test_attempts = 2
 
         test_profile = await create_test_profile(None, await builder.build_context())
@@ -1456,7 +1456,7 @@ class TestConductor(IsolatedAsyncioTestCase, Config, TestDIDs):
 
         with mock.patch.object(test_module, "LOGGER") as mock_logger:
             conductor.webhook_router(
-                "test-topic", {"test": "payload"}, "http://example", 2
+                "test-topic", {"test": "payload"}, "https://example", 2
             )
             mock_logger.warning.assert_called_once()
 
@@ -1537,7 +1537,7 @@ class TestConductor(IsolatedAsyncioTestCase, Config, TestDIDs):
 
         test_topic = "test-topic"
         test_payload = {"test": "payload"}
-        test_endpoint = "http://example"
+        test_endpoint = "https://example"
         test_attempts = 2
 
         test_profile = await create_test_profile(None, await builder.build_context())
