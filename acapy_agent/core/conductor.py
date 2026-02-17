@@ -236,13 +236,18 @@ class Conductor:
             )
             LOGGER.debug("Inbound transports registered successfully.")
 
-            # Register all outbound transports
-            LOGGER.debug("Setting up outbound transports.")
-            self.outbound_transport_manager = OutboundTransportManager(
-                self.root_profile, self.handle_not_delivered
-            )
+        # Always register outbound transports (needed for webhook delivery
+        # even when DIDComm transports are disabled via --no-transport)
+        LOGGER.debug("Setting up outbound transports.")
+        self.outbound_transport_manager = OutboundTransportManager(
+            self.root_profile, self.handle_not_delivered
+        )
+        if context.settings.get("transport.disabled"):
+            # In no-transport mode, register HTTP transport for webhook delivery
+            self.outbound_transport_manager.register("http")
+        else:
             await self.outbound_transport_manager.setup()
-            LOGGER.debug("Outbound transports registered successfully.")
+        LOGGER.debug("Outbound transports registered successfully.")
 
         # Initialize dispatcher
         LOGGER.debug("Initializing dispatcher.")
@@ -335,7 +340,7 @@ class Conductor:
         LOGGER.debug("Wallet type validated.")
 
         if not context.settings.get("transport.disabled"):
-            # Start up transports if enabled
+            # Start up inbound transports if enabled
             try:
                 LOGGER.debug("Transport not disabled. Starting inbound transports.")
                 await self.inbound_transport_manager.start()
@@ -343,6 +348,10 @@ class Conductor:
             except Exception:
                 LOGGER.exception("Unable to start inbound transports.")
                 raise
+
+        # Always start outbound transports (needed for webhook delivery
+        # even when DIDComm transports are disabled via --no-transport)
+        if self.outbound_transport_manager:
             try:
                 LOGGER.debug("Starting outbound transports.")
                 await self.outbound_transport_manager.start()
@@ -865,6 +874,11 @@ class Conductor:
             metadata: Additional metadata associated with the payload
 
         """
+        if not self.outbound_transport_manager:
+            LOGGER.warning(
+                "Cannot send webhook: outbound transport manager is not available"
+            )
+            return
         try:
             self.outbound_transport_manager.enqueue_webhook(
                 topic, payload, endpoint, max_attempts, metadata
