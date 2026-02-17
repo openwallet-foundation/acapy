@@ -1,5 +1,39 @@
 # ACA-Py Changelog
 
+## 1.5.1rc0
+
+### February 18, 2026
+
+ACA-Py 1.5.1 is a clean up release primarily to address some follow-on issues related to the [1.5.0] release -- notably with the handling of AnonCreds revocation. There are some  convenience additions and a GitHub Actions pipeline fix.
+
+[1.5.0]: https://github.com/openwallet-foundation/acapy/releases/tag/1.5.0
+
+### 1.5.1 Breaking Changes
+
+There are no breaking changes in this release from [1.5.0]. Those upgrading from a version prior to [1.5.0] should review the [1.5.0] Breaking Changes section for details about the breaking changes introduced in [1.5.0].
+
+### 1.5.1 Deprecation Notices
+
+The `acapy_agent.revocation_anoncreds` package has been deprecated and relocated to `acapy_agent.anoncreds.revocation` for improved consistency across the codebase. The change should only affect [ACA-Py Plugins] that implement AnonCreds, but other developers should also take note.
+
+The `wallet-type` configuration value `askar` is now deprecated and all deployments still using that wallet type should migrate to either the `askar-anoncreds` or (ideally) `kanon-anoncreds` wallet types.
+
+AIP 1.0 protocols that were [previously announced as deprecated](#140-deprecation-notices) have now been removed from ACA-Py core. Implementers still using those protocols **MUST** adjust their configuration to load those protocols from the respective plugins, or better, upgrade to their AIP 2.0 equivalents.
+
+### 1.5.1 Categorized PR List
+
+- **Core Platform and Architecture**
+  - Enable outbound transport in `--no-transport` mode, only disable inbound [\#4050](https://github.com/openwallet-foundation/acapy/pull/4050) [PatStLouis](https://github.com/PatStLouis)
+  - feat: add list endpoint for out-of-band records [\#4046](https://github.com/openwallet-foundation/acapy/pull/4046) [kukgini](https://github.com/kukgini)
+- **AnonCreds, Revocation, and Wallet Migration**
+  - Fix revocation setup [\#4047](https://github.com/openwallet-foundation/acapy/pull/4047) [PatStLouis](https://github.com/PatStLouis)
+- **Testing, Logging, and Diagnostics**
+  - FIX BDD interop integration tests [\#4052](https://github.com/openwallet-foundation/acapy/pull/4052) [PatStLouis](https://github.com/PatStLouis)
+- **Dependabot PRs**
+  - [Link to list of Dependabot PRs in this release](https://github.com/openwallet-foundation/acapy/pulls?q=is%3Apr+is%3Amerged+merged%3A2025-01-29..2026-02-18+author%3Aapp%2Fdependabot+)
+- **Release management pull requests**:
+  - 1.5.1rc0 [\#4054](https://github.com/openwallet-foundation/acapy/pull/4054) [swcurran](https://github.com/swcurran)
+
 ## 1.5.0
 
 ### January 29, 2026
