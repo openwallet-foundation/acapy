@@ -1404,7 +1404,7 @@ class TestConductor(IsolatedAsyncioTestCase, Config, TestDIDs):
 
         test_topic = "test-topic"
         test_payload = {"test": "payload"}
-        test_endpoint = "http://example"
+        test_endpoint = "https://example"
         test_attempts = 2
 
         test_profile = await create_test_profile(None, await builder.build_context())
@@ -1441,6 +1441,127 @@ class TestConductor(IsolatedAsyncioTestCase, Config, TestDIDs):
             conductor.outbound_transport_manager,
             "enqueue_webhook",
             side_effect=OutboundDeliveryError,
+        ) as mock_enqueue:
+            conductor.webhook_router(
+                test_topic, test_payload, test_endpoint, test_attempts
+            )
+            mock_enqueue.assert_called_once_with(
+                test_topic, test_payload, test_endpoint, test_attempts, None
+            )
+
+    async def test_webhook_router_no_outbound_manager(self):
+        builder: ContextBuilder = StubContextBuilder(self.test_settings)
+        conductor = test_module.Conductor(builder)
+        conductor.outbound_transport_manager = None
+
+        with mock.patch.object(test_module, "LOGGER") as mock_logger:
+            conductor.webhook_router(
+                "test-topic", {"test": "payload"}, "https://example", 2
+            )
+            mock_logger.warning.assert_called_once()
+
+    async def test_setup_no_transport_mode(self):
+        builder: ContextBuilder = StubContextBuilder(self.test_settings)
+        builder.update_settings({"transport.disabled": True})
+        conductor = test_module.Conductor(builder)
+
+        test_profile = await create_test_profile(None, await builder.build_context())
+
+        with (
+            mock.patch.object(
+                test_module,
+                "wallet_config",
+                return_value=(
+                    test_profile,
+                    DIDInfo("did", "verkey", metadata={}, method=SOV, key_type=ED25519),
+                ),
+            ),
+            mock.patch.object(
+                test_module, "OutboundTransportManager", autospec=True
+            ) as mock_outbound_mgr,
+        ):
+            mock_outbound_mgr.return_value.registered_transports = {
+                "test": mock.MagicMock(schemes=["http"])
+            }
+            await conductor.setup()
+
+            # Inbound transports should NOT be set up
+            assert conductor.inbound_transport_manager is None
+
+            # Outbound transport manager should be created
+            mock_outbound_mgr.assert_called_once()
+            # HTTP transport should be registered for webhook delivery
+            mock_outbound_mgr.return_value.register.assert_called_once_with("http")
+            # setup() should NOT be called (that registers from config)
+            mock_outbound_mgr.return_value.setup.assert_not_awaited()
+
+    async def test_start_no_transport_mode(self):
+        builder: ContextBuilder = StubContextBuilder(self.test_settings)
+        builder.update_settings({"transport.disabled": True})
+        conductor = test_module.Conductor(builder)
+
+        test_profile = await create_test_profile(None, await builder.build_context())
+
+        with (
+            mock.patch.object(
+                test_module,
+                "wallet_config",
+                return_value=(
+                    test_profile,
+                    DIDInfo("did", "verkey", metadata={}, method=SOV, key_type=ED25519),
+                ),
+            ),
+            mock.patch.object(
+                test_module, "OutboundTransportManager", autospec=True
+            ) as mock_outbound_mgr,
+        ):
+            mock_outbound_mgr.return_value.registered_transports = {
+                "test": mock.MagicMock(schemes=["http"])
+            }
+            await conductor.setup()
+
+            mock_outbound_mgr.return_value.registered_transports = {}
+
+            await conductor.start()
+
+            # Outbound transports should still be started for webhooks
+            mock_outbound_mgr.return_value.start.assert_awaited_once_with()
+
+            await conductor.stop()
+            mock_outbound_mgr.return_value.stop.assert_awaited_once_with()
+
+    async def test_webhook_in_no_transport_mode(self):
+        builder: ContextBuilder = StubContextBuilder(self.test_settings)
+        builder.update_settings({"transport.disabled": True})
+        conductor = test_module.Conductor(builder)
+
+        test_topic = "test-topic"
+        test_payload = {"test": "payload"}
+        test_endpoint = "https://example"
+        test_attempts = 2
+
+        test_profile = await create_test_profile(None, await builder.build_context())
+
+        with (
+            mock.patch.object(
+                test_module,
+                "wallet_config",
+                return_value=(
+                    test_profile,
+                    DIDInfo("did", "verkey", metadata={}, method=SOV, key_type=ED25519),
+                ),
+            ),
+            mock.patch.object(
+                test_module, "OutboundTransportManager", autospec=True
+            ) as mock_outbound_mgr,
+        ):
+            mock_outbound_mgr.return_value.registered_transports = {
+                "test": mock.MagicMock(schemes=["http"])
+            }
+            await conductor.setup()
+
+        with mock.patch.object(
+            conductor.outbound_transport_manager, "enqueue_webhook"
         ) as mock_enqueue:
             conductor.webhook_router(
                 test_topic, test_payload, test_endpoint, test_attempts
