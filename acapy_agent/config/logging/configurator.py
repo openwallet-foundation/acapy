@@ -377,13 +377,15 @@ class LoggingConfigurator:
                 )
                 banner.hr()
                 banner.print(
-                    "Aries RFC 0036: Issue Credential 1.0 is deprecated "
-                    "and support will be removed in a future release; "
-                    "use RFC 0453: Issue Credential 2.0 instead."
+                    "Aries RFC 0036: Issue Credential 1.0 has been removed "
+                    "from ACA-Py core. To continue using this protocol, "
+                    "enable the issue-credential plugin from "
+                    "https://github.com/openwallet-foundation/acapy-plugins"
                 )
                 banner.hr()
                 banner.print(
-                    "Aries RFC 0037: Present Proof 1.0 is deprecated "
-                    "and support will be removed in a future release; "
-                    "use RFC 0454: Present Proof 2.0 instead."
+                    "Aries RFC 0037: Present Proof 1.0 has been removed "
+                    "from ACA-Py core. To continue using this protocol, "
+                    "enable the present-proof plugin from "
+                    "https://github.com/openwallet-foundation/acapy-plugins"
                 )
