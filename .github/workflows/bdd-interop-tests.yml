@@ -36,7 +36,7 @@ jobs:
           fetch-depth: 0
       - name: Check changed files
         id: check-changed-files
-        uses: tj-actions/changed-files@8cba46e29c11878d930bca7870bb54394d3e8b21 # v47.0.2
+        uses: tj-actions/changed-files@7dee1b0c1557f278e5c7dc244927139d78c0e22a # v47.0.4
         with:
           files_yaml: |
             src: 
@@ -66,7 +66,7 @@ jobs:
       - name: Prepare Interop Tests
         if: (steps.check-if-src-changed.outputs.run_tests != 'false' || steps.check_if_release.outputs.is_release == 'true' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
         run: |
-          # Get AATH 
+          # Get AATH
           git clone https://github.com/openwallet-foundation/owl-agent-test-harness.git
 
           # Change fork and branch for pull requests
@@ -83,27 +83,32 @@ jobs:
         if: (steps.check_if_release.outputs.is_release != 'true' && github.event_name == 'pull_request' && steps.check-if-src-changed.outputs.run_tests != 'false')
         run: |
           cd owl-agent-test-harness
-          NO_TTY=1 LEDGER_URL_CONFIG=https://test.bcovrin.vonx.io TAILS_SERVER_URL_CONFIG=https://tails.vonx.io ./manage run -d acapy-main -t @critical -t ~@wip -t ~@T004-RFC0211 -t ~@DidMethod_orb -t ~@Transport_NoHttpOutbound -t ~@Anoncreds >> output.txt
+          LEDGER_TIMEOUT=180 NO_TTY=1 LEDGER_URL_CONFIG=https://test.bcovrin.vonx.io TAILS_SERVER_URL_CONFIG=https://tails.vonx.io ./manage run -d acapy-main -t @critical -t ~@wip -t ~@T004-RFC0211 -t ~@DidMethod_orb -t ~@Transport_NoHttpOutbound -t ~@Anoncreds 2>&1 | tee output.txt
       - name: Run Release or Nightly Interop Tests Indy
         if: (steps.check_if_release.outputs.is_release == 'true' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' && steps.check-if-src-changed.outputs.run_tests != 'false')
         run: |
           cd owl-agent-test-harness
-          NO_TTY=1 LEDGER_URL_CONFIG=https://test.bcovrin.vonx.io TAILS_SERVER_URL_CONFIG=https://tails.vonx.io ./manage run -d acapy-main -t @critical -t ~@wip -t ~@T004-RFC0211 -t ~@DidMethod_orb -t ~@Transport_NoHttpOutbound -t ~@Anoncreds >> output.txt
+          LEDGER_TIMEOUT=180 NO_TTY=1 LEDGER_URL_CONFIG=https://test.bcovrin.vonx.io TAILS_SERVER_URL_CONFIG=https://tails.vonx.io ./manage run -d acapy-main -t @critical -t ~@wip -t ~@T004-RFC0211 -t ~@DidMethod_orb -t ~@Transport_NoHttpOutbound -t ~@Anoncreds 2>&1 | tee output.txt
       - name: Run Release or Nightly Interop Tests AnonCreds
         if: (steps.check_if_release.outputs.is_release == 'true' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' && steps.check-if-src-changed.outputs.run_tests != 'false')
         run: |
           cd owl-agent-test-harness
-          BACKCHANNEL_EXTRA_acapy_main="{\"wallet-type\":\"askar-anoncreds\"}" NO_TTY=1 LEDGER_URL_CONFIG=https://test.bcovrin.vonx.io TAILS_SERVER_URL_CONFIG=https://tails.vonx.io ./manage run -d acapy-main -t @AcceptanceTest -t ~@wip -t ~@T004-RFC0211 -t ~@DidMethod_orb -t ~@Transport_NoHttpOutbound -t ~@Indy -t ~@CredFormat_Indy >> output.txt
+          LEDGER_TIMEOUT=180 BACKCHANNEL_EXTRA_acapy_main="{\"wallet-type\":\"askar-anoncreds\"}" NO_TTY=1 LEDGER_URL_CONFIG=https://test.bcovrin.vonx.io TAILS_SERVER_URL_CONFIG=https://tails.vonx.io ./manage run -d acapy-main -t @AcceptanceTest -t ~@wip -t ~@T004-RFC0211 -t ~@DidMethod_orb -t ~@Transport_NoHttpOutbound -t ~@Indy -t ~@CredFormat_Indy 2>&1 | tee output.txt
       - name: Check If Tests Failed
-        if: steps.check-if-src-changed.outputs.run_tests != 'false'
+        if: always() && (steps.check-if-src-changed.outputs.run_tests != 'false')
         run: |
           cd owl-agent-test-harness
-          cat output.txt
-          if grep "Failing scenarios:" output.txt; then
-              echo "Tests failed"
-              exit 1
+          if [ -f output.txt ]; then
+            cat output.txt
+            if grep "Failing scenarios:" output.txt; then
+                echo "Tests failed"
+                exit 1
+            else
+                echo "Tests passed"
+                exit 0
+            fi
           else
-              echo "Tests passed"
-              exit 0
+            echo "No output file found - tests may not have run"
+            exit 1
           fi
 
