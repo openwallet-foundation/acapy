@@ -27,6 +27,7 @@ AIP 1.0 protocols that were [previously announced as deprecated](#140-deprecatio
   - feat: add list endpoint for out-of-band records [\#4046](https://github.com/openwallet-foundation/acapy/pull/4046) [kukgini](https://github.com/kukgini)
 - **AnonCreds, Revocation, and Wallet Migration**
   - Fix revocation setup [\#4047](https://github.com/openwallet-foundation/acapy/pull/4047) [PatStLouis](https://github.com/PatStLouis)
+  - fix: handle revocation registry race conditions for BDD integration tests [\#4056](https://github.com/openwallet-foundation/acapy/pull/4056) [PatStLouis](https://github.com/PatStLouis)
 - **Testing, Logging, and Diagnostics**
   - FIX BDD interop integration tests [\#4052](https://github.com/openwallet-foundation/acapy/pull/4052) [PatStLouis](https://github.com/PatStLouis)
 - **Dependabot PRs**
