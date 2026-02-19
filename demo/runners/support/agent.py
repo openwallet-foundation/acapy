@@ -494,6 +494,29 @@ class DemoAgent:
                 "credential_definition_ids"
             ][0]
         log_msg("Cred def ID:", credential_definition_id)
+
+        if support_revocation:
+            log_msg("Waiting for revocation registry to become active...")
+            poll_timeout = 60.0
+            poll_interval = 2.0
+            elapsed = 0.0
+            while elapsed < poll_timeout:
+                try:
+                    active_reg = await self.admin_GET(
+                        f"/anoncreds/revocation/active-registry/{credential_definition_id}"
+                    )
+                    if active_reg and active_reg.get("result"):
+                        log_msg("Revocation registry is active.")
+                        break
+                except Exception:
+                    pass
+                await asyncio.sleep(poll_interval)
+                elapsed += poll_interval
+            else:
+                log_msg(
+                    "WARNING: Revocation registry did not become active within timeout"
+                )
+
         return schema_id, credential_definition_id
 
     def get_agent_args(self):
