@@ -11,11 +11,12 @@ from ......utils.testing import create_test_profile
 from .....issuer import AnonCredsIssuer
 from .....models.issuer_cred_rev_record import IssuerCredRevRecord
 from .....models.revocation import RevRegDef, RevRegDefState, RevRegDefValue
-from .....revocation import AnonCredsRevocation
+from .....revocation import AnonCredsRevocation, AnonCredsRevocationError
 from .....tests.mock_objects import MockRevocationRegistryDefinition
 from ....common.testing import BaseAnonCredsRouteTestCase
 from .. import routes as test_module
 from ..routes import (
+    get_active_rev_reg,
     get_rev_reg_issued,
     get_rev_reg_issued_count,
     get_rev_regs,
@@ -177,6 +178,16 @@ class TestAnonCredsRevocationRegistryRoutes(
 
         with self.assertRaises(web.HTTPForbidden):
             await set_active_registry(self.request)
+
+    @mock.patch.object(
+        AnonCredsRevocation,
+        "get_or_create_active_registry",
+        side_effect=AnonCredsRevocationError("No active registry"),
+    )
+    async def test_get_active_rev_reg_not_found(self, mock_get):
+        self.request.match_info = {"cred_def_id": "test_cred_def_id"}
+        with self.assertRaises(web.HTTPNotFound):
+            await get_active_rev_reg(self.request)
 
     async def test_get_rev_regs(self):
         self.request.query = {
