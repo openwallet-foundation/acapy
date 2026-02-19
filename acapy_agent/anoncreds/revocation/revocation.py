@@ -1531,7 +1531,13 @@ class AnonCredsRevocation:
         new_rev_reg_def_id = None
         if new_backup_reg and not isinstance(new_backup_reg, str):
             new_rev_reg_def_id = new_backup_reg.rev_reg_def_id
-            await self.store_revocation_registry_definition(new_backup_reg)
+            try:
+                await self.store_revocation_registry_definition(new_backup_reg)
+            except AnonCredsRevocationError:
+                LOGGER.debug(
+                    "Registry %s already stored by event chain",
+                    new_rev_reg_def_id,
+                )
         elif isinstance(new_backup_reg, str):
             LOGGER.error("Failed to create new backup registry: %s", new_backup_reg)
         else:
@@ -1544,10 +1550,12 @@ class AnonCredsRevocation:
             keep_ids.add(new_rev_reg_def_id)
 
         async with self.profile.transaction() as txn:
-            registries = await txn.handle.fetch_all(
-                CATEGORY_REV_REG_DEF,
-                {"cred_def_id": cred_def_id},
-                for_update=True,
+            registries = list(
+                await txn.handle.fetch_all(
+                    CATEGORY_REV_REG_DEF,
+                    {"cred_def_id": cred_def_id},
+                    for_update=True,
+                )
             )
             recs = [
                 r for r in registries if r.tags.get("state") != RevRegDefState.STATE_WAIT

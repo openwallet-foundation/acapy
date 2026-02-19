@@ -1047,6 +1047,87 @@ class TestAnonCredsRevocation(IsolatedAsyncioTestCase):
         assert result[0].tags["state"] == RevRegDefState.STATE_DECOMMISSIONED
 
     @mock.patch.object(AskarAnonCredsProfileSession, "handle")
+    async def test_decommission_registry_duplicate_store_handled(self, mock_handle):
+        """When event chain already stored the registry, duplicate is handled gracefully."""
+        mock_handle.fetch_all = mock.CoroutineMock(
+            side_effect=[
+                [
+                    MockEntry(
+                        name="backup-reg-reg",
+                        tags={
+                            "cred_def_id": "test-rev-reg-def-id",
+                            "state": RevRegDefState.STATE_FINISHED,
+                            "active": "false",
+                        },
+                    ),
+                ],
+                [
+                    MockEntry(
+                        name="active-reg-reg",
+                        tags={
+                            "cred_def_id": "test-rev-reg-def-id",
+                            "state": RevRegDefState.STATE_FINISHED,
+                            "active": "true",
+                        },
+                    ),
+                    MockEntry(
+                        name="backup-reg-reg",
+                        tags={
+                            "cred_def_id": "test-rev-reg-def-id",
+                            "state": RevRegDefState.STATE_FINISHED,
+                            "active": "false",
+                        },
+                    ),
+                    MockEntry(
+                        name="new-rev-reg",
+                        tags={
+                            "cred_def_id": "test-rev-reg-def-id",
+                            "state": RevRegDefState.STATE_FINISHED,
+                            "active": "false",
+                        },
+                    ),
+                ],
+            ]
+        )
+        self.revocation.get_or_create_active_registry = mock.CoroutineMock(
+            return_value=RevRegDefResult(
+                job_id="test-job-id",
+                revocation_registry_definition_state=RevRegDefState(
+                    state=RevRegDefState.STATE_FINISHED,
+                    revocation_registry_definition_id="active-reg-reg",
+                    revocation_registry_definition=rev_reg_def,
+                ),
+                registration_metadata={},
+                revocation_registry_definition_metadata={},
+            )
+        )
+        self.revocation.create_and_register_revocation_registry_definition = (
+            mock.CoroutineMock(
+                return_value=RevRegDefResult(
+                    job_id="test-job-id",
+                    revocation_registry_definition_state=RevRegDefState(
+                        state=RevRegDefState.STATE_ACTION,
+                        revocation_registry_definition_id="new-rev-reg",
+                        revocation_registry_definition=rev_reg_def,
+                    ),
+                    registration_metadata={},
+                    revocation_registry_definition_metadata={},
+                )
+            )
+        )
+        self.revocation.store_revocation_registry_definition = mock.CoroutineMock(
+            side_effect=test_module.AnonCredsRevocationError("Duplicate entry")
+        )
+        self.revocation.set_active_registry = mock.CoroutineMock(return_value=None)
+        mock_handle.replace = mock.CoroutineMock(return_value=None)
+
+        result = await self.revocation.decommission_registry("test-rev-reg-def-id")
+
+        assert isinstance(result, list)
+        self.revocation.store_revocation_registry_definition.assert_called_once()
+        self.revocation.set_active_registry.assert_called_once_with("backup-reg-reg")
+
+    @mock.patch.object(AskarAnonCredsProfileSession, "handle")
     async def test_get_backup_registry_id_raises_when_no_backup(self, mock_handle):
         """_get_backup_registry_id raises when no finished backup exists."""
         mock_handle.fetch_all = mock.CoroutineMock(return_value=[])
