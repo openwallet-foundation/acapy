@@ -2,7 +2,7 @@
 
 ## 1.5.1rc0
 
-### February 18, 2026
+### February 20, 2026
 
 ACA-Py 1.5.1 is a clean up release primarily to address some follow-on issues related to the [1.5.0] release -- notably with the handling of AnonCreds revocation. There are some  convenience additions and a GitHub Actions pipeline fix.
 
@@ -31,7 +31,7 @@ AIP 1.0 protocols that were [previously announced as deprecated](#140-deprecatio
 - **Testing, Logging, and Diagnostics**
   - FIX BDD interop integration tests [\#4052](https://github.com/openwallet-foundation/acapy/pull/4052) [PatStLouis](https://github.com/PatStLouis)
 - **Dependabot PRs**
-  - [Link to list of Dependabot PRs in this release](https://github.com/openwallet-foundation/acapy/pulls?q=is%3Apr+is%3Amerged+merged%3A2025-01-29..2026-02-18+author%3Aapp%2Fdependabot+)
+  - [Link to list of Dependabot PRs in this release](https://github.com/openwallet-foundation/acapy/pulls?q=is%3Apr+is%3Amerged+merged%3A2025-01-29..2026-02-20+author%3Aapp%2Fdependabot+)
 - **Release management pull requests**:
   - 1.5.1rc0 [\#4054](https://github.com/openwallet-foundation/acapy/pull/4054) [swcurran](https://github.com/swcurran)
 
