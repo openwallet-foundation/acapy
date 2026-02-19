@@ -146,6 +146,7 @@ nav:
     - Databases: deploying/Databases.md
     - Persistent Queues and Caching: deploying/RedisPlugins.md
     - The askar-anoncreds Wallet Type: deploying/AnonCredsWalletType.md
+    - Migrating Issuance from Indy to did:webvh: deploying/IndyToWebVHMigration.md
 - Testing/Troubleshooting:
     - Running and Creating Unit Tests: testing/UnitTests.md
     - Integration Tests: testing/IntegrationTests.md
