@@ -2,6 +2,7 @@ from unittest import IsolatedAsyncioTestCase
 
 from .....admin.request_context import AdminRequestContext
 from .....connections.models.conn_record import ConnRecord
+from .....storage.error import StorageError
 from .....tests import mock
 from .....utils.testing import create_test_profile
 from .. import routes as test_module
@@ -231,6 +232,76 @@ class TestOutOfBandRoutes(IsolatedAsyncioTestCase):
 
             with self.assertRaises(test_module.web.HTTPBadRequest):
                 await test_module.invitation_receive(self.request)
+
+    async def test_oob_records_list(self):
+        mock_record = mock.MagicMock(
+            serialize=mock.MagicMock(return_value={"oob_id": "test"})
+        )
+        with (
+            mock.patch.object(
+                test_module.OobRecord,
+                "query",
+                mock.CoroutineMock(return_value=[mock_record]),
+            ),
+            mock.patch.object(
+                test_module.web, "json_response", mock.Mock()
+            ) as mock_json_response,
+        ):
+            await test_module.oob_records_list(self.request)
+            mock_json_response.assert_called_once_with(
+                {"results": [{"oob_id": "test"}]}
+            )
+
+    async def test_oob_records_list_with_filters(self):
+        self.request.query = {
+            "state": "initial",
+            "role": "sender",
+            "connection_id": "test-conn-id",
+            "invi_msg_id": "test-invi-id",
+        }
+        with (
+            mock.patch.object(
+                test_module.OobRecord,
+                "query",
+                mock.CoroutineMock(return_value=[]),
+            ) as mock_query,
+            mock.patch.object(
+                test_module.web, "json_response", mock.Mock()
+            ) as mock_json_response,
+        ):
+            await test_module.oob_records_list(self.request)
+            mock_query.assert_called_once()
+            call_kwargs = mock_query.call_args
+            tag_filter = call_kwargs[0][1]
+            assert "connection_id" in tag_filter
+            assert "invi_msg_id" in tag_filter
+            assert "state" not in tag_filter
+            mock_json_response.assert_called_once_with({"results": []})
+
+    async def test_oob_records_list_with_pagination(self):
+        self.request.query = {"limit": "10", "offset": "5"}
+        with (
+            mock.patch.object(
+                test_module.OobRecord,
+                "query",
+                mock.CoroutineMock(return_value=[]),
+            ) as mock_query,
+            mock.patch.object(test_module.web, "json_response", mock.Mock()),
+        ):
+            await test_module.oob_records_list(self.request)
+            mock_query.assert_called_once()
+            call_kwargs = mock_query.call_args[1]
+            assert call_kwargs["limit"] == 10
+            assert call_kwargs["offset"] == 5
+
+    async def test_oob_records_list_storage_error(self):
+        with mock.patch.object(
+            test_module.OobRecord,
+            "query",
+            mock.CoroutineMock(side_effect=StorageError("test error")),
+        ):
+            with self.assertRaises(test_module.web.HTTPBadRequest):
+                await test_module.oob_records_list(self.request)
 
     async def test_register(self):
         mock_app = mock.MagicMock()
