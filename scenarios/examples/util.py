@@ -313,6 +313,82 @@ async def indy_present_proof_v2(
     return holder_pres_ex, verifier_pres_ex
 
 
+async def jsonld_present_proof_v2(
+    holder: Controller,
+    verifier: Controller,
+    holder_connection_id: str,
+    verifier_connection_id: str,
+    *,
+    presentation_definition: Mapping[str, Any],
+    domain: Optional[str] = None,
+    challenge: Optional[str] = None,
+    comment: Optional[str] = None,
+):
+    """Present a credential using present proof v2 (DIF/JSON-LD)."""
+    dif_options: Dict[str, Any] = {"challenge": challenge or str(uuid4())}
+    if domain:
+        dif_options["domain"] = domain
+
+    verifier_pres_ex = await verifier.post(
+        "/present-proof-2.0/send-request",
+        json={
+            "auto_verify": False,
+            "comment": comment or "Presentation request from minimal",
+            "connection_id": verifier_connection_id,
+            "presentation_request": {
+                "dif": {
+                    "presentation_definition": dict(presentation_definition),
+                    "options": dif_options,
+                }
+            },
+            "trace": False,
+        },
+        response=V20PresExRecord,
+    )
+    verifier_pres_ex_id = verifier_pres_ex.pres_ex_id
+
+    holder_pres_ex = await holder.event_with_values(
+        topic="present_proof_v2_0",
+        event_type=V20PresExRecord,
+        connection_id=holder_connection_id,
+        state="request-received",
+    )
+    holder_pres_ex_id = holder_pres_ex.pres_ex_id
+
+    await holder.post(
+        f"/present-proof-2.0/records/{holder_pres_ex_id}/send-presentation",
+        json={"dif": {}},
+        response=V20PresExRecord,
+    )
+
+    await verifier.event_with_values(
+        topic="present_proof_v2_0",
+        event_type=V20PresExRecord,
+        pres_ex_id=verifier_pres_ex_id,
+        state="presentation-received",
+    )
+    await verifier.post(
+        f"/present-proof-2.0/records/{verifier_pres_ex_id}/verify-presentation",
+        json={},
+        response=V20PresExRecord,
+    )
+    verifier_pres_ex = await verifier.event_with_values(
+        topic="present_proof_v2_0",
+        event_type=V20PresExRecord,
+        pres_ex_id=verifier_pres_ex_id,
+        state="done",
+    )
+
+    holder_pres_ex = await holder.event_with_values(
+        topic="present_proof_v2_0",
+        event_type=V20PresExRecord,
+        pres_ex_id=holder_pres_ex_id,
+        state="done",
+    )
+
+    return holder_pres_ex, verifier_pres_ex
+
+
 async def anoncreds_issue_credential_v2(
     issuer: Controller,
     holder: Controller,

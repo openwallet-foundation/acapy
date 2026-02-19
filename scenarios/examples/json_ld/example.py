@@ -15,10 +15,10 @@ from acapy_controller.models import DIDResult, V20PresExRecord
 from acapy_controller.protocols import (
     didexchange,
     jsonld_issue_credential,
-    jsonld_present_proof,
     params,
 )
 from aiohttp import ClientSession
+from examples.util import jsonld_present_proof_v2
 
 ALICE = getenv("ALICE", "http://alice:3001")
 BOB = getenv("BOB", "http://bob:3001")
@@ -159,7 +159,7 @@ async def main():
         pause_for_input()
 
         with section("Present example ED25519 credential"):
-            alice_pres_ex, bob_pres_ex = await jsonld_present_proof(
+            alice_pres_ex, bob_pres_ex = await jsonld_present_proof_v2(
                 alice,
                 bob,
                 alice_conn.connection_id,
@@ -241,7 +241,7 @@ async def main():
         pause_for_input()
 
         with section("Present example P256 credential"):
-            alice_pres_ex, bob_pres_ex = await jsonld_present_proof(
+            alice_pres_ex, bob_pres_ex = await jsonld_present_proof_v2(
                 alice,
                 bob,
                 alice_conn.connection_id,
@@ -327,7 +327,7 @@ async def main():
         pause_for_input()
 
         with section("Present ED25519 quick context credential"):
-            alice_pres_ex, bob_pres_ex = await jsonld_present_proof(
+            alice_pres_ex, bob_pres_ex = await jsonld_present_proof_v2(
                 alice,
                 bob,
                 alice_conn.connection_id,
@@ -405,7 +405,7 @@ async def main():
         pause_for_input()
 
         with section("Present BBS+ Credential with SD"):
-            alice_pres_ex, bob_pres_ex = await jsonld_present_proof(
+            alice_pres_ex, bob_pres_ex = await jsonld_present_proof_v2(
                 alice,
                 bob,
                 alice_conn.connection_id,
