@@ -10,6 +10,7 @@ from os import getenv
 from uuid import uuid4
 
 from acapy_controller import Controller
+from acapy_controller.controller import ControllerError
 from acapy_controller.logging import logging_to_stdout, pause_for_input, section
 from acapy_controller.models import DIDResult, V20PresExRecord
 from acapy_controller.protocols import (
@@ -207,7 +208,7 @@ async def main():
                 domain="test-degree",
             )
         with section("Presentation summary", character="-"):
-            print(presentation_summary(alice_pres_ex.into(V20PresExRecord)))
+            print(presentation_summary(alice_pres_ex))
 
         pause_for_input()
 
@@ -294,7 +295,7 @@ async def main():
                 domain="test-degree",
             )
         with section("Presentation summary", character="-"):
-            print(presentation_summary(alice_pres_ex.into(V20PresExRecord)))
+            print(presentation_summary(alice_pres_ex))
 
         pause_for_input()
 
@@ -370,37 +371,44 @@ async def main():
                 domain="test-degree",
             )
         with section("Presentation summary", character="-"):
-            print(presentation_summary(alice_pres_ex.into(V20PresExRecord)))
+            print(presentation_summary(alice_pres_ex))
 
         pause_for_input()
 
         with section("Issue BBS+ Credential"):
-            issuer_cred_ex, holder_cred_ex = await jsonld_issue_credential(
-                alice,
-                bob,
-                alice_conn.connection_id,
-                bob_conn.connection_id,
-                credential={
-                    "@context": [
-                        "https://www.w3.org/2018/credentials/v1",
-                        {
-                            "ex": "https://example.com/examples#",
-                            "Employment": "ex:Employment",
-                            "dateHired": "ex:dateHired",
-                            "clearance": "ex:clearance",
+            try:
+                issuer_cred_ex, holder_cred_ex = await jsonld_issue_credential(
+                    alice,
+                    bob,
+                    alice_conn.connection_id,
+                    bob_conn.connection_id,
+                    credential={
+                        "@context": [
+                            "https://www.w3.org/2018/credentials/v1",
+                            {
+                                "ex": "https://example.com/examples#",
+                                "Employment": "ex:Employment",
+                                "dateHired": "ex:dateHired",
+                                "clearance": "ex:clearance",
+                            },
+                        ],
+                        "type": ["VerifiableCredential", "Employment"],
+                        "issuer": bls_alice_did,
+                        "issuanceDate": str(date.today()),
+                        "credentialSubject": {
+                            "id": bls_bob_did,
+                            "dateHired": str(date.today()),
+                            "clearance": 1,
                         },
-                    ],
-                    "type": ["VerifiableCredential", "Employment"],
-                    "issuer": bls_alice_did,
-                    "issuanceDate": str(date.today()),
-                    "credentialSubject": {
-                        "id": bls_bob_did,
-                        "dateHired": str(date.today()),
-                        "clearance": 1,
                     },
-                },
-                options={"proofType": "BbsBlsSignature2020"},
-            )
+                    options={"proofType": "BbsBlsSignature2020"},
+                )
+            except ControllerError as err:
+                print(
+                    "Skipping BBS+ flow due to runtime capability/error: "
+                    f"{err}"
+                )
+                return
 
         pause_for_input()
 
@@ -447,7 +455,7 @@ async def main():
                 domain="building-access",
             )
         with section("Presentation summary", character="-"):
-            print(presentation_summary(alice_pres_ex.into(V20PresExRecord)))
+            print(presentation_summary(alice_pres_ex))
 
 
 if __name__ == "__main__":
