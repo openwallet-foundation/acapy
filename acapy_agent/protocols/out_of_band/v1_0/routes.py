@@ -18,6 +18,7 @@ from ....admin.decorators.auth import tenant_authentication
 from ....admin.request_context import AdminRequestContext
 from ....messaging.models.base import BaseModelError
 from ....messaging.models.openapi import OpenAPISchema
+from ....messaging.models.paginated_query import PaginatedQuerySchema, get_limit_offset
 from ....messaging.valid import UUID4_EXAMPLE, UUID4_VALIDATE
 from ....storage.error import StorageError, StorageNotFoundError
 from ...didcomm_prefix import DIDCommPrefix
@@ -26,7 +27,7 @@ from .manager import OutOfBandManager, OutOfBandManagerError
 from .message_types import SPEC_URI
 from .messages.invitation import HSProto, InvitationMessage, InvitationMessageSchema
 from .models.invitation import InvitationRecordSchema
-from .models.oob_record import OobRecordSchema
+from .models.oob_record import OobRecord, OobRecordSchema
 
 LOGGER = logging.getLogger(__name__)
 
@@ -217,6 +218,106 @@ class InvitationRecordMatchInfoSchema(OpenAPISchema):
     )
 
 
+class OobRecordListQueryStringSchema(PaginatedQuerySchema):
+    """Parameters and validators for OOB record list request query string."""
+
+    state = fields.Str(
+        required=False,
+        validate=validate.OneOf(
+            OobRecord.get_attributes_by_prefix("STATE_", walk_mro=True)
+        ),
+        metadata={
+            "description": "OOB record state",
+            "example": OobRecord.STATE_INITIAL,
+        },
+    )
+    role = fields.Str(
+        required=False,
+        validate=validate.OneOf(
+            OobRecord.get_attributes_by_prefix("ROLE_", walk_mro=False)
+        ),
+        metadata={
+            "description": "OOB record role",
+            "example": OobRecord.ROLE_SENDER,
+        },
+    )
+    connection_id = fields.Str(
+        required=False,
+        validate=UUID4_VALIDATE,
+        metadata={
+            "description": "Connection identifier",
+            "example": UUID4_EXAMPLE,
+        },
+    )
+    invi_msg_id = fields.Str(
+        required=False,
+        validate=UUID4_VALIDATE,
+        metadata={
+            "description": "Invitation message identifier",
+            "example": UUID4_EXAMPLE,
+        },
+    )
+
+
+class OobRecordListSchema(OpenAPISchema):
+    """Result schema for OOB record list."""
+
+    results = fields.List(
+        fields.Nested(OobRecordSchema()),
+        required=True,
+        metadata={"description": "List of OOB records"},
+    )
+
+
+@docs(
+    tags=["out-of-band"],
+    summary="Query OOB records",
+)
+@querystring_schema(OobRecordListQueryStringSchema())
+@response_schema(OobRecordListSchema(), 200, description="")
+@tenant_authentication
+async def oob_records_list(request: web.BaseRequest):
+    """Request handler for searching OOB records.
+
+    Args:
+        request: aiohttp request object
+
+    Returns:
+        The OOB record list response
+
+    """
+    context: AdminRequestContext = request["context"]
+
+    tag_filter = {
+        k: request.query[k]
+        for k in ("connection_id", "invi_msg_id")
+        if request.query.get(k, "") != ""
+    }
+    post_filter = {
+        k: request.query[k]
+        for k in ("state", "role")
+        if request.query.get(k, "") != ""
+    }
+
+    limit, offset = get_limit_offset(request)
+
+    profile = context.profile
+    try:
+        async with profile.session() as session:
+            records = await OobRecord.query(
+                session,
+                tag_filter,
+                limit=limit,
+                offset=offset,
+                post_filter_positive=post_filter,
+            )
+        results = [record.serialize() for record in records]
+    except (StorageError, BaseModelError) as err:
+        raise web.HTTPBadRequest(reason=err.roll_up) from err
+
+    return web.json_response({"results": results})
+
+
 @docs(
     tags=["out-of-band"],
     summary="Create a new connection invitation",
@@ -365,6 +466,11 @@ async def register(app: web.Application):
         [
             web.post("/out-of-band/create-invitation", invitation_create),
             web.post("/out-of-band/receive-invitation", invitation_receive),
+            web.get(
+                "/out-of-band/records",
+                oob_records_list,
+                allow_head=False,
+            ),
             web.delete("/out-of-band/invitations/{invi_msg_id}", invitation_remove),
         ]
     )
