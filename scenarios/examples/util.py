@@ -222,7 +222,12 @@ async def indy_present_proof_v2(
     non_revoked: Optional[Mapping[str, int]] = None,
     cred_rev_id: Optional[str] = None,
 ):
-    """Present a credential using present proof v2 (indy)."""
+    """Present a credential using present proof v2 (indy).
+
+    This follows the acapy_controller.protocols flow, but resolves the holder-side
+    request payload via _presentation_request_payload(...) to support both legacy
+    pres_request and by_format webhook payload shapes.
+    """
     attrs = {
         "name": name or "proof",
         "version": version or "0.1.0",
