@@ -271,11 +271,10 @@ async def indy_present_proof_v2(
 
     request_payload = _presentation_request_payload(holder_pres_ex)
     assert request_payload
+    proof_request = request_payload
     if "anoncreds" in request_payload or "indy" in request_payload:
         proof_request = request_payload.get("indy") or request_payload.get("anoncreds")
-    else:
-        proof_request = request_payload
-    assert proof_request
+        assert proof_request
     pres_spec = auto_select_credentials_for_presentation_request(
         proof_request, relevant_creds
     )
