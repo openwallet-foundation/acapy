@@ -2239,6 +2239,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../deploying/upgradingToAipv2/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Upgrading ACA-Py from AIPv1 to AIPv2
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../deploying/BBSSignatures/" class="md-nav__link">
         
   
@@ -3031,7 +3059,7 @@ a major, minor or patch release, per <a href="https://semver.org/">semver</a> ru
 <p>Once ready to do a release, create a local branch that includes the following updates:</p>
 <ol>
 <li>
-<p>Create a local PR branch from an updated <code>main</code> branch, e.g. "1.5.0".</p>
+<p>Create a local PR branch from an updated <code>main</code> branch, e.g. "1.5.1".</p>
 </li>
 <li>
 <p>See if there are any Document Site <code>mkdocs</code> changes needed. Run the script
@@ -3165,19 +3193,19 @@ a major, minor or patch release, per <a href="https://semver.org/">semver</a> ru
 <p>Published images are automatically tagged with multiple tags for flexibility:</p>
 <ul>
 <li>
-<p><strong>Regular Releases</strong> (e.g., <code>1.5.0</code>):</p>
+<p><strong>Regular Releases</strong> (e.g., <code>1.5.1</code>):</p>
 <ul>
-<li><code>py3.12-1.5.0</code> - Python version specific tag</li>
-<li><code>1.5.0</code> - Semantic version tag</li>
+<li><code>py3.12-1.5.1</code> - Python version specific tag</li>
+<li><code>1.5.1</code> - Semantic version tag</li>
 <li><code>1.5</code> - Major.minor tag (moves to latest patch release)</li>
 <li><code>latest</code> - Only assigned if this is the highest semantic version</li>
 </ul>
 </li>
 <li>
-<p><strong>Release Candidates</strong> (e.g., <code>1.5.0rc1</code>):</p>
+<p><strong>Release Candidates</strong> (e.g., <code>1.5.1rc0</code>):</p>
 <ul>
-<li><code>py3.12-1.5.0rc1</code> - Python version specific RC tag</li>
-<li><code>1.5.0rc1</code> - Semantic version RC tag</li>
+<li><code>py3.12-1.5.1rc0</code> - Python version specific RC tag</li>
+<li><code>1.5.1rc0</code> - Semantic version RC tag</li>
 <li><strong>Note</strong>: RC releases do NOT receive major.minor (<code>1.5</code>) or <code>latest</code> tags</li>
 </ul>
 </li>
@@ -3199,7 +3227,7 @@ a major, minor or patch release, per <a href="https://semver.org/">semver</a> ru
 <ol>
 <li>
 <p>When a new release is tagged, create a new branch at the same commit with
-    the branch name in the format <code>docs-v&lt;version&gt;</code>, for example, <code>docs-v1.5.0</code>.
+    the branch name in the format <code>docs-v&lt;version&gt;</code>, for example, <code>docs-v1.5.1</code>.
     The creation of the branch triggers the execution of the <a href="https://github.com/openwallet-foundation/acapy/blob/main/.github/workflows/publish-docs.yml">publish-docs</a>
     GitHub Action which generates the documentation for the new release,
     publishing it at <a href="https://aca-py.org">https://aca-py.org</a>. The GitHub Action also executes when

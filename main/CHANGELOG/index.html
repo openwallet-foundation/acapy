@@ -554,6 +554,67 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#151rc0" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1.5.1rc0
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="1.5.1rc0">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#february-20-2026" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        February 20, 2026
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#151-breaking-changes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1.5.1 Breaking Changes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#151-deprecation-notices" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1.5.1 Deprecation Notices
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#151-categorized-pr-list" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1.5.1 Categorized PR List
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#150" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3478,6 +3539,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../deploying/upgradingToAipv2/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Upgrading ACA-Py from AIPv1 to AIPv2
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../deploying/BBSSignatures/" class="md-nav__link">
         
   
@@ -4237,6 +4326,67 @@
       Table of contents
     </label>
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#151rc0" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1.5.1rc0
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="1.5.1rc0">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#february-20-2026" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        February 20, 2026
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#151-breaking-changes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1.5.1 Breaking Changes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#151-deprecation-notices" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1.5.1 Deprecation Notices
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#151-categorized-pr-list" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1.5.1 Categorized PR List
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
       
         <li class="md-nav__item">
   <a href="#150" class="md-nav__link">
@@ -5448,6 +5598,40 @@
 
 
 <h1 id="aca-py-changelog">ACA-Py Changelog<a class="headerlink" href="#aca-py-changelog" title="Permanent link">&para;</a></h1>
+<h2 id="151rc0">1.5.1rc0<a class="headerlink" href="#151rc0" title="Permanent link">&para;</a></h2>
+<h3 id="february-20-2026">February 20, 2026<a class="headerlink" href="#february-20-2026" title="Permanent link">&para;</a></h3>
+<p>ACA-Py 1.5.1 is a clean up release primarily to address some follow-on issues related to the <a href="https://github.com/openwallet-foundation/acapy/releases/tag/1.5.0">1.5.0</a> release -- notably with the handling of AnonCreds revocation. There are some  convenience additions and a GitHub Actions pipeline fix.</p>
+<h3 id="151-breaking-changes">1.5.1 Breaking Changes<a class="headerlink" href="#151-breaking-changes" title="Permanent link">&para;</a></h3>
+<p>There are no breaking changes in this release from <a href="https://github.com/openwallet-foundation/acapy/releases/tag/1.5.0">1.5.0</a>. Those upgrading from a version prior to <a href="https://github.com/openwallet-foundation/acapy/releases/tag/1.5.0">1.5.0</a> should review the <a href="https://github.com/openwallet-foundation/acapy/releases/tag/1.5.0">1.5.0</a> Breaking Changes section for details about the breaking changes introduced in <a href="https://github.com/openwallet-foundation/acapy/releases/tag/1.5.0">1.5.0</a>.</p>
+<h3 id="151-deprecation-notices">1.5.1 Deprecation Notices<a class="headerlink" href="#151-deprecation-notices" title="Permanent link">&para;</a></h3>
+<p>The <code>acapy_agent.revocation_anoncreds</code> package has been deprecated and relocated to <code>acapy_agent.anoncreds.revocation</code> for improved consistency across the codebase. The change should only affect <a href="https://plugins.aca-py.org">ACA-Py Plugins</a> that implement AnonCreds, but other developers should also take note.</p>
+<p>The <code>wallet-type</code> configuration value <code>askar</code> is now deprecated and all deployments still using that wallet type should migrate to either the <code>askar-anoncreds</code> or (ideally) <code>kanon-anoncreds</code> wallet types.</p>
+<p>AIP 1.0 protocols that were <a href="#140-deprecation-notices">previously announced as deprecated</a> have now been removed from ACA-Py core. Implementers still using those protocols <strong>MUST</strong> adjust their configuration to load those protocols from the respective plugins, or better, upgrade to their AIP 2.0 equivalents.</p>
+<h3 id="151-categorized-pr-list">1.5.1 Categorized PR List<a class="headerlink" href="#151-categorized-pr-list" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Core Platform and Architecture</strong><ul>
+<li>Enable outbound transport in <code>--no-transport</code> mode, only disable inbound <a href="https://github.com/openwallet-foundation/acapy/pull/4050">#4050</a> <a href="https://github.com/PatStLouis">PatStLouis</a></li>
+<li>feat: add list endpoint for out-of-band records <a href="https://github.com/openwallet-foundation/acapy/pull/4046">#4046</a> <a href="https://github.com/kukgini">kukgini</a></li>
+</ul>
+</li>
+<li><strong>AnonCreds, Revocation, and Wallet Migration</strong><ul>
+<li>Fix revocation setup <a href="https://github.com/openwallet-foundation/acapy/pull/4047">#4047</a> <a href="https://github.com/PatStLouis">PatStLouis</a></li>
+<li>fix: handle revocation registry race conditions for BDD integration tests <a href="https://github.com/openwallet-foundation/acapy/pull/4056">#4056</a> <a href="https://github.com/PatStLouis">PatStLouis</a></li>
+</ul>
+</li>
+<li><strong>Testing, Logging, and Diagnostics</strong><ul>
+<li>FIX BDD interop integration tests <a href="https://github.com/openwallet-foundation/acapy/pull/4052">#4052</a> <a href="https://github.com/PatStLouis">PatStLouis</a></li>
+</ul>
+</li>
+<li><strong>Dependabot PRs</strong><ul>
+<li><a href="https://github.com/openwallet-foundation/acapy/pulls?q=is%3Apr+is%3Amerged+merged%3A2025-01-29..2026-02-20+author%3Aapp%2Fdependabot+">Link to list of Dependabot PRs in this release</a></li>
+</ul>
+</li>
+<li><strong>Release management pull requests</strong>:<ul>
+<li>1.5.1rc0 <a href="https://github.com/openwallet-foundation/acapy/pull/4054">#4054</a> <a href="https://github.com/swcurran">swcurran</a></li>
+</ul>
+</li>
+</ul>
 <h2 id="150">1.5.0<a class="headerlink" href="#150" title="Permanent link">&para;</a></h2>
 <h3 id="january-29-2026">January 29, 2026<a class="headerlink" href="#january-29-2026" title="Permanent link">&para;</a></h3>
 <p>ACA-Py 1.5.0 is a significant release that advances the platform’s modernization and modularization goals. The most substantial changes are the upgrade to <strong>Python 3.13</strong> and the continued evolution of ACA-Py toward a <strong>plugin-oriented architecture</strong>, including the removal of the legacy v1.0 credential exchange protocols (issue credential and present proof) from the core agent. The release also includes some important fixes to the wallet migration process to the <code>askar-anoncreds</code> wallet type, and to the webhooks associated with the use of the <code>askar-anoncreds</code> wallet type.</p>
