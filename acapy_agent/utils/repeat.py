@@ -105,7 +105,9 @@ def _timeout_cm(duration: float):
         try:
             yield
         except asyncio.CancelledError as exc:
-            raise asyncio.TimeoutError from exc
+            handle.cancel()  # cleanup before raising
+            # Intentional: convert to TimeoutError for asyncio.timeout() API compatibility
+            raise asyncio.TimeoutError from exc  # NOSONAR python:S7497
         finally:
             handle.cancel()
 
