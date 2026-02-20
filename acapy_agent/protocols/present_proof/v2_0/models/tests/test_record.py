@@ -170,6 +170,19 @@ class TestRecord(IsolatedAsyncioTestCase):
                 AttachDecorator.data_base64(mapping=INDY_PROOF_REQ, ident="indy")
             ],
         )
+        pres_proposal = V20PresProposal(
+            formats=[
+                V20PresFormat(
+                    attach_id="indy",
+                    format_=ATTACHMENT_FORMAT[PRES_20_PROPOSAL][
+                        V20PresFormat.Format.INDY.api
+                    ],
+                )
+            ],
+            proposals_attach=[
+                AttachDecorator.data_base64(mapping=INDY_PROOF_REQ, ident="indy")
+            ],
+        )
         pres = V20Pres(
             formats=[
                 V20PresFormat(
@@ -188,6 +201,7 @@ class TestRecord(IsolatedAsyncioTestCase):
             initiator="init",
             role="role",
             state=V20PresExRecord.STATE_PRESENTATION_RECEIVED,
+            pres_proposal=pres_proposal,
             pres_request=pres_request,
             pres=pres,
         )
@@ -198,6 +212,5 @@ class TestRecord(IsolatedAsyncioTestCase):
 
             payload = session.emit_event.call_args.args[1]
             assert "by_format" in payload
-            assert "pres_request" not in payload
-            assert "pres" not in payload
-            assert "pres_proposal" not in payload
+            for key in ("pres", "pres_proposal", "pres_request"):
+                assert key not in payload and key in payload["by_format"]
