@@ -21,23 +21,10 @@ from acapy_controller.protocols import (
     params,
 )
 from aiohttp import ClientSession
-from examples.util import indy_present_proof_v2
+from examples.util import _presentation_request_payload, indy_present_proof_v2
 
 ALICE = getenv("ALICE", "http://alice:3001")
 BOB = getenv("BOB", "http://bob:3001")
-
-
-def _presentation_request_payload(presentation: V20PresExRecord):
-    if presentation.by_format and presentation.by_format.pres_request:
-        return presentation.by_format.pres_request
-    request = presentation.pres_request
-    if not request:
-        return None
-    if isinstance(request, dict):
-        return request
-    if hasattr(request, "model_dump"):
-        return request.model_dump(by_alias=True)
-    return request.dict(by_alias=True)
 
 
 def summary(presentation: V20PresExRecord) -> str:

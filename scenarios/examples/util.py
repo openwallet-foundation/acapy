@@ -59,7 +59,6 @@ def get_wallet_name(agent_command: List) -> str:
     raise Exception("Error unable to upgrade wallet type to askar-anoncreds")
 
 
-# anoncreds utilities:
 def _presentation_request_payload(
     presentation: V20PresExRecord,
 ) -> Optional[Dict[str, Any]]:
@@ -75,6 +74,7 @@ def _presentation_request_payload(
     return request.dict(by_alias=True)
 
 
+# anoncreds utilities:
 def anoncreds_presentation_summary(presentation: V20PresExRecord) -> str:
     """Summarize a presentation exchange record."""
     request = _presentation_request_payload(presentation)
