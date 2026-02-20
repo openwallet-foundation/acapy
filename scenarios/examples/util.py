@@ -1,3 +1,5 @@
+"""Scenario helpers for ACA-Py examples."""
+
 import json
 import time
 from dataclasses import dataclass
@@ -41,6 +43,7 @@ def wait_until_healthy(client, container_id: str, attempts: int = 350, is_health
 
 
 def update_wallet_type(agent_command: List, wallet_type: str) -> str:
+    """Update the wallet type argument in a CLI command list."""
     for i in range(len(agent_command) - 1):
         if agent_command[i] == "--wallet-type":
             agent_command[i + 1] = wallet_type
@@ -49,23 +52,37 @@ def update_wallet_type(agent_command: List, wallet_type: str) -> str:
 
 
 def get_wallet_name(agent_command: List) -> str:
+    """Return the wallet name argument from a CLI command list."""
     for i in range(len(agent_command) - 1):
         if agent_command[i] == "--wallet-name":
             return agent_command[i + 1]
     raise Exception("Error unable to upgrade wallet type to askar-anoncreds")
 
 
+def _presentation_request_payload(
+    presentation: V20PresExRecord,
+) -> Optional[Dict[str, Any]]:
+    if presentation.by_format and presentation.by_format.pres_request:
+        return presentation.by_format.pres_request
+    request = presentation.pres_request
+    if not request:
+        return None
+    if isinstance(request, dict):
+        return request
+    if hasattr(request, "model_dump"):
+        return request.model_dump(by_alias=True)
+    return request.dict(by_alias=True)
+
+
 # anoncreds utilities:
 def anoncreds_presentation_summary(presentation: V20PresExRecord) -> str:
     """Summarize a presentation exchange record."""
-    request = presentation.pres_request
+    request = _presentation_request_payload(presentation)
     return "Summary: " + json.dumps(
         {
             "state": presentation.state,
             "verified": presentation.verified,
-            "presentation_request": (
-                request.model_dump(by_alias=True) if request else None
-            ),
+            "presentation_request": request,
         },
         indent=2,
         sort_keys=True,
@@ -189,6 +206,191 @@ def auto_select_credentials_for_presentation_request(
             "self_attested_attributes": {},
         }
     )
+
+
+async def indy_present_proof_v2(
+    holder: Controller,
+    verifier: Controller,
+    holder_connection_id: str,
+    verifier_connection_id: str,
+    *,
+    name: Optional[str] = None,
+    version: Optional[str] = None,
+    comment: Optional[str] = None,
+    requested_attributes: Optional[List[Mapping[str, Any]]] = None,
+    requested_predicates: Optional[List[Mapping[str, Any]]] = None,
+    non_revoked: Optional[Mapping[str, int]] = None,
+    cred_rev_id: Optional[str] = None,
+):
+    """Present a credential using present proof v2 (indy).
+
+    This follows the acapy_controller.protocols flow, but resolves the holder-side
+    request payload via _presentation_request_payload(...) to support both legacy
+    pres_request and by_format webhook payload shapes.
+    """
+    attrs = {
+        "name": name or "proof",
+        "version": version or "0.1.0",
+        "nonce": str(randbelow(10**10)),
+        "requested_attributes": {
+            str(uuid4()): attr for attr in requested_attributes or []
+        },
+        "requested_predicates": {
+            str(uuid4()): pred for pred in requested_predicates or []
+        },
+        "non_revoked": (non_revoked if non_revoked else None),
+    }
+
+    verifier_pres_ex = await verifier.post(
+        "/present-proof-2.0/send-request",
+        json={
+            "auto_verify": False,
+            "comment": comment or "Presentation request from minimal",
+            "connection_id": verifier_connection_id,
+            "presentation_request": {"indy": attrs},
+            "trace": False,
+        },
+        response=V20PresExRecord,
+    )
+    verifier_pres_ex_id = verifier_pres_ex.pres_ex_id
+
+    holder_pres_ex = await holder.event_with_values(
+        topic="present_proof_v2_0",
+        event_type=V20PresExRecord,
+        connection_id=holder_connection_id,
+        state="request-received",
+    )
+    holder_pres_ex_id = holder_pres_ex.pres_ex_id
+
+    relevant_creds = await holder.get(
+        f"/present-proof-2.0/records/{holder_pres_ex_id}/credentials",
+        response=List[CredPrecis],
+    )
+
+    if cred_rev_id:
+        relevant_creds = [
+            cred
+            for cred in relevant_creds
+            if cred.cred_info._extra.get("cred_rev_id") == cred_rev_id
+        ]
+
+    request_payload = _presentation_request_payload(holder_pres_ex)
+    assert request_payload
+    proof_request = request_payload
+    if "anoncreds" in request_payload or "indy" in request_payload:
+        proof_request = request_payload.get("indy") or request_payload.get("anoncreds")
+        assert proof_request
+    pres_spec = auto_select_credentials_for_presentation_request(
+        proof_request, relevant_creds
+    )
+    await holder.post(
+        f"/present-proof-2.0/records/{holder_pres_ex_id}/send-presentation",
+        json={"indy": pres_spec.serialize()},
+        response=V20PresExRecord,
+    )
+
+    await verifier.event_with_values(
+        topic="present_proof_v2_0",
+        event_type=V20PresExRecord,
+        pres_ex_id=verifier_pres_ex_id,
+        state="presentation-received",
+    )
+    await verifier.post(
+        f"/present-proof-2.0/records/{verifier_pres_ex_id}/verify-presentation",
+        json={},
+        response=V20PresExRecord,
+    )
+    verifier_pres_ex = await verifier.event_with_values(
+        topic="present_proof_v2_0",
+        event_type=V20PresExRecord,
+        pres_ex_id=verifier_pres_ex_id,
+        state="done",
+    )
+
+    holder_pres_ex = await holder.event_with_values(
+        topic="present_proof_v2_0",
+        event_type=V20PresExRecord,
+        pres_ex_id=holder_pres_ex_id,
+        state="done",
+    )
+
+    return holder_pres_ex, verifier_pres_ex
+
+
+async def jsonld_present_proof_v2(
+    holder: Controller,
+    verifier: Controller,
+    holder_connection_id: str,
+    verifier_connection_id: str,
+    *,
+    presentation_definition: Mapping[str, Any],
+    domain: Optional[str] = None,
+    challenge: Optional[str] = None,
+    comment: Optional[str] = None,
+):
+    """Present a credential using present proof v2 (DIF/JSON-LD)."""
+    dif_options: Dict[str, Any] = {"challenge": challenge or str(uuid4())}
+    if domain:
+        dif_options["domain"] = domain
+
+    verifier_pres_ex = await verifier.post(
+        "/present-proof-2.0/send-request",
+        json={
+            "auto_verify": False,
+            "comment": comment or "Presentation request from minimal",
+            "connection_id": verifier_connection_id,
+            "presentation_request": {
+                "dif": {
+                    "presentation_definition": dict(presentation_definition),
+                    "options": dif_options,
+                }
+            },
+            "trace": False,
+        },
+        response=V20PresExRecord,
+    )
+    verifier_pres_ex_id = verifier_pres_ex.pres_ex_id
+
+    holder_pres_ex = await holder.event_with_values(
+        topic="present_proof_v2_0",
+        event_type=V20PresExRecord,
+        connection_id=holder_connection_id,
+        state="request-received",
+    )
+    holder_pres_ex_id = holder_pres_ex.pres_ex_id
+
+    await holder.post(
+        f"/present-proof-2.0/records/{holder_pres_ex_id}/send-presentation",
+        json={"dif": {}},
+        response=V20PresExRecord,
+    )
+
+    await verifier.event_with_values(
+        topic="present_proof_v2_0",
+        event_type=V20PresExRecord,
+        pres_ex_id=verifier_pres_ex_id,
+        state="presentation-received",
+    )
+    await verifier.post(
+        f"/present-proof-2.0/records/{verifier_pres_ex_id}/verify-presentation",
+        json={},
+        response=V20PresExRecord,
+    )
+    verifier_pres_ex = await verifier.event_with_values(
+        topic="present_proof_v2_0",
+        event_type=V20PresExRecord,
+        pres_ex_id=verifier_pres_ex_id,
+        state="done",
+    )
+
+    holder_pres_ex = await holder.event_with_values(
+        topic="present_proof_v2_0",
+        event_type=V20PresExRecord,
+        pres_ex_id=holder_pres_ex_id,
+        state="done",
+    )
+
+    return holder_pres_ex, verifier_pres_ex
 
 
 async def anoncreds_issue_credential_v2(
@@ -413,7 +615,6 @@ async def anoncreds_present_proof_v2(
         connection_id=holder_connection_id,
         state="request-received",
     )
-    assert holder_pres_ex.pres_request
     holder_pres_ex_id = holder_pres_ex.pres_ex_id
 
     relevant_creds = await holder.get(
@@ -429,10 +630,12 @@ async def anoncreds_present_proof_v2(
             if cred.cred_info._extra.get("cred_rev_id") == cred_rev_id
         ]
 
-    assert holder_pres_ex.by_format.pres_request
-    proof_request = holder_pres_ex.by_format.pres_request.get(
-        "anoncreds"
-    ) or holder_pres_ex.by_format.pres_request.get("indy")
+    request_payload = _presentation_request_payload(holder_pres_ex)
+    assert request_payload
+    proof_request = request_payload
+    if "anoncreds" in request_payload or "indy" in request_payload:
+        proof_request = request_payload.get("anoncreds") or request_payload.get("indy")
+        assert proof_request
     pres_spec = auto_select_credentials_for_presentation_request(
         proof_request, relevant_creds
     )
