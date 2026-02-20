@@ -138,6 +138,7 @@ nav:
 - Deploying:
     - Deployment Model: deploying/deploymentModel.md
     - Upgrading ACA-Py: deploying/UpgradingACA-Py.md
+    - Upgrading ACA-Py from AIPv1 to AIPv2: deploying/upgradingToAipv2.md
     - Enabling BBS Signatures support: deploying/BBSSignatures.md
     - Indy SDK to Askar Migration: deploying/IndySDKtoAskarMigration.md
     - Controller Migration to use the askar-anoncreds Wallet Type: deploying/AnonCredsControllerMigration.md
