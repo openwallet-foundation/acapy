@@ -404,10 +404,7 @@ async def main():
                     options={"proofType": "BbsBlsSignature2020"},
                 )
             except ControllerError as err:
-                print(
-                    "Skipping BBS+ flow due to runtime capability/error: "
-                    f"{err}"
-                )
+                print(f"Skipping BBS+ flow due to runtime capability/error: {err}")
                 return
 
         pause_for_input()

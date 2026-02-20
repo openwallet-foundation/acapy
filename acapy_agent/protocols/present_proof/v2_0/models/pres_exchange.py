@@ -207,7 +207,7 @@ class V20PresExRecord(BaseExchangeRecord):
             payload = V20PresExRecordWebhook(**payload)
             payload = payload.__dict__
         elif by_format := payload.get("by_format"):
-         # Issue #3802: remove legacy fields only when represented in by_format
+            # Issue #3802: remove legacy fields only when represented in by_format
             for key in ("pres_proposal", "pres_request", "pres"):
                 if key in by_format:
                     payload.pop(key, None)

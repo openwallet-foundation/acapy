@@ -19,9 +19,9 @@ from acapy_controller.protocols import (
 )
 from aiohttp import ClientSession
 from examples.util import (
-    _presentation_request_payload,
     CredDefResultAnonCreds,
     SchemaResultAnonCreds,
+    _presentation_request_payload,
     anoncreds_issue_credential_v2,
     anoncreds_present_proof_v2,
 )
