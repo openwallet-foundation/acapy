@@ -7,6 +7,7 @@ This guide helps you upgrade your controller application to use AIP 2.0 endpoint
 AIP 2.0 introduces significant changes to how credential and presentation exchanges are handled. AIP 1.0 exclusively supported Indy credentials. AIP 2.0 supports multiple credential formats, providing better interoperability and flexibility.
 
 **Key differences from AIP 1.0:**
+
 - New REST endpoints under `/issue-credential-2.0` and `/present-proof-2.0` namespaces
 - Format-specific filters in request bodies
 - New exchange record types with updated field names
@@ -14,6 +15,7 @@ AIP 2.0 introduces significant changes to how credential and presentation exchan
 - Enhanced state management
 
 **Credential format options:**
+
 - **`anoncreds` filter** (Recommended): Requires upgraded wallet type (`askar-anoncreds`). This is the recommended option offering improved performance, better features, and future-proof compatibility.
 - **`indy` filter**: Backward compatible with AIP 1.0, works with existing Indy wallets (no wallet upgrade required)
 
@@ -61,6 +63,7 @@ AIP 2.0 introduces new exchange record types that replace the v1.0 records. Unde
 ### Credential Exchange Records (V20CredExRecord)
 
 Key fields:
+
 - `cred_ex_id`: Unique identifier for the exchange (replaces `credential_exchange_id`)
 - `connection_id`: Connection identifier
 - `thread_id`: Thread identifier for message threading
@@ -77,6 +80,7 @@ Key fields:
 - `updated_at`: Timestamp when the record was last updated
 
 **Exchange States:**
+
 - `proposal-sent`: Proposal has been sent
 - `proposal-received`: Proposal has been received
 - `offer-sent`: Offer has been sent
@@ -91,6 +95,7 @@ Key fields:
 ### Presentation Exchange Records (V20PresExRecord)
 
 Key fields:
+
 - `pres_ex_id`: Unique identifier for the exchange (replaces `presentation_exchange_id`)
 - `connection_id`: Connection identifier
 - `thread_id`: Thread identifier for message threading
@@ -105,6 +110,7 @@ Key fields:
 - `updated_at`: Timestamp when the record was last updated
 
 **Exchange States:**
+
 - `proposal-sent`: Proposal has been sent
 - `proposal-received`: Proposal has been received
 - `request-sent`: Request has been sent
@@ -121,6 +127,7 @@ AIP 2.0 uses format-specific filters in request bodies when creating credential 
 ### Credential Exchange Filters
 
 The `filter` field is required in requests to endpoints like:
+
 - `POST /issue-credential-2.0/create`
 - `POST /issue-credential-2.0/send-offer`
 - `POST /issue-credential-2.0/send-request`
@@ -156,19 +163,21 @@ aca-py start \
 
 **Upgrading existing wallets:** For existing wallets with the `askar` type, you can upgrade to `askar-anoncreds` using the wallet upgrade endpoint:
 
-```
+```bash
 POST /anoncreds/wallet/upgrade?wallet_name=<wallet_name>
 ```
 
 > **⚠️ Warning:** This upgrade is irreversible. You cannot downgrade from `askar-anoncreds` back to `askar`. It is highly recommended to back up your wallet and test the upgrade in a development environment before upgrading a production wallet.
 
 **Benefits of upgrading to `askar-anoncreds`:**
+
 - Improved performance and efficiency
 - Better support for modern credential features
 - Future-proof solution aligned with AnonCreds specifications
 - Enhanced interoperability with other AnonCreds-compatible systems
 
 **AnonCreds filter fields:**
+
 - `cred_def_id` (string, optional): Credential definition identifier
 - `schema_id` (string, optional): Schema identifier
 - `schema_issuer_id` (string, optional): Schema issuer ID
@@ -191,6 +200,7 @@ The `indy` filter provides backward compatibility with AIP 1.0 and works with ex
 ```
 
 **Indy filter fields:**
+
 - `cred_def_id` (string, optional): Credential definition identifier
 - `schema_id` (string, optional): Schema identifier
 - `schema_issuer_did` (string, optional): Schema issuer DID
@@ -201,6 +211,7 @@ The `indy` filter provides backward compatibility with AIP 1.0 and works with ex
 ### Presentation Request Filters
 
 When creating presentation requests, you specify a `presentation_request` object that supports multiple proof formats. The `presentation_request` field is used in endpoints like:
+
 - `POST /present-proof-2.0/create-request`
 - `POST /present-proof-2.0/send-request`
 
@@ -270,6 +281,7 @@ Webhooks are sent as POST requests to the configured URL with the topic appended
 **Webhook URL:** `https://your-controller.example.com/webhooks/issue_credential_v2_0`
 
 **Example payload:**
+
 ```json
 {
   "connection_id": "conn-123",
@@ -289,6 +301,7 @@ Webhooks are sent as POST requests to the configured URL with the topic appended
 ```
 
 **Key webhook fields:**
+
 - `cred_ex_id`: The credential exchange identifier (use this to retrieve full details via API)
 - `state`: Current state of the exchange
 - `role`: Your role in the exchange (`issuer` or `holder`)
@@ -302,6 +315,7 @@ Webhooks are sent as POST requests to the configured URL with the topic appended
 **Webhook URL:** `https://your-controller.example.com/webhooks/present_proof_v2_0`
 
 **Example payload:**
+
 ```json
 {
   "connection_id": "conn-123",
@@ -319,6 +333,7 @@ Webhooks are sent as POST requests to the configured URL with the topic appended
 ```
 
 **Key webhook fields:**
+
 - `pres_ex_id`: The presentation exchange identifier (use this to retrieve full details via API)
 - `state`: Current state of the exchange
 - `role`: Your role in the exchange (`prover` or `verifier`)
@@ -328,20 +343,22 @@ Webhooks are sent as POST requests to the configured URL with the topic appended
 
 ### Webhook Processing Best Practices
 
-1. **Idempotency**: Webhooks may be delivered multiple times. Implement idempotent handlers using the exchange ID and state.
+**Idempotency**: Webhooks may be delivered multiple times. Implement idempotent handlers using the exchange ID and state.
 
-2. **State Transitions**: Monitor state transitions to trigger appropriate actions:
-   - `offer-received` → Retrieve offer details and decide whether to request
-   - `request-received` → Issue credential
-   - `credential-received` → Store credential
-   - `request-received` (presentation) → Prepare and send presentation
-   - `presentation-received` → Verify presentation
+**State Transitions**: Monitor state transitions to trigger appropriate actions:
 
-3. **Error Handling**: Check for `error_msg` field in webhook payloads to handle errors.
+ - `offer-received` → Retrieve offer details and decide whether to request
+ - `request-received` → Issue credential
+ - `credential-received` → Store credential
+ - `request-received` (presentation) → Prepare and send presentation
+ - `presentation-received` → Verify presentation
 
-4. **Webhook Topics**: Ensure your webhook handler distinguishes between v1.0 and v2.0 topics:
-   - v1.0: `issue_credential`, `present_proof`
-   - v2.0: `issue_credential_v2_0`, `present_proof_v2_0`
+**Error Handling**: Check for `error_msg` field in webhook payloads to handle errors.
+
+**Webhook Topics**: Ensure your webhook handler distinguishes between v1.0 and v2.0 topics:
+
+ - v1.0: `issue_credential`, `present_proof`
+ - v2.0: `issue_credential_v2_0`, `present_proof_v2_0`
 
 ## Migration Steps
 
@@ -352,10 +369,12 @@ This section provides a step-by-step guide for migrating your controller code fr
 Replace all v1.0 endpoint calls in your controller code with v2.0 equivalents:
 
 **Before (v1.0):**
+
 - `GET /issue-credential/records`
 - `POST /issue-credential/send-offer`
 
 **After (v2.0):**
+
 - `GET /issue-credential-2.0/records`
 - `POST /issue-credential-2.0/send-offer`
 
@@ -364,19 +383,23 @@ Replace all v1.0 endpoint calls in your controller code with v2.0 equivalents:
 Update your controller's webhook handlers to process v2.0 topics:
 
 **Before (v1.0):**
+
 - Webhook topic: `issue_credential`
 - Field name: `credential_exchange_id`
 
 **After (v2.0):**
+
 - Webhook topic: `issue_credential_v2_0`
 - Field name: `cred_ex_id` (note: field name changed)
 
 **Key changes:**
+
 - Update webhook route to handle `/webhooks/issue_credential_v2_0` path
 - Use `cred_ex_id` instead of `credential_exchange_id` to access the exchange ID
 - Handle state transitions: `offer-received`, `request-received`, `credential-received`
 
 **Supporting both versions during migration:**
+
 - Check the topic name to determine which field name to use
 - Use `cred_ex_id` for v2.0 topics, `credential_exchange_id` for v1.0 topics
 
@@ -385,21 +408,26 @@ Update your controller's webhook handlers to process v2.0 topics:
 Since AIP 1.0 exclusively supported Indy credentials, you'll need to choose between using the `indy` filter (backward compatible) or `anoncreds` filter (requires wallet upgrade):
 
 **Before (v1.0 - Credential Offer):**
+
 - Use `credential_definition_id` field directly
 - No filter object required
 
 **After (v2.0 - Using indy filter, backward compatible):**
+
 - Wrap credential definition ID in `filter.indy.cred_def_id`
 - Use `@type: "issue-credential/2.0/credential-preview"` in credential preview
 
 **After (v2.0 - Using anoncreds filter, requires askar-anoncreds wallet):**
+
 - Wrap credential definition ID in `filter.anoncreds.cred_def_id`
 - Requires `--wallet-type askar-anoncreds` when starting ACA-Py
 
 **Before (v1.0 - Presentation Request):**
+
 - Use `proof_request` object directly
 
 **After (v2.0 - Presentation Request):**
+
 - Use `presentation_request` object with format-specific request (`indy` or `anoncreds`)
 - Wrap proof request structure in `presentation_request.indy` or `presentation_request.anoncreds`
 
@@ -408,16 +436,19 @@ Since AIP 1.0 exclusively supported Indy credentials, you'll need to choose betw
 Update your controller code that accesses exchange record fields:
 
 **Before (v1.0):**
+
 - `credential_exchange_id` - Credential exchange identifier
 - `credential_definition_id` - Credential definition identifier
 - `presentation_exchange_id` - Presentation exchange identifier
 
 **After (v2.0):**
+
 - `cred_ex_id` - Credential exchange identifier (shorter name)
 - `cred_def_id` - Credential definition identifier (shorter name)
 - `pres_ex_id` - Presentation exchange identifier (shorter name)
 
 **Key field name changes:**
+
 - `credential_exchange_id` → `cred_ex_id`
 - `presentation_exchange_id` → `pres_ex_id`
 - `credential_definition_id` → `cred_def_id` (within filter)
@@ -427,12 +458,15 @@ Update your controller code that accesses exchange record fields:
 Update your controller's state handling logic to account for v2.0 state names:
 
 **Before (v1.0):**
+
 - States use snake_case: `offer_sent`, `request_received`
 
 **After (v2.0):**
+
 - States use kebab-case: `offer-sent`, `request-received`, `credential-received`
 
 **State name changes:**
+
 - `offer_sent` → `offer-sent`
 - `offer_received` → `offer-received`
 - `request_sent` → `request-sent`
@@ -450,12 +484,14 @@ As an issuer, you may need to revoke credentials that have been issued. AIP 2.0 
 To revoke a credential, use the revocation endpoint that matches the filter used when the credential was issued:
 
 **If credential was issued using `anoncreds` filter (askar-anoncreds wallet):**
-```
+
+```bash
 POST /anoncreds/revocation/revoke
 ```
 
 **If credential was issued using `indy` filter (askar wallet):**
-```
+
+```bash
 POST /revocation/revoke
 ```
 
@@ -476,6 +512,7 @@ The simplest way to revoke a credential is using the `cred_ex_id` (credential ex
 ```
 
 **Request parameters:**
+
 - `cred_ex_id` (string, optional): Credential exchange ID from the issuance. If provided, revocation details are retrieved automatically.
 - `rev_reg_id` (string, optional): Revocation registry ID. Required if `cred_ex_id` is not provided.
 - `cred_rev_id` (string, optional): Credential revocation ID. Required if `cred_ex_id` is not provided.
@@ -492,6 +529,7 @@ The simplest way to revoke a credential is using the `cred_ex_id` (credential ex
 3. **Notify the holder** by setting `notify: true` and providing the `connection_id` to send a revocation notification
 
 **Example: Revoking with immediate publication and notification**
+
 ```json
 {
   "cred_ex_id": "cred-ex-456",
@@ -503,6 +541,7 @@ The simplest way to revoke a credential is using the `cred_ex_id` (credential ex
 ```
 
 **Example: Revoking and marking as pending (publish later)**
+
 ```json
 {
   "cred_ex_id": "cred-ex-456",
@@ -516,11 +555,13 @@ The simplest way to revoke a credential is using the `cred_ex_id` (credential ex
 If you revoked credentials with `publish: false`, you can publish all pending revocations later. Use the endpoint that matches the filter used when issuing:
 
 **If credentials were issued using `anoncreds` filter (askar-anoncreds wallet):**
+
 ```
 POST /anoncreds/revocation/publish-revocations
 ```
 
 **If credentials were issued using `indy` filter (askar wallet):**
+
 ```
 POST /revocation/publish-revocations
 ```
@@ -542,5 +583,5 @@ For more details on revocation, see the [AnonCreds Specification](https://anoncr
 ## Additional Resources
 
 - [Aries Interop Profile 2.0 Specification](https://github.com/decentralized-identity/aries-rfcs/tree/main/concepts/0302-aries-interop-profile)
-- [ACA-Py Supported RFCs](SupportedRFCs.md)
-- [ACA-Py Release Notes](../../CHANGELOG.md)
+- [ACA-Py Supported RFCs](../features/SupportedRFCs.md)
+- [ACA-Py Release Notes](https://github.com/openwallet-foundation/acapy/blob/main/CHANGELOG.md)
