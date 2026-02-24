@@ -4,12 +4,11 @@ on:
     branches:
       - main
 
-permissions:
-  contents: read
-  checks: write
-
 jobs:
   sonarcloud:
+    permissions:
+      contents: read
+      checks: write
     name: SonarCloud
     runs-on: ubuntu-latest
     if: github.repository == 'openwallet-foundation/acapy' && github.actor != 'dependabot[bot]'

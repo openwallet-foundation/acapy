@@ -7,9 +7,6 @@ on:
       - acapy_agent/**
       - docker/**
 
-permissions:
-  contents: read
-
 jobs:
   snyk:
     permissions:

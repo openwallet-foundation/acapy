@@ -9,11 +9,6 @@ on:
       - main
     types: [opened, synchronize, reopened, ready_for_review]
 
-permissions:
-  contents: read
-  pull-requests: read
-  checks: write
-
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -25,6 +20,10 @@ defaults:
 jobs:
   test:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+      checks: write
     # Run on openwallet-foundation and non-draft PRs or on non-PR events
     if: (github.repository == 'openwallet-foundation/acapy') && ((github.event_name == 'pull_request' && github.event.pull_request.draft == false) || (github.event_name != 'pull_request'))
     steps:
