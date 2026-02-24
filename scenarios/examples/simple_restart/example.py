@@ -14,9 +14,8 @@ from acapy_controller.protocols import (
     indy_anoncred_credential_artifacts,
     indy_anoncred_onboard,
     indy_issue_credential_v2,
-    indy_present_proof_v2,
 )
-from examples.util import wait_until_healthy
+from examples.util import indy_present_proof_v2, wait_until_healthy
 
 import docker
 

@@ -21,6 +21,7 @@ from aiohttp import ClientSession
 from examples.util import (
     CredDefResultAnonCreds,
     SchemaResultAnonCreds,
+    _presentation_request_payload,
     anoncreds_issue_credential_v2,
     anoncreds_present_proof_v2,
 )
@@ -31,12 +32,12 @@ BOB = getenv("BOB", "http://bob:3001")
 
 def summary(presentation: V20PresExRecord) -> str:
     """Summarize a presentation exchange record."""
-    request = presentation.pres_request
+    request = _presentation_request_payload(presentation)
     return "Summary: " + json.dumps(
         {
             "state": presentation.state,
             "verified": presentation.verified,
-            "presentation_request": request.dict(by_alias=True) if request else None,
+            "presentation_request": request,
         },
         indent=2,
         sort_keys=True,

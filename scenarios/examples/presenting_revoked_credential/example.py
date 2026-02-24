@@ -18,10 +18,10 @@ from acapy_controller.protocols import (
     didexchange,
     indy_anoncred_credential_artifacts,
     indy_issue_credential_v2,
-    indy_present_proof_v2,
     params,
 )
 from aiohttp import ClientSession
+from examples.util import _presentation_request_payload, indy_present_proof_v2
 
 ALICE = getenv("ALICE", "http://alice:3001")
 BOB = getenv("BOB", "http://bob:3001")
@@ -29,12 +29,12 @@ BOB = getenv("BOB", "http://bob:3001")
 
 def summary(presentation: V20PresExRecord) -> str:
     """Summarize a presentation exchange record."""
-    request = presentation.pres_request
+    request = _presentation_request_payload(presentation)
     return "Summary: " + json.dumps(
         {
             "state": presentation.state,
             "verified": presentation.verified,
-            "presentation_request": request.dict(by_alias=True) if request else None,
+            "presentation_request": request,
         },
         indent=2,
         sort_keys=True,
