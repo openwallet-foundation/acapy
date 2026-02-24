@@ -1,7 +1,7 @@
 {
   "swagger" : "2.0",
   "info" : {
-    "version" : "v1.2.6rc0",
+    "version" : "v1.2.6rc1",
     "title" : "Aries Cloud Agent"
   },
   "tags" : [ {
@@ -3891,6 +3891,64 @@
             "description" : "",
             "schema" : {
               "$ref" : "#/definitions/OobRecord"
+            }
+          }
+        }
+      }
+    },
+    "/out-of-band/records" : {
+      "get" : {
+        "tags" : [ "out-of-band" ],
+        "summary" : "Query OOB records",
+        "produces" : [ "application/json" ],
+        "parameters" : [ {
+          "name" : "connection_id",
+          "in" : "query",
+          "description" : "Connection identifier",
+          "required" : false,
+          "type" : "string",
+          "pattern" : "[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-4[a-fA-F0-9]{3}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}"
+        }, {
+          "name" : "invi_msg_id",
+          "in" : "query",
+          "description" : "Invitation message identifier",
+          "required" : false,
+          "type" : "string",
+          "pattern" : "[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-4[a-fA-F0-9]{3}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}"
+        }, {
+          "name" : "limit",
+          "in" : "query",
+          "description" : "Number of results to return",
+          "required" : false,
+          "type" : "integer",
+          "default" : 100
+        }, {
+          "name" : "offset",
+          "in" : "query",
+          "description" : "Offset for pagination",
+          "required" : false,
+          "type" : "integer",
+          "default" : 0
+        }, {
+          "name" : "role",
+          "in" : "query",
+          "description" : "OOB record role",
+          "required" : false,
+          "type" : "string",
+          "enum" : [ "sender", "receiver" ]
+        }, {
+          "name" : "state",
+          "in" : "query",
+          "description" : "OOB record state",
+          "required" : false,
+          "type" : "string",
+          "enum" : [ "initial", "prepare-response", "await-response", "reuse-not-accepted", "reuse-accepted", "done", "deleted" ]
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "",
+            "schema" : {
+              "$ref" : "#/definitions/OobRecordList"
             }
           }
         }
@@ -10916,6 +10974,19 @@
           "example" : "2021-12-31T23:59:59Z",
           "description" : "Time of last record update",
           "pattern" : "^\\d{4}-\\d\\d-\\d\\d[T ]\\d\\d:\\d\\d(?:\\:(?:\\d\\d(?:\\.\\d{1,6})?))?(?:[+-]\\d\\d:?\\d\\d|Z|)$"
+        }
+      }
+    },
+    "OobRecordList" : {
+      "type" : "object",
+      "required" : [ "results" ],
+      "properties" : {
+        "results" : {
+          "type" : "array",
+          "description" : "List of OOB records",
+          "items" : {
+            "$ref" : "#/definitions/OobRecord"
+          }
         }
       }
     },

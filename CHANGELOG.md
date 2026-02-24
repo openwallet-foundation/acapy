@@ -1,13 +1,14 @@
 # Aries Cloud Agent Python Changelog
 
-## 1.2.6rc0
+## 1.2.6rc1
 
-### Jan 30, 2026
+### Feb 24, 2026
 
-This patch is being released to address some issues in the migration of the `askar` wallet-type to `askar-anoncreds`, and in to restore some webhooks that were lost when `askar-anoncreds` support was added. The fixes are necessary to enable the both the migration of an existing ACA-Py wallet-type to `askar-anoncreds` using ACA-Py 1.2 and to see the same events after the migration as before.
+This patch is being released to address some issues in the migration of the `askar` wallet-type to `askar-anoncreds`, and in to restore some webhooks that were lost when `askar-anoncreds` support was added. The fixes are necessary to enable the both the migration of an existing ACA-Py wallet-type to `askar-anoncreds` using ACA-Py 1.2 and to see the same events after the migration as before. In addition, a new endpoint has been added for the `Out of Band` (OOB) protocol that supports retrieving a list of Out of Band records.
 
 The release includes the following PRs from the `main` branch cherry-picked into this release:
 
+- feat: add list endpoint for out-of-band records [\#4046](https://github.com/openwallet-foundation/acapy/pull/4046)
 - Update AnonCreds events [\#4016](https://github.com/openwallet-foundation/acapy/pull/4016)
 - Fix issues with anoncreds upgrade [\#3991](https://github.com/openwallet-foundation/acapy/pull/3991)
 
@@ -23,7 +24,11 @@ There are no breaking changes in this release.
   - LTS 1.2 backport for 1.5.0 release [\#4036](https://github.com/openwallet-foundation/acapy/pull/4036) [PatStLouis](https://github.com/PatStLouis)
   - Fix issues with anoncreds upgrade (#3991) [\#4002](https://github.com/openwallet-foundation/acapy/pull/4002) [jamshale](https://github.com/jamshale)
 
+- Out of Band Protocol Enhancements
+  - feat: backport list endpoint for out-of-band records to 1.2.lts [\#4058](https://github.com/openwallet-foundation/acapy/pull/4058) [PatStLouis](https://github.com/PatStLouis)
+
 - Release management pull requests:
+  - 1.2.6rc1 [\#4064](https://github.com/openwallet-foundation/acapy/pull/4064) [swcurran](https://github.com/swcurran)
   - 1.2.6rc0 [\#4038](https://github.com/openwallet-foundation/acapy/pull/4038) [swcurran](https://github.com/swcurran)
 
 ## 1.2.5
