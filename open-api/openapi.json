@@ -2,7 +2,7 @@
   "openapi" : "3.0.1",
   "info" : {
     "title" : "Aries Cloud Agent",
-    "version" : "v1.3.3rc0"
+    "version" : "v1.3.3rc1"
   },
   "servers" : [ {
     "url" : "/"
@@ -4678,6 +4678,93 @@
         "summary" : "Receive a new connection invitation",
         "tags" : [ "out-of-band" ],
         "x-codegen-request-body-name" : "body"
+      }
+    },
+    "/out-of-band/records" : {
+      "get" : {
+        "parameters" : [ {
+          "description" : "Connection identifier",
+          "in" : "query",
+          "name" : "connection_id",
+          "schema" : {
+            "pattern" : "[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-4[a-fA-F0-9]{3}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}",
+            "type" : "string"
+          }
+        }, {
+          "description" : "Order results in descending order if true",
+          "in" : "query",
+          "name" : "descending",
+          "schema" : {
+            "default" : false,
+            "type" : "boolean"
+          }
+        }, {
+          "description" : "Invitation message identifier",
+          "in" : "query",
+          "name" : "invi_msg_id",
+          "schema" : {
+            "pattern" : "[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-4[a-fA-F0-9]{3}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}",
+            "type" : "string"
+          }
+        }, {
+          "description" : "Number of results to return",
+          "in" : "query",
+          "name" : "limit",
+          "schema" : {
+            "default" : 100,
+            "maximum" : 10000,
+            "minimum" : 1,
+            "type" : "integer"
+          }
+        }, {
+          "description" : "Offset for pagination",
+          "in" : "query",
+          "name" : "offset",
+          "schema" : {
+            "default" : 0,
+            "minimum" : 0,
+            "type" : "integer"
+          }
+        }, {
+          "description" : "The column to order results by. Only \"id\" is currently supported.",
+          "in" : "query",
+          "name" : "order_by",
+          "schema" : {
+            "default" : "id",
+            "enum" : [ "id" ],
+            "type" : "string"
+          }
+        }, {
+          "description" : "OOB record role",
+          "in" : "query",
+          "name" : "role",
+          "schema" : {
+            "enum" : [ "sender", "receiver" ],
+            "type" : "string"
+          }
+        }, {
+          "description" : "OOB record state",
+          "in" : "query",
+          "name" : "state",
+          "schema" : {
+            "enum" : [ "initial", "prepare-response", "await-response", "reuse-not-accepted", "reuse-accepted", "done", "deleted" ],
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/OobRecordList"
+                }
+              }
+            },
+            "description" : ""
+          }
+        },
+        "summary" : "Query OOB records",
+        "tags" : [ "out-of-band" ]
       }
     },
     "/plugins" : {
@@ -12612,6 +12699,19 @@
           }
         },
         "required" : [ "invi_msg_id", "invitation", "oob_id", "state" ],
+        "type" : "object"
+      },
+      "OobRecordList" : {
+        "properties" : {
+          "results" : {
+            "description" : "List of OOB records",
+            "items" : {
+              "$ref" : "#/components/schemas/OobRecord"
+            },
+            "type" : "array"
+          }
+        },
+        "required" : [ "results" ],
         "type" : "object"
       },
       "PerformRequest" : {

@@ -1,17 +1,18 @@
 # Aries Cloud Agent Python Changelog
 
-## 1.3.3rc0
+## 1.3.3rc1
 
-### Jan 30, 2026
+### Feb 24, 2026
 
-This patch is being released to address some issues in the migration of the `askar` wallet-type to `askar-anoncreds`, and in to restore some webhooks that were lost when `askar-anoncreds` support was added. The fixes are necessary to enable the both the migration of an existing ACA-Py wallet-type to `askar-anoncreds` using ACA-Py 1.2 and to see the same events after the migration as before.
+This patch is being released to address some issues in the migration of the `askar` wallet-type to `askar-anoncreds`, and in to restore some webhooks that were lost when `askar-anoncreds` support was added. The fixes are necessary to enable the both the migration of an existing ACA-Py wallet-type to `askar-anoncreds` using ACA-Py 1.2 and to see the same events after the migration as before. In addition, a new endpoint has been added for the `Out of Band` (OOB) protocol that supports retrieving a list of Out of Band records.
 
 The release includes the following PRs from the `main` branch cherry-picked into this release:
 
+- feat: add list endpoint for out-of-band records [\#4046](https://github.com/openwallet-foundation/acapy/pull/4046)
 - Update AnonCreds events [\#4016](https://github.com/openwallet-foundation/acapy/pull/4016)
 - Fix issues with anoncreds upgrade [\#3991](https://github.com/openwallet-foundation/acapy/pull/3991)
 
-As well, a dependency update was applied, updating the `poetry.lock` file to use the latest minor versions of the dependencies and eliminating the one "High" or "Critical" vulnerability in the dependencies. 
+As well, a dependency update was applied, updating the `poetry.lock` file to use the latest minor versions of the dependencies and eliminating the one "High" or "Critical" vulnerability in the dependencies.
 
 ### 1.3.3 Breaking Changes
 
@@ -23,7 +24,11 @@ There are no breaking changes in this release.
   - LTS 1.3 backport for 1.5.0 release [\#4037](https://github.com/openwallet-foundation/acapy/pull/4037) [PatStLouis](https://github.com/PatStLouis)
   - Fix issues with anoncreds upgrade (#3991) [\#4001](https://github.com/openwallet-foundation/acapy/pull/4001) [jamshale](https://github.com/jamshale)
 
+- Out of Band Protocol Enhancements
+  - feat: backport list endpoint for out-of-band records to 1.3.lts [\#4057](https://github.com/openwallet-foundation/acapy/pull/4057) [PatStLouis](https://github.com/PatStLouis)
+
 - Release management pull requests:
+  - 1.3.3rc1 [\#4065](https://github.com/openwallet-foundation/acapy/pull/4065) [swcurran](https://github.com/swcurran)
   - 1.3.3rc0 [\#4039](https://github.com/openwallet-foundation/acapy/pull/4039) [swcurran](https://github.com/swcurran)
 
 ## 1.3.2
