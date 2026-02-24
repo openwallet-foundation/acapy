@@ -1,10 +1,21 @@
-# Migrating AnonCreds Issuance from Indy to did:webvh
+# Transitioning AnonCreds Issuance from Indy to did:webvh
 
-This guide walks through the process of transitioning an ACA-Py Issuer from
-publishing [AnonCreds] objects on a [Hyperledger Indy] ledger to publishing them
-using the [did:webvh] method. The same ACA-Py instance can issue credentials
-rooted in both methods simultaneously, so the migration can be done gradually
-with no downtime or data loss.
+This guide describes how to transition [AnonCreds] **issuance** from a
+[Hyperledger Indy] ledger to the [did:webvh] method. It focuses on the issuance
+process as a whole: issuer setup, verifier readiness, and the cutover from one
+Verifiable Data Registry (VDR) to another.
+
+**Assumption:** All parties in your ecosystem already support did:webvh
+technologically. Issuers, holders, and verifiers can resolve did:webvh
+identifiers and process AnonCreds rooted in did:webvh. This guide is for when
+that readiness is in place and you are moving issuance from Indy to did:webvh.
+
+The recommended approach is a **planned cutover**: you stop issuing from Indy
+and start issuing from did:webvh on a chosen date. Existing holders keep their
+Indy-rooted credentials; new issuance uses did:webvh. During and after the
+cutover, the issuer must continue to **manage already-issued Indy credentials**
+(e.g. revocation and other status updates) until those credentials are no longer
+in use.
 
 [AnonCreds]: https://www.hyperledger.org/projects/anoncreds
 [Hyperledger Indy]: https://www.hyperledger.org/projects/hyperledger-indy
@@ -85,7 +96,7 @@ Before starting the migration, ensure the following are in place:
   and verifiers can continue to verify them. There is no mechanism to
   "re-root" an already-issued AnonCreds credential to a different VDR.
 
-**Must be re-created under the new DID:**
+**Must be created under the new DID (new objects, same logical content):**
 
 - Schemas (same attributes, new `issuerId`)
 - Credential definitions (new cred def linked to the new schema)
@@ -98,50 +109,65 @@ Before starting the migration, ensure the following are in place:
   registries simultaneously -- the correct registry is selected automatically
   based on the identifier pattern of the object being accessed.
 
-## Migration Strategy: Dual-Issuance Transition
+## Migration Strategy: Planned Cutover
 
-The recommended approach is a phased transition where Indy and did:webvh
-issuance run side-by-side:
+The recommended approach is to **switch issuance** from Indy to did:webvh in one
+planned cutover. During and after the transition, some holders have Indy-rooted
+credentials (issued before the switch) and some have did:webvh-rooted
+credentials (issued after). You do not issue the same credential from both
+VDRs at the same time. The issuer must continue to **manage already-issued Indy
+credentials** — including revocation and other status updates — until they are
+fully phased out.
 
 ```mermaid
 flowchart LR
-    subgraph phase1 ["Phase 1: Indy Only"]
-        IndyIssue["Issue Indy credentials"]
+    subgraph phase1 ["Phase 1: Prepare"]
+        Setup["Set up did:webvh"]
+        Share["Share new identifiers with verifiers"]
     end
-    subgraph phase2 ["Phase 2: Dual Issuance"]
-        IndyIssue2["Continue Indy issuance"]
-        WebVHIssue["Begin did:webvh issuance"]
+    subgraph phase2 ["Phase 2: Verifier readiness"]
+        Wait["Verifiers update presentation requests"]
     end
-    subgraph phase3 ["Phase 3: did:webvh Only"]
-        WebVHOnly["Issue did:webvh credentials only"]
+    subgraph phase3 ["Phase 3: Switch to did:webvh Issuing"]
+        Cutover["Stop Indy issuance, issue only did:webvh"]
     end
     phase1 --> phase2 --> phase3
 ```
 
-### Phase 1 -- Current State
+### Phase 1 -- Prepare
 
-You are issuing Indy-based AnonCreds credentials. No changes yet.
-
-### Phase 2 -- Dual Issuance
+You are currently issuing Indy-based AnonCreds credentials. Prepare the
+did:webvh side without changing issuance yet:
 
 1. Set up the did:webvh infrastructure (server, witness, plugin) alongside
    your existing Indy configuration.
 2. Create a did:webvh DID for your issuer.
-3. Re-register your schemas and credential definitions under the new DID.
-4. Start issuing new credentials using the did:webvh credential definitions
-   for new holders or use cases.
-5. Continue issuing Indy credentials for existing holders and verifiers who
-   have not yet added did:webvh resolution support.
-6. Communicate the transition to your verifier ecosystem so they can prepare
-   to resolve did:webvh identifiers.
+3. Register your schemas and credential definitions under the new DID (these
+   are new objects with the same logical content; only the `issuerId` and
+   resulting identifiers change).
+4. **Share the new did:webvh identifiers with verifiers** (credential
+   definition IDs, schema IDs, etc.) so they can add them to their
+   presentation requests. During this period, the did:webvh objects exist but
+   are **not** used for general issuance. Limited testing (e.g. issuing a
+   credential or two to verify the pipeline) is acceptable.
 
-### Phase 3 -- did:webvh Only
+### Phase 2 -- Verifier readiness
 
-1. Once your verifier ecosystem supports did:webvh resolution, stop issuing
-   new Indy credentials.
-2. All new issuance uses did:webvh credential definitions.
-3. Previously issued Indy credentials remain valid and verifiable for their
-   lifetime. They do not need to be re-issued.
+Give verifiers time to update their systems to accept credentials rooted in
+either the existing Indy identifiers or the new did:webvh identifiers. Once
+verifiers can resolve did:webvh and include the new credential definition IDs
+in their proof requests, you can schedule the cutover.
+
+### Phase 3 -- Switch to did:webvh Issuing
+
+1. On the chosen date, **stop issuing new Indy credentials**. All new
+   issuance uses did:webvh credential definitions only.
+2. Previously issued Indy credentials remain valid and verifiable for their
+   lifetime. They do not need to be re-issued. The issuer must **continue to
+   manage** those Indy credentials (e.g. process revocation and other status
+   updates) for as long as they are in use.
+3. You can remove the Indy ledger connection only when all Indy credentials
+   have expired or been revoked and verifiers no longer need to resolve them.
 
 ## Setting Up did:webvh Issuance
 
@@ -257,21 +283,28 @@ created in step 5.
 - **Same API, different identifiers** -- The `/anoncreds/*` endpoints are
   identical for Indy and did:webvh. The only change is the `issuerId` you
   supply and the format of the returned object IDs.
-- **Track your credential definitions** -- During dual issuance, your
-  controller needs to know which cred def IDs are Indy-based and which are
-  did:webvh-based, so it can offer the correct credential type to each holder.
+- **After cutover** -- Once you switch to did:webvh issuance, new credential
+  offers use did:webvh credential definition IDs. Existing Indy credentials in
+  holders' wallets continue to work; no re-issue is required. The controller
+  must continue to manage already-issued Indy credentials (e.g. revocation and
+  status updates) for as long as they remain in use.
 - **Webhook payloads** -- Webhook events for credential exchange will contain
   the did:webvh identifier formats. Ensure your controller can handle both
-  formats during the transition.
+  formats during and after the transition (e.g. for any Indy credentials still
+  in use).
 
 ## Impact on Verifiers
 
-- **Resolution capability required** -- Verifiers must be able to resolve
-  did:webvh identifiers. This means they need either the `webvh` plugin loaded
-  or a universal resolver that supports did:webvh.
-- **Accept both formats during transition** -- Proof requests should reference
-  both Indy and did:webvh credential definition IDs during the dual-issuance
-  period, or use attribute-based restrictions that are format-agnostic.
+- **Readiness assumed** -- This guide assumes verifiers already support
+  did:webvh (resolution and AnonCreds processing). Before the issuer cuts over,
+  verifiers should add the new did:webvh credential definition and schema IDs
+  to their presentation requests so they accept credentials rooted in either
+  VDR during the transition.
+- **Accept both formats during transition** -- After cutover, some holders will
+  present Indy-rooted credentials (issued before) and some did:webvh-rooted
+  (issued after). Proof requests should reference both Indy and did:webvh
+  credential definition IDs, or use attribute-based restrictions that are
+  format-agnostic.
 - **No protocol changes** -- The presentation exchange protocol (DIDComm v2,
   present-proof v2) is identical regardless of the underlying VDR. AnonCreds
   is AnonCreds -- the cryptographic operations and proof format are the same.
@@ -282,26 +315,28 @@ created in step 5.
 
 Yes. Register a new schema with identical `attrNames` under your did:webvh DID.
 The schema content is the same; only the `issuerId` and resulting identifier
-change.
+change. These are new objects, not "re-registered" ones.
 
 **Do holders need to do anything?**
 
-No. Existing Indy credentials in holders' wallets continue to work unchanged.
-New credentials issued from did:webvh credential definitions are received and
-stored normally -- holders do not need any special configuration.
+This guide assumes holders already support did:webvh (storage and presentation of
+did:webvh-rooted AnonCreds). Existing Indy credentials in holders' wallets
+continue to work unchanged. New credentials issued from did:webvh credential
+definitions are received and stored normally.
 
-**Can I run Indy and did:webvh issuance simultaneously?**
+**Why a planned cutover instead of issuing from both VDRs at once?**
 
-Yes. ACA-Py's AnonCreds registry automatically routes operations to the correct
-registry based on the identifier pattern (`did:indy:*` or legacy Indy format
-goes to the Indy registry; `did:webvh:*` goes to the WebVH registry). Both
-registries can be active at the same time with no conflicts.
+Once the ecosystem supports did:webvh, the recommended path is to switch
+issuance in one cutover. Issuing the same credential from both Indy and
+did:webvh at the same time is not recommended for a given credential
+definition; it complicates lifecycle and verifier logic. After the switch,
+support Indy only for revocation of existing credentials.
 
-**What happens to my existing Indy credentials after migration?**
+**What happens to my existing Indy credentials after the switch?**
 
 They remain valid and verifiable for as long as the Indy ledger they were
 published on is operational. Revoking an Indy credential still works through
-the Indy revocation registry. The migration only affects *new* issuance.
+the Indy revocation registry. The transition only affects *new* issuance.
 
 **Do I need to keep my Indy ledger connection after Phase 3?**
 
@@ -309,3 +344,10 @@ If you have outstanding Indy credentials that may need to be revoked, or if
 verifiers may still need to resolve your Indy-based credential definitions,
 yes. You can remove the Indy ledger connection only when all Indy credentials
 have expired or been revoked and verifiers no longer need to resolve them.
+
+**Does this model apply to other VDR or format transitions?**
+
+The pattern described here — prepare new identifiers, share with verifiers,
+then switch issuance and phase out the old VDR — can be adapted when
+transitioning between other credential formats or Verifiable Data Registries.
+This document applies it specifically to Indy → did:webvh.
