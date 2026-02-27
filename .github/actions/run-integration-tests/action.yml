@@ -20,7 +20,15 @@ runs:
     - name: run-integration-tests-acapy
       # to run with external ledger and tails server run as follows (and remove the ledger and tails actions from the workflow):
       # run: LEDGER_URL=... PUBLIC_TAILS_URL=... ./run_bdd $TEST_SCOPE
-      run: ./run_bdd $TEST_SCOPE
+      run: |
+        set -euo pipefail
+        if [ -n "${TEST_SCOPE-}" ]; then
+          # Split TEST_SCOPE on whitespace into an argv-safe array
+          read -r -a scope_args <<< "$TEST_SCOPE"
+          ./run_bdd "${scope_args[@]}"
+        else
+          ./run_bdd
+        fi
       shell: bash
       env:
         TEST_SCOPE: ${{ inputs.TEST_SCOPE }}
