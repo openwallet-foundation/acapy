@@ -3,7 +3,9 @@ on:
   push:
     branches:
       - main
+      - '**.lts'  # LTS release branches (e.g., 0.12.lts, 1.2.lts)
     paths:
+      - aries_cloudagent/**  # Legacy directory (older LTS branches)
       - acapy_agent/**
       - docker/**
 
@@ -36,6 +38,18 @@ jobs:
       with:
         image: acapy-agent
         args: --file=docker/Dockerfile
+
+    - name: Run Snyk monitor for continuous monitoring
+      # Continuously monitor for new vulnerabilities in released/releasable code
+      # See https://support.snyk.io/hc/en-us/articles/360000920818-What-are-the-differences-among-snyk-test-monitor-and-protect
+      continue-on-error: true
+      uses: snyk/actions/docker@9adf32b1121593767fc3c057af55b55db032dc04 # 1.0.0
+      env:
+        SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+      with:
+        image: acapy-agent
+        args: --file=docker/Dockerfile
+        command: monitor
 
       # Replace any "null" security severity values with 0. The null value is used in the case
       # of license-related findings, which do not do not indicate a security vulnerability.

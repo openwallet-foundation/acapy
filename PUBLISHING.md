@@ -152,9 +152,9 @@ For the build test, the RTD Sphinx theme needs to be added to the docker image, 
      - `1.5` - Major.minor tag (moves to latest patch release)
      - `latest` - Only assigned if this is the highest semantic version
    
-   - **Release Candidates** (e.g., `1.5.1rc0`):
-     - `py3.12-1.5.1rc0` - Python version specific RC tag
-     - `1.5.1rc0` - Semantic version RC tag
+   - **Release Candidates** (e.g., `1.5.1rc1`):
+     - `py3.12-1.5.1rc1` - Python version specific RC tag
+     - `1.5.1rc1` - Semantic version RC tag
      - **Note**: RC releases do NOT receive major.minor (`1.5`) or `latest` tags
    
    The `latest` tag is explicitly managed by comparing semantic versions across all
