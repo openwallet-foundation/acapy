@@ -1,8 +1,8 @@
 # Aries Cloud Agent Python Changelog
 
-## 1.2.6rc1
+## 1.2.6
 
-### Feb 24, 2026
+### Mar 2, 2026
 
 This patch is being released to address some issues in the migration of the `askar` wallet-type to `askar-anoncreds`, and in to restore some webhooks that were lost when `askar-anoncreds` support was added. The fixes are necessary to enable the both the migration of an existing ACA-Py wallet-type to `askar-anoncreds` using ACA-Py 1.2 and to see the same events after the migration as before. In addition, a new endpoint has been added for the `Out of Band` (OOB) protocol that supports retrieving a list of Out of Band records.
 
@@ -28,6 +28,7 @@ There are no breaking changes in this release.
   - feat: backport list endpoint for out-of-band records to 1.2.lts [\#4058](https://github.com/openwallet-foundation/acapy/pull/4058) [PatStLouis](https://github.com/PatStLouis)
 
 - Release management pull requests:
+  - 1.2.6 [\#4070](https://github.com/openwallet-foundation/acapy/pull/4070) [swcurran](https://github.com/swcurran)
   - 1.2.6rc1 [\#4064](https://github.com/openwallet-foundation/acapy/pull/4064) [swcurran](https://github.com/swcurran)
   - 1.2.6rc0 [\#4038](https://github.com/openwallet-foundation/acapy/pull/4038) [swcurran](https://github.com/swcurran)
 
