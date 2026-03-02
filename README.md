@@ -62,12 +62,12 @@ supported version within that release series.
 
 **Current LTS releases:**
 
-- Release [1.3](https://github.com/openwallet-foundation/acapy/releases/tag/1.3.1) **Current LTS Release**
-- Release [1.2](https://github.com/openwallet-foundation/acapy/releases/tag/1.2.5) **End of Life: April 2026**
-- Release [0.12](https://github.com/openwallet-foundation/acapy/releases/tag/0.12.8) **End of Life: October 2025**
+- Release [1.3](https://github.com/openwallet-foundation/acapy/releases/tag/1.3.3) **Current LTS Release**
+- Release [1.2](https://github.com/openwallet-foundation/acapy/releases/tag/1.2.6) **End of Life: April 2026**
 
 **Past LTS releases:**
 
+- Release [0.12](https://github.com/openwallet-foundation/acapy/releases/tag/0.12.8) **End of Life: October 2025**
 - Release [0.11](https://github.com/openwallet-foundation/acapy/releases/tag/0.11.3) **End of Life: January 2025**
 
 Unless specified in the **Breaking Changes** section of the ACA-Py
