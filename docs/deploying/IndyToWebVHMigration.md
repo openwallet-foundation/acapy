@@ -47,9 +47,17 @@ For technical background on how ACA-Py supports multiple AnonCreds methods, see
 
 ## Key Differences at a Glance
 
+> **Note:** The did:webvh column below describes the **did:webvh Server AnonCreds
+> Method** as implemented by ACA-Py and the WebVH plugin—with namespace (`ns`),
+> identifier (`id`), and a defined path to the resource. The did:webvh method
+> itself is flexible: it can support "plain" did:webvh DIDs (no extra path
+> elements) and other DID URL path schemes. This guide and the table refer to
+> the convention used by this implementation, not to a requirement of did:webvh
+> in general.
+
 | Aspect | Indy | did:webvh |
 |---|---|---|
-| **Identifier format** | `WgWx...:2:name:1.0` (legacy) or `did:indy:sovrin:WgWx...` | `did:webvh:{SCID}:domain:ns:id/resources/{digest}` |
+| **Identifier format** | **Schema (legacy):** `{ledgerPrefix}:2:{name}:{version}` (e.g. `WgWx...:2:ExampleSchema:1.0`). **Cred def (legacy):** `{ledgerPrefix}:3:CL:{seqNo}:{tag}`. **DID:** `did:indy:{namespace}:{id}` (e.g. `did:indy:sovrin:WgWx...`). | `did:webvh:{SCID}:domain:ns:id/resources/{digest}` |
 | **Where objects live** | Indy ledger transactions | WebVH server-hosted resources with Data Integrity proofs |
 | **Trust model** | Endorser/Steward signs ledger transactions | Witness attests resource publications |
 | **Revocation tails files** | Uploaded to a tails server | Uploaded to a tails server (same approach) |
@@ -131,7 +139,11 @@ flowchart LR
     subgraph phase3 ["Phase 3: Switch to did:webvh Issuing"]
         Cutover["Stop Indy issuance, issue only did:webvh"]
     end
-    phase1 --> phase2 --> phase3
+    subgraph phase4 ["Phase 4: Remove Indy"]
+        Notify["Issuer notifies parties"]
+        Remove["Remove Indy code and config"]
+    end
+    phase1 --> phase2 --> phase3 --> phase4
 ```
 
 ### Phase 1 -- Prepare
@@ -153,10 +165,44 @@ did:webvh side without changing issuance yet:
 
 ### Phase 2 -- Verifier readiness
 
-Give verifiers time to update their systems to accept credentials rooted in
-either the existing Indy identifiers or the new did:webvh identifiers. Once
-verifiers can resolve did:webvh and include the new credential definition IDs
-in their proof requests, you can schedule the cutover.
+Verifier readiness requires two things. First, verifiers need **updated
+libraries** that support resolving credentials via the did:webvh AnonCreds
+method (so they can resolve and validate did:webvh-rooted credentials).
+Second, they must **update their presentation requests** to add the
+equivalent did:webvh identifiers as an alternative (OR) to the current Indy
+identifiers—so that a wallet receiving the request can respond with whichever
+credential it is holding (Indy-rooted or did:webvh-rooted). Give verifiers
+time to do both. A presentation request can restrict on **issuer (DID)**,
+**schema**, and/or **credential definition**; in each case, add the
+corresponding did:webvh identifier alongside the existing Indy one so that
+either type satisfies the request. Once verifiers can resolve did:webvh and
+have updated their presentation requests, you can schedule the cutover.
+
+**Example — presentation request restrictions:**
+
+Before cutover (Indy only), a verifier might restrict on a single credential
+definition:
+
+```json
+"restrictions": [
+  { "cred_def_id": "WgWxqztrNooG92RXvxSTWv:3:CL:20:tag" }
+]
+```
+
+After updating for the transition (accept Indy or did:webvh), the verifier
+includes both identifiers so that credentials from either VDR are accepted:
+
+```json
+"restrictions": [
+  { "cred_def_id": "WgWxqztrNooG92RXvxSTWv:3:CL:20:tag" },
+  { "cred_def_id": "did:webvh:zQ3sh...:example.com:my-org:issuer-01/resources/abc123" }
+]
+```
+
+Alternatively, restrictions can be expressed by **issuer** (`issuer_id`) or
+**schema** (`schema_id`); in each case, add the corresponding did:webvh
+identifier so that credentials rooted in either Indy or did:webvh satisfy the
+request.
 
 ### Phase 3 -- Switch to did:webvh Issuing
 
@@ -166,8 +212,16 @@ in their proof requests, you can schedule the cutover.
    lifetime. They do not need to be re-issued. The issuer must **continue to
    manage** those Indy credentials (e.g. process revocation and other status
    updates) for as long as they are in use.
-3. You can remove the Indy ledger connection only when all Indy credentials
-   have expired or been revoked and verifiers no longer need to resolve them.
+
+### Phase 4 -- Remove Indy
+
+When all Indy credentials have been revoked (or have expired), the issuer
+notifies all parties—especially verifiers—that Indy credentials are no longer
+in use. Issuers and verifiers can then, at their leisure, remove both the code
+and the presentation-request configuration that uses or references Indy-rooted
+credentials. Verifiers should do this only after all credential types they
+accept have been converted to did:webvh (or otherwise no longer depend on Indy).
+At that point the issuer can remove the Indy ledger connection.
 
 ## Setting Up did:webvh Issuance
 
