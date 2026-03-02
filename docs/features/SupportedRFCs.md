@@ -8,7 +8,7 @@ ACA-Py or the repository `main` branch. Reminders (and PRs!) to update this page
 welcome! If you have any questions, please contact us on the #aries channel on
 [OpenWallet Foundation Discord](https://discord.gg/openwallet-foundation) or through an issue in this repo.
 
-**Last Update**: 2026-02-24, Release 1.5.1rc1
+**Last Update**: 2026-02-27, Release 1.5.1
 
 > The checklist version of this document was created as a joint effort
 > between [Northern Block](https://northernblock.io/), [Animo Solutions](https://animo.id/) and the Ontario government, on behalf of the Ontario government.

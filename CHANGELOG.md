@@ -1,8 +1,8 @@
 # ACA-Py Changelog
 
-## 1.5.1rc1
+## 1.5.1
 
-### February 24, 2026
+### February 27, 2026
 
 ACA-Py 1.5.1 is a clean up release primarily to address some follow-on issues related to the [1.5.0] release -- notably with the handling of AnonCreds revocation. There are some  convenience additions and a GitHub Actions pipeline fix.
 
@@ -30,10 +30,12 @@ AIP 1.0 protocols that were [previously announced as deprecated](#140-deprecatio
   - fix: handle revocation registry race conditions for BDD integration tests [\#4056](https://github.com/openwallet-foundation/acapy/pull/4056) [PatStLouis](https://github.com/PatStLouis)
   - Fix revocation setup [\#4047](https://github.com/openwallet-foundation/acapy/pull/4047) [PatStLouis](https://github.com/PatStLouis)
 - **Testing, Logging, and Diagnostics**
+  - Consolidate snyk scanning GHA [\#4067](https://github.com/openwallet-foundation/acapy/pull/4067) [esune](https://github.com/esune)
   - FIX BDD interop integration tests [\#4052](https://github.com/openwallet-foundation/acapy/pull/4052) [PatStLouis](https://github.com/PatStLouis)
 - **Dependabot PRs**
-  - [Link to list of Dependabot PRs in this release](https://github.com/openwallet-foundation/acapy/pulls?q=is%3Apr+is%3Amerged+merged%3A2025-01-29..2026-02-20+author%3Aapp%2Fdependabot+)
+  - [Link to list of Dependabot PRs in this release](https://github.com/openwallet-foundation/acapy/pulls?q=is%3Apr+is%3Amerged+merged%3A2025-01-29..2026-02-27+author%3Aapp%2Fdependabot+)
 - **Release management pull requests**:
+  - 1.5.1 [\#4068](https://github.com/openwallet-foundation/acapy/pull/4068) [swcurran](https://github.com/swcurran)
   - 1.5.1rc1 [\#4063](https://github.com/openwallet-foundation/acapy/pull/4063) [swcurran](https://github.com/swcurran)
   - 1.5.1rc0 [\#4054](https://github.com/openwallet-foundation/acapy/pull/4054) [swcurran](https://github.com/swcurran)
 
