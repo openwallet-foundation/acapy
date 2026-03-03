@@ -3,11 +3,6 @@ name: PR Tests
 on:
   pull_request:
 
-permissions:
-  contents: read
-  pull-requests: read
-  checks: write
-
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -15,6 +10,10 @@ concurrency:
 jobs:
   tests:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+      checks: write
     steps:
     - name: checkout
       uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
@@ -28,6 +27,10 @@ jobs:
   postgres-tests:
     name: PostgreSQL Integration Tests
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+      checks: write
     services:
       postgres:
         image: postgres:15-alpine

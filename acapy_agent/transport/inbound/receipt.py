@@ -82,7 +82,7 @@ class MessageReceipt:
 
     @property
     def direct_response_requested(self) -> str:
-        """Accessor for the the state of the direct response mode.
+        """Accessor for the state of the direct response mode.
 
         Returns:
             This context's requested direct response mode
