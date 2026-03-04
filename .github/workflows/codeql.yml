@@ -1,13 +1,10 @@
 name: "Code scanning - action"
 
-"on":
+on:
   push:
   pull_request:
   schedule:
     - cron: "0 19 * * 0"
-
-permissions:
-  contents: read
 
 jobs:
   CodeQL-Build:
@@ -16,6 +13,7 @@ jobs:
     if: (github.event_name == 'pull_request' && github.repository == 'openwallet-foundation/acapy') || (github.event_name != 'pull_request')
 
     permissions:
+      contents: read
       security-events: write
 
     steps:

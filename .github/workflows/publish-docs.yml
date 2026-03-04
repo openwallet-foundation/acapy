@@ -7,9 +7,6 @@ on:
       - main
       - docs-v*
 
-permissions:
-  contents: read
-
 jobs:
   deploy:
     runs-on: ubuntu-latest
