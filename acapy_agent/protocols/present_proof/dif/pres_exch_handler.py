@@ -67,6 +67,9 @@ PRESENTATION_SUBMISSION_JSONLD_CONTEXT = (
 PRESENTATION_SUBMISSION_JSONLD_TYPE = "PresentationSubmission"
 PYTZ_TIMEZONE_PATTERN = re.compile(r"(([a-zA-Z]+)(?:\/)([a-zA-Z]+))")
 LIST_INDEX_PATTERN = re.compile(r"\[(\W+)\]|\[(\d+)\]")
+# jsonpath-ng 1.8+ uses parentheses in str(full_path); normalize to "a.b.c"
+JSONPATH_FULL_PATH_PARENS = re.compile(r"[()]")
+
 LOGGER = logging.getLogger(__name__)
 
 
@@ -526,7 +529,9 @@ class DIFPresExchHandler:
                     if len(match) == 0:
                         continue
                     for match_item in match:
-                        full_path = str(match_item.full_path)
+                        full_path = JSONPATH_FULL_PATH_PARENS.sub(
+                            "", str(match_item.full_path)
+                        )
                         if bool(LIST_INDEX_PATTERN.search(full_path)):
                             full_path = re.sub(r"\[(\W+)\]|\[(\d+)\]", "[0]", full_path)
                             full_path = full_path.replace(".[", "[")
@@ -1601,7 +1606,7 @@ class DIFPresExchHandler:
             to_check = path_split_array[-1]
             if "." not in to_check:
                 return path
-            split_by_index = re.split(r"\[(\d+)\]", to_check, 1)
+            split_by_index = re.split(r"\[(\d+)\]", to_check, maxsplit=1)
             if len(split_by_index) > 1:
                 jsonpath = parse(split_by_index[0])
                 match = jsonpath.find(cred_dict)
