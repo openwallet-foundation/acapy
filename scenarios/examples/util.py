@@ -462,7 +462,7 @@ async def anoncreds_issue_credential_v2(
             "connection_id": issuer_connection_id,
             "filter": _filter,
             "credential_preview": {
-                "type": "issue-credential-2.0/2.0/credential-preview",  # pyright: ignore
+                "type": "issue-credential-2.0/2.0/credential-preview",
                 "attributes": [
                     {
                         "mime_type": None,

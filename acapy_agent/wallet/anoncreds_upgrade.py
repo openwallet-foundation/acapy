@@ -35,6 +35,7 @@ from ..anoncreds.models.revocation import (
 from ..anoncreds.models.schema import SchemaState
 from ..cache.base import BaseCache
 from ..core.profile import Profile, ProfileSession
+from ..indy.constants import CATEGORY_REV_REG
 from ..indy.credx.holder import CATEGORY_LINK_SECRET, IndyCredxHolder
 from ..ledger.multiple_ledger.ledger_requests_executor import (
     GET_CRED_DEF,
@@ -119,12 +120,14 @@ class RevRegDefUpgradeObj:
         rev_reg_def: RevRegDef,
         rev_reg_def_private: RevocationRegistryDefinitionPrivate,
         active: bool = False,
+        accum: Optional[str] = None,
     ):
         """Initialize rev reg def upgrade object."""
         self.rev_reg_def_id = rev_reg_def_id
         self.rev_reg_def = rev_reg_def
         self.rev_reg_def_private = rev_reg_def_private
         self.active = active
+        self.accum = accum
 
 
 class RevListUpgradeObj:
@@ -242,6 +245,8 @@ async def get_rev_reg_def_upgrade_object(
         askar_reg_rev_def_private = await storage.get_record(
             CATEGORY_REV_REG_DEF_PRIVATE, rev_reg_def_id
         )
+        accum_record = await storage.get_record(CATEGORY_REV_REG, rev_reg_def_id)
+        acccum_value = json.loads(accum_record.value)["value"]["accum"]
 
     revoc_reg_def_values = json.loads(askar_issuer_rev_reg_def.value)
 
@@ -261,7 +266,11 @@ async def get_rev_reg_def_upgrade_object(
     )
 
     return RevRegDefUpgradeObj(
-        rev_reg_def_id, rev_reg_def, askar_reg_rev_def_private.value, is_active
+        rev_reg_def_id,
+        rev_reg_def,
+        askar_reg_rev_def_private.value,
+        is_active,
+        acccum_value,
     )
 
 
@@ -277,18 +286,19 @@ async def get_rev_list_upgrade_object(
             {"rev_reg_id": rev_reg_def_upgrade_obj.rev_reg_def_id},
         )
 
-    revocation_list = [0] * rev_reg.value.max_cred_num
+    # We need to increase the list by 1 here because the first index
+    # is reserved by the crtyographic algorithm and the previous record
+    # goes up to max_cred_num as numbers and not a list of truthy values
+    revocation_list = [0] * (rev_reg.value.max_cred_num + 1)
     for askar_cred_rev_record in askar_cred_rev_records:
         if askar_cred_rev_record.tags.get("state") == "revoked":
-            revocation_list[int(askar_cred_rev_record.tags.get("cred_rev_id")) - 1] = 1
+            revocation_list[int(askar_cred_rev_record.tags.get("cred_rev_id"))] = 1
 
     rev_list = RevList(
         issuer_id=rev_reg.issuer_id,
         rev_reg_def_id=rev_reg_def_upgrade_obj.rev_reg_def_id,
         revocation_list=revocation_list,
-        current_accumulator=json.loads(
-            rev_reg_def_upgrade_obj.askar_issuer_rev_reg_def.value
-        )["revoc_reg_entry"]["value"]["accum"],
+        current_accumulator=rev_reg_def_upgrade_obj.accum,
     )
 
     return RevListUpgradeObj(
@@ -400,7 +410,8 @@ async def upgrade_and_delete_rev_entry_records(
     txn: ProfileSession, rev_list_upgrade_obj: RevListUpgradeObj
 ) -> None:
     """Upgrade and delete revocation entry records."""
-    next_index = 0
+    # 0 index is reserved by the crypto algorithm
+    next_index = 1
     for cred_rev_record in rev_list_upgrade_obj.cred_rev_records:
         if int(cred_rev_record.tags.get("cred_rev_id")) > next_index:
             next_index = int(cred_rev_record.tags.get("cred_rev_id"))
@@ -467,6 +478,7 @@ async def get_rev_reg_def_upgrade_objs(
             ),
             key=lambda x: json.loads(x.value)["created_at"],
         )
+
     found_active = False
     is_active = False
     for askar_issuer_rev_reg_def in askar_issuer_rev_reg_def_records:
