@@ -501,8 +501,35 @@ async def main():
             },
         )
 
-    rev_lists = await verify_rev_reg(alice)
-    print(rev_lists)
+        # Revoke all other issued credentials
+
+        all_rev_regs = (await alice.get("/anoncreds/revocation/registries"))[
+            "rev_reg_ids"
+        ]
+        for rev_reg in all_rev_regs:
+            rev_reg_list = await alice.get(
+                f"/anoncreds/revocation/registry/{rev_reg}/issued/details",
+            )
+            for value in rev_reg_list:
+                if value["state"] == "issued":
+                    await alice.post(
+                        url="/anoncreds/revocation/revoke",
+                        json={
+                            "connection_id": alice_conns["askar"].connection_id,
+                            "rev_reg_id": value["rev_reg_id"],
+                            "cred_rev_id": value["cred_rev_id"],
+                            "publish": True,
+                            "notify": True,
+                            "notify_version": "v1_0",
+                        },
+                    )
+
+            # verify all credentials are revoked
+            rev_reg_list = await alice.get(
+                f"/anoncreds/revocation/registry/{rev_reg}/issued/details",
+            )
+            for value in rev_reg_list:
+                assert value["state"] == "revoked"
 
     # cleanup - shut down alice agent (not part of docker compose)
     stop_and_remove_container(client, alice_id)
