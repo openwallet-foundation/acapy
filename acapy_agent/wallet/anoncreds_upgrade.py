@@ -246,7 +246,7 @@ async def get_rev_reg_def_upgrade_object(
             CATEGORY_REV_REG_DEF_PRIVATE, rev_reg_def_id
         )
         accum_record = await storage.get_record(CATEGORY_REV_REG, rev_reg_def_id)
-        acccum_value = json.loads(accum_record.value)["value"]["accum"]
+        accum_value = json.loads(accum_record.value)["value"]["accum"]
 
     revoc_reg_def_values = json.loads(askar_issuer_rev_reg_def.value)
 
@@ -270,7 +270,7 @@ async def get_rev_reg_def_upgrade_object(
         rev_reg_def,
         askar_reg_rev_def_private.value,
         is_active,
-        acccum_value,
+        accum_value,
     )
 
 
@@ -287,7 +287,7 @@ async def get_rev_list_upgrade_object(
         )
 
     # We need to increase the list by 1 here because the first index
-    # is reserved by the crtyographic algorithm and the previous record
+    # is reserved by the cryptographic algorithm and the previous record
     # goes up to max_cred_num as numbers and not a list of truthy values
     revocation_list = [0] * (rev_reg.value.max_cred_num + 1)
     for askar_cred_rev_record in askar_cred_rev_records:

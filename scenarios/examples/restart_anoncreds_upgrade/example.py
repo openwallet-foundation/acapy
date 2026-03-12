@@ -133,10 +133,10 @@ async def verify_schema_cred_def(issuer, schema_count, cred_def_count):
         assert cred_def_count == len(cred_defs["credential_definition_ids"])
 
 
-async def verify_holder_credentials(holder, active_cred_count):
+async def verify_holder_credentials(holder, cred_count):
     credentials = await holder.get("/credentials")
     credentials = credentials["results"]
-    assert len(credentials) == active_cred_count
+    assert len(credentials) == cred_count
 
 
 async def verify_rev_reg(issuer):
@@ -163,11 +163,11 @@ async def verify_rev_reg(issuer):
             rev_reg_list = await issuer.get(
                 f"/revocation/registry/{rev_reg}/issued/details",
             )
-        list = [0] * 5
+        rev_list = [0] * 5
         for value in rev_reg_list:
             if value["state"] == "revoked":
-                list[int(value["cred_rev_id"]) - 1] = 1
-        rev_reg_lists.append(list)
+                rev_list[int(value["cred_rev_id"]) - 1] = 1
+        rev_reg_lists.append(rev_list)
 
     return rev_reg_lists
 
