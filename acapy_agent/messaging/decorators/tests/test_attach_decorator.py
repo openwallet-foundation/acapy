@@ -12,7 +12,7 @@ from ....utils.testing import create_test_profile
 from ....wallet.base import BaseWallet
 from ....wallet.did_method import SOV, DIDMethods
 from ....wallet.key_type import ED25519
-from ....wallet.util import b64_to_bytes, bytes_to_b64
+from ....wallet.util import b58_to_bytes, b64_to_bytes, bytes_to_b64, str_to_b64
 from ..attach_decorator import (
     AttachDecorator,
     AttachDecoratorData,
@@ -522,3 +522,50 @@ class TestAttachDecoratorSignature:
         deco_dict["data"]["links"] = "https://en.wikipedia.org/wiki/Potato"
         with pytest.raises(BaseModelError):
             AttachDecorator.deserialize(deco_dict)  # now has base64 and links
+
+    @pytest.mark.asyncio
+    async def test_verify_uses_kid_from_header_when_jwk_has_no_kid(self, wallet, seed):
+        """Verify uses kid from JWS header when jwk has no kid (Credo/interop case)."""
+        # Build a JWS where kid is only in the unprotected header, not in jwk.
+        # This is the format some agents (e.g. Credo) send; verification must use header.kid.
+        did_info = await wallet.create_local_did(SOV, ED25519, seed[0])
+        verkey_b58 = did_info.verkey
+        kid_full = did_key(verkey_b58)
+
+        payload = b"payload for header-kid test"
+        b64_payload = bytes_to_b64(payload)
+        # Protected header with jwk but NO kid in jwk
+        protected = {
+            "alg": "EdDSA",
+            "jwk": {
+                "kty": "OKP",
+                "crv": "Ed25519",
+                "x": bytes_to_b64(
+                    b58_to_bytes(verkey_b58), urlsafe=True, pad=False
+                ),
+            },
+        }
+        b64_protected = str_to_b64(
+            json.dumps(protected, separators=(",", ":")),
+            urlsafe=True,
+            pad=False,
+        )
+        sign_input = (b64_protected + "." + b64_payload).encode("ascii")
+        sig_bytes = await wallet.sign_message(
+            message=sign_input,
+            from_verkey=verkey_b58,
+        )
+        b64_sig = bytes_to_b64(sig_bytes, urlsafe=True, pad=False)
+
+        data = AttachDecoratorData.deserialize(
+            {
+                "base64": b64_payload,
+                "jws": {
+                    "header": {"kid": kid_full},
+                    "protected": b64_protected,
+                    "signature": b64_sig,
+                },
+            }
+        )
+        assert await data.verify(wallet)
+        assert await data.verify(wallet, signer_verkey=verkey_b58)
