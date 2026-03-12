@@ -1,6 +1,7 @@
 import json
 from copy import deepcopy
 from datetime import datetime, timezone
+from types import SimpleNamespace
 from unittest import TestCase
 
 import pytest
@@ -567,3 +568,37 @@ class TestAttachDecoratorSignature:
         )
         assert await data.verify(wallet)
         assert await data.verify(wallet, signer_verkey=verkey_b58)
+
+    @pytest.mark.asyncio
+    async def test_verify_uses_kid_from_jwk_when_header_has_no_kid(self, wallet, seed):
+        """Verify uses jwk.kid when header has no kid (fallback path)."""
+        deco = AttachDecorator.data_base64(
+            mapping=INDY_CRED,
+            ident=IDENT,
+            description=DESCRIPTION,
+        )
+        did_info = await wallet.create_local_did(SOV, ED25519, seed[0])
+        await deco.data.sign(did_info.verkey, wallet)
+        # Force fallback: header has no kid, so verify must use jwk.kid from protected
+        deco.data.jws_.header = SimpleNamespace(kid=None)
+        assert await deco.data.verify(wallet)
+        assert await deco.data.verify(wallet, signer_verkey=did_info.verkey)
+
+    @pytest.mark.asyncio
+    async def test_verify_returns_false_when_signer_verkey_does_not_match(
+        self, wallet, seed
+    ):
+        """Verify returns False when signer_verkey is not the signing key."""
+        deco = AttachDecorator.data_base64(
+            mapping=INDY_CRED,
+            ident=IDENT,
+            description=DESCRIPTION,
+        )
+        did_infos = [await wallet.create_local_did(SOV, ED25519, seed[i]) for i in [0, 1]]
+        await deco.data.sign(did_infos[0].verkey, wallet)
+        # Sign with key 0; require key 1 -> should fail
+        assert not await deco.data.verify(wallet, signer_verkey=did_infos[1].verkey)
+        # No signer_verkey constraint -> should pass
+        assert await deco.data.verify(wallet)
+        # Correct signer_verkey -> should pass
+        assert await deco.data.verify(wallet, signer_verkey=did_infos[0].verkey)
