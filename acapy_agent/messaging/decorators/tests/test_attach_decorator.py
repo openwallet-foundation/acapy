@@ -540,9 +540,7 @@ class TestAttachDecoratorSignature:
             "jwk": {
                 "kty": "OKP",
                 "crv": "Ed25519",
-                "x": bytes_to_b64(
-                    b58_to_bytes(verkey_b58), urlsafe=True, pad=False
-                ),
+                "x": bytes_to_b64(b58_to_bytes(verkey_b58), urlsafe=True, pad=False),
             },
         }
         b64_protected = str_to_b64(
