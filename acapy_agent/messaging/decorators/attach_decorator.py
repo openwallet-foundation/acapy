@@ -442,8 +442,15 @@ class AttachDecoratorData(BaseModel):
             if not await wallet.verify_message(sign_input, b_sig, verkey, ED25519):
                 return False
 
-            if "kid" in jwk:
-                encoded_pk = DIDKey.from_did(protected["jwk"]["kid"]).public_key_b58
+            # Prefer kid from JWS header (canonical per spec); fall back to jwk.kid
+            kid = None
+            if getattr(sig, "header", None) and getattr(sig.header, "kid", None):
+                kid = sig.header.kid
+            elif "kid" in jwk:
+                kid = protected["jwk"]["kid"]
+
+            if kid:
+                encoded_pk = DIDKey.from_did(kid).public_key_b58
                 verkey_to_check.append(encoded_pk)
                 if not await wallet.verify_message(
                     sign_input, b_sig, encoded_pk, ED25519
