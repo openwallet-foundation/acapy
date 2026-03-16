@@ -22,7 +22,12 @@ from ....ledger.base import BaseLedger
 from ....ledger.error import (
     LedgerError,
 )
+from ....ledger.multiple_ledger.ledger_requests_executor import (
+    GET_REVOC_REG_DELTA,
+    IndyLedgerRequestsExecutor,
+)
 from ....messaging.responder import BaseResponder
+from ....multitenant.base import BaseMultitenantManager
 from ....protocols.endorse_transaction.v1_0.manager import (
     TransactionManager,
     TransactionManagerError,
@@ -280,7 +285,9 @@ async def fix_and_publish_from_invalid_accum_err(profile: Profile, err_msg: str)
                     rev_reg_delta,
                     recovery_txn,
                     applied_txn,
-                ) = await fix_ledger_entry(profile, rev_list, False, genesis_transactions)
+                ) = await fix_ledger_entry(
+                    profile, rev_list, False, genesis_transactions, False, endorser_did
+                )
                 if recovery_txn.get("value"):
                     await create_and_send_endorser_txn()
 
@@ -307,12 +314,24 @@ async def fix_ledger_entry(
     rev_list: RevList,
     apply_ledger_update: bool,
     genesis_transactions: str,
+    write_ledger: bool = True,
+    endorser_did: Optional[str] = None,
 ) -> Tuple[dict, dict, dict]:
     """Fix the ledger entry to match wallet-recorded credentials."""
     applied_txn = {}
     recovery_txn = {}
 
     LOGGER.debug("Fixing ledger entry for revocation list...")
+
+    multitenant_mgr = profile.inject_or(BaseMultitenantManager)
+    if multitenant_mgr:
+        ledger_exec_inst = IndyLedgerRequestsExecutor(profile)
+    else:
+        ledger_exec_inst = profile.inject(IndyLedgerRequestsExecutor)
+    _, ledger = await ledger_exec_inst.get_ledger_for_identifier(
+        rev_list.rev_reg_def_id,
+        txn_record_type=GET_REVOC_REG_DELTA,
+    )
 
     # get rev reg delta (revocations published to ledger)
     ledger = profile.inject(BaseLedger)
@@ -338,16 +357,21 @@ async def fix_ledger_entry(
     recovery_txn = await generate_ledger_rrrecovery_txn(genesis_transactions, rev_list)
 
     if apply_ledger_update:
-        ledger = session.inject_or(BaseLedger)
+        ledger = profile.inject_or(BaseLedger)
         if not ledger:
             reason = "No ledger available"
-            if not session.context.settings.get_value("wallet.type"):
+            if not profile.context.settings.get_value("wallet.type"):
                 reason += ": missing wallet-type?"
-            raise LedgerError(reason="reason")
+            raise LedgerError(reason=reason)
 
         async with ledger:
             ledger_response = await ledger.send_revoc_reg_entry(
-                rev_list.rev_reg_def_id, "CL_ACCUM", recovery_txn
+                rev_list.rev_reg_def_id,
+                "CL_ACCUM",
+                recovery_txn,
+                rev_list.issuer_id,
+                write_ledger=write_ledger,
+                endorser_did=endorser_did,
             )
 
         applied_txn = ledger_response["result"]

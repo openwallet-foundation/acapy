@@ -834,7 +834,12 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
                 LOGGER.warning("Retry ledger update/fix due to error")
                 LOGGER.warning(err)
                 (_, _, rev_entry_res) = await fix_ledger_entry(
-                    profile, rev_list, True, ledger.pool.genesis_txns
+                    profile,
+                    rev_list,
+                    True,
+                    ledger.pool.genesis_txns,
+                    write_ledger=write_ledger,
+                    endorser_did=endorser_did,
                 )
                 LOGGER.warning("Ledger update/fix applied")
             elif "InvalidClientTaaAcceptanceError" in err.roll_up:
