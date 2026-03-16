@@ -183,12 +183,12 @@ async def fix_and_publish_from_invalid_accum_err(profile: Profile, err_msg: str)
     async def check_retry(accum):
         """Used to manage retries for fixing revocation registry entries."""
         if cache is None:
-            if cache is None:
-                LOGGER.warning(
-                    "No cache backend configured; skipping retry tracking for %s",
-                    accum,
-                )
-                return
+            LOGGER.warning(
+                "No cache backend configured; skipping retry tracking for %s",
+                accum,
+            )
+            return
+
         retry_value = await cache.get(accum)
         if not retry_value:
             await cache.set(accum, 5)
@@ -276,7 +276,6 @@ async def fix_and_publish_from_invalid_accum_err(profile: Profile, err_msg: str)
 
             # If the accum from the ledger matches the error message, fix it
             if accum and accum in err_msg:
-                # If the accum from the ledger matches the error message, fix it
                 # if accum and accum in err_msg:
                 await check_retry(accum)
 
@@ -391,19 +390,24 @@ async def fix_ledger_entry(
                     endorser_did=endorser_did,
                 )
 
-            applied_txn = ledger_response["result"]
+                if isinstance(ledger_response, dict) and "result" in ledger_response:
+                    applied_txn = ledger_response["result"]
 
-            # Update the local wallets rev reg entry with the new accumulator value
-            rev_list_value_json = rev_list.value_json
-            rev_list_value_json["rev_list"]["currentAccumulator"] = applied_txn["txn"][
-                "data"
-            ]["value"]["accum"]
-            rev_list.current_accumulator = applied_txn["txn"]["data"]["value"]["accum"]
-            await session.handle.replace(
-                CATEGORY_REV_LIST,
-                rev_list.rev_reg_def_id,
-                rev_list_value_json,
-                rev_list.tags,
-            )
+                    # Update the local wallets rev reg entry with the new accumulator value
+                    rev_list_value_json = rev_list.value_json
+                    rev_list_value_json["rev_list"]["currentAccumulator"] = applied_txn[
+                        "txn"
+                    ]["data"]["value"]["accum"]
+                    rev_list.current_accumulator = applied_txn["txn"]["data"]["value"][
+                        "accum"
+                    ]
+                    await session.handle.replace(
+                        CATEGORY_REV_LIST,
+                        rev_list.rev_reg_def_id,
+                        rev_list_value_json,
+                        rev_list.tags,
+                    )
+                    return (rev_reg_delta, recovery_txn, applied_txn)
 
-    return (rev_reg_delta, recovery_txn, applied_txn)
+    # Ledger update not applied, return without applied_txn
+    return (rev_reg_delta, recovery_txn, {})
