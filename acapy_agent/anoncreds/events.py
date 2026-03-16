@@ -69,6 +69,12 @@ REV_REG_FULL_HANDLING_COMPLETED_EVENT = (
 # If retries continue to fail, this will notify the issuer that intervention is required
 INTERVENTION_REQUIRED_EVENT = "anoncreds::revocation-registry::intervention-required"
 
+# If revocation list requires endorsement and fails to update, this event is emitted to
+# trigger retry logic and notify of failure
+REV_LIST_ENDORSED_UPDATE_FAILED_EVENT = (
+    "anoncreds::revocation-list::endorsed-update-failed"
+)
+
 
 class BaseEventPayload(Protocol):
     """Base event payload."""

@@ -1,16 +1,10 @@
 """Legacy Indy Registry."""
 
-import asyncio
 import logging
 import re
 from asyncio import shield
 from typing import List, Optional, Pattern, Sequence, Tuple
 
-from anoncreds import (
-    CredentialDefinition,
-    RevocationRegistryDefinition,
-    RevocationRegistryDefinitionPrivate,
-)
 from base58 import alphabet
 from uuid_utils import uuid4
 
@@ -18,7 +12,7 @@ from ....anoncreds.default.legacy_indy.author import get_endorser_info
 from ....cache.base import BaseCache
 from ....config.injection_context import InjectionContext
 from ....core.event_bus import EventBus
-from ....core.profile import Profile, ProfileSession
+from ....core.profile import Profile
 from ....ledger.base import BaseLedger
 from ....ledger.error import (
     LedgerError,
@@ -26,7 +20,6 @@ from ....ledger.error import (
     LedgerTransactionError,
 )
 from ....ledger.merkel_validation.constants import (
-    GET_REVOC_REG_DELTA,
     GET_REVOC_REG_ENTRY,
     GET_SCHEMA,
 )
@@ -53,13 +46,8 @@ from ...base import (
     BaseAnonCredsRegistrar,
     BaseAnonCredsResolver,
 )
-from ...constants import (
-    CATEGORY_REV_LIST,
-    CATEGORY_REV_REG_DEF,
-    CATEGORY_REV_REG_DEF_PRIVATE,
-)
 from ...events import RevListFinishedEvent
-from ...issuer import CATEGORY_CRED_DEF, AnonCredsIssuer, AnonCredsIssuerError
+from ...issuer import AnonCredsIssuer, AnonCredsIssuerError
 from ...models.credential_definition import (
     CredDef,
     CredDefResult,
@@ -67,7 +55,6 @@ from ...models.credential_definition import (
     CredDefValue,
     GetCredDefResult,
 )
-from ...models.issuer_cred_rev_record import IssuerCredRevRecord
 from ...models.revocation import (
     GetRevListResult,
     GetRevRegDefResult,
@@ -81,7 +68,7 @@ from ...models.revocation import (
 )
 from ...models.schema import AnonCredsSchema, GetSchemaResult, SchemaResult, SchemaState
 from ...models.schema_info import AnonCredsSchemaInfo
-from .recover import generate_ledger_rrrecovery_txn
+from .recover import fix_ledger_entry
 
 LOGGER = logging.getLogger(__name__)
 
@@ -846,13 +833,8 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
                 # In this scenario we try to post a correction
                 LOGGER.warning("Retry ledger update/fix due to error")
                 LOGGER.warning(err)
-                (_, _, rev_entry_res) = await self.fix_ledger_entry(
-                    profile,
-                    rev_list,
-                    True,
-                    ledger.pool.genesis_txns,
-                    write_ledger,
-                    endorser_did,
+                (_, _, rev_entry_res) = await fix_ledger_entry(
+                    profile, rev_list, True, ledger.pool.genesis_txns
                 )
                 LOGGER.warning("Ledger update/fix applied")
             elif "InvalidClientTaaAcceptanceError" in err.roll_up:
@@ -1079,140 +1061,6 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
             },
             revocation_list_metadata={},
         )
-
-    async def fix_ledger_entry(
-        self,
-        profile: Profile,
-        rev_list: RevList,
-        apply_ledger_update: bool,
-        genesis_transactions: str,
-        write_ledger: bool = True,
-        endorser_did: Optional[str] = None,
-    ) -> Tuple[dict, dict, dict]:
-        """Fix the ledger entry to match wallet-recorded credentials."""
-
-        def _wallet_accumalator_matches_ledger_list(
-            rev_list: RevList, rev_reg_delta: dict
-        ) -> bool:
-            return (
-                rev_reg_delta.get("value")
-                and rev_list.current_accumulator == rev_reg_delta["value"]["accum"]
-            )
-
-        applied_txn = {}
-        recovery_txn = {}
-
-        LOGGER.debug("Fixing ledger entry for revocation list...")
-
-        multitenant_mgr = profile.inject_or(BaseMultitenantManager)
-        if multitenant_mgr:
-            ledger_exec_inst = IndyLedgerRequestsExecutor(profile)
-        else:
-            ledger_exec_inst = profile.inject(IndyLedgerRequestsExecutor)
-        _, ledger = await ledger_exec_inst.get_ledger_for_identifier(
-            rev_list.rev_reg_def_id,
-            txn_record_type=GET_REVOC_REG_DELTA,
-        )
-
-        async with ledger:
-            (rev_reg_delta, _) = await ledger.get_revoc_reg_delta(rev_list.rev_reg_def_id)
-
-        async with profile.session() as session:
-            LOGGER.debug(f"revocation_list = {rev_list.revocation_list}")
-            LOGGER.debug(f"rev_reg_delta = {rev_reg_delta.get('value')}")
-
-            rev_list = await self._sync_wallet_rev_list_with_issuer_cred_rev_records(
-                session, rev_list
-            )
-
-            if not _wallet_accumalator_matches_ledger_list(rev_list, rev_reg_delta):
-                recovery_txn = await generate_ledger_rrrecovery_txn(
-                    genesis_transactions, rev_list
-                )
-
-                if apply_ledger_update and recovery_txn:
-                    ledger = session.inject_or(BaseLedger)
-                    if not ledger:
-                        reason = NO_LEDGER_AVAILABLE_MSG
-                        if not session.context.settings.get_value(WALLET_TYPE):
-                            reason += MISSING_WALLET_TYPE_MSG
-                        raise LedgerError(reason=reason)
-
-                    async with ledger:
-                        applied_txn = await ledger.send_revoc_reg_entry(
-                            rev_list.rev_reg_def_id,
-                            "CL_ACCUM",
-                            recovery_txn,
-                            rev_list.issuer_id,
-                            write_ledger,
-                            endorser_did,
-                        )
-
-        return (rev_reg_delta, recovery_txn, applied_txn)
-
-    async def _sync_wallet_rev_list_with_issuer_cred_rev_records(
-        self, session: ProfileSession, rev_list: RevList
-    ) -> RevList:
-        """Sync the wallet revocation list with the issuer cred rev records."""
-
-        async def _revoked_issuer_cred_rev_record_ids() -> List[int]:
-            cred_rev_records = await IssuerCredRevRecord.query_by_ids(
-                session, rev_reg_id=rev_list.rev_reg_def_id
-            )
-            return [
-                int(rec.cred_rev_id) for rec in cred_rev_records if rec.state == "revoked"
-            ]
-
-        def _revocation_list_to_array_of_indexes(
-            revocation_list: List[int],
-        ) -> List[int]:
-            return [index for index, value in enumerate(revocation_list) if value == 1]
-
-        revoked = await _revoked_issuer_cred_rev_record_ids()
-        if revoked == _revocation_list_to_array_of_indexes(rev_list.revocation_list):
-            return rev_list
-
-        # The revocation list is out of sync with the issuer cred rev records
-        # Recreate the revocation list with the issuer cred rev records
-        revoc_reg_def_entry = await session.handle.fetch(
-            CATEGORY_REV_REG_DEF, rev_list.rev_reg_def_id
-        )
-        cred_def_entry = await session.handle.fetch(
-            CATEGORY_CRED_DEF,
-            RevRegDef.deserialize(revoc_reg_def_entry.value_json).cred_def_id,
-        )
-        revoc_reg_def_private_entry = await session.handle.fetch(
-            CATEGORY_REV_REG_DEF_PRIVATE, rev_list.rev_reg_def_id
-        )
-        updated_list = await asyncio.get_event_loop().run_in_executor(
-            None,
-            lambda: rev_list.to_native().update(
-                cred_def=CredentialDefinition.load(cred_def_entry.value_json),
-                rev_reg_def=RevocationRegistryDefinition.load(
-                    revoc_reg_def_entry.value_json
-                ),
-                rev_reg_def_private=RevocationRegistryDefinitionPrivate.load(
-                    revoc_reg_def_private_entry.raw_value
-                ),
-                issued=None,
-                revoked=revoked,
-                timestamp=None,
-            ),
-        )
-        rev_list_entry_update = await session.handle.fetch(
-            CATEGORY_REV_LIST, rev_list.rev_reg_def_id, for_update=True
-        )
-        tags = rev_list_entry_update.tags
-        rev_list_entry_update = rev_list_entry_update.value_json
-        rev_list_entry_update["rev_list"] = updated_list.to_dict()
-
-        await session.handle.replace(
-            CATEGORY_REV_LIST,
-            rev_list.rev_reg_def_id,
-            value_json=rev_list_entry_update,
-            tags=tags,
-        )
-        return RevList.deserialize(updated_list.to_json())
 
     async def txn_submit(
         self,

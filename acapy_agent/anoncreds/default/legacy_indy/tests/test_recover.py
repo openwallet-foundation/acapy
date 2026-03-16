@@ -131,7 +131,7 @@ class TestLegacyIndyRecover(IsolatedAsyncioTestCase):
         )
         assert result == {}
 
-        # Logs waring when ledger has revoked indexes not in wallet
+        # Logs warning when ledger has revoked indexes not in wallet
         with mock.patch(
             "acapy_agent.anoncreds.default.legacy_indy.recover.LOGGER"
         ) as mock_logger:
