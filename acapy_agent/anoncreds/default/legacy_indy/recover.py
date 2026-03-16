@@ -182,6 +182,13 @@ async def fix_and_publish_from_invalid_accum_err(profile: Profile, err_msg: str)
 
     async def check_retry(accum):
         """Used to manage retries for fixing revocation registry entries."""
+        if cache is None:
+            if cache is None:
+                LOGGER.warning(
+                    "No cache backend configured; skipping retry tracking for %s",
+                    accum,
+                )
+                return
         retry_value = await cache.get(accum)
         if not retry_value:
             await cache.set(accum, 5)
@@ -189,7 +196,10 @@ async def fix_and_publish_from_invalid_accum_err(profile: Profile, err_msg: str)
             if retry_value > 0:
                 await cache.set(accum, retry_value - 1)
             else:
-                LOGGER.error(f"Revocation registry entry transaction failed for {accum}")
+                LOGGER.error(
+                    "Revocation registry entry transaction failed for %s",
+                    accum,
+                )
 
     def get_genesis_transactions():
         """Get the genesis transactions needed for fixing broken accum."""
@@ -333,51 +343,57 @@ async def fix_ledger_entry(
         txn_record_type=GET_REVOC_REG_DELTA,
     )
 
-    # get rev reg delta (revocations published to ledger)
-    ledger = profile.inject(BaseLedger)
+    if not ledger:
+        reason = "No ledger available for revocation registry entry fix"
+        if not profile.context.settings.get_value("wallet.type"):
+            reason += ": missing wallet-type?"
+        raise LedgerError(reason=reason)
+
     async with ledger:
         (rev_reg_delta, _) = await ledger.get_revoc_reg_delta(rev_list.rev_reg_def_id)
 
-    # get rev reg records from wallet (revocations and status)
-    async with profile.session() as session:
-        recs = await IssuerCredRevRecord.query_by_ids(
-            session, rev_reg_id=rev_list.rev_reg_def_id
-        )
-
-    revoked_ids, rec_count = _get_revoked_discrepancies(recs, rev_reg_delta)
-
-    LOGGER.debug(f"Fixed entry recs count = {rec_count}")
-    LOGGER.debug(f"Fixed entry recs revoked ids = {revoked_ids}")
-
-    # No update required if no discrepancies
-    if rec_count == 0:
-        return (rev_reg_delta, {}, {})
-
-    # We have revocation discrepancies, generate the recovery txn
-    recovery_txn = await generate_ledger_rrrecovery_txn(genesis_transactions, rev_list)
-
-    if apply_ledger_update:
-        ledger = profile.inject_or(BaseLedger)
-        if not ledger:
-            reason = "No ledger available"
-            if not profile.context.settings.get_value("wallet.type"):
-                reason += ": missing wallet-type?"
-            raise LedgerError(reason=reason)
-
-        async with ledger:
-            ledger_response = await ledger.send_revoc_reg_entry(
-                rev_list.rev_reg_def_id,
-                "CL_ACCUM",
-                recovery_txn,
-                rev_list.issuer_id,
-                write_ledger=write_ledger,
-                endorser_did=endorser_did,
+        async with profile.session() as session:
+            # get rev reg records from wallet (revocations and status)
+            recs = await IssuerCredRevRecord.query_by_ids(
+                session, rev_reg_id=rev_list.rev_reg_def_id
             )
 
-        applied_txn = ledger_response["result"]
+            revoked_ids, rec_count = _get_revoked_discrepancies(recs, rev_reg_delta)
 
-        # Update the local wallets rev reg entry with the new accumulator value
-        async with profile.session() as session:
+            LOGGER.debug(f"Fixed entry recs count = {rec_count}")
+            LOGGER.debug(f"Fixed entry recs revoked ids = {revoked_ids}")
+
+            # No update required if no discrepancies
+            if rec_count == 0:
+                return (rev_reg_delta, {}, {})
+
+            # We have revocation discrepancies, generate the recovery txn
+            recovery_txn = await generate_ledger_rrrecovery_txn(
+                genesis_transactions, rev_list
+            )
+
+            # If no recovery transaction was generated, skip ledger update
+            if not recovery_txn:
+                LOGGER.debug(
+                    "No recovery transaction generated for revocation list %s; "
+                    "skipping ledger update",
+                    rev_list.rev_reg_def_id,
+                )
+                return (rev_reg_delta, recovery_txn, applied_txn)
+
+            if apply_ledger_update:
+                ledger_response = await ledger.send_revoc_reg_entry(
+                    rev_list.rev_reg_def_id,
+                    "CL_ACCUM",
+                    recovery_txn,
+                    rev_list.issuer_id,
+                    write_ledger=write_ledger,
+                    endorser_did=endorser_did,
+                )
+
+            applied_txn = ledger_response["result"]
+
+            # Update the local wallets rev reg entry with the new accumulator value
             rev_list_value_json = rev_list.value_json
             rev_list_value_json["rev_list"]["currentAccumulator"] = applied_txn["txn"][
                 "data"
