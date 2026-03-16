@@ -392,8 +392,6 @@ async def fix_ledger_entry(
 
                 if isinstance(ledger_response, dict) and "result" in ledger_response:
                     applied_txn = ledger_response["result"]
-
-                    # Update the local wallets rev reg entry with the new accumulator value
                     rev_list_value_json = rev_list.value_json
                     rev_list_value_json["rev_list"]["currentAccumulator"] = applied_txn[
                         "txn"
