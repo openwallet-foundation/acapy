@@ -361,7 +361,7 @@ class TestLegacyIndyRecover(IsolatedAsyncioTestCase):
             ],
         ),
     )
-    async def test_fix_ledger_entry_recovery_apply_with_incorrect_object_response_from_ledger(
+    async def test_fix_ledger_entry_recovery_apply_without_update(
         self,
     ):
         rev_list = RevList(
@@ -375,6 +375,73 @@ class TestLegacyIndyRecover(IsolatedAsyncioTestCase):
             self.profile,
             rev_list,
             apply_ledger_update=False,
+            genesis_transactions="GENESIS",
+        )
+
+        assert result[0] == {"value": {"revoked": [1], "accum": "accum"}}
+        assert result[1] == {"value": "txn"}
+        assert result[2] == {}
+
+    @mock.patch(
+        "acapy_agent.anoncreds.default.legacy_indy.recover.generate_ledger_rrrecovery_txn",
+        mock.CoroutineMock(return_value={"value": "txn"}),
+    )
+    @mock.patch(
+        "acapy_agent.anoncreds.default.legacy_indy.recover.IssuerCredRevRecord.query_by_ids",
+        mock.CoroutineMock(
+            return_value=[
+                IssuerCredRevRecord(
+                    state=IssuerCredRevRecord.STATE_REVOKED,
+                    cred_rev_id="1",
+                ),
+                IssuerCredRevRecord(
+                    state=IssuerCredRevRecord.STATE_REVOKED,
+                    cred_rev_id="2",
+                ),
+            ],
+        ),
+    )
+    async def test_fix_ledger_entry_recovery_apply_with_correct_response_from_ledger(
+        self,
+    ):
+        rev_list = RevList(
+            issuer_id="CsQY9MGeD3CQP4EyuVFo5m",
+            rev_reg_def_id="rev-reg-id",
+            current_accumulator="21 124C594B6B20E41B681E",
+            revocation_list=[1, 0, 0, 0],
+        )
+
+        mock_ledger = mock.MagicMock(BaseLedger, autospec=True)
+        mock_ledger.send_revoc_reg_entry = mock.CoroutineMock(
+            return_value={"result": {"data": {"value": {"accum": "accum"}}}}
+        )
+        mock_ledger.get_revoc_reg_delta = mock.CoroutineMock(
+            return_value=(
+                {"value": {"revoked": [1], "accum": "accum"}},
+                1234567890,
+            )
+        )
+        mock_ledger.pool = mock.MagicMock(
+            genesis_txns="dummy genesis transactions",
+        )
+
+        self.ledger = mock_ledger
+
+        self.profile = await create_test_profile()
+        self.profile._context.injector.bind_instance(BaseLedger, self.ledger)
+
+        mock_executor = mock.MagicMock(IndyLedgerRequestsExecutor, autospec=True)
+        mock_executor.get_ledger_for_identifier = mock.CoroutineMock(
+            return_value=(None, self.ledger)
+        )
+        self.profile._context.injector.bind_instance(
+            IndyLedgerRequestsExecutor, mock_executor
+        )
+
+        result = await fix_ledger_entry(
+            self.profile,
+            rev_list,
+            apply_ledger_update=True,
             genesis_transactions="GENESIS",
         )
 
