@@ -9,6 +9,7 @@ import indy_vdr
 import pytest
 from anoncreds import RevocationRegistryDefinition
 
+from .....connections.models.conn_record import ConnRecord
 from .....ledger.base import BaseLedger
 from .....ledger.multiple_ledger.ledger_requests_executor import (
     IndyLedgerRequestsExecutor,
@@ -20,6 +21,7 @@ from ....models.revocation import RevList, RevRegDef, RevRegDefValue
 from ..recover import (
     RevocRecoveryException,
     _check_tails_hash_for_inconsistency,
+    _get_endorser_info,
     _get_genesis_transactions,
     _get_ledger_accum,
     _get_revoked_discrepancies,
@@ -448,3 +450,42 @@ class TestLegacyIndyRecover(IsolatedAsyncioTestCase):
         assert result[0] == {"value": {"revoked": [1], "accum": "accum"}}
         assert result[1] == {"value": "txn"}
         assert result[2] == {}
+
+    @mock.patch.object(
+        ConnRecord, "retrieve_by_alias", mock.CoroutineMock(return_value=None)
+    )
+    async def test_get_endorser_info_no_connection_id(self):
+        profile = await create_test_profile(
+            {
+                "endorser.connection_id": None,
+            }
+        )
+        endorser_did, connection = await _get_endorser_info(profile)
+        assert endorser_did is None
+        assert connection is None
+
+    @mock.patch.object(
+        ConnRecord,
+        "retrieve_by_alias",
+        mock.CoroutineMock(return_value=[ConnRecord(connection_id="conn-id")]),
+    )
+    @mock.patch.object(
+        ConnRecord,
+        "retrieve_by_id",
+        mock.CoroutineMock(return_value=ConnRecord(connection_id="conn-id")),
+    )
+    @mock.patch.object(
+        ConnRecord,
+        "metadata_get",
+        mock.CoroutineMock(return_value={"endorser_did": "endorser-did"}),
+    )
+    async def test_get_endorser_info_when_author(self):
+        profile = await create_test_profile(
+            {
+                "endorser.author": True,
+                "endorser.endorser_alias": "endorser",
+            }
+        )
+        endorser_did, connection = await _get_endorser_info(profile)
+        assert endorser_did == "endorser-did"
+        assert isinstance(connection, ConnRecord)
