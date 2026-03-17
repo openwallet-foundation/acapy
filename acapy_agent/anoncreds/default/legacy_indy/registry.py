@@ -17,7 +17,6 @@ from ....ledger.base import BaseLedger
 from ....ledger.error import (
     LedgerError,
     LedgerObjectAlreadyExistsError,
-    LedgerTransactionError,
 )
 from ....ledger.merkel_validation.constants import (
     GET_REVOC_REG_ENTRY,
@@ -68,7 +67,6 @@ from ...models.revocation import (
 )
 from ...models.schema import AnonCredsSchema, GetSchemaResult, SchemaResult, SchemaState
 from ...models.schema_info import AnonCredsSchemaInfo
-from .recover import fix_ledger_entry
 
 LOGGER = logging.getLogger(__name__)
 
@@ -814,48 +812,15 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
             txn_record_type=GET_REVOC_REG_ENTRY,
         )
 
-        try:
-            async with ledger:
-                rev_entry_res = await ledger.send_revoc_reg_entry(
-                    rev_list.rev_reg_def_id,
-                    rev_reg_def_type,
-                    entry,
-                    rev_list.issuer_id,
-                    write_ledger=write_ledger,
-                    endorser_did=endorser_did,
-                )
-        except LedgerTransactionError as err:
-            if "InvalidClientRequest" in err.roll_up:
-                # ... if the ledger write fails (with "InvalidClientRequest")
-                # e.g. acapy_agent.ledger.error.LedgerTransactionError:
-                #   Ledger rejected transaction request: client request invalid:
-                #   InvalidClientRequest(...)
-                # In this scenario we try to post a correction
-                LOGGER.warning("Retry ledger update/fix due to error")
-                LOGGER.warning(err)
-                (_, _, rev_entry_res) = await fix_ledger_entry(
-                    profile,
-                    rev_list,
-                    True,
-                    ledger.pool.genesis_txns,
-                    write_ledger=write_ledger,
-                    endorser_did=endorser_did,
-                )
-                LOGGER.warning("Ledger update/fix applied")
-            elif "InvalidClientTaaAcceptanceError" in err.roll_up:
-                # if no write access (with "InvalidClientTaaAcceptanceError")
-                # e.g. acapy_agent.ledger.error.LedgerTransactionError:
-                #   Ledger rejected transaction request: client request invalid:
-                #   InvalidClientTaaAcceptanceError(...)
-                LOGGER.exception("Ledger update failed due to TAA issue")
-                raise AnonCredsRegistrationError(
-                    "Ledger update failed due to TAA Issue"
-                ) from err
-            else:
-                LOGGER.exception("Ledger update failed due to unknown issue")
-                raise AnonCredsRegistrationError(
-                    "Ledger update failed due to unknown issue"
-                ) from err
+        async with ledger:
+            rev_entry_res = await ledger.send_revoc_reg_entry(
+                rev_list.rev_reg_def_id,
+                rev_reg_def_type,
+                entry,
+                rev_list.issuer_id,
+                write_ledger=write_ledger,
+                endorser_did=endorser_did,
+            )
 
         return rev_entry_res
 

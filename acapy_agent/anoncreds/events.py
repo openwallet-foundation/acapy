@@ -71,9 +71,7 @@ INTERVENTION_REQUIRED_EVENT = "anoncreds::revocation-registry::intervention-requ
 
 # If revocation list requires endorsement and fails to update, this event is emitted to
 # trigger retry logic and notify of failure
-REV_LIST_ENDORSED_UPDATE_FAILED_EVENT = (
-    "anoncreds::revocation-list::endorsed-update-failed"
-)
+REV_LIST_UPDATE_FAILED_EVENT = "anoncreds::revocation-list::update-failed"
 
 
 class BaseEventPayload(Protocol):

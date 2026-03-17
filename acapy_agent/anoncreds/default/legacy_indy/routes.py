@@ -5,7 +5,7 @@ import re
 
 from ....core.event_bus import EventBus, EventWithMetadata
 from ....core.profile import Profile
-from ...events import REV_LIST_ENDORSED_UPDATE_FAILED_EVENT
+from ...events import REV_LIST_UPDATE_FAILED_EVENT
 from .recover import fix_and_publish_from_invalid_accum_err
 
 LOGGER = logging.getLogger(__name__)
@@ -16,7 +16,7 @@ def register_events(event_bus: EventBus):
     # If revocation list requires endorsement and fails to update, this event is emitted
     # to trigger retry logic and notify of failure
     event_bus.subscribe(
-        re.compile(REV_LIST_ENDORSED_UPDATE_FAILED_EVENT),
+        re.compile(REV_LIST_UPDATE_FAILED_EVENT),
         notify_issuer_about_update_failure_due_to_endorsement,
     )
 

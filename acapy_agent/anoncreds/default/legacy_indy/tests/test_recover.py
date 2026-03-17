@@ -9,12 +9,23 @@ import indy_vdr
 import pytest
 from anoncreds import RevocationRegistryDefinition
 
+from .....ledger.base import BaseLedger
+from .....ledger.multiple_ledger.ledger_requests_executor import (
+    IndyLedgerRequestsExecutor,
+)
 from .....tests import mock
+from .....utils.testing import create_test_profile
+from ....models.issuer_cred_rev_record import IssuerCredRevRecord
 from ....models.revocation import RevList, RevRegDef, RevRegDefValue
 from ..recover import (
     RevocRecoveryException,
     _check_tails_hash_for_inconsistency,
+    _get_genesis_transactions,
+    _get_ledger_accum,
+    _get_revoked_discrepancies,
+    _track_retry,
     fetch_txns,
+    fix_ledger_entry,
     generate_ledger_rrrecovery_txn,
 )
 
@@ -39,6 +50,31 @@ rev_reg_def = RevRegDef(
 
 @pytest.mark.anoncreds
 class TestLegacyIndyRecover(IsolatedAsyncioTestCase):
+    async def asyncSetUp(self):
+        mock_ledger = mock.MagicMock(BaseLedger, autospec=True)
+        mock_ledger.get_revoc_reg_delta = mock.CoroutineMock(
+            return_value=(
+                {"value": {"revoked": [1], "accum": "accum"}},
+                1234567890,
+            )
+        )
+        mock_ledger.pool = mock.MagicMock(
+            genesis_txns="dummy genesis transactions",
+        )
+
+        self.ledger = mock_ledger
+
+        self.profile = await create_test_profile()
+        self.profile._context.injector.bind_instance(BaseLedger, self.ledger)
+
+        mock_executor = mock.MagicMock(IndyLedgerRequestsExecutor, autospec=True)
+        mock_executor.get_ledger_for_identifier = mock.CoroutineMock(
+            return_value=(None, self.ledger)
+        )
+        self.profile._context.injector.bind_instance(
+            IndyLedgerRequestsExecutor, mock_executor
+        )
+
     @mock.patch.object(
         indy_vdr,
         "open_pool",
@@ -185,3 +221,164 @@ class TestLegacyIndyRecover(IsolatedAsyncioTestCase):
                 "http://tails-server.com",
                 "58NNWYnVxVFzAfUztwGSNBL4551XNq6nXk56pCiKJxxt",
             )
+
+    async def test_track_retry_no_cache(self):
+        # Should not raise
+        await _track_retry(None, "accum")
+
+    async def test_track_retry_first_time(self):
+        cache = mock.MagicMock()
+        cache.get = mock.CoroutineMock(return_value=None)
+        cache.set = mock.CoroutineMock()
+
+        await _track_retry(cache, "accum")
+
+        cache.set.assert_called_once_with("accum", 5)
+
+    async def test_track_retry_decrement(self):
+        cache = mock.MagicMock()
+        cache.get = mock.CoroutineMock(return_value=3)
+        cache.set = mock.CoroutineMock()
+
+        await _track_retry(cache, "accum")
+
+        cache.set.assert_called_once_with("accum", 2)
+
+    async def test_track_retry_exhausted(self):
+        cache = mock.MagicMock()
+        cache.get = mock.CoroutineMock(return_value=0)
+        cache.set = mock.CoroutineMock()
+
+        with mock.patch(
+            "acapy_agent.anoncreds.default.legacy_indy.recover.LOGGER"
+        ) as logger:
+            await _track_retry(cache, "accum")
+
+            logger.error.assert_called_once()
+
+    def test_get_revoked_discrepancies(self):
+        rec1 = mock.MagicMock(
+            state=IssuerCredRevRecord.STATE_REVOKED,
+            cred_rev_id="1",
+        )
+        rec2 = mock.MagicMock(
+            state=IssuerCredRevRecord.STATE_REVOKED,
+            cred_rev_id="2",
+        )
+        rec3 = mock.MagicMock(
+            state="active",
+            cred_rev_id="3",
+        )
+
+        rev_reg_delta = {"value": {"revoked": [1]}}
+
+        revoked_ids, rec_count = _get_revoked_discrepancies(
+            [rec1, rec2, rec3], rev_reg_delta
+        )
+
+        assert revoked_ids == [1, 2]
+        assert rec_count == 1  # only "2" missing from ledger
+
+    async def test_get_ledger_accum(self):
+        result = await _get_ledger_accum(self.ledger, "rev-reg-id")
+
+        assert result == "accum"
+
+    def test_get_genesis_transactions_from_settings(self):
+        profile = mock.MagicMock()
+        profile.context.settings.get.return_value = "GENESIS_TXNS"
+
+        result = _get_genesis_transactions(profile)
+
+        assert result == "GENESIS_TXNS"
+
+    def test_get_genesis_transactions_from_ledger(self):
+        result = _get_genesis_transactions(self.profile)
+
+        assert result == "dummy genesis transactions"
+
+    async def test_fix_ledger_entry_no_discrepancies(self):
+
+        rev_list = mock.MagicMock()
+        rev_list.rev_reg_def_id = "rev-reg-id"
+
+        result = await fix_ledger_entry(
+            self.profile,
+            rev_list,
+            apply_ledger_update=False,
+            genesis_transactions="GENESIS",
+        )
+
+        # No discrepancies → no recovery txn
+        assert result[1] == {}
+        assert result[2] == {}
+
+    @mock.patch(
+        "acapy_agent.anoncreds.default.legacy_indy.recover.generate_ledger_rrrecovery_txn",
+        mock.CoroutineMock(return_value={"value": "txn"}),
+    )
+    @mock.patch(
+        "acapy_agent.anoncreds.default.legacy_indy.recover.IssuerCredRevRecord.query_by_ids",
+        mock.CoroutineMock(
+            return_value=[
+                IssuerCredRevRecord(
+                    state=IssuerCredRevRecord.STATE_REVOKED,
+                    cred_rev_id="1",
+                )
+            ],
+        ),
+    )
+    async def test_fix_ledger_entry_recovery_no_apply(self):
+        rev_list = mock.MagicMock()
+        rev_list.rev_reg_def_id = "rev-reg-id"
+
+        result = await fix_ledger_entry(
+            self.profile,
+            rev_list,
+            apply_ledger_update=False,
+            genesis_transactions="GENESIS",
+        )
+
+        assert result[0] == {"value": {"revoked": [1], "accum": "accum"}}
+        assert result[1] == {}
+        assert result[2] == {}
+
+    @mock.patch(
+        "acapy_agent.anoncreds.default.legacy_indy.recover.generate_ledger_rrrecovery_txn",
+        mock.CoroutineMock(return_value={"value": "txn"}),
+    )
+    @mock.patch(
+        "acapy_agent.anoncreds.default.legacy_indy.recover.IssuerCredRevRecord.query_by_ids",
+        mock.CoroutineMock(
+            return_value=[
+                IssuerCredRevRecord(
+                    state=IssuerCredRevRecord.STATE_REVOKED,
+                    cred_rev_id="1",
+                ),
+                IssuerCredRevRecord(
+                    state=IssuerCredRevRecord.STATE_REVOKED,
+                    cred_rev_id="2",
+                ),
+            ],
+        ),
+    )
+    async def test_fix_ledger_entry_recovery_apply_with_incorrect_object_response_from_ledger(
+        self,
+    ):
+        rev_list = RevList(
+            issuer_id="CsQY9MGeD3CQP4EyuVFo5m",
+            rev_reg_def_id="rev-reg-id",
+            current_accumulator="21 124C594B6B20E41B681E",
+            revocation_list=[1, 0, 0, 0],
+        )
+
+        result = await fix_ledger_entry(
+            self.profile,
+            rev_list,
+            apply_ledger_update=False,
+            genesis_transactions="GENESIS",
+        )
+
+        assert result[0] == {"value": {"revoked": [1], "accum": "accum"}}
+        assert result[1] == {"value": "txn"}
+        assert result[2] == {}

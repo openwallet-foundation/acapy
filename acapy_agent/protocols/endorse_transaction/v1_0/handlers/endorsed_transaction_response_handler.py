@@ -1,7 +1,7 @@
 """Endorsed transaction response handler."""
 
 from .....anoncreds.base import AnonCredsRegistrationError
-from .....anoncreds.events import REV_LIST_ENDORSED_UPDATE_FAILED_EVENT
+from .....anoncreds.events import REV_LIST_UPDATE_FAILED_EVENT
 from .....messaging.base_handler import (
     BaseHandler,
     BaseResponder,
@@ -40,7 +40,7 @@ class EndorsedTransactionResponseHandler(BaseHandler):
             )
             if is_anoncreds:
                 await context.profile.notify(
-                    REV_LIST_ENDORSED_UPDATE_FAILED_EVENT, {"msg": err_msg}
+                    REV_LIST_UPDATE_FAILED_EVENT, {"msg": err_msg}
                 )
             else:
                 await notify_rev_reg_entry_txn_failed(context.profile, err_msg)

@@ -38,6 +38,7 @@ from ...constants import (
     CATEGORY_REV_LIST,
     CATEGORY_REV_REG_DEF,
 )
+from ...events import RevListFinishedEvent, RevListFinishedPayload
 from ...models.issuer_cred_rev_record import IssuerCredRevRecord
 from ...models.revocation import (
     RevList,
@@ -167,63 +168,86 @@ async def _get_endorser_info(
 ) -> Tuple[Optional[str], Optional[ConnRecord]]:
     connection_id = await get_endorser_connection_id(profile)
 
+    if connection_id is None:
+        return None, None
+
     endorser_did = None
     async with profile.session() as session:
         connection_record = await ConnRecord.retrieve_by_id(session, connection_id)
         endorser_info = await connection_record.metadata_get(session, "endorser_info")
-    endorser_did = endorser_info.get("endorser_did")
+        endorser_did = endorser_info.get("endorser_did")
 
     return endorser_did, connection_record
 
 
-async def fix_and_publish_from_invalid_accum_err(profile: Profile, err_msg: str):
-    """Fix and publish revocation registry entries from invalid accumulator error."""
-    cache = profile.inject_or(BaseCache)
+async def _track_retry(cache: BaseCache, accum: str):
+    if not cache:
+        LOGGER.warning(
+            "No cache backend configured; skipping retry tracking for %s",
+            accum,
+        )
+        return
 
-    async def check_retry(accum):
-        """Used to manage retries for fixing revocation registry entries."""
-        if cache is None:
-            LOGGER.warning(
-                "No cache backend configured; skipping retry tracking for %s",
-                accum,
-            )
-            return
+    retry_value = await cache.get(accum)
 
-        retry_value = await cache.get(accum)
-        if not retry_value:
-            await cache.set(accum, 5)
-        else:
-            if retry_value > 0:
-                await cache.set(accum, retry_value - 1)
-            else:
-                LOGGER.error(
-                    "Revocation registry entry transaction failed for %s",
-                    accum,
-                )
+    if retry_value is None:
+        await cache.set(accum, 5)
+        return
 
-    def get_genesis_transactions():
-        """Get the genesis transactions needed for fixing broken accum."""
-        genesis_transactions = profile.context.settings.get("ledger.genesis_transactions")
-        if not genesis_transactions:
-            write_ledger = profile.context.injector.inject(BaseLedger)
-            pool = write_ledger.pool
-            genesis_transactions = pool.genesis_txns
-        return genesis_transactions
+    if retry_value > 0:
+        await cache.set(accum, retry_value - 1)
+    else:
+        LOGGER.error(
+            "Revocation registry entry transaction failed for %s",
+            accum,
+        )
 
-    async def create_and_send_endorser_txn():
-        """Create and send the endorser transaction again."""
-        async with ledger:
-            # Create the revocation registry entry
-            (rev_reg_def_id, requested_txn) = await ledger.send_revoc_reg_entry(
-                rev_list.rev_reg_def_id,
-                "CL_ACCUM",
-                recovery_txn,
-                rev_list.issuer_id,
-                write_ledger=False,
-                endorser_did=endorser_did,
-            )
+
+async def _get_ledger_accum(ledger: BaseLedger, rev_reg_id: str):
+    async with ledger:
+        accum_response, _ = await ledger.get_revoc_reg_delta(rev_reg_id)
+
+    return accum_response.get("value", {}).get("accum")
+
+
+def _get_genesis_transactions(profile: Profile):
+    genesis = profile.context.settings.get("ledger.genesis_transactions")
+
+    if genesis:
+        return genesis
+
+    ledger = profile.context.injector.inject(BaseLedger)
+    return ledger.pool.genesis_txns
+
+
+async def _get_rev_list(session, rev_reg_id: str):
+    rev_list_entry = await session.handle.fetch(CATEGORY_REV_LIST, rev_reg_id)
+    return RevList.deserialize(rev_list_entry.value_json["rev_list"])
+
+
+async def _send_txn(
+    profile: Profile,
+    ledger: BaseLedger,
+    rev_list: RevList,
+    recovery_txn: dict,
+    endorser_did: str,
+    connection,
+):
+    async with ledger:
+        result = await ledger.send_revoc_reg_entry(
+            rev_list.rev_reg_def_id,
+            "CL_ACCUM",
+            recovery_txn,
+            rev_list.issuer_id,
+            write_ledger=True,
+            endorser_did=endorser_did,
+        )
+
+    if endorser_did:
+        (rev_reg_def_id, requested_txn) = result
 
         job_id = uuid4().hex
+
         meta_data = {
             "context": {
                 "job_id": job_id,
@@ -236,72 +260,84 @@ async def fix_and_publish_from_invalid_accum_err(profile: Profile, err_msg: str)
             }
         }
 
-        # Send the transaction to the endorser again with recovery txn
         transaction_manager = TransactionManager(profile)
+
         try:
-            revo_transaction = await transaction_manager.create_record(
+            txn = await transaction_manager.create_record(
                 messages_attach=requested_txn["signed_txn"],
                 connection_id=connection.connection_id,
                 meta_data=meta_data,
             )
-            (
-                revo_transaction,
-                revo_transaction_request,
-            ) = await transaction_manager.create_request(transaction=revo_transaction)
+
+            txn, txn_request = await transaction_manager.create_request(transaction=txn)
+
         except (StorageError, TransactionManagerError) as err:
             raise RevocationManagerError(err.roll_up) from err
 
         responder = profile.inject_or(BaseResponder)
+
         if not responder:
             raise RevocationManagerError(
                 "No responder found. Unable to send transaction request"
             )
-        await responder.send(
-            revo_transaction_request,
-            connection_id=connection.connection_id,
-        )
+
+        await responder.send(txn_request, connection_id=connection.connection_id)
+
+
+async def fix_and_publish_from_invalid_accum_err(profile: Profile, err_msg: str):
+    """Fix and publish revocation registry entries from invalid accumulator error."""
+    cache = profile.inject_or(BaseCache)
 
     async with profile.session() as session:
-        rev_reg_records = await session.handle.fetch_all(
-            CATEGORY_REV_REG_DEF,
-            {},
-        )
-        # Cycle through all rev_rev_def records to find the offending accumulator
+        rev_reg_records = await session.handle.fetch_all(CATEGORY_REV_REG_DEF, {})
+
         for rev_reg_entry in rev_reg_records:
             ledger = session.inject_or(BaseLedger)
-            async with ledger:
-                # Get the value from the ledger
-                (accum_response, _) = await ledger.get_revoc_reg_delta(rev_reg_entry.name)
-                accum = accum_response.get("value", {}).get("accum")
 
-            # If the accum from the ledger matches the error message, fix it
-            if accum and accum in err_msg:
-                # if accum and accum in err_msg:
-                await check_retry(accum)
+            accum = await _get_ledger_accum(ledger, rev_reg_entry.name)
 
-                # Get the genesis transactions needed for fix
-                genesis_transactions = get_genesis_transactions()
+            if not accum or accum not in err_msg:
+                continue
 
-                # We know this needs endorsement
-                endorser_did, connection = await _get_endorser_info(profile)
-                rev_list_entry = await session.handle.fetch(
-                    CATEGORY_REV_LIST, rev_reg_entry.name
-                )
+            await _track_retry(cache, accum)
 
-                rev_list = RevList.deserialize(rev_list_entry.value_json["rev_list"])
+            genesis_transactions = _get_genesis_transactions(profile)
 
-                (
-                    rev_reg_delta,
+            endorser_did, connection = await _get_endorser_info(profile)
+            write_ledger = False if endorser_did is None else True
+
+            rev_list = await _get_rev_list(session, rev_reg_entry.name)
+
+            _, recovery_txn, _ = await fix_ledger_entry(
+                profile,
+                rev_list,
+                True,
+                genesis_transactions,
+                write_ledger,
+                endorser_did,
+            )
+
+            if recovery_txn.get("value"):
+                await _send_txn(
+                    profile,
+                    ledger,
+                    rev_list,
                     recovery_txn,
-                    applied_txn,
-                ) = await fix_ledger_entry(
-                    profile, rev_list, False, genesis_transactions, False, endorser_did
+                    endorser_did,
+                    connection,
                 )
-                if recovery_txn.get("value"):
-                    await create_and_send_endorser_txn()
+                revoked = recovery_txn["value"]["revoked"]
+                LOGGER.info(
+                    "Notifying about %d revoked creds for rev_reg_def_id: %s",
+                    len(revoked),
+                    rev_list.rev_reg_def_id,
+                )
+                await profile.notify(
+                    RevListFinishedEvent.event_topic,
+                    RevListFinishedPayload(rev_list.rev_reg_def_id, revoked, {}),
+                )
 
-                # Some time in between re-tries
-                await asyncio.sleep(1)
+            await asyncio.sleep(1)
 
 
 def _get_revoked_discrepancies(
