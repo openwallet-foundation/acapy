@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: ACA-Py Documentation
+    url: https://acapy.org
+    about: Check the docs before opening an issue
+  - name: Community Discord
+    url: https://discord.gg/hyperledger
+    about: Ask questions in the Hyperledger Discord
