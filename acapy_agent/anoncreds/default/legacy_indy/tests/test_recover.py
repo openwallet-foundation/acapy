@@ -298,7 +298,6 @@ class TestLegacyIndyRecover(IsolatedAsyncioTestCase):
         assert result == "dummy genesis transactions"
 
     async def test_fix_ledger_entry_no_discrepancies(self):
-
         rev_list = mock.MagicMock()
         rev_list.rev_reg_def_id = "rev-reg-id"
 
