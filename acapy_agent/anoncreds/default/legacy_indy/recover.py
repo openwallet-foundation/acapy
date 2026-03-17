@@ -93,7 +93,7 @@ async def fetch_txns(
 
     pool = await indy_vdr.open_pool(transactions=genesis_txns)
     result = await pool.submit_request(revoc_reg_delta_request)
-    if not result["data"]:
+    if not result.get("data"):
         raise RevocRecoveryException(f"Registry definition not found for {registry_id}")
 
     # Load the anoncreds revocation registry definition
@@ -112,7 +112,7 @@ async def fetch_txns(
         None, registry_id, None, to_timestamp
     )
     result = await pool.submit_request(revoc_reg_delta_request)
-    if not result["data"]:
+    if not result.get("data"):
         raise RevocRecoveryException("Error fetching delta from ledger")
 
     registry_from_ledger = result["data"]["value"]["accum_to"]
@@ -239,7 +239,7 @@ async def _send_txn(
             "CL_ACCUM",
             recovery_txn,
             rev_list.issuer_id,
-            write_ledger=True,
+            write_ledger=True if not endorser_did else False,
             endorser_did=endorser_did,
         )
 
@@ -336,6 +336,7 @@ async def fix_and_publish_from_invalid_accum_err(profile: Profile, err_msg: str)
                     RevListFinishedEvent.event_topic,
                     RevListFinishedPayload(rev_list.rev_reg_def_id, revoked, {}),
                 )
+                return
 
             await asyncio.sleep(1)
 
@@ -414,10 +415,10 @@ async def fix_ledger_entry(
                     "skipping ledger update",
                     rev_list.rev_reg_def_id,
                 )
-                return (rev_reg_delta, recovery_txn, applied_txn)
+                apply_ledger_update = False
 
             if apply_ledger_update:
-                ledger_response = await ledger.send_revoc_reg_entry(
+                await ledger.send_revoc_reg_entry(
                     rev_list.rev_reg_def_id,
                     "CL_ACCUM",
                     recovery_txn,
@@ -426,22 +427,5 @@ async def fix_ledger_entry(
                     endorser_did=endorser_did,
                 )
 
-                if isinstance(ledger_response, dict) and "result" in ledger_response:
-                    applied_txn = ledger_response["result"]
-                    rev_list_value_json = rev_list.value_json
-                    rev_list_value_json["rev_list"]["currentAccumulator"] = applied_txn[
-                        "txn"
-                    ]["data"]["value"]["accum"]
-                    rev_list.current_accumulator = applied_txn["txn"]["data"]["value"][
-                        "accum"
-                    ]
-                    await session.handle.replace(
-                        CATEGORY_REV_LIST,
-                        rev_list.rev_reg_def_id,
-                        rev_list_value_json,
-                        rev_list.tags,
-                    )
-                    return (rev_reg_delta, recovery_txn, applied_txn)
-
     # Ledger update not applied, return without applied_txn
-    return (rev_reg_delta, recovery_txn, {})
+    return (rev_reg_delta, recovery_txn, applied_txn)
