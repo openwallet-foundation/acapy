@@ -318,9 +318,9 @@ async def test_assign_kid_and_get_by_kid_success(wallet_env, monkeypatch):
     monkeypatch.setattr(
         wallet.session,
         "inject",
-        lambda cls: BadKeyTypes
-        if cls is module.KeyTypes
-        else wallet.session.context.inject(cls),
+        lambda cls: (
+            BadKeyTypes if cls is module.KeyTypes else wallet.session.context.inject(cls)
+        ),
     )
     monkeypatch.setattr(module, "ERR_UNKNOWN_KEY_TYPE", "Unknown key type %s")
     with pytest.raises(module.WalletError):
