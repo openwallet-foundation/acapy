@@ -14,6 +14,8 @@ from .....ledger.base import BaseLedger
 from .....ledger.multiple_ledger.ledger_requests_executor import (
     IndyLedgerRequestsExecutor,
 )
+from .....messaging.responder import BaseResponder
+from .....protocols.endorse_transaction.v1_0.manager import TransactionManager
 from .....tests import mock
 from .....utils.testing import create_test_profile
 from ....models.issuer_cred_rev_record import IssuerCredRevRecord
@@ -25,6 +27,7 @@ from ..recover import (
     _get_genesis_transactions,
     _get_ledger_accum,
     _get_revoked_discrepancies,
+    _send_txn,
     _track_retry,
     fetch_txns,
     fix_ledger_entry,
@@ -489,3 +492,105 @@ class TestLegacyIndyRecover(IsolatedAsyncioTestCase):
         endorser_did, connection = await _get_endorser_info(profile)
         assert endorser_did == "endorser-did"
         assert isinstance(connection, ConnRecord)
+
+    async def test_send_txn_without_endorser(self):
+        # Should not raise
+        mock_ledger = mock.MagicMock(BaseLedger, autospec=True)
+        mock_ledger.send_revoc_reg_entry = mock.CoroutineMock(
+            return_value={"result": {"data": {"value": {"accum": "accum"}}}}
+        )
+        mock_ledger.get_revoc_reg_delta = mock.CoroutineMock(
+            return_value=(
+                {"value": {"revoked": [1], "accum": "accum"}},
+                1234567890,
+            )
+        )
+        mock_ledger.pool = mock.MagicMock(
+            genesis_txns="dummy genesis transactions",
+        )
+
+        self.ledger = mock_ledger
+
+        self.profile = await create_test_profile()
+        self.profile._context.injector.bind_instance(BaseLedger, self.ledger)
+
+        mock_executor = mock.MagicMock(IndyLedgerRequestsExecutor, autospec=True)
+        mock_executor.get_ledger_for_identifier = mock.CoroutineMock(
+            return_value=(None, self.ledger)
+        )
+        self.profile._context.injector.bind_instance(
+            IndyLedgerRequestsExecutor, mock_executor
+        )
+
+        await _send_txn(
+            profile=self.profile,
+            ledger=self.ledger,
+            rev_list=RevList(
+                issuer_id="CsQY9MGeD3CQP4EyuVFo5m",
+                rev_reg_def_id="rev-reg-id",
+                current_accumulator="21 124C594B6B20E41B681E",
+                revocation_list=[1, 0, 0, 0],
+            ),
+            recovery_txn={"value": "txn"},
+            endorser_did=None,
+            connection=None,
+        )
+
+    @mock.patch.object(
+        TransactionManager,
+        "create_record",
+        mock.CoroutineMock(return_value={"txn_id": "txn-id"}),
+    )
+    @mock.patch.object(
+        TransactionManager,
+        "create_request",
+        mock.CoroutineMock(return_value=({"request_id": "request-id"}, "ledger-id")),
+    )
+    async def test_send_txn_with_endorser_happy_path(self):
+        # Should not raise
+        mock_ledger = mock.MagicMock(BaseLedger, autospec=True)
+        mock_ledger.send_revoc_reg_entry = mock.CoroutineMock(
+            return_value=(
+                "rev-reg-def-id",
+                {"signed_txn": "txn"},
+            )
+        )
+
+        mock_ledger.get_revoc_reg_delta = mock.CoroutineMock(
+            return_value=(
+                {"value": {"revoked": [1], "accum": "accum"}},
+                1234567890,
+            )
+        )
+        mock_ledger.pool = mock.MagicMock(
+            genesis_txns="dummy genesis transactions",
+        )
+
+        self.ledger = mock_ledger
+
+        self.profile = await create_test_profile()
+        self.profile._context.injector.bind_instance(BaseLedger, self.ledger)
+        mock_responder = mock.MagicMock(BaseResponder, autospec=True)
+        self.profile._context.injector.bind_instance(BaseResponder, mock_responder)
+
+        mock_executor = mock.MagicMock(IndyLedgerRequestsExecutor, autospec=True)
+        mock_executor.get_ledger_for_identifier = mock.CoroutineMock(
+            return_value=(None, self.ledger)
+        )
+        self.profile._context.injector.bind_instance(
+            IndyLedgerRequestsExecutor, mock_executor
+        )
+
+        await _send_txn(
+            profile=self.profile,
+            ledger=self.ledger,
+            rev_list=RevList(
+                issuer_id="CsQY9MGeD3CQP4EyuVFo5m",
+                rev_reg_def_id="rev-reg-id",
+                current_accumulator="21 124C594B6B20E41B681E",
+                revocation_list=[1, 0, 0, 0],
+            ),
+            recovery_txn={"value": "txn"},
+            endorser_did="endorser-did",
+            connection=mock.MagicMock(ConnRecord, autospec=True),
+        )
