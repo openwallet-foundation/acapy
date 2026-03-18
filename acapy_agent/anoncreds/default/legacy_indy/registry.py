@@ -19,7 +19,6 @@ from ....ledger.error import (
     LedgerObjectAlreadyExistsError,
 )
 from ....ledger.merkel_validation.constants import (
-    GET_REVOC_REG_ENTRY,
     GET_SCHEMA,
 )
 from ....ledger.multiple_ledger.ledger_requests_executor import (
@@ -802,15 +801,9 @@ class LegacyIndyRegistry(BaseAnonCredsResolver, BaseAnonCredsRegistrar):
         endorser_did: Optional[str] = None,
     ) -> dict:
         """Send a revocation registry entry to the ledger with fixes if needed."""
-        multitenant_mgr = profile.inject_or(BaseMultitenantManager)
-        if multitenant_mgr:
-            ledger_exec_inst = IndyLedgerRequestsExecutor(profile)
-        else:
-            ledger_exec_inst = profile.inject(IndyLedgerRequestsExecutor)
-        _, ledger = await ledger_exec_inst.get_ledger_for_identifier(
-            rev_list.rev_reg_def_id,
-            txn_record_type=GET_REVOC_REG_ENTRY,
-        )
+        ledger = profile.inject_or(BaseLedger)
+        if not ledger:
+            raise AnonCredsRegistrationError(NO_LEDGER_AVAILABLE_MSG)
 
         async with ledger:
             rev_entry_res = await ledger.send_revoc_reg_entry(
