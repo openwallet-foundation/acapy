@@ -251,7 +251,7 @@ class KanonIndyCredxIssuer(IndyIssuer):
                 key_proof,
             ) = await asyncio.get_event_loop().run_in_executor(
                 None,
-                lambda origin=origin_did, sch=schema, sig=signature_type, tg=tag, sup=support_revocation: (
+                lambda origin=origin_did, sch=schema, sig=signature_type, tg=tag, sup=support_revocation: ( # noqa: E501
                     CredentialDefinition.create(
                         strip_did_prefix(origin),
                         sch,
@@ -698,7 +698,7 @@ class KanonIndyCredxIssuer(IndyIssuer):
                 _rev_reg_delta,
             ) = await asyncio.get_event_loop().run_in_executor(
                 None,
-                lambda o=origin_did, cd=cred_def.raw_value, tg=tag, rdt=revoc_def_type, mx=max_cred_num, td=tails_base_path: (
+                lambda o=origin_did, cd=cred_def.raw_value, tg=tag, rdt=revoc_def_type, mx=max_cred_num, td=tails_base_path: ( # noqa: E501
                     RevocationRegistryDefinition.create(
                         strip_did_prefix(o),
                         cd,
