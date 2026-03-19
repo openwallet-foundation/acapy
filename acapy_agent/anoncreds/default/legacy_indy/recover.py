@@ -51,8 +51,10 @@ LOGGER = logging.getLogger(__name__)
 """
 This module calculates a new ledger accumulator, based on the revocation status
 on the ledger vs revocations recorded in the wallet.
+
 The calculated transaction can be written to the ledger to get the ledger back
 in sync with the wallet.
+
 This function can be used if there were previous revocation errors (i.e. the
 credential revocation was successfully written to the wallet but the ledger write
 failed.)
@@ -63,7 +65,9 @@ class RevocRecoveryException(Exception):
     """Raise exception generating the recovery transaction."""
 
 
-async def _check_tails_hash_for_inconsistency(tails_location: str, tails_hash: str):
+async def _check_tails_hash_for_inconsistency(
+    tails_location: str, tails_hash: str
+) -> None:
     async with aiohttp.ClientSession() as session:
         LOGGER.debug("Tails URL: %s", tails_location)
         tails_data_http_response = await session.get(tails_location)
@@ -79,7 +83,7 @@ async def _check_tails_hash_for_inconsistency(tails_location: str, tails_hash: s
             LOGGER.debug(f"Checked tails hash: {tails_hash}")
 
 
-async def fetch_txns(
+async def fetch_transaction_and_revoked_credentials_from_ledger(
     genesis_txns: str, registry_id: str, issuer_id: str
 ) -> tuple[
     dict,
@@ -123,22 +127,29 @@ async def fetch_txns(
     return registry_from_ledger, revoked
 
 
-async def generate_ledger_rrrecovery_txn(genesis_txns: str, rev_list: RevList):
+async def generate_ledger_revocation_registry_recovery_txn(
+    genesis_txns: str, rev_list: RevList
+) -> dict:
     """Generate a new ledger accum entry, based on wallet vs ledger revocation state."""
-    new_delta = None
-
-    ledger_data = await fetch_txns(
+    ledger_data = await fetch_transaction_and_revoked_credentials_from_ledger(
         genesis_txns, rev_list.rev_reg_def_id, rev_list.issuer_id
     )
     if not ledger_data:
-        return new_delta
+        return {}
+
     registry_from_ledger, prev_revoked = ledger_data
 
+    # Create a set of revoked indexes from the revocation list to match against the
+    # ledger revoked indexes
     set_revoked = {
         i for i, revoked in enumerate(rev_list.revocation_list) if revoked == 1
     }
     mismatch = prev_revoked - set_revoked
     if mismatch:
+        # Somehow we have revoked credentials in the ledger that are not revoked in the
+        # wallet. This shouldn't happen except perhaps with the 0 index which is reserved
+        # by the indy algorithm and not used for actual credentials.
+        # Log a warning but continue with the fix.
         LOGGER.warning(
             "Credential index(es) revoked on the ledger, but not in wallet: %s",
             mismatch,
@@ -180,7 +191,8 @@ async def _get_endorser_info(
     return endorser_did, connection_record
 
 
-async def _track_retry(cache: BaseCache, accum: str):
+async def _track_retry(cache: BaseCache, accum: str) -> None:
+    """Tracks retry for 5 attempts for accum value. This is hardcoded to avoid infinite retries."""  # noqa: E501
     if not cache:
         LOGGER.warning(
             "No cache backend configured; skipping retry tracking for %s",
@@ -203,7 +215,7 @@ async def _track_retry(cache: BaseCache, accum: str):
         )
 
 
-async def _get_ledger_accum(ledger: BaseLedger, rev_reg_id: str):
+async def _get_ledger_accumulator(ledger: BaseLedger, rev_reg_id: str):
     async with ledger:
         accum_response, _ = await ledger.get_revoc_reg_delta(rev_reg_id)
 
@@ -220,7 +232,7 @@ def _get_genesis_transactions(profile: Profile):
     return ledger.pool.genesis_txns
 
 
-async def _get_rev_list(session, rev_reg_id: str):
+async def _get_rev_list(session, rev_reg_id: str) -> RevList:
     rev_list_entry = await session.handle.fetch(CATEGORY_REV_LIST, rev_reg_id)
     return RevList.deserialize(rev_list_entry.value_json["rev_list"])
 
@@ -231,8 +243,8 @@ async def _send_txn(
     rev_list: RevList,
     recovery_txn: dict,
     endorser_did: str,
-    connection,
-):
+    connection: ConnRecord,
+) -> None:
     async with ledger:
         result = await ledger.send_revoc_reg_entry(
             rev_list.rev_reg_def_id,
@@ -243,6 +255,8 @@ async def _send_txn(
             endorser_did=endorser_did,
         )
 
+    # Requires the endorser sends the transaction to the ledger, Otherwise self
+    # endorsed and sent to ledger above.
     if endorser_did:
         (rev_reg_def_id, requested_txn) = result
 
@@ -291,14 +305,19 @@ async def fix_and_publish_from_invalid_accum_err(profile: Profile, err_msg: str)
     async with profile.session() as session:
         rev_reg_records = await session.handle.fetch_all(CATEGORY_REV_REG_DEF, {})
 
+        # We have no way to know which revocation registry entry the invalid accumulator
+        # error is related to, so we need to check each of them for the accumulator value
+        # and retry if it matches the error message.
         for rev_reg_entry in rev_reg_records:
             ledger = session.inject_or(BaseLedger)
 
-            accum = await _get_ledger_accum(ledger, rev_reg_entry.name)
+            accum = await _get_ledger_accumulator(ledger, rev_reg_entry.name)
 
             if not accum or accum not in err_msg:
                 continue
 
+            # Retry for a finite number of times or until the accumulator is
+            # no longer in the error message
             await _track_retry(cache, accum)
 
             genesis_transactions = _get_genesis_transactions(profile)
@@ -317,6 +336,7 @@ async def fix_and_publish_from_invalid_accum_err(profile: Profile, err_msg: str)
                 endorser_did,
             )
 
+            # Generating the recovery transaction succeeded. Send it to the ledger.
             if recovery_txn.get("value"):
                 await _send_txn(
                     profile,
@@ -328,7 +348,7 @@ async def fix_and_publish_from_invalid_accum_err(profile: Profile, err_msg: str)
                 )
                 revoked = recovery_txn["value"]["revoked"]
                 LOGGER.info(
-                    "Notifying about %d revoked creds for rev_reg_def_id: %s",
+                    "Notifying about %d revoked credentials for rev_reg_def_id: %s",
                     len(revoked),
                     rev_list.rev_reg_def_id,
                 )
@@ -338,12 +358,17 @@ async def fix_and_publish_from_invalid_accum_err(profile: Profile, err_msg: str)
                 )
                 return
 
+            # Wait a second before retrying for the same revocation registry. Hopefully
+            # short term connection or ledger issues will be resolved by then.
+            # If not, we'll retry again on the next attempted revocation for this
+            # registry.
             await asyncio.sleep(1)
 
 
 def _get_revoked_discrepancies(
     recs: Sequence[IssuerCredRevRecord], rev_reg_delta: dict
 ) -> Tuple[list, int]:
+    """Get issuer revoked credential ids from wallet records and count discrepancies with ledger delta."""  # noqa: E501
     revoked_ids = []
     rec_count = 0
     for rec in recs:
@@ -403,8 +428,10 @@ async def fix_ledger_entry(
             if rec_count == 0:
                 return (rev_reg_delta, {}, {})
 
-            # We have revocation discrepancies, generate the recovery txn
-            recovery_txn = await generate_ledger_rrrecovery_txn(
+            # We have revocation discrepancies, generate the recovery txn.
+            # We're using the rev_list as source of truth instead of issuer
+            # cred_rev records. These should always be in sync.
+            recovery_txn = await generate_ledger_revocation_registry_recovery_txn(
                 genesis_transactions, rev_list
             )
 
