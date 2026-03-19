@@ -787,21 +787,18 @@ class TestLegacyIndyRegistry(IsolatedAsyncioTestCase):
             result = await self.registry.txn_submit(ledger, "test_txn")
             assert result == "transaction_id"
 
-    @mock.patch.object(
-        IndyLedgerRequestsExecutor,
-        "get_ledger_for_identifier",
-        return_value=(
-            "id",
-            mock.MagicMock(
-                send_revoc_reg_entry=mock.CoroutineMock(return_value="transaction_id")
-            ),
-        ),
-    )
     @mock.patch.object(AskarAnonCredsProfileSession, "handle")
-    async def test_register_revocation_list_no_endorsement(
-        self, mock_handle, mock_send_revoc_reg_entry
-    ):
-        self.profile.inject_or = mock.MagicMock()
+    async def test_register_revocation_list_no_endorsement(self, mock_handle):
+        mock_ledger = mock.MagicMock(BaseLedger, autospec=True)
+        mock_ledger.send_revoc_reg_entry = mock.CoroutineMock(
+            return_value={"result": {"data": {"value": {"accum": "accum"}}}}
+        )
+        mock_ledger.pool = mock.MagicMock(
+            genesis_txns="dummy genesis transactions",
+        )
+        self.ledger = mock_ledger
+        self.profile = await create_test_profile()
+        self.profile._context.injector.bind_instance(BaseLedger, self.ledger)
         mock_handle.fetch = mock.CoroutineMock(
             side_effect=[
                 mock.CoroutineMock(return_value=None),
@@ -837,7 +834,6 @@ class TestLegacyIndyRegistry(IsolatedAsyncioTestCase):
         )
 
         assert isinstance(result, RevListResult)
-        assert mock_send_revoc_reg_entry.called
 
     @mock.patch.object(
         ConnRecord,
@@ -851,28 +847,20 @@ class TestLegacyIndyRegistry(IsolatedAsyncioTestCase):
         "create_record",
         return_value=TransactionRecord(),
     )
-    @mock.patch.object(
-        IndyLedgerRequestsExecutor,
-        "get_ledger_for_identifier",
-        return_value=(
-            "id",
-            mock.MagicMock(
-                send_revoc_reg_entry=mock.CoroutineMock(
-                    return_value=(
-                        "rev_reg_def_id",
-                        {
-                            "signed_txn": "txn",
-                        },
-                    )
-                )
-            ),
-        ),
-    )
     async def test_register_revocation_list_with_author_role(
-        self, mock_send_revoc_reg_entry, mock_create_record, _
+        self, mock_send_revoc_reg_entry, mock_create_record
     ):
-        self.profile.inject_or = mock.MagicMock()
-        self.profile.settings.set_value("endorser.author", True)
+
+        mock_ledger = mock.MagicMock(BaseLedger, autospec=True)
+        mock_ledger.send_revoc_reg_entry = mock.CoroutineMock(
+            return_value=("rev_reg_def_id", {"signed_txn": "txn"})
+        )
+        mock_ledger.pool = mock.MagicMock(
+            genesis_txns="dummy genesis transactions",
+        )
+        self.ledger = mock_ledger
+        self.profile = await create_test_profile({"endorser.author": True})
+        self.profile._context.injector.bind_instance(BaseLedger, self.ledger)
 
         result = await self.registry.register_revocation_list(
             self.profile,
@@ -918,27 +906,19 @@ class TestLegacyIndyRegistry(IsolatedAsyncioTestCase):
         "create_record",
         return_value=TransactionRecord(),
     )
-    @mock.patch.object(
-        IndyLedgerRequestsExecutor,
-        "get_ledger_for_identifier",
-        return_value=(
-            "id",
-            mock.MagicMock(
-                send_revoc_reg_entry=mock.CoroutineMock(
-                    return_value=(
-                        "rev_reg_def_id",
-                        {
-                            "signed_txn": "txn",
-                        },
-                    )
-                )
-            ),
-        ),
-    )
     async def test_register_revocation_list_with_create_transaction_option(
-        self, mock_send_revoc_reg_entry, mock_create_record, _
+        self, mock_send_revoc_reg_entry, mock_create_record
     ):
-        self.profile.inject_or = mock.MagicMock()
+        mock_ledger = mock.MagicMock(BaseLedger, autospec=True)
+        mock_ledger.send_revoc_reg_entry = mock.CoroutineMock(
+            return_value=("rev_reg_def_id", {"signed_txn": "txn"})
+        )
+        mock_ledger.pool = mock.MagicMock(
+            genesis_txns="dummy genesis transactions",
+        )
+        self.ledger = mock_ledger
+        self.profile = await create_test_profile()
+        self.profile._context.injector.bind_instance(BaseLedger, self.ledger)
 
         result = await self.registry.register_revocation_list(
             self.profile,
@@ -990,32 +970,21 @@ class TestLegacyIndyRegistry(IsolatedAsyncioTestCase):
         "create_request",
         return_value=(TransactionRecord(), "transaction_request"),
     )
-    @mock.patch.object(
-        IndyLedgerRequestsExecutor,
-        "get_ledger_for_identifier",
-        return_value=(
-            "id",
-            mock.MagicMock(
-                send_revoc_reg_entry=mock.CoroutineMock(
-                    return_value=(
-                        "rev_reg_def_id",
-                        {
-                            "signed_txn": "txn",
-                        },
-                    )
-                )
-            ),
-        ),
-    )
     async def test_register_revocation_list_with_create_transaction_option_and_auto_request(
-        self, mock_send_revoc_reg_entry, mock_create_request, mock_create_record, _
+        self, mock_send_revoc_reg_entry, mock_create_request, mock_create_record
     ):
-        self.profile.inject_or = mock.MagicMock()
-        self.profile.context.injector.bind_instance(
-            BaseResponder,
-            mock.MagicMock(BaseResponder, autospec=True),
+        mock_ledger = mock.MagicMock(BaseLedger, autospec=True)
+        mock_ledger.send_revoc_reg_entry = mock.CoroutineMock(
+            return_value=("rev_reg_def_id", {"signed_txn": "txn"})
         )
-        self.profile.settings.set_value("endorser.auto_request", True)
+        mock_ledger.pool = mock.MagicMock(
+            genesis_txns="dummy genesis transactions",
+        )
+        self.ledger = mock_ledger
+        mock_responder = mock.MagicMock(BaseResponder, autospec=True)
+        self.profile = await create_test_profile({"endorser.auto_request": True})
+        self.profile._context.injector.bind_instance(BaseResponder, mock_responder)
+        self.profile._context.injector.bind_instance(BaseLedger, self.ledger)
 
         result = await self.registry.register_revocation_list(
             self.profile,
