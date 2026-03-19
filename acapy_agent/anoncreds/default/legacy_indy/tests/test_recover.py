@@ -146,7 +146,7 @@ class TestLegacyIndyRecover(IsolatedAsyncioTestCase):
             )
         ),
     )
-    async def test_generate_ledger_rrrecovery_txn(self):
+    async def test_generate_ledger_revocation_registry_recovery_txn(self):
         # Has updates
         result = await generate_ledger_revocation_registry_recovery_txn(
             GENESIS,
