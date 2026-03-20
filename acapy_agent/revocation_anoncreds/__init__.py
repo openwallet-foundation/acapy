@@ -11,11 +11,7 @@ from ..anoncreds.models.issuer_cred_rev_record import (
     IssuerCredRevRecordSchemaAnonCreds,
 )
 from ..anoncreds.revocation.manager import RevocationManager, RevocationManagerError
-from ..anoncreds.revocation.recover import (
-    RevocRecoveryException,
-    fetch_txns,
-    generate_ledger_rrrecovery_txn,
-)
+from ..anoncreds.revocation.recover import RevocRecoveryException
 from ..anoncreds.revocation.revocation import (
     AnonCredsRevocation,
     AnonCredsRevocationError,
@@ -39,6 +35,4 @@ __all__ = [
     "RevocRecoveryException",
     "RevocationManager",
     "RevocationManagerError",
-    "fetch_txns",
-    "generate_ledger_rrrecovery_txn",
 ]
