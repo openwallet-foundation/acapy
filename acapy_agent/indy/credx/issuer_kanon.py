@@ -251,16 +251,14 @@ class KanonIndyCredxIssuer(IndyIssuer):
                 key_proof,
             ) = await asyncio.get_event_loop().run_in_executor(
                 None,
-                lambda origin=origin_did,
-                sch=schema,
-                sig=signature_type,
-                tg=tag,
-                sup=support_revocation: CredentialDefinition.create(
-                    strip_did_prefix(origin),
-                    sch,
-                    sig or DEFAULT_SIGNATURE_TYPE,
-                    tg or DEFAULT_CRED_DEF_TAG,
-                    support_revocation=sup,
+                lambda origin=origin_did, sch=schema, sig=signature_type, tg=tag, sup=support_revocation: (  # noqa: E501
+                    CredentialDefinition.create(
+                        strip_did_prefix(origin),
+                        sch,
+                        sig or DEFAULT_SIGNATURE_TYPE,
+                        tg or DEFAULT_CRED_DEF_TAG,
+                        support_revocation=sup,
+                    )
                 ),
             )
             cred_def_id = cred_def.id
@@ -700,18 +698,15 @@ class KanonIndyCredxIssuer(IndyIssuer):
                 _rev_reg_delta,
             ) = await asyncio.get_event_loop().run_in_executor(
                 None,
-                lambda o=origin_did,
-                cd=cred_def.raw_value,
-                tg=tag,
-                rdt=revoc_def_type,
-                mx=max_cred_num,
-                td=tails_base_path: RevocationRegistryDefinition.create(
-                    strip_did_prefix(o),
-                    cd,
-                    tg,
-                    rdt,
-                    mx,
-                    tails_dir_path=td,
+                lambda o=origin_did, cd=cred_def.raw_value, tg=tag, rdt=revoc_def_type, mx=max_cred_num, td=tails_base_path: (  # noqa: E501
+                    RevocationRegistryDefinition.create(
+                        strip_did_prefix(o),
+                        cd,
+                        tg,
+                        rdt,
+                        mx,
+                        tails_dir_path=td,
+                    )
                 ),
             )
         except CredxError as err:
