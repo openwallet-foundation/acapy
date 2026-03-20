@@ -1,5 +1,7 @@
 """Endorsed transaction response handler."""
 
+from .....anoncreds.base import AnonCredsRegistrationError
+from .....anoncreds.events import REV_LIST_UPDATE_FAILED_EVENT
 from .....messaging.base_handler import (
     BaseHandler,
     BaseResponder,
@@ -32,12 +34,21 @@ class EndorsedTransactionResponseHandler(BaseHandler):
             raise HandlerException("No connection established")
 
         async def send_failed_transaction_event(err_msg: str):
-            await notify_rev_reg_entry_txn_failed(context.profile, err_msg)
+            is_anoncreds = context.profile.settings.get("wallet.type") in (
+                "askar-anoncreds",
+                "kanon-anoncreds",
+            )
+            if is_anoncreds:
+                await context.profile.notify(
+                    REV_LIST_UPDATE_FAILED_EVENT, {"msg": err_msg}
+                )
+            else:
+                await notify_rev_reg_entry_txn_failed(context.profile, err_msg)
 
         mgr = TransactionManager(context.profile)
         try:
             transaction = await mgr.receive_endorse_response(context.message)
-        except TransactionManagerError as err:
+        except (TransactionManagerError, AnonCredsRegistrationError) as err:
             self._logger.exception("Error receiving endorsed transaction response")
             await send_failed_transaction_event(str(err))
             raise HandlerException(str(err))
@@ -54,7 +65,11 @@ class EndorsedTransactionResponseHandler(BaseHandler):
                     transaction_acknowledgement_message,
                     connection_id=transaction.connection_id,
                 )
-            except (StorageError, TransactionManagerError) as err:
+            except (
+                StorageError,
+                TransactionManagerError,
+                AnonCredsRegistrationError,
+            ) as err:
                 self._logger.exception(err)
                 await send_failed_transaction_event(str(err))
                 raise HandlerException(str(err))

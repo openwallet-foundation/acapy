@@ -2,7 +2,7 @@
 
 import logging
 from collections.abc import Mapping, Sequence
-from typing import TYPE_CHECKING, Optional, Tuple
+from typing import Optional, Tuple
 
 from ...core.error import BaseError
 from ...core.profile import Profile
@@ -13,9 +13,6 @@ from ...revocation.util import notify_pending_cleared_event
 from ...storage.error import StorageNotFoundError
 from ..models.issuer_cred_rev_record import IssuerCredRevRecord
 from .revocation import AnonCredsRevocation
-
-if TYPE_CHECKING:
-    from ..default.legacy_indy.registry import LegacyIndyRegistry
 
 
 class RevocationManagerError(BaseError):
@@ -201,16 +198,6 @@ class RevocationManager:
         if not rev_list:
             raise RevocationManagerError(
                 f"No revocation list found for revocation registry id {rev_reg_def_id}"
-            )
-
-        indy_registry = LegacyIndyRegistry()
-
-        if await indy_registry.supports(rev_reg_def_id):
-            return await indy_registry.fix_ledger_entry(
-                self._profile,
-                rev_list,
-                apply_ledger_update,
-                genesis_transactions,
             )
 
         raise RevocationManagerError(
