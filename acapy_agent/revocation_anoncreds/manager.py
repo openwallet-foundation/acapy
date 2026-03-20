@@ -204,16 +204,6 @@ class RevocationManager:
                 f"No revocation list found for revocation registry id {rev_reg_def_id}"
             )
 
-        indy_registry = LegacyIndyRegistry()
-
-        if await indy_registry.supports(rev_reg_def_id):
-            return await indy_registry.fix_ledger_entry(
-                self._profile,
-                rev_list,
-                apply_ledger_update,
-                genesis_transactions,
-            )
-
         raise RevocationManagerError(
             "Indy registry does not support revocation registry "
             f"identified by {rev_reg_def_id}"
