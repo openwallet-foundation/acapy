@@ -847,7 +847,6 @@ class TestLegacyIndyRegistry(IsolatedAsyncioTestCase):
     async def test_register_revocation_list_with_author_role(
         self, mock_send_revoc_reg_entry, mock_create_record
     ):
-
         mock_ledger = mock.MagicMock(BaseLedger, autospec=True)
         mock_ledger.send_revoc_reg_entry = mock.CoroutineMock(
             return_value=("rev_reg_def_id", {"signed_txn": "txn"})

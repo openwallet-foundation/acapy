@@ -31,7 +31,11 @@ from ..core.event_bus import Event, EventBus
 from ..core.profile import Profile, ProfileSession
 from ..tails.anoncreds_tails_server import AnonCredsTailsServer
 from .error_messages import ANONCREDS_PROFILE_REQUIRED_MSG
-from .events import RevListFinishedEvent, RevRegDefFinishedEvent
+from .events import (
+    REV_LIST_UPDATE_FAILED_EVENT,
+    RevListFinishedEvent,
+    RevRegDefFinishedEvent,
+)
 from .issuer import (
     CATEGORY_CRED_DEF,
     CATEGORY_CRED_DEF_PRIVATE,

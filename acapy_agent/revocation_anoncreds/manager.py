@@ -4,7 +4,6 @@ import logging
 from collections.abc import Mapping, Sequence
 from typing import Optional, Text, Tuple, Type
 
-from ..anoncreds.default.legacy_indy.registry import LegacyIndyRegistry
 from ..anoncreds.revocation import AnonCredsRevocation
 from ..core.error import BaseError
 from ..core.profile import Profile

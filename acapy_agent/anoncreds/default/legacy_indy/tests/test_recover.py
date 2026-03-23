@@ -9,6 +9,8 @@ import indy_vdr
 import pytest
 from anoncreds import RevocationRegistryDefinition
 
+from .....revocation_anoncreds.models.issuer_cred_rev_record import IssuerCredRevRecord
+
 from .....connections.models.conn_record import ConnRecord
 from .....ledger.base import BaseLedger
 from .....ledger.multiple_ledger.ledger_requests_executor import (
@@ -18,7 +20,6 @@ from .....messaging.responder import BaseResponder
 from .....protocols.endorse_transaction.v1_0.manager import TransactionManager
 from .....tests import mock
 from .....utils.testing import create_test_profile
-from ....models.issuer_cred_rev_record import IssuerCredRevRecord
 from ....models.revocation import RevList, RevRegDef, RevRegDefValue
 from ..recover import (
     RevocRecoveryException,
@@ -265,14 +266,17 @@ class TestLegacyIndyRecover(IsolatedAsyncioTestCase):
         rec1 = mock.MagicMock(
             state=IssuerCredRevRecord.STATE_REVOKED,
             cred_rev_id="1",
+            rev_reg_id="4xE68b6S5VRFrKMMG1U95M:4:4xE68b6S5VRFrKMMG1U95M:3:CL:59232:default:CL_ACCUM:tag",
         )
         rec2 = mock.MagicMock(
             state=IssuerCredRevRecord.STATE_REVOKED,
             cred_rev_id="2",
+            rev_reg_id="4xE68b6S5VRFrKMMG1U95M:4:4xE68b6S5VRFrKMMG1U95M:3:CL:59232:default:CL_ACCUM:tag",
         )
         rec3 = mock.MagicMock(
             state="active",
             cred_rev_id="3",
+            rev_reg_id="4xE68b6S5VRFrKMMG1U95M:4:4xE68b6S5VRFrKMMG1U95M:3:CL:59232:default:CL_ACCUM:tag",
         )
 
         rev_reg_delta = {"value": {"revoked": [1]}}
@@ -328,6 +332,7 @@ class TestLegacyIndyRecover(IsolatedAsyncioTestCase):
                 IssuerCredRevRecord(
                     state=IssuerCredRevRecord.STATE_REVOKED,
                     cred_rev_id="1",
+                    rev_reg_id="4xE68b6S5VRFrKMMG1U95M:4:4xE68b6S5VRFrKMMG1U95M:3:CL:59232:default:CL_ACCUM:tag",
                 )
             ],
         ),
@@ -358,10 +363,12 @@ class TestLegacyIndyRecover(IsolatedAsyncioTestCase):
                 IssuerCredRevRecord(
                     state=IssuerCredRevRecord.STATE_REVOKED,
                     cred_rev_id="1",
+                    rev_reg_id="4xE68b6S5VRFrKMMG1U95M:4:4xE68b6S5VRFrKMMG1U95M:3:CL:59232:default:CL_ACCUM:tag",
                 ),
                 IssuerCredRevRecord(
                     state=IssuerCredRevRecord.STATE_REVOKED,
                     cred_rev_id="2",
+                    rev_reg_id="4xE68b6S5VRFrKMMG1U95M:4:4xE68b6S5VRFrKMMG1U95M:3:CL:59232:default:CL_ACCUM:tag",
                 ),
             ],
         ),
@@ -398,10 +405,12 @@ class TestLegacyIndyRecover(IsolatedAsyncioTestCase):
                 IssuerCredRevRecord(
                     state=IssuerCredRevRecord.STATE_REVOKED,
                     cred_rev_id="1",
+                    rev_reg_id="4xE68b6S5VRFrKMMG1U95M:4:4xE68b6S5VRFrKMMG1U95M:3:CL:59232:default:CL_ACCUM:tag",
                 ),
                 IssuerCredRevRecord(
                     state=IssuerCredRevRecord.STATE_REVOKED,
                     cred_rev_id="2",
+                    rev_reg_id="4xE68b6S5VRFrKMMG1U95M:4:4xE68b6S5VRFrKMMG1U95M:3:CL:59232:default:CL_ACCUM:tag",
                 ),
             ],
         ),

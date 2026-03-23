@@ -8,7 +8,7 @@ from typing import Optional, Sequence, Tuple
 
 from ....revocation_anoncreds.models.issuer_cred_rev_record import IssuerCredRevRecord
 
-from ...events import RevListFinishedEvent, RevListFinishedPayload
+from ...events import REV_LIST_FINISHED_EVENT, RevListFinishedPayload
 
 from ....indy.credx.issuer import CATEGORY_REV_REG_DEF
 
@@ -355,7 +355,7 @@ async def fix_and_publish_from_invalid_accum_err(profile: Profile, err_msg: str)
                     rev_list.rev_reg_def_id,
                 )
                 await profile.notify(
-                    RevListFinishedEvent.event_topic,
+                    REV_LIST_FINISHED_EVENT,
                     RevListFinishedPayload(rev_list.rev_reg_def_id, revoked, {}),
                 )
                 return
