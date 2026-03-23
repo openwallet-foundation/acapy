@@ -554,6 +554,67 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#160rc0" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1.6.0rc0
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="1.6.0rc0">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#march-23-2026" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        March 23, 2026
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#160-breaking-changes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1.6.0 Breaking Changes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#160-deprecation-notices" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1.6.0 Deprecation Notices
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#160-categorized-pr-list" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1.6.0 Categorized PR List
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#151" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -4356,6 +4417,67 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#160rc0" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1.6.0rc0
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="1.6.0rc0">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#march-23-2026" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        March 23, 2026
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#160-breaking-changes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1.6.0 Breaking Changes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#160-deprecation-notices" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1.6.0 Deprecation Notices
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#160-categorized-pr-list" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1.6.0 Categorized PR List
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#151" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -5626,6 +5748,56 @@
 
 
 <h1 id="aca-py-changelog">ACA-Py Changelog<a class="headerlink" href="#aca-py-changelog" title="Permanent link">&para;</a></h1>
+<h2 id="160rc0">1.6.0rc0<a class="headerlink" href="#160rc0" title="Permanent link">&para;</a></h2>
+<h3 id="march-23-2026">March 23, 2026<a class="headerlink" href="#march-23-2026" title="Permanent link">&para;</a></h3>
+<p>ACA-Py Release 1.6.0 continues the clean up of the migration of deployments moving from the <code>askar</code> wallet type to <code>askar-anoncreds</code>. More use case specific issues have been found with the upgrade and corrected in this release, notably when revokable AnonCreds credentials rooted in Indy, with Endorsers and when an initial revocation publication operation fails. The proper handle of such a condition is again properly handled. Also added is an interoperability improvement with the <a href="https://github.com/openwallet-foundation/credo-ts">Credo-TS</a> framework around the handling of JWS verification.</p>
+<p>The release also includes new documentation to support migration from Indy-based AnonCreds issuance to <a href="https://didwebvh.info">did:webvh</a>, reflecting the broader ecosystem shift toward more flexible and web-native DID methods.</p>
+<p>Additional updates include dependency upgrades, improvements to CI/CD and test management, and routine maintenance changes. Dependabot updates have also been incorporated to keep dependencies current and secure.</p>
+<h3 id="160-breaking-changes">1.6.0 Breaking Changes<a class="headerlink" href="#160-breaking-changes" title="Permanent link">&para;</a></h3>
+<p>This release introduces no intentional breaking changes.</p>
+<p>Included are required fixes that correct behavior in some edge cases related to deployments using AnonCreds revocation, Indy and upgrading from the <code>askar</code> wallet type to the <code>askar-anoncreds</code> wallet type. Deployments that have already upgraded to 1.4.0 and later <strong>SHOULD</strong> upgrade to 1.6.0.</p>
+<p>ACA-Py now prefers the <code>kid</code> value in the JWS header over <code>jwk.kid</code> when verifying signatures in attachment decorators. While this aligns with expected standards behavior, integrations relying on the previous resolution order should validate their assumptions.</p>
+<p>These changes are not expected to impact most deployments but should be reviewed in environments with custom integrations or strict interoperability requirements.</p>
+<h3 id="160-deprecation-notices">1.6.0 Deprecation Notices<a class="headerlink" href="#160-deprecation-notices" title="Permanent link">&para;</a></h3>
+<p>The <code>acapy_agent.revocation_anoncreds</code> package has been deprecated and relocated to <code>acapy_agent.anoncreds.revocation</code> for improved consistency across the codebase. The change should only affect <a href="https://plugins.aca-py.org">ACA-Py Plugins</a> that implement AnonCreds, but other developers should also take note.</p>
+<p>The <code>wallet-type</code> configuration value <code>askar</code> is now deprecated and all deployments still using that wallet type should migrate to either the <code>askar-anoncreds</code> or (ideally) <code>kanon-anoncreds</code> wallet types.</p>
+<p>AIP 1.0 protocols that were <a href="#140-deprecation-notices">previously announced as deprecated</a> have now been removed from ACA-Py core. Implementers still using those protocols <strong>MUST</strong> adjust their configuration to load those protocols from the respective plugins, or better, upgrade to their AIP 2.0 equivalents.</p>
+<h3 id="160-categorized-pr-list">1.6.0 Categorized PR List<a class="headerlink" href="#160-categorized-pr-list" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>AnonCreds Revocation Updates</strong><ul>
+<li>Feat/4086 anoncreds indy accum fix with endorsement <a href="https://github.com/openwallet-foundation/acapy/pull/4090">#4090</a> <a href="https://github.com/jamshale">jamshale</a></li>
+<li>fix: Revocation errors in the anoncreds upgrade <a href="https://github.com/openwallet-foundation/acapy/pull/4080">#4080</a> <a href="https://github.com/jamshale">jamshale</a></li>
+</ul>
+</li>
+<li><strong>InterOp Updates -- JWS Handling</strong><ul>
+<li>fix: prefer JWS header kid over jwk.kid in attach decorator verify (fixes <a class="magiclink magiclink-github magiclink-issue" href="https://github.com/squidfunk/mkdocs-material/issues/4077" title="GitHub Issue: squidfunk/mkdocs-material #4077">#4077</a>) <a href="https://github.com/openwallet-foundation/acapy/pull/4085">#4085</a> <a href="https://github.com/PatStLouis">PatStLouis</a></li>
+</ul>
+</li>
+<li><strong>Documentation Changes</strong><ul>
+<li>docs: add migration guide for Indy to did:webvh AnonCreds issuance <a href="https://github.com/openwallet-foundation/acapy/pull/4059">#4059</a> <a href="https://github.com/PatStLouis">PatStLouis</a></li>
+<li>chore: add PR template and issue templates <a href="https://github.com/openwallet-foundation/acapy/pull/4091">#4091</a> <a href="https://github.com/Chaithanya5gif">Chaithanya5gif</a></li>
+</ul>
+</li>
+<li><strong>Dependency Updates</strong><ul>
+<li>chore: Update ruff version in github action runner to project major version <a href="https://github.com/openwallet-foundation/acapy/pull/4093">#4093</a> <a href="https://github.com/jamshale">jamshale</a></li>
+<li>chore: bump jsonpath-ng to 1.8.0 and fix full_path format <a href="https://github.com/openwallet-foundation/acapy/pull/4078">#4078</a> <a href="https://github.com/PatStLouis">PatStLouis</a></li>
+<li>chore: Update the interop tails server url <a href="https://github.com/openwallet-foundation/acapy/pull/4075">#4075</a> <a href="https://github.com/jamshale">jamshale</a></li>
+</ul>
+</li>
+<li><strong>Tests and Test Management Updates</strong><ul>
+<li>fix: exclude BBS+ present-proof scenarios from BDD interop tests <a href="https://github.com/openwallet-foundation/acapy/pull/4074">#4074</a> <a href="https://github.com/PatStLouis">PatStLouis</a></li>
+<li>ci: scope permissions to jobs and fix workflow syntax <a href="https://github.com/openwallet-foundation/acapy/pull/4066">#4066</a> <a href="https://github.com/PatStLouis">PatStLouis</a></li>
+</ul>
+</li>
+<li><strong>Dependabot PRs</strong><ul>
+<li><a href="https://github.com/openwallet-foundation/acapy/pulls?q=is%3Apr+is%3Amerged+merged%3A2026-02-27..2026-03-23+author%3Aapp%2Fdependabot+">Link to list of Dependabot PRs in this release</a></li>
+</ul>
+</li>
+<li><strong>Release management pull requests</strong>:<ul>
+<li>1.6.0rc0 <a href="https://github.com/openwallet-foundation/acapy/pull/4097">#4097</a> <a href="https://github.com/swcurran">swcurran</a></li>
+</ul>
+</li>
+</ul>
 <h2 id="151">1.5.1<a class="headerlink" href="#151" title="Permanent link">&para;</a></h2>
 <h3 id="february-27-2026">February 27, 2026<a class="headerlink" href="#february-27-2026" title="Permanent link">&para;</a></h3>
 <p>ACA-Py 1.5.1 is a clean up release primarily to address some follow-on issues related to the <a href="https://github.com/openwallet-foundation/acapy/releases/tag/1.5.0">1.5.0</a> release -- notably with the handling of AnonCreds revocation. There are some  convenience additions and a GitHub Actions pipeline fix.</p>
