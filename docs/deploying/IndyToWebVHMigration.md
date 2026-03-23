@@ -17,9 +17,9 @@ cutover, the issuer must continue to **manage already-issued Indy credentials**
 (e.g. revocation and other status updates) until those credentials are no longer
 in use.
 
-[AnonCreds]: https://www.hyperledger.org/projects/anoncreds
-[Hyperledger Indy]: https://www.hyperledger.org/projects/hyperledger-indy
-[did:webvh]: https://identity.foundation/didwebvh/
+[AnonCreds]: https://www.lfdecentralizedtrust.org/projects/anoncreds
+[Hyperledger Indy]: https://www.lfdecentralizedtrust.org/projects/hyperledger-indy
+[did:webvh]: https://didwebvh.info
 
 ## Why Migrate?
 
@@ -75,7 +75,7 @@ Before starting the migration, ensure the following are in place:
 1. **`askar-anoncreds` wallet type** -- Your ACA-Py instance must be running
    with `--wallet-type askar-anoncreds`. If you are still on the legacy `askar`
    wallet type, complete the
-   [AnonCreds Controller Migration](AnoncredsControllerMigration.md) first. See
+   [AnonCreds Controller Migration](AnonCredsControllerMigration.md) first. See
    also [The askar-anoncreds Wallet Type](AnonCredsWalletType.md) for
    background.
 

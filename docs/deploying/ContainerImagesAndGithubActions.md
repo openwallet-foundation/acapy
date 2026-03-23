@@ -42,16 +42,16 @@ Click [here](https://github.com/openwallet-foundation/acapy/pkgs/container/acapy
 
 The following is the ACA-Py container images tagging format:
 
-**Regular Releases** (e.g., `1.5.1`):
- - `py3.12-1.5.1` - Python version specific tag
- - `1.5.1` - Semantic version tag
- - `1.5` - Major.minor tag (moves to latest patch release)
+**Regular Releases** (e.g., `1.6.0`):
+ - `py3.12-1.6.0` - Python version specific tag
+ - `1.6.0` - Semantic version tag
+ - `1.6` - Major.minor tag (moves to latest patch release)
  - `latest` - Only assigned if this is the highest semantic version
 
-**Release Candidates** (e.g., `1.5.1rc0`):
- - `py3.12-1.5.1rc0` - Python version specific RC tag
- - `1.5.1rc0` - Semantic version RC tag
- - **Note**: RC releases do NOT receive major.minor (`1.5`) or `latest` tags
+**Release Candidates** (e.g., `1.6.0rc0`):
+ - `py3.12-1.6.0rc0` - Python version specific RC tag
+ - `1.6.0rc0` - Semantic version RC tag
+ - **Note**: RC releases do NOT receive major.minor (`1.6`) or `latest` tags
 
 **Nightly Builds**:
 - `pyV.vv-nightly-YYYY-MM-DD` - Date-stamped nightly build
