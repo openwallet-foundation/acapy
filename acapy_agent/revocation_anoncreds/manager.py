@@ -4,7 +4,6 @@ import logging
 from collections.abc import Mapping, Sequence
 from typing import Optional, Text, Tuple, Type
 
-from ..anoncreds.default.legacy_indy.registry import LegacyIndyRegistry
 from ..anoncreds.revocation import AnonCredsRevocation
 from ..core.error import BaseError
 from ..core.profile import Profile
@@ -202,16 +201,6 @@ class RevocationManager:
         if not rev_list:
             raise RevocationManagerError(
                 f"No revocation list found for revocation registry id {rev_reg_def_id}"
-            )
-
-        indy_registry = LegacyIndyRegistry()
-
-        if await indy_registry.supports(rev_reg_def_id):
-            return await indy_registry.fix_ledger_entry(
-                self._profile,
-                rev_list,
-                apply_ledger_update,
-                genesis_transactions,
             )
 
         raise RevocationManagerError(

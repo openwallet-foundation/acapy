@@ -31,7 +31,11 @@ from ..core.event_bus import Event, EventBus
 from ..core.profile import Profile, ProfileSession
 from ..tails.anoncreds_tails_server import AnonCredsTailsServer
 from .error_messages import ANONCREDS_PROFILE_REQUIRED_MSG
-from .events import RevListFinishedEvent, RevRegDefFinishedEvent
+from .events import (
+    REV_LIST_UPDATE_FAILED_EVENT,
+    RevListFinishedEvent,
+    RevRegDefFinishedEvent,
+)
 from .issuer import (
     CATEGORY_CRED_DEF,
     CATEGORY_CRED_DEF_PRIVATE,
@@ -561,9 +565,19 @@ class AnonCredsRevocation:
             raise AnonCredsRevocationError("Passed revocation list does not match stored")
 
         anoncreds_registry = self.profile.inject(AnonCredsRegistry)
-        result = await anoncreds_registry.update_revocation_list(
-            self.profile, rev_reg_def, prev, curr, revoked, options
-        )
+        try:
+            result = await anoncreds_registry.update_revocation_list(
+                self.profile, rev_reg_def, prev, curr, revoked, options
+            )
+        except Exception as err:
+            error_msg = f"Revocation list update failed: {str(err)}"
+            await self.profile.notify(REV_LIST_UPDATE_FAILED_EVENT, {"msg": str(err)})
+
+            LOGGER.warning(error_msg)
+
+            # Return error message for web response.
+            # Don't raise, in order to avoid exception handling in auto revocation setup
+            return error_msg
 
         try:
             async with self.profile.session() as session:
