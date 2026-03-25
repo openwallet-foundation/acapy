@@ -1,5 +1,33 @@
 # Aries Cloud Agent Python Changelog
 
+## 1.3.4rc0
+
+### Mar 25, 2026
+
+This patch is being released to address another issue in the migration of the `askar` wallet-type to `askar-anoncreds`, and to get a security fix in a dependency (jsonpath-ng). As well, an interop issue with Credo-TS and the handling of JWS was added.
+
+The release includes the following PRs from the `main` branch cherry-picked into this release:
+
+- Feat/4086 anoncreds indy accum fix with endorsement [\#4090](https://github.com/openwallet-foundation/acapy/pull/4090) [jamshale](https://github.com/jamshale)
+- fix: prefer JWS header kid over jwk.kid in attach decorator verify (fixes #4077) [\#4085](https://github.com/openwallet-foundation/acapy/pull/4085) [PatStLouis](https://github.com/PatStLouis)
+- chore: bump jsonpath-ng to 1.8.0 and fix full_path format [\#4078](https://github.com/openwallet-foundation/acapy/pull/4078) [PatStLouis](https://github.com/PatStLouis)
+
+### 1.3.4 Breaking Changes
+
+There are no breaking changes in this release.
+
+### 1.3.4 Categorized List of Pull Requests
+
+- AnonCreds Revocation Fix
+  - 1.3.lts backport Feat/4086 anoncreds indy accum fix with endorsement [\#4098](https://github.com/openwallet-foundation/acapy/pull/4098) [jamshale](https://github.com/jamshale)
+- JWS Handling Update / Credo-TS Interop
+  - 1.3.lts fix: prefer JWS header kid over jwk.kid in attach decorator verify [\#4095](https://github.com/openwallet-foundation/acapy/pull/4095) [PatStLouis](https://github.com/PatStLouis)
+- Dependency Update to pick up security fix
+  - chore: bump jsonpath-ng to 1.8.0 and fix full_path format [\#4083](https://github.com/openwallet-foundation/acapy/pull/4083) [jamshale](https://github.com/jamshale)
+
+- Release management pull requests:
+  - 1.3.4rc0 [\#4100](https://github.com/openwallet-foundation/acapy/pull/4100) [swcurran](https://github.com/swcurran)
+  
 ## 1.3.3
 
 ### Mar 2, 2026
