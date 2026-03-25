@@ -1,5 +1,32 @@
 # Aries Cloud Agent Python Changelog
 
+## 1.2.7rc0
+
+### Mar 25, 2026
+
+This to get a security fix in a dependency (jsonpath-ng) and to address an interop issue with Credo-TS in the handling of JWS. An AnonCreds revocation fix that was added to the 1.3.4 release is NOT included in this release as it does not apply to the 1.2 branch.
+
+**As support for the ACA-Py 1.2 LTS branch ends in April 2026, this is likely the last 1.2 release. Deployers are strongly encouraged to update to at least the latest 1.3 release and ideally to the latest ACA-Py release.**
+
+The release includes the following PRs from the `main` branch cherry-picked into this release:
+
+- fix: prefer JWS header kid over jwk.kid in attach decorator verify (fixes #4077) [\#4085](https://github.com/openwallet-foundation/acapy/pull/4085) [PatStLouis](https://github.com/PatStLouis)
+- chore: bump jsonpath-ng to 1.8.0 and fix full_path format [\#4078](https://github.com/openwallet-foundation/acapy/pull/4078) [PatStLouis](https://github.com/PatStLouis)
+
+### 1.2.7 Breaking Changes
+
+There are no breaking changes in this release.
+
+#### 1.2.7 Categorized List of Pull Requests
+
+- JWS Handling Update / Credo-TS Interop
+  - 1.2.lts fix: prefer JWS header kid over jwk.kid in attach decorator verify [\#4094](https://github.com/openwallet-foundation/acapy/pull/4094) [PatStLouis](https://github.com/PatStLouis)
+- Dependency Update to pick up security fix
+  - chore: bump jsonpath-ng to 1.8.0 and fix full_path format [\#4082](https://github.com/openwallet-foundation/acapy/pull/4082) [jamshale](https://github.com/jamshale)
+
+- Release management pull requests:
+  - 1.2.7rc0 [\#4101](https://github.com/openwallet-foundation/acapy/pull/4101) [swcurran](https://github.com/swcurran)
+
 ## 1.2.6
 
 ### Mar 2, 2026
