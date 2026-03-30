@@ -1,4 +1,4 @@
 asyncpg~=0.31.0
 prompt_toolkit~=3.0.51
-pygments~=2.19
+pygments~=2.20
 qrcode[pil]~=8.2
