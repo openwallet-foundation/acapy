@@ -1,8 +1,8 @@
 # ACA-Py Changelog
 
-## 1.6.0rc0
+## 1.6.0
 
-### March 23, 2026
+### April 1, 2026
 
 ACA-Py Release 1.6.0 continues the clean up of the migration of deployments moving from the `askar` wallet type to `askar-anoncreds`. More use case specific issues have been found with the upgrade and corrected in this release, notably when revokable AnonCreds credentials rooted in Indy, with Endorsers and when an initial revocation publication operation fails. The proper handle of such a condition is again properly handled. Also added is an interoperability improvement with the [Credo-TS] framework around the handling of JWS verification.
 
@@ -15,7 +15,7 @@ Additional updates include dependency upgrades, improvements to CI/CD and test m
 
 ### 1.6.0 Breaking Changes
 
-This release introduces no intentional breaking changes.
+This release introduces no intentional breaking changes. Note that PR [\#3998](https://github.com/openwallet-foundation/acapy/pull/3998) in release [1.5.1](#151) was initially missed in the release as breaking, but is a breaking change. Implementations relying on the removed duplicate webhooks for present-proof v2 should adjust to the new behavior.
 
 Included are required fixes that correct behavior in some edge cases related to deployments using AnonCreds revocation, Indy and upgrading from the `askar` wallet type to the `askar-anoncreds` wallet type. Deployments that have already upgraded to 1.4.0 and later **SHOULD** upgrade to 1.6.0.
 
@@ -49,8 +49,9 @@ AIP 1.0 protocols that were [previously announced as deprecated](#140-deprecatio
   - fix: exclude BBS+ present-proof scenarios from BDD interop tests [\#4074](https://github.com/openwallet-foundation/acapy/pull/4074) [PatStLouis](https://github.com/PatStLouis)
   - ci: scope permissions to jobs and fix workflow syntax [\#4066](https://github.com/openwallet-foundation/acapy/pull/4066) [PatStLouis](https://github.com/PatStLouis)
 - **Dependabot PRs**
-  - [Link to list of Dependabot PRs in this release](https://github.com/openwallet-foundation/acapy/pulls?q=is%3Apr+is%3Amerged+merged%3A2026-02-27..2026-03-23+author%3Aapp%2Fdependabot+)
+  - [Link to list of Dependabot PRs in this release](https://github.com/openwallet-foundation/acapy/pulls?q=is%3Apr+is%3Amerged+merged%3A2026-02-27..2026-04-01+author%3Aapp%2Fdependabot+)
 - **Release management pull requests**:
+  - 1.6.0 [\#4109](https://github.com/openwallet-foundation/acapy/pull/4109) [swcurran](https://github.com/swcurran)
   - 1.6.0rc0 [\#4097](https://github.com/openwallet-foundation/acapy/pull/4097) [swcurran](https://github.com/swcurran)
 
 ## 1.5.1
@@ -63,7 +64,9 @@ ACA-Py 1.5.1 is a clean up release primarily to address some follow-on issues re
 
 ### 1.5.1 Breaking Changes
 
-There are no breaking changes in this release from [1.5.0]. Those upgrading from a version prior to [1.5.0] should review the [1.5.0] Breaking Changes section for details about the breaking changes introduced in [1.5.0].
+PR [\#3998](https://github.com/openwallet-foundation/acapy/pull/3998) is a breaking change for those depending on the removed duplicate webhook calls.
+
+Those upgrading from a version prior to [1.5.0] should review the [1.5.0] Breaking Changes section for details about the breaking changes introduced in [1.5.0].
 
 ### 1.5.1 Deprecation Notices
 
@@ -244,6 +247,67 @@ Implementers are encouraged to evaluate Kanon as the preferred approach for new 
   - 1.4.0 [\#3948](https://github.com/openwallet-foundation/acapy/pull/3948) [swcurran](https://github.com/swcurran)
   - 1.4.0rc1 [\#3933](https://github.com/openwallet-foundation/acapy/pull/3933) [swcurran](https://github.com/swcurran)
   - 1.4.0rc0 [\#3911](https://github.com/openwallet-foundation/acapy/pull/3911) [swcurran](https://github.com/swcurran)
+
+## 1.3.4
+
+### Apr 1, 2026
+
+This patch is being released to address another issue in the migration of the `askar` wallet-type to `askar-anoncreds`, and to get a security fix in a dependency (jsonpath-ng). As well, an interop issue with Credo-TS and the handling of JWS was added.
+
+The release includes the following PRs from the `main` branch cherry-picked into this release:
+
+- Feat/4086 anoncreds indy accum fix with endorsement [\#4090](https://github.com/openwallet-foundation/acapy/pull/4090) [jamshale](https://github.com/jamshale)
+- fix: prefer JWS header kid over jwk.kid in attach decorator verify (fixes #4077) [\#4085](https://github.com/openwallet-foundation/acapy/pull/4085) [PatStLouis](https://github.com/PatStLouis)
+- chore: bump jsonpath-ng to 1.8.0 and fix full_path format [\#4078](https://github.com/openwallet-foundation/acapy/pull/4078) [PatStLouis](https://github.com/PatStLouis)
+
+### 1.3.4 Breaking Changes
+
+There are no breaking changes in this release.
+
+### 1.3.4 Categorized List of Pull Requests
+
+- AnonCreds Revocation Fix
+  - 1.3.lts backport Feat/4086 anoncreds indy accum fix with endorsement [\#4098](https://github.com/openwallet-foundation/acapy/pull/4098) [jamshale](https://github.com/jamshale)
+- JWS Handling Update / Credo-TS Interop
+  - 1.3.lts fix: prefer JWS header kid over jwk.kid in attach decorator verify [\#4095](https://github.com/openwallet-foundation/acapy/pull/4095) [PatStLouis](https://github.com/PatStLouis)
+- Dependency Update to pick up security fix
+  - chore: bump jsonpath-ng to 1.8.0 and fix full_path format [\#4083](https://github.com/openwallet-foundation/acapy/pull/4083) [jamshale](https://github.com/jamshale)
+
+- Release management pull requests:
+  - 1.3.4 [\#4108](https://github.com/openwallet-foundation/acapy/pull/4108) [swcurran](https://github.com/swcurran)
+  - 1.3.4rc0 [\#4100](https://github.com/openwallet-foundation/acapy/pull/4100) [swcurran](https://github.com/swcurran)
+  
+## 1.3.3
+
+### Mar 2, 2026
+
+This patch is being released to address some issues in the migration of the `askar` wallet-type to `askar-anoncreds`, and in to restore some webhooks that were lost when `askar-anoncreds` support was added. The fixes are necessary to enable the both the migration of an existing ACA-Py wallet-type to `askar-anoncreds` using ACA-Py 1.2 and to see the same events after the migration as before. In addition, a new endpoint has been added for the `Out of Band` (OOB) protocol that supports retrieving a list of Out of Band records.
+
+The release includes the following PRs from the `main` branch cherry-picked into this release:
+
+- feat: add list endpoint for out-of-band records [\#4046](https://github.com/openwallet-foundation/acapy/pull/4046)
+- Update AnonCreds events [\#4016](https://github.com/openwallet-foundation/acapy/pull/4016)
+- Fix issues with anoncreds upgrade [\#3991](https://github.com/openwallet-foundation/acapy/pull/3991)
+
+As well, a dependency update was applied, updating the `poetry.lock` file to use the latest minor versions of the dependencies and eliminating the one "High" or "Critical" vulnerability in the dependencies.
+
+### 1.3.3 Breaking Changes
+
+There are no breaking changes in this release.
+
+### 1.3.3 Categorized List of Pull Requests
+
+- Migration to, and running with, the `askar-anoncreds` wallet-type
+  - LTS 1.3 backport for 1.5.0 release [\#4037](https://github.com/openwallet-foundation/acapy/pull/4037) [PatStLouis](https://github.com/PatStLouis)
+  - Fix issues with anoncreds upgrade (#3991) [\#4001](https://github.com/openwallet-foundation/acapy/pull/4001) [jamshale](https://github.com/jamshale)
+
+- Out of Band Protocol Enhancements
+  - feat: backport list endpoint for out-of-band records to 1.3.lts [\#4057](https://github.com/openwallet-foundation/acapy/pull/4057) [PatStLouis](https://github.com/PatStLouis)
+
+- Release management pull requests:
+  - 1.3.3 [\#4071](https://github.com/openwallet-foundation/acapy/pull/4071) [swcurran](https://github.com/swcurran)
+  - 1.3.3rc1 [\#4065](https://github.com/openwallet-foundation/acapy/pull/4065) [swcurran](https://github.com/swcurran)
+  - 1.3.3rc0 [\#4039](https://github.com/openwallet-foundation/acapy/pull/4039) [swcurran](https://github.com/swcurran)
 
 ## 1.3.2
 
@@ -560,6 +624,96 @@ Specifics of the majority of the changes can be found by looking at the diffs fo
   - 1.3.0rc0 [\#3604](https://github.com/openwallet-foundation/acapy/pull/3604) [swcurran](https://github.com/swcurran)
 - Dependabot PRs
   - [Link to list of Dependabot PRs in this release](https://github.com/openwallet-foundation/acapy/pulls?q=is%3Apr+is%3Amerged+merged%3A2025-01-21..2025-05-01+author%3Aapp%2Fdependabot+)
+
+## 1.2.7
+
+### Apr 1, 2026
+
+This release is to get a security fix in a dependency (jsonpath-ng) and to address an interop issue with Credo-TS in the handling of JWS. An AnonCreds revocation fix that was added to the 1.3.4 release is NOT included in this release as it does not apply to the 1.2 LTS branch.
+
+**As support for the ACA-Py 1.2 LTS branch ends in April 2026, this is the last 1.2 LTS release. Deployers are strongly encouraged to update to at least the latest 1.3 LTS release and ideally to the latest ACA-Py release.**
+
+The release includes the following PRs from the `main` branch cherry-picked into this release:
+
+- fix: prefer JWS header kid over jwk.kid in attach decorator verify (fixes #4077) [\#4085](https://github.com/openwallet-foundation/acapy/pull/4085) [PatStLouis](https://github.com/PatStLouis)
+- chore: bump jsonpath-ng to 1.8.0 and fix full_path format [\#4078](https://github.com/openwallet-foundation/acapy/pull/4078) [PatStLouis](https://github.com/PatStLouis)
+
+### 1.2.7 Breaking Changes
+
+There are no breaking changes in this release.
+
+#### 1.2.7 Categorized List of Pull Requests
+
+- JWS Handling Update / Credo-TS Interop
+  - 1.2.lts fix: prefer JWS header kid over jwk.kid in attach decorator verify [\#4094](https://github.com/openwallet-foundation/acapy/pull/4094) [PatStLouis](https://github.com/PatStLouis)
+- Dependency Update to pick up security fix
+  - chore: bump jsonpath-ng to 1.8.0 and fix full_path format [\#4082](https://github.com/openwallet-foundation/acapy/pull/4082) [jamshale](https://github.com/jamshale)
+
+- Release management pull requests:
+  - 1.2.7 [\#4107](https://github.com/openwallet-foundation/acapy/pull/4107) [swcurran](https://github.com/swcurran)
+  - 1.2.7rc0 [\#4101](https://github.com/openwallet-foundation/acapy/pull/4101) [swcurran](https://github.com/swcurran)
+
+## 1.2.6
+
+### Mar 2, 2026
+
+This patch is being released to address some issues in the migration of the `askar` wallet-type to `askar-anoncreds`, and in to restore some webhooks that were lost when `askar-anoncreds` support was added. The fixes are necessary to enable the both the migration of an existing ACA-Py wallet-type to `askar-anoncreds` using ACA-Py 1.2 and to see the same events after the migration as before. In addition, a new endpoint has been added for the `Out of Band` (OOB) protocol that supports retrieving a list of Out of Band records.
+
+The release includes the following PRs from the `main` branch cherry-picked into this release:
+
+- feat: add list endpoint for out-of-band records [\#4046](https://github.com/openwallet-foundation/acapy/pull/4046)
+- Update AnonCreds events [\#4016](https://github.com/openwallet-foundation/acapy/pull/4016)
+- Fix issues with anoncreds upgrade [\#3991](https://github.com/openwallet-foundation/acapy/pull/3991)
+
+As well, a dependency update was applied, updating the `poetry.lock` file to use the latest minor versions of the dependencies and eliminating the one "High" or "Critical" vulnerability in the dependencies. 
+
+### 1.2.6 Breaking Changes
+
+There are no breaking changes in this release.
+
+#### 1.2.6 Categorized List of Pull Requests
+
+- Migration to, and running with, the `askar-anoncreds` wallet-type
+  - LTS 1.2 backport for 1.5.0 release [\#4036](https://github.com/openwallet-foundation/acapy/pull/4036) [PatStLouis](https://github.com/PatStLouis)
+  - Fix issues with anoncreds upgrade (#3991) [\#4002](https://github.com/openwallet-foundation/acapy/pull/4002) [jamshale](https://github.com/jamshale)
+
+- Out of Band Protocol Enhancements
+  - feat: backport list endpoint for out-of-band records to 1.2.lts [\#4058](https://github.com/openwallet-foundation/acapy/pull/4058) [PatStLouis](https://github.com/PatStLouis)
+
+- Release management pull requests:
+  - 1.2.6 [\#4070](https://github.com/openwallet-foundation/acapy/pull/4070) [swcurran](https://github.com/swcurran)
+  - 1.2.6rc1 [\#4064](https://github.com/openwallet-foundation/acapy/pull/4064) [swcurran](https://github.com/swcurran)
+  - 1.2.6rc0 [\#4038](https://github.com/openwallet-foundation/acapy/pull/4038) [swcurran](https://github.com/swcurran)
+
+## 1.2.5
+
+### July 18, 2025
+
+This patch release adds a GitHub Action to publish an LTS container image with the tag `1.2-lts` when a release is published from the ACA-Py 1.2.lts branch. This is a convenience for those who want to use the latest LTS version of ACA-Py in their deployments, and is not intended to be used as a replacement for the latest release of ACA-Py or when a specific release is required.
+
+The release includes the following PRs from the `main` branch cherry-picked into this release:
+
+- Put cred_rev_id read, increment and write in a transaction [\#3793](https://github.com/openwallet-foundation/acapy/pull/3793)
+- Remove header from http/ws responses [\#3753](https://github.com/openwallet-foundation/acapy/pull/3753)
+- 🐛 Fix v2 cred ex and pres ex webhook events to emit after db write [\#3699](https://github.com/openwallet-foundation/acapy/pull/3699)
+- fix: multiuse invite derived conns should have msg id [\#3692](https://github.com/openwallet-foundation/acapy/pull/3692)
+
+As well, a dependency update was applied, updating the `poetry.lock` file to use the latest minor versions of the dependencies.
+
+### 1.2.5 Breaking Changes
+
+There are no breaking changes in this release.
+
+#### 1.2.5 Categorized List of Pull Requests
+
+- LTS Container image Publishing
+  - 1.2.lts.patch [\#3816](https://github.com/openwallet-foundation/acapy/pull/3816) [jamshale](https://github.com/jamshale)
+  - Don't run workflow for release candidates [\#3797](https://github.com/openwallet-foundation/acapy/pull/3797) [jamshale](https://github.com/jamshale)
+  - Add recreate lts workflow to 1.2.lts branch [\#3772](https://github.com/openwallet-foundation/acapy/pull/3772) [jamshale](https://github.com/jamshale)
+
+- Release management pull requests:
+  - 1.2.5 [\#3830](https://github.com/openwallet-foundation/acapy/pull/3830) [swcurran](https://github.com/swcurran)
+  - 1.2.5rc0 [\#3821](https://github.com/openwallet-foundation/acapy/pull/3821) [swcurran](https://github.com/swcurran)
 
 ## 1.2.4
 
