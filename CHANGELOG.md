@@ -2,7 +2,7 @@
 
 ## 1.6.0
 
-### March 23, 2026
+### April 1, 2026
 
 ACA-Py Release 1.6.0 continues the clean up of the migration of deployments moving from the `askar` wallet type to `askar-anoncreds`. More use case specific issues have been found with the upgrade and corrected in this release, notably when revokable AnonCreds credentials rooted in Indy, with Endorsers and when an initial revocation publication operation fails. The proper handle of such a condition is again properly handled. Also added is an interoperability improvement with the [Credo-TS] framework around the handling of JWS verification.
 
