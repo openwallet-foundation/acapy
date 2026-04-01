@@ -1,12 +1,12 @@
 # How to Publish a New Version
 
-The code to be published should be in the `main` branch. Make sure that all the PRs to go in the release are
+The code to be published should be in the `1.3.lts` branch. Make sure that all the PRs to go in the release are
 merged, and decide on the release tag. Should it be a release candidate or the final tag, and should it be
 a major, minor or patch release, per [semver](https://semver.org/) rules.
 
 Once ready to do a release, create a local branch that includes the following updates:
 
-1. Create a local PR branch from an updated `main` branch, e.g. "1.3.4".
+1. Create a local PR branch from an updated `1.3.lts` branch, e.g. "1.3.4".
 
 2. See if there are any Document Site `mkdocs` changes needed. Run the script
    `./scripts/prepmkdocs.sh; mkdocs`. Watch the log, noting particularly if
