@@ -15,7 +15,7 @@ Additional updates include dependency upgrades, improvements to CI/CD and test m
 
 ### 1.6.0 Breaking Changes
 
-This release introduces no intentional breaking changes. Note that PR [\#3998](https://github.com/openwallet-foundation/acapy/pull/3998) in release [1.5.1](#151) was not mentioned in the release as breaking, but is a breaking change. Implementations relying on the removed duplicate webhooks for present-proof v2 should adjust to the new behavior.
+This release introduces no intentional breaking changes. Note that PR [\#3998](https://github.com/openwallet-foundation/acapy/pull/3998) in release [1.5.1](#151) was initially missed in the release as breaking, but is a breaking change. Implementations relying on the removed duplicate webhooks for present-proof v2 should adjust to the new behavior.
 
 Included are required fixes that correct behavior in some edge cases related to deployments using AnonCreds revocation, Indy and upgrading from the `askar` wallet type to the `askar-anoncreds` wallet type. Deployments that have already upgraded to 1.4.0 and later **SHOULD** upgrade to 1.6.0.
 
@@ -64,7 +64,7 @@ ACA-Py 1.5.1 is a clean up release primarily to address some follow-on issues re
 
 ### 1.5.1 Breaking Changes
 
-PR [\#3998](https://github.com/openwallet-foundation/acapy/pull/3998) is a breaking change for those depending on the removed duplicate webhook calls. 
+PR [\#3998](https://github.com/openwallet-foundation/acapy/pull/3998) is a breaking change for those depending on the removed duplicate webhook calls.
 
 Those upgrading from a version prior to [1.5.0] should review the [1.5.0] Breaking Changes section for details about the breaking changes introduced in [1.5.0].
 
