@@ -1,8 +1,8 @@
 # Aries Cloud Agent Python Changelog
 
-## 1.3.4rc0
+## 1.3.4
 
-### Mar 25, 2026
+### Apr 1, 2026
 
 This patch is being released to address another issue in the migration of the `askar` wallet-type to `askar-anoncreds`, and to get a security fix in a dependency (jsonpath-ng). As well, an interop issue with Credo-TS and the handling of JWS was added.
 
@@ -26,6 +26,7 @@ There are no breaking changes in this release.
   - chore: bump jsonpath-ng to 1.8.0 and fix full_path format [\#4083](https://github.com/openwallet-foundation/acapy/pull/4083) [jamshale](https://github.com/jamshale)
 
 - Release management pull requests:
+  - 1.3.4 [\#4108](https://github.com/openwallet-foundation/acapy/pull/4108) [swcurran](https://github.com/swcurran)
   - 1.3.4rc0 [\#4100](https://github.com/openwallet-foundation/acapy/pull/4100) [swcurran](https://github.com/swcurran)
   
 ## 1.3.3
