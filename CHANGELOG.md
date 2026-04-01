@@ -1,12 +1,12 @@
 # Aries Cloud Agent Python Changelog
 
-## 1.2.7rc0
+## 1.2.7
 
-### Mar 25, 2026
+### Apr 1, 2026
 
-This to get a security fix in a dependency (jsonpath-ng) and to address an interop issue with Credo-TS in the handling of JWS. An AnonCreds revocation fix that was added to the 1.3.4 release is NOT included in this release as it does not apply to the 1.2 branch.
+This release is to get a security fix in a dependency (jsonpath-ng) and to address an interop issue with Credo-TS in the handling of JWS. An AnonCreds revocation fix that was added to the 1.3.4 release is NOT included in this release as it does not apply to the 1.2 LTS branch.
 
-**As support for the ACA-Py 1.2 LTS branch ends in April 2026, this is likely the last 1.2 release. Deployers are strongly encouraged to update to at least the latest 1.3 release and ideally to the latest ACA-Py release.**
+**As support for the ACA-Py 1.2 LTS branch ends in April 2026, this is the last 1.2 LTS release. Deployers are strongly encouraged to update to at least the latest 1.3 LTS release and ideally to the latest ACA-Py release.**
 
 The release includes the following PRs from the `main` branch cherry-picked into this release:
 
@@ -25,6 +25,7 @@ There are no breaking changes in this release.
   - chore: bump jsonpath-ng to 1.8.0 and fix full_path format [\#4082](https://github.com/openwallet-foundation/acapy/pull/4082) [jamshale](https://github.com/jamshale)
 
 - Release management pull requests:
+  - 1.2.7 [\#4107](https://github.com/openwallet-foundation/acapy/pull/4107) [swcurran](https://github.com/swcurran)
   - 1.2.7rc0 [\#4101](https://github.com/openwallet-foundation/acapy/pull/4101) [swcurran](https://github.com/swcurran)
 
 ## 1.2.6

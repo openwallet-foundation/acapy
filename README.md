@@ -53,8 +53,8 @@ the [LTS strategy](./LTS-Strategy.md).
 
 Current LTS releases:
 
-- Release [1.3](https://github.com/openwallet-foundation/acapy/releases/tag/1.3.3) **Current LTS Release**
-- Release [1.2](https://github.com/openwallet-foundation/acapy/releases/tag/1.2.6) **End of Life: April 2026**
+- Release [1.3](https://github.com/openwallet-foundation/acapy/releases/tag/1.3.4) **Current LTS Release**
+- Release [1.2](https://github.com/openwallet-foundation/acapy/releases/tag/1.2.7) **End of Life: April 2026**
 
 Past LTS releases:
 
