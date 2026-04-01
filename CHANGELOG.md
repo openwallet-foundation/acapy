@@ -64,7 +64,7 @@ ACA-Py 1.5.1 is a clean up release primarily to address some follow-on issues re
 
 ### 1.5.1 Breaking Changes
 
-Issue [\#3998](https://github.com/openwallet-foundation/acapy/pull/3998) is a breaking change for those depending on the removed duplicate webhook calls. 
+PR [\#3998](https://github.com/openwallet-foundation/acapy/pull/3998) is a breaking change for those depending on the removed duplicate webhook calls. 
 
 Those upgrading from a version prior to [1.5.0] should review the [1.5.0] Breaking Changes section for details about the breaking changes introduced in [1.5.0].
 
