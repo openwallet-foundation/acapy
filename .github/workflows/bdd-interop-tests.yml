@@ -56,7 +56,7 @@ jobs:
         id: check_if_release
       - name: Request GitHub API for PR data
         if: steps.check-if-src-changed.outputs.run_tests != 'false'
-        uses: octokit/request-action@10df4beff76ddd0c48b0e983ecde429e7174dfd3 # v2.x
+        uses: octokit/request-action@45eef13998ff762839b0a0de9bbcf41970fd056d # v2.x
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         id: get_pr_data
