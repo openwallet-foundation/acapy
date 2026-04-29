@@ -12,7 +12,6 @@ from .....messaging.models.base import BaseModel, BaseModelSchema
 from .....messaging.valid import UUID4_EXAMPLE
 from .....utils.classloader import DeferLoad
 from ..models.detail.anoncreds import V20CredExRecordAnonCreds
-from ..models.detail.indy import V20CredExRecordIndy
 from ..models.detail.ld_proof import V20CredExRecordLDProof
 
 if TYPE_CHECKING:
@@ -40,29 +39,12 @@ class V20CredFormat(BaseModel):
                 ".formats.anoncreds.handler.AnonCredsCredFormatHandler"
             ),
         )
-        INDY = FormatSpec(
-            "hlindy/",
-            V20CredExRecordIndy,
-            DeferLoad(
-                "acapy_agent.protocols.issue_credential.v2_0"
-                ".formats.indy.handler.IndyCredFormatHandler"
-            ),
-        )
         LD_PROOF = FormatSpec(
             "aries/",
             V20CredExRecordLDProof,
             DeferLoad(
                 "acapy_agent.protocols.issue_credential.v2_0"
                 ".formats.ld_proof.handler.LDProofCredFormatHandler"
-            ),
-        )
-
-        VC_DI = FormatSpec(
-            "didcomm/",
-            V20CredExRecordIndy,
-            DeferLoad(
-                "acapy_agent.protocols.issue_credential.v2_0"
-                ".formats.vc_di.handler.VCDICredFormatHandler"
             ),
         )
 
@@ -91,7 +73,7 @@ class V20CredFormat(BaseModel):
         @property
         def detail(
             self,
-        ) -> Union[V20CredExRecordIndy, V20CredExRecordLDProof, V20CredExRecordAnonCreds]:
+        ) -> Union[V20CredExRecordLDProof, V20CredExRecordAnonCreds]:
             """Accessor for credential exchange detail class."""
             return self.value.detail
 

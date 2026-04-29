@@ -19,7 +19,6 @@ from ..config.logging import context_wallet_id
 from ..core.event_bus import Event, EventBus
 from ..core.plugin_registry import PluginRegistry
 from ..core.profile import Profile
-from ..ledger.error import LedgerConfigError, LedgerTransactionError
 from ..messaging.responder import BaseResponder
 from ..multitenant.base import BaseMultitenantManager
 from ..multitenant.error import InvalidTokenError, MultitenantManagerError
@@ -36,7 +35,7 @@ from ..utils.stats import Collector
 from ..utils.task_queue import TaskQueue
 from ..version import __version__
 from ..wallet import singletons
-from ..wallet.anoncreds_upgrade import check_upgrade_completion_loop
+from ..wallet.upgrade import check_upgrade_completion_loop
 from .base_server import BaseAdminServer
 from .error import AdminSetupError
 from .request_context import AdminRequestContext
@@ -180,12 +179,6 @@ async def ready_middleware(request: web.BaseRequest, handler: Coroutine):
             validation_error_message,
         )
         raise web.HTTPUnprocessableEntity(reason=validation_error_message) from e
-    except (LedgerConfigError, LedgerTransactionError) as e:
-        # fatal, signal server shutdown
-        LOGGER.critical("Shutdown with %s", str(e))
-        request.app._state["ready"] = False
-        request.app._state["alive"] = False
-        raise
     except Exception as e:
         LOGGER.exception("Handler error with exception:", exc_info=e)
         raise

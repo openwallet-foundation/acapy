@@ -1,13 +1,11 @@
 """The Conductor.
 
 The conductor is responsible for coordinating messages that are received
-over the network, communicating with the ledger, passing messages to handlers,
-instantiating concrete implementations of required modules and storing data in the
-wallet.
+over the network, passing messages to handlers, instantiating concrete implementations
+of required modules and storing data in the wallet.
 
 """
 
-import asyncio
 import hashlib
 import json
 import logging
@@ -21,25 +19,10 @@ from ..admin.server import AdminResponder, AdminServer
 from ..commands.upgrade import add_version_record, get_upgrade_version_list, upgrade
 from ..config.default_context import ContextBuilder, DefaultContextBuilder
 from ..config.injection_context import InjectionContext
-from ..config.ledger import (
-    get_genesis_transactions,
-    ledger_config,
-    load_multiple_genesis_transactions_from_config,
-)
 from ..config.logging import LoggingConfigurator
-from ..config.provider import ClassProvider
 from ..config.wallet import wallet_config
 from ..connections.base_manager import BaseConnectionManager, BaseConnectionManagerError
 from ..core.profile import Profile
-from ..indy.verifier import IndyVerifier
-from ..ledger.base import BaseLedger
-from ..ledger.error import LedgerConfigError, LedgerTransactionError
-from ..ledger.multiple_ledger.base_manager import (
-    BaseMultipleLedgerManager,
-    MultipleLedgerManagerError,
-)
-from ..ledger.multiple_ledger.ledger_requests_executor import IndyLedgerRequestsExecutor
-from ..ledger.multiple_ledger.manager_provider import MultiIndyLedgerManagerProvider
 from ..messaging.responder import BaseResponder
 from ..multitenant.base import BaseMultitenantManager
 from ..multitenant.manager_provider import MultitenantManagerProvider
@@ -68,14 +51,11 @@ from ..transport.outbound.manager import OutboundTransportManager, QueuedOutboun
 from ..transport.outbound.message import OutboundMessage
 from ..transport.outbound.status import OutboundSendStatus
 from ..transport.wire_format import BaseWireFormat
-from ..utils.profiles import get_subwallet_profiles_from_storage
 from ..utils.stats import Collector
 from ..utils.task_queue import CompletedTask, TaskQueue
 from ..vc.ld_proofs.document_loader import DocumentLoader
 from ..version import RECORD_TYPE_ACAPY_VERSION, __version__
-from ..wallet.anoncreds_upgrade import upgrade_wallet_to_anoncreds_if_requested
 from ..wallet.did_info import DIDInfo
-from ..wallet.singletons import IsAnonCredsSingleton
 from .dispatcher import Dispatcher
 from .error import ProfileError, StartupError
 from .oob_processor import OobMessageProcessor
@@ -142,87 +122,11 @@ class Conductor:
                 )
                 context.settings.set_value("wallet.type", "kanon-anoncreds")
 
-        # Fetch genesis transactions if necessary
-        if context.settings.get("ledger.ledger_config_list"):
-            LOGGER.debug(
-                "Ledger config list found. Loading multiple genesis transactions"
-            )
-            await load_multiple_genesis_transactions_from_config(context.settings)
-        if (
-            context.settings.get("ledger.genesis_transactions")
-            or context.settings.get("ledger.genesis_file")
-            or context.settings.get("ledger.genesis_url")
-        ):
-            LOGGER.debug(
-                "Genesis transactions/configurations found. Fetching genesis transactions"
-            )
-            await get_genesis_transactions(context.settings)
-
         # Configure the root profile
         LOGGER.debug("Configuring the root profile and setting up public DID")
         self.root_profile, self.setup_public_did = await wallet_config(context)
         context = self.root_profile.context
         LOGGER.debug("Root profile configured successfully")
-
-        # Multiledger Setup
-        ledger_config_list = context.settings.get("ledger.ledger_config_list")
-        if ledger_config_list and len(ledger_config_list) > 0:
-            LOGGER.debug("Setting up multiledger manager")
-            context.injector.bind_provider(
-                BaseMultipleLedgerManager,
-                MultiIndyLedgerManagerProvider(self.root_profile),
-            )
-            if not context.settings.get("ledger.genesis_transactions"):
-                ledger = context.injector.inject(BaseLedger)
-                LOGGER.debug(
-                    "Ledger backend: %s, Profile backend: %s",
-                    ledger.BACKEND_NAME,
-                    self.root_profile.BACKEND_NAME,
-                )
-                if (
-                    self.root_profile.BACKEND_NAME == "askar"
-                    and ledger.BACKEND_NAME == "indy-vdr"
-                ):
-                    LOGGER.debug("Binding IndyCredxVerifier for 'askar' backend.")
-                    context.injector.bind_provider(
-                        IndyVerifier,
-                        ClassProvider(
-                            "acapy_agent.indy.credx.verifier.IndyCredxVerifier",
-                            self.root_profile,
-                        ),
-                    )
-                elif (
-                    self.root_profile.BACKEND_NAME == "askar-anoncreds"
-                    or self.root_profile.BACKEND_NAME == "kanon-anoncreds"
-                ) and ledger.BACKEND_NAME == "indy-vdr":
-                    LOGGER.debug(
-                        "Binding IndyCredxVerifier for 'askar-anoncreds' backend."
-                    )
-                    context.injector.bind_provider(
-                        IndyVerifier,
-                        ClassProvider(
-                            "acapy_agent.anoncreds.credx.verifier.IndyCredxVerifier",
-                            self.root_profile,
-                        ),
-                    )
-                else:
-                    LOGGER.error("Unsupported ledger backend for multiledger setup.")
-                    raise MultipleLedgerManagerError(
-                        "Multiledger is supported only for Indy SDK or Askar "
-                        "[Indy VDR] profile"
-                    )
-        context.injector.bind_instance(
-            IndyLedgerRequestsExecutor, IndyLedgerRequestsExecutor(self.root_profile)
-        )
-
-        # Configure the ledger
-        ledger_configured = await ledger_config(
-            self.root_profile, self.setup_public_did and self.setup_public_did.did
-        )
-        if not ledger_configured:
-            LOGGER.info("No ledger configured.")
-        else:
-            LOGGER.info("Ledger configured successfully.")
 
         if not context.settings.get("transport.disabled"):
             # Register all inbound transports if enabled
@@ -599,19 +503,6 @@ class Conductor:
             except Exception:
                 LOGGER.exception("Error accepting mediation invitation.")
 
-        try:
-            LOGGER.debug("Checking for wallet upgrades in progress.")
-            await self.check_for_wallet_upgrades_in_progress()
-            LOGGER.debug("Wallet upgrades check completed.")
-        except Exception:
-            LOGGER.exception(
-                "An exception was caught while checking for wallet upgrades in progress."
-            )
-
-        # Ensure anoncreds wallet is added to singleton (avoids unnecessary upgrade check)
-        if self.root_profile.settings.get("wallet.type") == "askar-anoncreds":
-            IsAnonCredsSingleton().set_wallet(self.root_profile.name)
-
         # notify protocols of startup status
         LOGGER.debug("Notifying protocols of startup status.")
         await self.root_profile.notify(STARTUP_EVENT_TOPIC, {})
@@ -687,21 +578,15 @@ class Conductor:
                 self.outbound_message_router,
                 lambda completed: self.dispatch_complete(message, completed),
             )
-        except (LedgerConfigError, LedgerTransactionError) as e:
-            LOGGER.error("Ledger error occurred in message handler: %s", str(e))
+        except Exception as e:
+            LOGGER.error("Error occurred in message handler: %s", str(e))
             raise
 
     def dispatch_complete(self, message: InboundMessage, completed: CompletedTask):
         """Handle completion of message dispatch."""
         if completed.exc_info:
             exc_class, exc, _ = completed.exc_info
-            if isinstance(exc, (LedgerConfigError, LedgerTransactionError)):
-                LOGGER.error(
-                    "Ledger error occurred in message handler: %s",
-                    str(exc),
-                    exc_info=completed.exc_info,
-                )
-            elif isinstance(exc, (ProfileError, StorageNotFoundError)):
+            if isinstance(exc, (ProfileError, StorageNotFoundError)):
                 LOGGER.error(
                     "Storage error occurred in message handler: %s: %s",
                     exc_class.__name__,
@@ -786,10 +671,8 @@ class Conductor:
         """Handle a message that failed delivery via an inbound session."""
         try:
             self.dispatcher.run_task(self.queue_outbound(profile, outbound))
-        except (LedgerConfigError, LedgerTransactionError) as e:
-            LOGGER.error(
-                "Ledger error occurred while handling failed delivery: %s", str(e)
-            )
+        except Exception as e:
+            LOGGER.error("Error occurred while handling failed delivery: %s", str(e))
             raise
 
     async def queue_outbound(
@@ -819,9 +702,9 @@ class Conductor:
             except BaseConnectionManagerError:
                 LOGGER.exception("Error preparing outbound message for transmission")
                 return OutboundSendStatus.UNDELIVERABLE
-            except (LedgerConfigError, LedgerTransactionError) as e:
+            except Exception as e:
                 LOGGER.error(
-                    "Ledger error occurred while preparing outbound message: %s", str(e)
+                    "Error occurred while preparing outbound message: %s", str(e)
                 )
                 raise
             del conn_mgr
@@ -963,20 +846,3 @@ class Conductor:
                         f"[{storage_type_from_config}] doesn't match the wallet type "
                         f"in storage [{storage_type_record.value}]"
                     )
-
-    async def check_for_wallet_upgrades_in_progress(self):
-        """Check for upgrade and upgrade if needed."""
-        if self.context.settings.get_value("multitenant.enabled"):
-            # Sub-wallets
-            subwallet_profiles = await get_subwallet_profiles_from_storage(
-                self.root_profile
-            )
-            await asyncio.gather(
-                *[
-                    upgrade_wallet_to_anoncreds_if_requested(profile, is_subwallet=True)
-                    for profile in subwallet_profiles
-                ]
-            )
-
-        # Stand-alone or admin wallet
-        await upgrade_wallet_to_anoncreds_if_requested(self.root_profile)

@@ -517,7 +517,6 @@ class AnonCredsHolder:
         """Check ledger for revocation status of credential by credential id.
 
         Args:
-            ledger (BaseLedger): The ledger to check for revocation status.
             credential_id (str): The ID of the credential to check.
             timestamp_from (int, optional): The earliest timestamp to consider for
                 revocation status. Defaults to None.

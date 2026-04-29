@@ -2,8 +2,6 @@
 
 from .....anoncreds.holder import AnonCredsHolderError
 from .....core.oob_processor import OobMessageProcessor
-from .....indy.holder import IndyHolderError
-from .....ledger.error import LedgerError
 from .....messaging.base_handler import BaseHandler, HandlerException
 from .....messaging.models.base import BaseModelError
 from .....messaging.request_context import RequestContext
@@ -87,10 +85,9 @@ class V20CredOfferHandler(BaseHandler):
             except (
                 BaseModelError,
                 AnonCredsHolderError,
-                IndyHolderError,
-                LedgerError,
                 StorageError,
                 V20CredManagerError,
+                Exception,
             ) as err:
                 self._logger.exception("Error responding to credential offer")
                 if cred_ex_record:

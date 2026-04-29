@@ -11,15 +11,12 @@ from aries_askar import AskarError, AskarErrorCode, Entry, Key, KeyAlg, SeedMeth
 from ..database_manager.dbstore import DBStoreError, DBStoreSession
 from ..kanon.didcomm.v1 import pack_message, unpack_message
 from ..kanon.profile_anon_kanon import KanonAnonCredsProfileSession
-from ..ledger.base import BaseLedger
-from ..ledger.endpoint_type import EndpointType
-from ..ledger.error import LedgerConfigError
 from ..storage.base import StorageDuplicateError, StorageNotFoundError, StorageRecord
 from ..storage.kanon_storage import KanonStorage
 from .base import BaseWallet, DIDInfo, KeyInfo
 from .crypto import sign_message, validate_seed, verify_signed_message
 from .did_info import INVITATION_REUSE_KEY
-from .did_method import INDY, SOV, DIDMethod, DIDMethods
+from .did_method import SOV, DIDMethod, DIDMethods
 from .did_parameters_validation import DIDParametersValidation
 from .error import WalletDuplicateError, WalletError, WalletNotFoundError
 from .key_type import BLS12381G2, ED25519, P256, X25519, KeyType, KeyTypes
@@ -802,117 +799,6 @@ class KanonWallet(BaseWallet):
 
         LOGGER.debug("set_public_did completed with result: %s", public)
         return public
-
-    async def set_did_endpoint(
-        self,
-        did: str,
-        endpoint: str,
-        ledger: BaseLedger,
-        endpoint_type: Optional[EndpointType] = None,
-        write_ledger: bool = True,
-        endorser_did: Optional[str] = None,
-        routing_keys: Optional[List[str]] = None,
-        session: Optional[DBStoreSession] = None,
-    ):
-        """Update the endpoint for a DID.
-
-        Args:
-            did: The DID to update
-            endpoint: The new endpoint
-            ledger: The ledger to update
-            endpoint_type: The type of endpoint
-            write_ledger: Whether to write to ledger
-            endorser_did: Optional endorser DID
-            routing_keys: Optional routing keys
-            session: Optional existing session to reuse (avoids nested session creation)
-
-        """
-        LOGGER.debug(
-            "Entering set_did_endpoint with did: %s, endpoint: %s", did, endpoint
-        )
-
-        # Create session if not provided for consistency across all operations
-        if session is None:
-            session = self._get_dbstore_session()
-        if session is None:
-            async with self._session.store.session() as session:
-                return await self._set_did_endpoint_impl(
-                    did,
-                    endpoint,
-                    ledger,
-                    endpoint_type,
-                    write_ledger,
-                    endorser_did,
-                    routing_keys,
-                    session,
-                )
-        return await self._set_did_endpoint_impl(
-            did,
-            endpoint,
-            ledger,
-            endpoint_type,
-            write_ledger,
-            endorser_did,
-            routing_keys,
-            session,
-        )
-
-    async def _set_did_endpoint_impl(
-        self,
-        did: str,
-        endpoint: str,
-        ledger: BaseLedger,
-        endpoint_type: Optional[EndpointType],
-        write_ledger: bool,
-        endorser_did: Optional[str],
-        routing_keys: Optional[List[str]],
-        session: DBStoreSession,
-    ):
-        """Internal implementation of set_did_endpoint."""
-        LOGGER.debug("Fetching DID info for: %s", did)
-        did_info = await self.get_local_did(did, session=session)
-        if did_info.method not in (SOV, INDY):
-            LOGGER.error("Invalid DID method: %s", did_info.method)
-            raise WalletError(
-                "Setting DID endpoint is only allowed for did:sov or did:indy DIDs"
-            )
-        metadata = {**did_info.metadata}
-        if not endpoint_type:
-            endpoint_type = EndpointType.ENDPOINT
-            LOGGER.debug("Default endpoint_type set to ENDPOINT")
-        if endpoint_type == EndpointType.ENDPOINT:
-            metadata[endpoint_type.indy] = endpoint
-            LOGGER.debug("Updated metadata with endpoint: %s", endpoint)
-
-        wallet_public_didinfo = await self.get_public_did(session=session)
-        LOGGER.debug("Public DID info: %s", wallet_public_didinfo)
-        if (
-            wallet_public_didinfo and wallet_public_didinfo.did == did
-        ) or did_info.metadata.get("posted"):
-            if not ledger:
-                LOGGER.error("No ledger available for DID: %s", did)
-                raise LedgerConfigError(f"No ledger available but DID {did} is public")
-            if not ledger.read_only:
-                LOGGER.debug("Updating endpoint on ledger")
-                async with ledger:
-                    attrib_def = await ledger.update_endpoint_for_did(
-                        did,
-                        endpoint,
-                        endpoint_type,
-                        write_ledger=write_ledger,
-                        endorser_did=endorser_did,
-                        routing_keys=routing_keys,
-                    )
-                    LOGGER.debug("Ledger update result: %s", attrib_def)
-                    if not write_ledger:
-                        LOGGER.debug(
-                            "set_did_endpoint returning attrib_def: %s", attrib_def
-                        )
-                        return attrib_def
-
-        LOGGER.debug("Replacing local DID metadata")
-        await self.replace_local_did_metadata(did, metadata, session=session)
-        LOGGER.debug("set_did_endpoint completed")
 
     async def rotate_did_keypair_start(
         self,

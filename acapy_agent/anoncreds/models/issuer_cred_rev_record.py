@@ -2,26 +2,99 @@
 
 import json
 from collections.abc import Sequence
-from typing import List, Optional
+from typing import Any, List, Optional
 
 from marshmallow import fields
 
 from ...core.profile import ProfileSession
-from ...messaging.models.base_record import BaseRecordSchema
+from ...messaging.models.base_record import BaseRecord, BaseRecordSchema
 from ...messaging.valid import UUID4_EXAMPLE
-from ...revocation.models.issuer_cred_rev_record import (
-    IssuerCredRevRecord as IndyIssuerCredRevRecord,
-)
 from ...storage.base import BaseStorage
 
 
-class IssuerCredRevRecord(IndyIssuerCredRevRecord):
+class IssuerCredRevRecord(BaseRecord):
     """Represents credential revocation information to retain post-issue."""
 
     class Meta:
         """IssuerCredRevRecord metadata."""
 
-        schema_class = "IssuerCredRevRecordSchemaAnonCreds"
+        schema_class = "IssuerCredRevRecordSchema"
+
+    RECORD_TYPE = "issuer_cred_rev"
+    RECORD_ID_NAME = "record_id"
+    RECORD_TOPIC = "issuer_cred_rev"
+    TAG_NAMES = {
+        "cred_ex_id",
+        "cred_ex_version",
+        "cred_def_id",
+        "rev_reg_id",
+        "cred_rev_id",
+        "state",
+    }
+
+    STATE_ISSUED = "issued"
+    STATE_REVOKED = "revoked"
+
+    VERSION_1 = "1"
+    VERSION_2 = "2"
+
+    def __init__(
+        self,
+        *,
+        record_id: Optional[str] = None,
+        state: Optional[str] = None,
+        cred_ex_id: Optional[str] = None,
+        rev_reg_id: Optional[str] = None,
+        cred_rev_id: Optional[str] = None,
+        cred_def_id: Optional[str] = None,  # Marshmallow formalism: leave None
+        cred_ex_version: Optional[str] = None,
+        **kwargs,
+    ):
+        """Initialize a new IssuerCredRevRecord."""
+        super().__init__(
+            id=record_id,
+            state=state or IssuerCredRevRecord.STATE_ISSUED,
+            **kwargs,
+        )
+        self.cred_ex_id = cred_ex_id
+        self.rev_reg_id = rev_reg_id
+        self.cred_rev_id = cred_rev_id
+        self.cred_def_id = (
+            ":".join(rev_reg_id.split(":")[-7:-2]) if rev_reg_id else cred_def_id
+        )
+        self.cred_ex_version = cred_ex_version
+
+    @property
+    def record_id(self) -> str:
+        """Accessor for the ID associated with this exchange."""
+        return self._id
+
+    # Override query_by_ids to return the correct type
+    @classmethod
+    async def query_by_ids(
+        cls,
+        session: ProfileSession,
+        *,
+        cred_def_id: Optional[str] = None,
+        rev_reg_id: Optional[str] = None,
+        state: Optional[str] = None,
+    ) -> Sequence["IssuerCredRevRecord"]:
+        """Retrieve issuer cred rev records by cred def id and/or rev reg id.
+
+        Args:
+            session: the profile session to use
+            cred_def_id: the cred def id by which to filter
+            rev_reg_id: the rev reg id by which to filter
+            state: a state value by which to filter
+
+        """
+        # Call parent method but cast return type
+        return await super().query_by_ids(
+            session,
+            cred_def_id=cred_def_id,
+            rev_reg_id=rev_reg_id,
+            state=state,
+        )
 
     @classmethod
     async def retrieve_by_ids(
@@ -56,32 +129,23 @@ class IssuerCredRevRecord(IndyIssuerCredRevRecord):
 
         return rev_reg_records
 
-    # Override query_by_ids to return the correct type
     @classmethod
-    async def query_by_ids(
+    async def retrieve_by_cred_ex_id(
         cls,
         session: ProfileSession,
-        *,
-        cred_def_id: Optional[str] = None,
-        rev_reg_id: Optional[str] = None,
-        state: Optional[str] = None,
-    ) -> Sequence["IssuerCredRevRecord"]:
-        """Retrieve issuer cred rev records by cred def id and/or rev reg id.
+        cred_ex_id: str,
+    ) -> "IssuerCredRevRecord":
+        """Retrieve an issuer cred rev record by rev reg id and cred rev id."""
+        return await cls.retrieve_by_tag_filter(session, {"cred_ex_id": cred_ex_id})
 
-        Args:
-            session: the profile session to use
-            cred_def_id: the cred def id by which to filter
-            rev_reg_id: the rev reg id by which to filter
-            state: a state value by which to filter
+    async def set_state(self, session: ProfileSession, state: Optional[str] = None):
+        """Change the issuer cred rev record state (default issued)."""
+        self.state = state or IssuerCredRevRecord.STATE_ISSUED
+        await self.save(session, reason=f"Marked {self.state}")
 
-        """
-        # Call parent method but cast return type
-        return await super().query_by_ids(
-            session,
-            cred_def_id=cred_def_id,
-            rev_reg_id=rev_reg_id,
-            state=state,
-        )
+    def __eq__(self, other: Any) -> bool:
+        """Comparison between records."""
+        return super().__eq__(other)
 
 
 class IssuerCredRevRecordSchemaAnonCreds(BaseRecordSchema):

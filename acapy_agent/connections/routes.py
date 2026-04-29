@@ -24,10 +24,10 @@ from ..messaging.valid import (
     ENDPOINT_EXAMPLE,
     ENDPOINT_VALIDATE,
     GENERIC_DID_VALIDATE,
-    INDY_DID_EXAMPLE,
-    INDY_DID_VALIDATE,
     RAW_ED25519_2018_PUBLIC_KEY_EXAMPLE,
     RAW_ED25519_2018_PUBLIC_KEY_VALIDATE,
+    UNQUALIFIED_OR_INDY_DID_EXAMPLE,
+    UNQUALIFIED_OR_INDY_DID_VALIDATE,
     UUID4_EXAMPLE,
 )
 from ..storage.error import StorageError, StorageNotFoundError
@@ -80,16 +80,19 @@ class ConnectionStaticRequestSchema(OpenAPISchema):
     )
     my_did = fields.Str(
         required=False,
-        validate=INDY_DID_VALIDATE,
-        metadata={"description": "Local DID", "example": INDY_DID_EXAMPLE},
+        validate=UNQUALIFIED_OR_INDY_DID_VALIDATE,
+        metadata={"description": "Local DID", "example": UNQUALIFIED_OR_INDY_DID_EXAMPLE},
     )
     their_seed = fields.Str(
         required=False, metadata={"description": "Seed to use for the remote DID"}
     )
     their_did = fields.Str(
         required=False,
-        validate=INDY_DID_VALIDATE,
-        metadata={"description": "Remote DID", "example": INDY_DID_EXAMPLE},
+        validate=UNQUALIFIED_OR_INDY_DID_VALIDATE,
+        metadata={
+            "description": "Remote DID",
+            "example": UNQUALIFIED_OR_INDY_DID_EXAMPLE,
+        },
     )
     their_verkey = fields.Str(
         required=False, metadata={"description": "Remote verification key"}
@@ -116,8 +119,8 @@ class ConnectionStaticResultSchema(OpenAPISchema):
 
     my_did = fields.Str(
         required=True,
-        validate=INDY_DID_VALIDATE,
-        metadata={"description": "Local DID", "example": INDY_DID_EXAMPLE},
+        validate=UNQUALIFIED_OR_INDY_DID_VALIDATE,
+        metadata={"description": "Local DID", "example": UNQUALIFIED_OR_INDY_DID_EXAMPLE},
     )
     my_verkey = fields.Str(
         required=True,
@@ -134,8 +137,11 @@ class ConnectionStaticResultSchema(OpenAPISchema):
     )
     their_did = fields.Str(
         required=True,
-        validate=INDY_DID_VALIDATE,
-        metadata={"description": "Remote DID", "example": INDY_DID_EXAMPLE},
+        validate=UNQUALIFIED_OR_INDY_DID_VALIDATE,
+        metadata={
+            "description": "Remote DID",
+            "example": UNQUALIFIED_OR_INDY_DID_EXAMPLE,
+        },
     )
     their_verkey = fields.Str(
         required=True,
@@ -165,7 +171,7 @@ class ConnectionsListQueryStringSchema(PaginatedQuerySchema):
     my_did = fields.Str(
         required=False,
         validate=GENERIC_DID_VALIDATE,
-        metadata={"description": "My DID", "example": INDY_DID_EXAMPLE},
+        metadata={"description": "My DID", "example": UNQUALIFIED_OR_INDY_DID_EXAMPLE},
     )
     state = fields.Str(
         required=False,
@@ -177,12 +183,15 @@ class ConnectionsListQueryStringSchema(PaginatedQuerySchema):
     their_did = fields.Str(
         required=False,
         validate=GENERIC_DID_VALIDATE,
-        metadata={"description": "Their DID", "example": INDY_DID_EXAMPLE},
+        metadata={"description": "Their DID", "example": UNQUALIFIED_OR_INDY_DID_EXAMPLE},
     )
     their_public_did = fields.Str(
         required=False,
         validate=GENERIC_DID_VALIDATE,
-        metadata={"description": "Their Public DID", "example": INDY_DID_EXAMPLE},
+        metadata={
+            "description": "Their Public DID",
+            "example": UNQUALIFIED_OR_INDY_DID_EXAMPLE,
+        },
     )
     their_role = fields.Str(
         required=False,

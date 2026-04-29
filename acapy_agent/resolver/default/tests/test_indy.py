@@ -7,7 +7,7 @@ from ....core.profile import Profile
 from ....ledger.base import BaseLedger
 from ....ledger.error import LedgerError
 from ....ledger.multiple_ledger.ledger_requests_executor import IndyLedgerRequestsExecutor
-from ....messaging.valid import IndyDID
+from ....messaging.valid import UnqualifiedOrIndyDID
 from ....multitenant.base import BaseMultitenantManager
 from ....multitenant.manager import MultitenantManager
 from ....tests import mock
@@ -55,7 +55,7 @@ class TestIndyResolver:
     @pytest.mark.asyncio
     async def test_supported_did_regex(self, profile, resolver: IndyDIDResolver):
         """Test the supported_did_regex."""
-        assert resolver.supported_did_regex == IndyDID.PATTERN
+        assert resolver.supported_did_regex == UnqualifiedOrIndyDID.PATTERN
         assert await resolver.supports(profile, TEST_DID0)
 
     @pytest.mark.asyncio

@@ -9,4 +9,8 @@ class AnonCredsRevocationModuleResponseSchema(OpenAPISchema):
     """Response schema for Revocation Module."""
 
 
-__all__ = ["REVOCATION_TAG_TITLE", "AnonCredsRevocationModuleResponseSchema"]
+__all__ = [
+    "REVOCATION_TAG_TITLE",
+    "AnonCredsRevocationModuleResponseSchema",
+    "AnonCredsRevRegIdMatchInfoSchema",
+]
