@@ -129,14 +129,22 @@ For the build test, the RTD Sphinx theme needs to be added to the docker image, 
    wait until it is merged. It's embarrassing when you have to do a whole new
    release just because you missed something silly...I know!
 
-10. Immediately after it is merged, create a new GitHub tag representing the
-   version. The tag name and title of the release should be the same as the
-   version in [pyproject.toml](https://github.com/openwallet-foundation/acapy/tree/main/pyproject.toml). Use
-   the "Generate Release Notes" capability to get a sequential listing of the
-   PRs in the release, to complement the manually curated Changelog. Verify on
-   PyPi that the version is published.
+10. Immediately after the PR is merged and if the release is a final release AND
+    the latest release AND an LTS release, update the LTS branch to point to
+    `main`. Do this ONLY when the current release version is both the latest
+    release AND its version has been declared an LTS release. Once a new version
+    has been created that has NOT been declared an LTS, the LTS branch will
+    extend independent of main.
 
-11. New images for the release are automatically published by the GitHubAction
+11. Immediately after the PR is merged, create a new GitHub tag representing the
+   version. The tag name and title of the release should be the same as the
+   version in
+   [pyproject.toml](https://github.com/openwallet-foundation/acapy/tree/main/pyproject.toml).
+   Use the "Generate Release Notes" capability to get a sequential listing of
+   the PRs in the release, to complement the manually curated Changelog. Verify
+   on PyPi that the version is published.
+
+12. New images for the release are automatically published by the GitHubAction
    Workflow: [publish.yml]. The action is triggered when a release is tagged, so
    no manual action is needed. Images are published in the [OpenWallet
    Foundation Package Repository under
@@ -178,7 +186,7 @@ For the build test, the RTD Sphinx theme needs to be added to the docker image, 
 
 [publish.yml]: https://github.com/openwallet-foundation/acapy/blob/main/.github/workflows/publish.yml
 
-12. When a new release is tagged, create a new branch at the same commit with
+13. When a new release is tagged, create a new branch at the same commit with
     the branch name in the format `docs-v<version>`, for example, `docs-v1.6.0rc0`.
     The creation of the branch triggers the execution of the [publish-docs]
     GitHub Action which generates the documentation for the new release,
@@ -192,7 +200,7 @@ For the build test, the RTD Sphinx theme needs to be added to the docker image, 
 [Managing the ACA-Py Documentation Site]: Managing-ACA-Py-Doc-Site.md
 [https://aca-py.org]: https://aca-py.org
 
-13. Update the [ACA-Py Read The Docs site] by logging into Read The Docs
+14. Update the [ACA-Py Read The Docs site] by logging into Read The Docs
     administration site, building a new "latest" (main branch) and activating
     and building the new release by version ID. Appropriate permissions are
     required to publish the new documentation version.

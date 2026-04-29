@@ -45,15 +45,15 @@ the [LTS strategy](./LTS-Strategy.md).
 
 ### LTS Docker Images
 
-ACA-Py publishes Git tags in the format `x.y-lts` (e.g., `1.3-lts`) along with 
+ACA-Py publishes Git tags in the format `x.y-lts` (e.g., `1.6-lts`) along with 
 corresponding Docker images to the GitHub Container Registry (GHCR) for each LTS release. These 
 Docker images are tagged with a stable `-lts` suffix, making it easier for developers to rely on 
 a consistent and maintained version line.
 
-You can pull the latest LTS image for version `1.3` using the following image tag:
+You can pull the latest LTS image for version `1.6` using the following image tag:
 
 ```bash
-ghcr.io/openwallet-foundation/acapy-agent:py3.12-1.3-lts
+ghcr.io/openwallet-foundation/acapy-agent:py3.12-1.6-lts
 ```
 
 The `-lts` tags are kept up to date with the latest patch releases from the corresponding 
@@ -62,7 +62,8 @@ supported version within that release series.
 
 **Active LTS releases:**
 
-- Release [1.3](https://github.com/openwallet-foundation/acapy/releases/tag/1.3.1) **Current LTS Release**
+- Release [1.6](https://github.com/openwallet-foundation/acapy/blob/1.6.lts/CHANGELOG.md) **Current LTS Release**
+- Release [1.3](https://github.com/openwallet-foundation/acapy/blob/1.3.lts/CHANGELOG.md) **End of Life: January 2027**
 
 **Past LTS releases:**
 
