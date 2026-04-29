@@ -5,8 +5,6 @@
 # Empty lines are ignored
 
 # Example: Uncomment the lines below to enable LTS for specific versions
-0.12
-1.2
 1.3
 
 # For testing purposes (remove in production):
