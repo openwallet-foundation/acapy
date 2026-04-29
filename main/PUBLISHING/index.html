@@ -3202,12 +3202,21 @@ a major, minor or patch release, per <a href="https://semver.org/">semver</a> ru
    release just because you missed something silly...I know!</p>
 </li>
 <li>
-<p>Immediately after it is merged, create a new GitHub tag representing the
+<p>Immediately after the PR is merged and if the release is a final release AND
+    the latest release AND an LTS release, update the LTS branch to point to
+    <code>main</code>. Do this ONLY when the current release version is both the latest
+    release AND its version has been declared an LTS release. Once a new version
+    has been created that has NOT been declared an LTS, the LTS branch will
+    extend independent of main.</p>
+</li>
+<li>
+<p>Immediately after the PR is merged, create a new GitHub tag representing the
    version. The tag name and title of the release should be the same as the
-   version in <a href="https://github.com/openwallet-foundation/acapy/tree/main/pyproject.toml">pyproject.toml</a>. Use
-   the "Generate Release Notes" capability to get a sequential listing of the
-   PRs in the release, to complement the manually curated Changelog. Verify on
-   PyPi that the version is published.</p>
+   version in
+   <a href="https://github.com/openwallet-foundation/acapy/tree/main/pyproject.toml">pyproject.toml</a>.
+   Use the "Generate Release Notes" capability to get a sequential listing of
+   the PRs in the release, to complement the manually curated Changelog. Verify
+   on PyPi that the version is published.</p>
 </li>
 <li>
 <p>New images for the release are automatically published by the GitHubAction
