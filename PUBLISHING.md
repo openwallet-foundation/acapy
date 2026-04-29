@@ -129,16 +129,18 @@ For the build test, the RTD Sphinx theme needs to be added to the docker image, 
    wait until it is merged. It's embarrassing when you have to do a whole new
    release just because you missed something silly...I know!
 
-10. If the release is a final release AND the latest release AND an LTS release,
-    update the LTS branch to point to `main`. Do this ONLY when the current
-    release version is both the latest release AND its version has been declared
-    an LTS release. Once a new version has been created that has NOT been
-    declared an LTS, the LTS branch will extend independent of main.
+10. Immediately after the PR is merged and if the release is a final release AND
+    the latest release AND an LTS release, update the LTS branch to point to
+    `main`. Do this ONLY when the current release version is both the latest
+    release AND its version has been declared an LTS release. Once a new version
+    has been created that has NOT been declared an LTS, the LTS branch will
+    extend independent of main.
 
-11. Immediately after it is merged, create a new GitHub tag representing the
-   version. The tag name and title of the release should be the
-   same as the version in
-   [pyproject.toml](https://github.com/openwallet-foundation/acapy/tree/main/pyproject.toml). Use the "Generate Release Notes" capability to get a sequential listing of
+11. Immediately after the PR is merged, create a new GitHub tag representing the
+   version. The tag name and title of the release should be the same as the
+   version in
+   [pyproject.toml](https://github.com/openwallet-foundation/acapy/tree/main/pyproject.toml).
+   Use the "Generate Release Notes" capability to get a sequential listing of
    the PRs in the release, to complement the manually curated Changelog. Verify
    on PyPi that the version is published.
 

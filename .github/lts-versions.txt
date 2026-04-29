@@ -6,6 +6,7 @@
 
 # Example: Uncomment the lines below to enable LTS for specific versions
 1.3
+1.6
 
 # For testing purposes (remove in production):
 # 0.0
