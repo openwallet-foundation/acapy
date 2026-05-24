@@ -25,7 +25,6 @@ from ...messaging.models.paginated_query import (
 from ...messaging.valid import UUID4_EXAMPLE, JSONWebToken
 from ...multitenant.base import BaseMultitenantManager
 from ...storage.error import StorageError, StorageNotFoundError
-from ...utils.endorsement_setup import attempt_auto_author_with_endorser_setup
 from ...wallet.error import WalletSettingsError
 from ...wallet.models.wallet_record import WalletRecord, WalletRecordSchema
 from ..error import WalletKeyMissingError
@@ -484,11 +483,6 @@ async def wallet_create(request: web.BaseRequest):
         wallet_record = await multitenant_mgr.create_wallet(settings, key_management_mode)
 
         token = await multitenant_mgr.create_auth_token(wallet_record, wallet_key)
-
-        wallet_profile = await multitenant_mgr.get_wallet_profile(
-            context, wallet_record, extra_settings=settings
-        )
-        await attempt_auto_author_with_endorser_setup(wallet_profile)
 
         event_bus = context.profile.inject_or(EventBus)
         if event_bus:

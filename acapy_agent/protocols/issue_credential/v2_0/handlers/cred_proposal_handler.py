@@ -1,8 +1,6 @@
 """Credential proposal message handler."""
 
 from .....anoncreds.issuer import AnonCredsIssuerError
-from .....indy.issuer import IndyIssuerError
-from .....ledger.error import LedgerError
 from .....messaging.base_handler import BaseHandler, HandlerException
 from .....messaging.models.base import BaseModelError
 from .....messaging.request_context import RequestContext
@@ -67,10 +65,9 @@ class V20CredProposalHandler(BaseHandler):
             except (
                 BaseModelError,
                 AnonCredsIssuerError,
-                IndyIssuerError,
-                LedgerError,
                 StorageError,
                 V20CredManagerError,
+                Exception,
             ) as err:
                 self._logger.exception("Error responding to credential proposal")
                 async with profile.session() as session:

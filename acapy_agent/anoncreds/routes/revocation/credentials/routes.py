@@ -12,7 +12,6 @@ from aiohttp_apispec import (
 
 from .....admin.decorators.auth import tenant_authentication
 from .....admin.request_context import AdminRequestContext
-from .....revocation.error import RevocationError
 from .....storage.error import StorageDuplicateError, StorageError, StorageNotFoundError
 from .....utils.profiles import is_not_anoncreds_profile_raise_web_exception
 from ....base import AnonCredsRegistrationError
@@ -111,7 +110,6 @@ async def publish_revocations(request: web.BaseRequest):
         rev_reg_resp = await rev_manager.publish_pending_revocations(rrid2crid, options)
         return web.json_response({"rrid2crid": rev_reg_resp})
     except (
-        RevocationError,
         StorageError,
         AnonCredsIssuerError,
         AnonCredsRevocationError,

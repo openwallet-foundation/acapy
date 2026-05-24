@@ -8,10 +8,10 @@ from marshmallow.utils import EXCLUDE
 from .....core.profile import ProfileSession
 from .....messaging.models.base_record import BaseRecord, BaseRecordSchema
 from .....messaging.valid import (
-    INDY_CRED_REV_ID_EXAMPLE,
-    INDY_CRED_REV_ID_VALIDATE,
-    INDY_REV_REG_ID_EXAMPLE,
-    INDY_REV_REG_ID_VALIDATE,
+    ANONCREDS_CRED_REV_ID_EXAMPLE,
+    ANONCREDS_CRED_REV_ID_VALIDATE,
+    ANONCREDS_REV_REG_ID_EXAMPLE,
+    ANONCREDS_REV_REG_ID_VALIDATE,
     UUID4_EXAMPLE,
     UUID4_VALIDATE,
 )
@@ -141,18 +141,18 @@ class RevNotificationRecordSchema(BaseRecordSchema):
 
     rev_reg_id = fields.Str(
         required=False,
-        validate=INDY_REV_REG_ID_VALIDATE,
+        validate=ANONCREDS_REV_REG_ID_VALIDATE,
         metadata={
             "description": "Revocation registry identifier",
-            "example": INDY_REV_REG_ID_EXAMPLE,
+            "example": ANONCREDS_REV_REG_ID_EXAMPLE,
         },
     )
     cred_rev_id = fields.Str(
         required=False,
-        validate=INDY_CRED_REV_ID_VALIDATE,
+        validate=ANONCREDS_CRED_REV_ID_VALIDATE,
         metadata={
             "description": "Credential revocation identifier",
-            "example": INDY_CRED_REV_ID_EXAMPLE,
+            "example": ANONCREDS_CRED_REV_ID_EXAMPLE,
         },
     )
     connection_id = fields.Str(

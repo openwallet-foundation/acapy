@@ -35,15 +35,6 @@ async def setup(context: InjectionContext):
     await jwk_resolver.setup(context)
     registry.register_resolver(jwk_resolver)
 
-    if not context.settings.get("ledger.disabled"):
-        indy_resolver = ClassProvider(
-            "acapy_agent.resolver.default.indy.IndyDIDResolver"
-        ).provide(context.settings, context.injector)
-        await indy_resolver.setup(context)
-        registry.register_resolver(indy_resolver)
-    else:
-        LOGGER.info("Ledger is not configured, not loading IndyDIDResolver")
-
     web_resolver = ClassProvider(
         "acapy_agent.resolver.default.web.WebDIDResolver"
     ).provide(context.settings, context.injector)

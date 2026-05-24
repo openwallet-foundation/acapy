@@ -8,18 +8,12 @@ from weakref import ref
 
 from aries_askar import AskarError, Session, Store
 
-from ..cache.base import BaseCache
 from ..config.injection_context import InjectionContext
 from ..config.provider import ClassProvider
 from ..core.error import ProfileError
 from ..core.profile import Profile, ProfileManager, ProfileSession
-from ..indy.holder import IndyHolder
-from ..indy.issuer import IndyIssuer
-from ..ledger.base import BaseLedger
-from ..ledger.indy_vdr import IndyVdrLedger, IndyVdrLedgerPool
 from ..storage.base import BaseStorage, BaseStorageSearch
 from ..storage.vc_holder.base import VCHolder
-from ..utils.multi_ledger import get_write_ledger_config_for_profile
 from ..wallet.base import BaseWallet
 from ..wallet.crypto import validate_seed
 from .store import AskarOpenStore, AskarStoreConfig
@@ -45,9 +39,7 @@ class AskarAnonCredsProfile(Profile):
             context=context, name=profile_id or opened.name, created=opened.created
         )
         self.opened = opened
-        self.ledger_pool: Optional[IndyVdrLedgerPool] = None
         self.profile_id = profile_id
-        self.init_ledger_pool()
         self.bind_providers()
 
     @property
@@ -65,29 +57,6 @@ class AskarAnonCredsProfile(Profile):
         if self.profile_id:
             await self.store.remove_profile(self.profile_id)
 
-    def init_ledger_pool(self):
-        """Initialize the ledger pool."""
-        if self.settings.get("ledger.disabled"):
-            LOGGER.debug("init_ledger_pool: Ledger support is disabled")
-            return
-        if self.settings.get("ledger.genesis_transactions"):
-            pool_name = self.settings.get("ledger.pool_name", "default")
-            keepalive = int(self.settings.get("ledger.keepalive", 5))
-            read_only = bool(self.settings.get("ledger.read_only", False))
-            socks_proxy = self.settings.get("ledger.socks_proxy")
-            if read_only:
-                LOGGER.warning("Note: setting ledger to read-only mode")
-            genesis_transactions = self.settings.get("ledger.genesis_transactions")
-            cache = self.context.injector.inject_or(BaseCache)
-            self.ledger_pool = IndyVdrLedgerPool(
-                pool_name,
-                keepalive=keepalive,
-                cache=cache,
-                genesis_transactions=genesis_transactions,
-                read_only=read_only,
-                socks_proxy=socks_proxy,
-            )
-
     def bind_providers(self):
         """Initialize the profile-level instance providers."""
         injector = self._context.injector
@@ -103,60 +72,6 @@ class AskarAnonCredsProfile(Profile):
                 ref(self),
             ),
         )
-        injector.bind_provider(
-            IndyHolder,
-            ClassProvider(
-                "acapy_agent.indy.credx.holder.IndyCredxHolder",
-                ref(self),
-            ),
-        )
-        injector.bind_provider(
-            IndyIssuer,
-            ClassProvider("acapy_agent.indy.credx.issuer.IndyCredxIssuer", ref(self)),
-        )
-
-        ledger_config_list = self.settings.get("ledger.ledger_config_list")
-        if ledger_config_list:
-            write_ledger_config = get_write_ledger_config_for_profile(
-                settings=self.settings
-            )
-            cache = self.context.injector.inject_or(BaseCache)
-
-            pool_name = write_ledger_config.get("pool_name")
-            pool_id = write_ledger_config.get("id")
-            ledger_name = pool_name or pool_id
-            keepalive = write_ledger_config.get("keepalive")
-            read_only = write_ledger_config.get("read_only")
-            socks_proxy = write_ledger_config.get("socks_proxy")
-            genesis_transactions = write_ledger_config.get("genesis_transactions")
-
-            ledger_pool = IndyVdrLedgerPool(
-                name=ledger_name,
-                keepalive=keepalive,
-                cache=cache,
-                genesis_transactions=genesis_transactions,
-                read_only=read_only,
-                socks_proxy=socks_proxy,
-            )
-            injector.bind_provider(
-                BaseLedger,
-                ClassProvider(IndyVdrLedger, ledger_pool, ref(self)),
-            )
-            self.settings["ledger.write_ledger"] = pool_id
-            if (
-                "endorser_alias" in write_ledger_config
-                and "endorser_did" in write_ledger_config
-            ):
-                self.settings["endorser.endorser_alias"] = write_ledger_config.get(
-                    "endorser_alias"
-                )
-                self.settings["endorser.endorser_public_did"] = write_ledger_config.get(
-                    "endorser_did"
-                )
-        elif self.ledger_pool:
-            injector.bind_provider(
-                BaseLedger, ClassProvider(IndyVdrLedger, self.ledger_pool, ref(self))
-            )
 
     def session(
         self, context: Optional[InjectionContext] = None

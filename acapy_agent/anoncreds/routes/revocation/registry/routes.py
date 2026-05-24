@@ -17,24 +17,13 @@ from uuid_utils import uuid4
 from .....admin.decorators.auth import tenant_authentication
 from .....admin.request_context import AdminRequestContext
 from .....askar.profile_anon import AskarAnonCredsProfile
-from .....indy.issuer import IndyIssuerError
-from .....indy.models.revocation import IndyRevRegDef
-from .....ledger.base import BaseLedger
-from .....ledger.error import LedgerError
-from .....ledger.multiple_ledger.base_manager import BaseMultipleLedgerManager
-from .....revocation.error import RevocationError
-from .....revocation.models.issuer_rev_reg_record import (
-    IssuerRevRegRecord,
-)
 from .....storage.error import StorageError
 from .....utils.profiles import is_not_anoncreds_profile_raise_web_exception
-from ....base import AnonCredsObjectNotFound, AnonCredsResolutionError
-from ....default.legacy_indy.registry import LegacyIndyRegistry
 from ....issuer import AnonCredsIssuer, AnonCredsIssuerError
 from ....models.issuer_cred_rev_record import (
     IssuerCredRevRecord,
 )
-from ....models.revocation import RevRegDefResultSchema
+from ....models.revocation import RevRegDef, RevRegDefResultSchema
 from ....revocation import AnonCredsRevocation, AnonCredsRevocationError
 from ....revocation.manager import RevocationManager, RevocationManagerError
 from ....routes.revocation import AnonCredsRevocationModuleResponseSchema
@@ -205,7 +194,7 @@ async def get_rev_reg(request: web.BaseRequest):
 
 async def _get_issuer_rev_reg_record(
     profile: AskarAnonCredsProfile, rev_reg_id: str
-) -> IssuerRevRegRecord:
+) -> RevRegDef:
     # fetch rev reg def from anoncreds
     try:
         revocation = AnonCredsRevocation(profile)
@@ -223,7 +212,7 @@ async def _get_issuer_rev_reg_record(
         raise web.HTTPInternalServerError(reason=str(e)) from e
 
     # transform
-    result = IssuerRevRegRecord(
+    result = RevRegDef(
         record_id=uuid4(),
         state=state,
         cred_def_id=rev_reg_def.cred_def_id,
@@ -232,7 +221,7 @@ async def _get_issuer_rev_reg_record(
         max_cred_num=rev_reg_def.value.max_cred_num,
         revoc_def_type="CL_ACCUM",
         revoc_reg_id=rev_reg_id,
-        revoc_reg_def=IndyRevRegDef(
+        revoc_reg_def=RevRegDef(
             ver="1.0",
             id_=rev_reg_id,
             revoc_def_type="CL_ACCUM",
@@ -386,51 +375,6 @@ async def get_rev_reg_issued(request: web.BaseRequest):
 
 @docs(
     tags=[REVOCATION_TAG_TITLE],
-    summary="Get details of revoked credentials from ledger",
-)
-@match_info_schema(AnonCredsRevRegIdMatchInfoSchema())
-@response_schema(CredRevRecordsResultSchemaAnonCreds(), 200, description="")
-@tenant_authentication
-async def get_rev_reg_indy_recs(request: web.BaseRequest):
-    """Request handler to get details of revoked credentials from ledger.
-
-    Args:
-        request: aiohttp request object
-
-    Returns:
-        Details of revoked credentials from ledger
-
-    """
-    context: AdminRequestContext = request["context"]
-    profile = context.profile
-
-    is_not_anoncreds_profile_raise_web_exception(profile)
-
-    rev_reg_id = request.match_info["rev_reg_id"]
-    indy_registry = LegacyIndyRegistry()
-
-    if await indy_registry.supports(rev_reg_id):
-        try:
-            rev_reg_delta, _ts = await indy_registry.get_revocation_registry_delta(
-                profile, rev_reg_id, None
-            )
-        except (AnonCredsObjectNotFound, AnonCredsResolutionError) as e:
-            raise web.HTTPInternalServerError(reason=str(e)) from e
-
-        return web.json_response(
-            {
-                "rev_reg_delta": rev_reg_delta,
-            }
-        )
-
-    raise web.HTTPInternalServerError(
-        reason="Indy registry does not support revocation registry "
-        f"identified by {rev_reg_id}"
-    )
-
-
-@docs(
-    tags=[REVOCATION_TAG_TITLE],
     summary="Fix revocation state in wallet and return number of updated entries",
 )
 @match_info_schema(AnonCredsRevRegIdMatchInfoSchema())
@@ -472,32 +416,6 @@ async def update_rev_reg_revoked_state(request: web.BaseRequest):
     except AnonCredsIssuerError as e:
         raise web.HTTPInternalServerError(reason=str(e)) from e
 
-    async with profile.session() as session:
-        genesis_transactions = context.settings.get("ledger.genesis_transactions")
-        if not genesis_transactions:
-            ledger_manager = context.injector.inject(BaseMultipleLedgerManager)
-            write_ledger = context.injector.inject(BaseLedger)
-            available_write_ledgers = await ledger_manager.get_write_ledgers()
-            LOGGER.debug("available write_ledgers = %s", available_write_ledgers)
-            LOGGER.debug("write_ledger = %s", write_ledger)
-            pool = write_ledger.pool
-            LOGGER.debug("write_ledger pool = %s", pool)
-
-            genesis_transactions = pool.genesis_txns
-
-        if not genesis_transactions:
-            raise web.HTTPInternalServerError(
-                reason="no genesis_transactions for writable ledger"
-            )
-
-        if apply_ledger_update:
-            ledger = session.inject_or(BaseLedger)
-            if not ledger:
-                reason = "No ledger available"
-                if not session.context.settings.get_value("wallet.type"):
-                    reason += ": missing wallet-type?"
-                raise web.HTTPInternalServerError(reason=reason)
-
     rev_manager = RevocationManager(profile)
     try:
         (
@@ -511,10 +429,8 @@ async def update_rev_reg_revoked_state(request: web.BaseRequest):
         )
     except (
         RevocationManagerError,
-        RevocationError,
+        AnonCredsRevocationError,
         StorageError,
-        IndyIssuerError,
-        LedgerError,
     ) as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
     except Exception as err:
@@ -617,11 +533,6 @@ async def register(app: web.Application) -> None:
             web.get(
                 "/anoncreds/revocation/registry/{rev_reg_id}/issued/details",
                 get_rev_reg_issued,
-                allow_head=False,
-            ),
-            web.get(
-                "/anoncreds/revocation/registry/{rev_reg_id}/issued/indy_recs",
-                get_rev_reg_indy_recs,
                 allow_head=False,
             ),
             web.patch(

@@ -19,13 +19,11 @@ from ....admin.decorators.auth import tenant_authentication
 from ....admin.request_context import AdminRequestContext
 from ....anoncreds.holder import AnonCredsHolderError
 from ....anoncreds.issuer import AnonCredsIssuerError
+from ....anoncreds.models.issuer_cred_rev_record import IssuerCredRevRecord
 from ....anoncreds.revocation.revocation import AnonCredsRevocationError
 from ....connections.models.conn_record import ConnRecord
 from ....core.event_bus import EventBus, EventWithMetadata
 from ....core.profile import Profile
-from ....indy.holder import IndyHolderError
-from ....indy.issuer import IndyIssuerError
-from ....ledger.error import LedgerError
 from ....messaging.decorators.attach_decorator import AttachDecorator
 from ....messaging.models.base import BaseModelError
 from ....messaging.models.openapi import OpenAPISchema
@@ -37,18 +35,10 @@ from ....messaging.valid import (
     ANONCREDS_CRED_DEF_ID_EXAMPLE,
     ANONCREDS_DID_EXAMPLE,
     ANONCREDS_SCHEMA_ID_EXAMPLE,
-    INDY_CRED_DEF_ID_EXAMPLE,
-    INDY_CRED_DEF_ID_VALIDATE,
-    INDY_DID_EXAMPLE,
-    INDY_DID_VALIDATE,
-    INDY_SCHEMA_ID_EXAMPLE,
-    INDY_SCHEMA_ID_VALIDATE,
     MAJOR_MINOR_VERSION_EXAMPLE,
-    MAJOR_MINOR_VERSION_VALIDATE,
     UUID4_EXAMPLE,
     UUID4_VALIDATE,
 )
-from ....revocation.models.issuer_cred_rev_record import IssuerCredRevRecord
 from ....storage.error import StorageError, StorageNotFoundError
 from ....utils.tracing import AdminAPIMessageTracingSchema, get_timer, trace_event
 from ....vc.ld_proofs.error import LinkedDataProofException
@@ -65,7 +55,6 @@ from .messages.cred_proposal import V20CredProposal
 from .messages.inner.cred_preview import V20CredPreview, V20CredPreviewSchema
 from .models.cred_ex_record import V20CredExRecord, V20CredExRecordSchema
 from .models.detail.anoncreds import V20CredExRecordAnonCredsSchema
-from .models.detail.indy import V20CredExRecordIndySchema
 from .models.detail.ld_proof import V20CredExRecordLDProofSchema
 
 LOGGER = logging.getLogger(__name__)
@@ -119,7 +108,6 @@ class V20CredExRecordDetailSchema(OpenAPISchema):
         metadata={"description": "Credential exchange record"},
     )
     anoncreds = fields.Nested(V20CredExRecordAnonCredsSchema, required=False)
-    indy = fields.Nested(V20CredExRecordIndySchema, required=False)
     ld_proof = fields.Nested(V20CredExRecordLDProofSchema, required=False)
     vc_di = fields.Nested(V20CredExRecordSchema, required=False)
 
@@ -187,92 +175,6 @@ class V20CredFilterAnonCredsSchema(OpenAPISchema):
     )
 
 
-class V20CredFilterIndySchema(OpenAPISchema):
-    """Indy credential filtration criteria."""
-
-    cred_def_id = fields.Str(
-        required=False,
-        validate=INDY_CRED_DEF_ID_VALIDATE,
-        metadata={
-            "description": "Credential definition identifier",
-            "example": INDY_CRED_DEF_ID_EXAMPLE,
-        },
-    )
-    schema_id = fields.Str(
-        required=False,
-        validate=INDY_SCHEMA_ID_VALIDATE,
-        metadata={
-            "description": "Schema identifier",
-            "example": INDY_SCHEMA_ID_EXAMPLE,
-        },
-    )
-    schema_issuer_did = fields.Str(
-        required=False,
-        validate=INDY_DID_VALIDATE,
-        metadata={"description": "Schema issuer DID", "example": INDY_DID_EXAMPLE},
-    )
-    schema_name = fields.Str(
-        required=False,
-        metadata={"description": "Schema name", "example": "preferences"},
-    )
-    schema_version = fields.Str(
-        required=False,
-        validate=MAJOR_MINOR_VERSION_VALIDATE,
-        metadata={
-            "description": "Schema version",
-            "example": MAJOR_MINOR_VERSION_EXAMPLE,
-        },
-    )
-    issuer_did = fields.Str(
-        required=False,
-        validate=INDY_DID_VALIDATE,
-        metadata={"description": "Credential issuer DID", "example": INDY_DID_EXAMPLE},
-    )
-
-
-class V20CredFilterVCDISchema(OpenAPISchema):
-    """VCDI credential filtration criteria."""
-
-    cred_def_id = fields.Str(
-        required=False,
-        validate=INDY_CRED_DEF_ID_VALIDATE,
-        metadata={
-            "description": "Credential definition identifier",
-            "example": INDY_CRED_DEF_ID_EXAMPLE,
-        },
-    )
-    schema_id = fields.Str(
-        required=False,
-        validate=INDY_SCHEMA_ID_VALIDATE,
-        metadata={
-            "description": "Schema identifier",
-            "example": INDY_SCHEMA_ID_EXAMPLE,
-        },
-    )
-    schema_issuer_did = fields.Str(
-        required=False,
-        validate=INDY_DID_VALIDATE,
-        metadata={"description": "Schema issuer DID", "example": INDY_DID_EXAMPLE},
-    )
-    schema_name = fields.Str(
-        required=False,
-        metadata={"description": "Schema name", "example": "preferences"},
-    )
-    schema_version = fields.Str(
-        required=False,
-        validate=MAJOR_MINOR_VERSION_VALIDATE,
-        metadata={
-            "description": "Schema version",
-            "example": MAJOR_MINOR_VERSION_EXAMPLE,
-        },
-    )
-    issuer_did = fields.Str(
-        required=False,
-        validate=INDY_DID_VALIDATE,
-        metadata={"description": "Credential issuer DID", "example": INDY_DID_EXAMPLE},
-    )
-
-
 class V20CredFilterSchema(OpenAPISchema):
     """Credential filtration criteria."""
 
@@ -281,39 +183,29 @@ class V20CredFilterSchema(OpenAPISchema):
         required=False,
         metadata={"description": "Credential filter for anoncreds"},
     )
-    indy = fields.Nested(
-        V20CredFilterIndySchema,
-        required=False,
-        metadata={"description": "Credential filter for indy"},
-    )
     ld_proof = fields.Nested(
         LDProofVCDetailSchema,
         required=False,
         metadata={"description": "Credential filter for linked data proof"},
-    )
-    vc_di = fields.Nested(
-        V20CredFilterVCDISchema,
-        required=False,
-        metadata={"description": "Credential filter for vc_di"},
     )
 
     @validates_schema
     def validate_fields(self, data, **kwargs):
         """Validate schema fields.
 
-        Data must have indy, ld_proof, vc_di, or all.
+        Data must have anoncreds, ld_proof.
 
         Args:
             data: The data to validate
             kwargs: Additional keyword arguments
 
         Raises:
-            ValidationError: if data has neither indy nor ld_proof
+            ValidationError: if data has neither anoncreds nor ld_proof
 
         """
         if not any(f.api in data for f in V20CredFormat.Format):
             raise ValidationError(
-                "V20CredFilterSchema requires indy, ld_proof, vc_di or all"
+                "V20CredFilterSchema requires anoncreds, ld_proof, or both"
             )
 
 
@@ -360,16 +252,6 @@ class V20IssueCredSchemaCore(AdminAPIMessageTracingSchema):
             "example": UUID4_EXAMPLE,
         },
     )
-
-    @validates_schema
-    def validate(self, data, **kwargs):
-        """Make sure preview is present when indy/vc_di format is present."""
-        if (
-            data.get("filter", {}).get("indy") or data.get("filter", {}).get("vc_di")
-        ) and not data.get("credential_preview"):
-            raise ValidationError(
-                "Credential preview is required if indy or vc_di filter is present"
-            )
 
 
 class V20CredFilterLDProofSchema(OpenAPISchema):
@@ -466,18 +348,6 @@ class V20CredBoundOfferRequestSchema(OpenAPISchema):
         required=False,
         metadata={"description": "Optional content for counter-proposal"},
     )
-
-    @validates_schema
-    def validate_fields(self, data, **kwargs):
-        """Validate schema fields: need both filter and counter_preview or neither."""
-        if (
-            "filter_" in data
-            and ("indy" in data["filter_"] or "ld_proof" in data["filter_"])
-        ) ^ ("counter_preview" in data):
-            raise ValidationError(
-                f"V20CredBoundOfferRequestSchema\n{data}\nrequires "
-                "both indy/ld_proof filter and counter_preview or neither"
-            )
 
 
 class V20CredOfferRequestSchema(V20IssueCredSchemaCore):
@@ -896,7 +766,6 @@ async def credential_exchange_send(request: web.BaseRequest):
 
     except (
         BaseModelError,
-        LedgerError,
         StorageError,
         V20CredManagerError,
         V20CredFormatError,
@@ -1118,7 +987,6 @@ async def credential_exchange_create_free_offer(request: web.BaseRequest):
         result = cred_ex_record.serialize()
     except (
         BaseModelError,
-        LedgerError,
         V20CredFormatError,
         V20CredManagerError,
     ) as err:
@@ -1203,8 +1071,6 @@ async def credential_exchange_send_free_offer(request: web.BaseRequest):
     except (
         BaseModelError,
         AnonCredsIssuerError,
-        IndyIssuerError,
-        LedgerError,
         StorageNotFoundError,
         V20CredFormatError,
         V20CredManagerError,
@@ -1306,8 +1172,6 @@ async def credential_exchange_send_bound_offer(request: web.BaseRequest):
     except (
         BaseModelError,
         AnonCredsIssuerError,
-        IndyIssuerError,
-        LedgerError,
         StorageError,
         V20CredFormatError,
         V20CredManagerError,
@@ -1340,10 +1204,7 @@ async def credential_exchange_send_bound_offer(request: web.BaseRequest):
 
 @docs(
     tags=["issue-credential v2.0"],
-    summary=(
-        "Send issuer a credential request not bound to an existing thread."
-        " Indy credentials cannot start at a request"
-    ),
+    summary=("Send issuer a credential request not bound to an existing thread."),
 )
 @request_schema(V20CredRequestFreeSchema())
 @response_schema(V20CredExRecordSchema(), 200, description="")
@@ -1420,8 +1281,6 @@ async def credential_exchange_send_free_request(request: web.BaseRequest):
     except (
         BaseModelError,
         AnonCredsHolderError,
-        IndyHolderError,
-        LedgerError,
         StorageError,
         V20CredManagerError,
     ) as err:
@@ -1540,8 +1399,6 @@ async def credential_exchange_send_bound_request(request: web.BaseRequest):
     except (
         BaseModelError,
         AnonCredsHolderError,
-        IndyHolderError,
-        LedgerError,
         StorageError,
         V20CredFormatError,
         V20CredManagerError,
@@ -1636,8 +1493,6 @@ async def credential_exchange_issue(request: web.BaseRequest):
         BaseModelError,
         AnonCredsIssuerError,
         AnonCredsRevocationError,
-        IndyIssuerError,
-        LedgerError,
         StorageError,
         V20CredFormatError,
         V20CredManagerError,
@@ -1724,7 +1579,6 @@ async def credential_exchange_store(request: web.BaseRequest):
 
     except (
         AnonCredsHolderError,
-        IndyHolderError,
         StorageError,
         V20CredManagerError,
     ) as err:  # treat failure to store as mangled on receipt hence protocol error

@@ -26,7 +26,7 @@ from ...utils.stats import Collector
 from ...utils.task_queue import TaskQueue
 from ...utils.testing import create_test_profile
 from ...wallet import singletons
-from ...wallet.anoncreds_upgrade import UPGRADING_RECORD_IN_PROGRESS
+from ...wallet.upgrade import UPGRADING_RECORD_IN_PROGRESS
 from .. import server as test_module
 from ..request_context import AdminRequestContext
 from ..server import AdminServer, AdminSetupError

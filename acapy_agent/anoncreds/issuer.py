@@ -20,7 +20,6 @@ from ..core.error import BaseError
 from ..core.event_bus import Event, EventBus
 from ..core.profile import Profile, ProfileSession
 from ..database_manager.db_errors import DBError
-from ..protocols.endorse_transaction.v1_0.util import is_author_role
 from .base import AnonCredsSchemaAlreadyExists, BaseAnonCredsError
 from .constants import (
     CATEGORY_CRED_DEF,
@@ -343,12 +342,11 @@ class AnonCredsIssuer:
 
         if support_revocation_option is None:
             # Support revocation not set - Default to auto-create rev reg if author role
-            is_author = is_author_role(self.profile)
             auto_create_rev_reg = self.profile.settings.get(
                 "endorser.auto_create_rev_reg", False
             )
 
-            support_revocation = bool(is_author and auto_create_rev_reg)
+            support_revocation = bool(auto_create_rev_reg)
         else:
             # If support_revocation is explicitly set, use that value
             if not isinstance(support_revocation_option, bool):
