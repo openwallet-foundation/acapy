@@ -1,0 +1,150 @@
+{
+  "realm": "acapy",
+  "displayName": "ACA-Py Demo",
+  "enabled": true,
+  "sslRequired": "none",
+  "registrationAllowed": false,
+  "loginWithEmailAllowed": false,
+  "accessTokenLifespan": 300,
+  "ssoSessionIdleTimeout": 1800,
+  "clientScopes": [
+    {
+      "name": "acapy:admin",
+      "description": "Full ACA-Py administrative access — wallet management, server config, ledger",
+      "protocol": "openid-connect",
+      "attributes": {
+        "include.in.token.scope": "true",
+        "display.on.consent.screen": "false"
+      },
+      "protocolMappers": []
+    },
+    {
+      "name": "acapy:tenant",
+      "description": "ACA-Py tenant-level access — credentials, connections, presentations",
+      "protocol": "openid-connect",
+      "attributes": {
+        "include.in.token.scope": "true",
+        "display.on.consent.screen": "false"
+      },
+      "protocolMappers": []
+    },
+    {
+      "name": "acapy:tenant:read",
+      "description": "Read-only ACA-Py tenant access",
+      "protocol": "openid-connect",
+      "attributes": {
+        "include.in.token.scope": "true",
+        "display.on.consent.screen": "false"
+      },
+      "protocolMappers": []
+    },
+    {
+      "name": "acapy:wallet:create",
+      "description": "Permission to create ACA-Py sub-wallets",
+      "protocol": "openid-connect",
+      "attributes": {
+        "include.in.token.scope": "true",
+        "display.on.consent.screen": "false"
+      },
+      "protocolMappers": []
+    }
+  ],
+  "clients": [
+    {
+      "clientId": "acapy-resource-server",
+      "name": "ACA-Py Resource Server",
+      "description": "Registered client representing the ACA-Py admin API. Bearer-only — does not issue tokens.",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "bearerOnly": true,
+      "publicClient": false,
+      "serviceAccountsEnabled": false,
+      "standardFlowEnabled": false,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false
+    },
+    {
+      "clientId": "acapy-controller",
+      "name": "ACA-Py Admin Controller",
+      "description": "Confidential service-account client for administrative access. Uses client_credentials grant.",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "bearerOnly": false,
+      "publicClient": false,
+      "serviceAccountsEnabled": true,
+      "standardFlowEnabled": false,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "controller-secret",
+      "defaultClientScopes": [
+        "acapy:admin"
+      ],
+      "optionalClientScopes": [
+        "acapy:tenant:read",
+        "acapy:wallet:create"
+      ],
+      "protocolMappers": [
+        {
+          "name": "audience-acapy",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "consentRequired": false,
+          "config": {
+            "included.client.audience": "acapy-resource-server",
+            "id.token.claim": "false",
+            "access.token.claim": "true"
+          }
+        }
+      ]
+    },
+    {
+      "clientId": "acapy-tenant-demo",
+      "name": "ACA-Py Demo Tenant",
+      "description": "Demo tenant client. The wallet_id claim is set to PLACEHOLDER by default and updated by setup-tenant.sh.",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "bearerOnly": false,
+      "publicClient": false,
+      "serviceAccountsEnabled": true,
+      "standardFlowEnabled": false,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "tenant-secret",
+      "defaultClientScopes": [
+        "acapy:tenant"
+      ],
+      "optionalClientScopes": [
+        "acapy:tenant:read"
+      ],
+      "protocolMappers": [
+        {
+          "name": "audience-acapy",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "consentRequired": false,
+          "config": {
+            "included.client.audience": "acapy-resource-server",
+            "id.token.claim": "false",
+            "access.token.claim": "true"
+          }
+        },
+        {
+          "name": "wallet-id",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-hardcoded-claim-mapper",
+          "consentRequired": false,
+          "config": {
+            "claim.name": "wallet_id",
+            "claim.value": "PLACEHOLDER_WALLET_ID",
+            "jsonType.label": "String",
+            "id.token.claim": "false",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "false"
+          }
+        }
+      ]
+    }
+  ]
+}
