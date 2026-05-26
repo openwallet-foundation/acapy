@@ -62,21 +62,21 @@ sequenceDiagram
 
     C->>RS: (3) API request<br/>Authorization: Bearer [token]
 
-    alt JWT access token
-        RS->>AS: (4a) Fetch JWKS (cached)
-        AS-->>RS: JWKS signing keys
-        Note over RS: Validate signature,<br/>expiry, iss, aud
-    else Opaque access token
-        RS->>AS: (4b) POST introspect token
-        AS-->>RS: { active, scope, sub, wallet_id, … }
+    RS->>AS: (4) Fetch JWKS (cached)
+    AS-->>RS: JWKS signing keys
+    Note over RS: (5) Validate signature,<br/>expiry, iss, aud
+
+    opt Opaque token or JWT decode fallback
+      RS->>AS: (6) POST introspect token
+      AS-->>RS: { active, scope, sub, wallet_id, … }
     end
 
-    Note over RS: (5) Check token scopes<br/>against route requirement
+    Note over RS: (7) Check token scopes<br/>against route requirement
 
-    RS-->>C: (6) API response
+    RS-->>C: (8) API response
 ```
 
-Steps 4a/4b happen on every request. JWKS keys are cached in memory by `PyJWKClient` so the round-trip to the AS only occurs when the key set changes.
+  JWT validation occurs on every request; introspection is only used for opaque tokens or when JWT decoding falls back to introspection. JWKS keys are cached in memory by `PyJWKClient` so the round-trip to the AS only occurs when the key set changes.
 
 ---
 
