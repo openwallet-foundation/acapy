@@ -66,7 +66,7 @@ sequenceDiagram
     AS-->>RS: JWKS signing keys
     Note over RS: (5) Validate signature,<br/>expiry, iss, aud
 
-    opt Opaque token or JWT decode fallback
+    opt Opaque token introspection fallback
       RS->>AS: (6) POST introspect token
       AS-->>RS: { active, scope, sub, wallet_id, … }
     end
