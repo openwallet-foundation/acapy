@@ -126,8 +126,12 @@ def tenant_authentication(handler):
 def require_scope(*required_scopes: str):
     """Require at least one of the given OAuth2 scopes on the request token.
 
-    Must be applied after tenant_authentication (or any decorator that populates
-    request["context"].metadata["scopes"]).
+    No-op when OAuth mode is not enabled (admin.oauth_enabled is not True), so
+    routes decorated with require_scope continue to work with API key / insecure
+    mode without any changes.
+
+    Must be stacked inside tenant_authentication or admin_authentication so that
+    authentication is checked before scope enforcement.
 
     Example::
 
@@ -142,6 +146,8 @@ def require_scope(*required_scopes: str):
             if request.method == "OPTIONS":
                 return await handler(request)
             context: AdminRequestContext = request["context"]
+            if not context.profile.settings.get("admin.oauth_enabled"):
+                return await handler(request)
             token_scopes: set = (context.metadata or {}).get("scopes", set())
             if not token_scopes.intersection(required_scopes):
                 raise web.HTTPForbidden(

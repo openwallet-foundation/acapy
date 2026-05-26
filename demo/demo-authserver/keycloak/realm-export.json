@@ -101,7 +101,7 @@
     {
       "clientId": "acapy-tenant-demo",
       "name": "ACA-Py Demo Tenant",
-      "description": "Demo tenant client. The wallet_id claim is set to PLACEHOLDER by default and updated by setup-tenant.sh.",
+      "description": "Demo tenant client with full write access including DID creation. The wallet_id claim is updated by setup-tenant.sh.",
       "enabled": true,
       "protocol": "openid-connect",
       "bearerOnly": false,
@@ -113,11 +113,59 @@
       "clientAuthenticatorType": "client-secret",
       "secret": "tenant-secret",
       "defaultClientScopes": [
-        "acapy:tenant"
+        "acapy:tenant",
+        "acapy:wallet:create"
       ],
       "optionalClientScopes": [
         "acapy:tenant:read"
       ],
+      "protocolMappers": [
+        {
+          "name": "audience-acapy",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "consentRequired": false,
+          "config": {
+            "included.client.audience": "acapy-resource-server",
+            "id.token.claim": "false",
+            "access.token.claim": "true"
+          }
+        },
+        {
+          "name": "wallet-id",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-hardcoded-claim-mapper",
+          "consentRequired": false,
+          "config": {
+            "claim.name": "wallet_id",
+            "claim.value": "PLACEHOLDER_WALLET_ID",
+            "jsonType.label": "String",
+            "id.token.claim": "false",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "false"
+          }
+        }
+      ]
+    }
+    ,
+    {
+      "clientId": "acapy-tenant-limited",
+      "name": "ACA-Py Limited Tenant",
+      "description": "Tenant client with acapy:tenant but WITHOUT acapy:wallet:create — used to demonstrate require_scope enforcement on /wallet/did/create.",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "bearerOnly": false,
+      "publicClient": false,
+      "serviceAccountsEnabled": true,
+      "standardFlowEnabled": false,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "limited-secret",
+      "defaultClientScopes": [
+        "acapy:tenant"
+      ],
+      "optionalClientScopes": [],
       "protocolMappers": [
         {
           "name": "audience-acapy",

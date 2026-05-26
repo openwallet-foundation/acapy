@@ -305,7 +305,8 @@ class AdminServer(BaseAdminServer):
         self.multitenant_manager = context.inject_or(BaseMultitenantManager)
 
         oauth_mode = bool(
-            context.settings.get("oauth.jwks_uri")
+            context.settings.get("admin.oauth_enabled")
+            or context.settings.get("oauth.jwks_uri")
             or context.settings.get("oauth.introspection_endpoint")
         )
         self.oauth_validator = OAuthTokenValidator(context.settings) if oauth_mode else None

@@ -28,6 +28,8 @@ TENANT_CLIENT_ID=${TENANT_CLIENT_ID:-acapy-tenant-demo}
 TENANT_CLIENT_SECRET=${TENANT_CLIENT_SECRET:-tenant-secret}
 READONLY_CLIENT_ID=${READONLY_CLIENT_ID:-acapy-tenant-readonly}
 READONLY_CLIENT_SECRET=${READONLY_CLIENT_SECRET:-readonly-secret}
+LIMITED_CLIENT_ID=${LIMITED_CLIENT_ID:-acapy-tenant-limited}
+LIMITED_CLIENT_SECRET=${LIMITED_CLIENT_SECRET:-limited-secret}
 
 TOKEN_ENDPOINT="${KEYCLOAK_URL}/realms/${KEYCLOAK_REALM}/protocol/openid-connect/token"
 REPORT_FILE="$(dirname "$0")/../oauth-scope-test-report.md"
@@ -165,6 +167,14 @@ READONLY_TOKEN=$(curl -sf -X POST "${TOKEN_ENDPOINT}" \
   | jq -r '.access_token')
 echo "    readonly token: obtained (${READONLY_CLIENT_ID})"
 
+LIMITED_TOKEN=$(curl -sf -X POST "${TOKEN_ENDPOINT}" \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d "grant_type=client_credentials" \
+  -d "client_id=${LIMITED_CLIENT_ID}" \
+  -d "client_secret=${LIMITED_CLIENT_SECRET}" \
+  | jq -r '.access_token')
+echo "    limited token:  obtained (${LIMITED_CLIENT_ID})"
+
 # Create a temporary wallet for admin write tests, then remove it
 TEST_WALLET_NAME="oauth-scope-test-$$"
 echo "    Creating temporary test wallet '${TEST_WALLET_NAME}'..."
@@ -282,6 +292,30 @@ run_test "POST /wallet/did/create — readonly token" "403" \
   "Read-only"
 run_test "GET /multitenancy/wallets — readonly token"    "403" "$(http_get "${ACAPY_URL}/multitenancy/wallets" "${READONLY_TOKEN}")" "Read-only"
 
+# ── Group 10: acapy:wallet:create scope enforcement ──────────────────────────
+# limited token has acapy:tenant but NOT acapy:wallet:create.
+# Demonstrates require_scope blocking POST /wallet/did/create even though
+# tenant_authentication passes (acapy:tenant is present).
+
+echo ""
+printf "${YELLOW}Group 10: acapy:wallet:create scope enforcement${NC}\n"
+
+run_test "GET /connections — limited token (acapy:tenant, no wallet:create)"    "200" \
+  "$(http_get "${ACAPY_URL}/connections" "${LIMITED_TOKEN}")" \
+  "wallet:create scope"
+
+run_test "POST /wallet/did/create — limited token (missing acapy:wallet:create)" "403" \
+  "$(http_post "${ACAPY_URL}/wallet/did/create" "${LIMITED_TOKEN}" '{"method":"key","options":{"key_type":"ed25519"}}')" \
+  "wallet:create scope"
+
+run_test "POST /wallet/did/create — tenant token (has acapy:wallet:create)"      "200" \
+  "$(http_post "${ACAPY_URL}/wallet/did/create" "${TENANT_TOKEN}" '{"method":"key","options":{"key_type":"ed25519"}}')" \
+  "wallet:create scope"
+
+run_test "POST /wallet/did/create — admin token (acapy:admin satisfies require_scope)" "200" \
+  "$(http_post "${ACAPY_URL}/wallet/did/create" "${ADMIN_TOKEN}" '{"method":"key","options":{"key_type":"ed25519"}}')" \
+  "wallet:create scope"
+
 # ── summary ───────────────────────────────────────────────────────────────────
 
 TOTAL=$((PASS + FAIL))
@@ -319,17 +353,17 @@ TIMESTAMP=$(date '+%Y-%m-%d %H:%M:%S')
   echo ""
   echo "## Scope Matrix"
   echo ""
-  echo "| Endpoint | No token | Invalid token | acapy:admin | acapy:tenant | acapy:tenant:read |"
-  echo "|----------|----------|---------------|-------------|--------------|-------------------|"
-  echo "| \`GET /status/ready\` | 200 | 200 | 200 | 200 | 200 |"
-  echo "| \`GET /status/config\` | 401 | 401 | 200 | 403 | 403 |"
-  echo "| \`GET /multitenancy/wallets\` | 401 | 401 | 200 | 403 | 403 |"
-  echo "| \`GET /multitenancy/wallet/{id}\` | 401 | 401 | 200 | 403 | 403 |"
-  echo "| \`GET /connections\` | 401 | 401 | 200 | 200 | 200 |"
-  echo "| \`GET /credentials\` | 401 | 401 | 200 | 200 | 200 |"
-  echo "| \`GET /wallet/did\` | 401 | 401 | 200 | 200 | 200 |"
-  echo "| \`POST /wallet/did/create\` | 401 | 401 | 200 | 200 | 403 |"
-  echo "| \`POST /multitenancy/wallet/{id}/remove\` | 401 | 401 | 200 | 403 | 403 |"
+  echo "| Endpoint | No token | Invalid token | acapy:admin | acapy:tenant + acapy:wallet:create | acapy:tenant (no wallet:create) | acapy:tenant:read |"
+  echo "|----------|----------|---------------|-------------|-------------------------------------|----------------------------------|-------------------|"
+  echo "| \`GET /status/ready\` | 200 | 200 | 200 | 200 | 200 | 200 |"
+  echo "| \`GET /status/config\` | 401 | 401 | 200 | 403 | 403 | 403 |"
+  echo "| \`GET /multitenancy/wallets\` | 401 | 401 | 200 | 403 | 403 | 403 |"
+  echo "| \`GET /multitenancy/wallet/{id}\` | 401 | 401 | 200 | 403 | 403 | 403 |"
+  echo "| \`GET /connections\` | 401 | 401 | 200 | 200 | 200 | 200 |"
+  echo "| \`GET /credentials\` | 401 | 401 | 200 | 200 | 200 | 200 |"
+  echo "| \`GET /wallet/did\` | 401 | 401 | 200 | 200 | 200 | 200 |"
+  echo "| \`POST /wallet/did/create\` | 401 | 401 | 200 | 200 | **403** | 403 |"
+  echo "| \`POST /multitenancy/wallet/{id}/remove\` | 401 | 401 | 200 | 403 | 403 | 403 |"
 } > "${REPORT_FILE}"
 
 echo ""

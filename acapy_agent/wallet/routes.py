@@ -9,7 +9,7 @@ from aiohttp import web
 from aiohttp_apispec import docs, querystring_schema, request_schema, response_schema
 from marshmallow import fields, validate
 
-from ..admin.decorators.auth import tenant_authentication
+from ..admin.decorators.auth import require_scope, tenant_authentication
 from ..admin.request_context import AdminRequestContext
 from ..config.injection_context import InjectionContext
 from ..connections.base_manager import BaseConnectionManager
@@ -560,6 +560,7 @@ async def wallet_did_list(request: web.BaseRequest):
 @request_schema(DIDCreateSchema())
 @response_schema(DIDResultSchema, 200, description="")
 @tenant_authentication
+@require_scope("acapy:wallet:create", "acapy:admin")
 async def wallet_create_did(request: web.BaseRequest):
     """Request handler for creating a new local DID in the wallet.
 
