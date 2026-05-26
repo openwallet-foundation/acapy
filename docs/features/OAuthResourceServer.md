@@ -60,7 +60,7 @@ sequenceDiagram
     C->>AS: (1) Authenticate<br/>(OIDC / PKCE / client credentials / etc.)
     AS-->>C: (2) Access token
 
-    C->>RS: (3) API request<br/>Authorization: Bearer &lt;token&gt;
+    C->>RS: (3) API request<br/>Authorization: Bearer [token]
 
     alt JWT access token
         RS->>AS: (4a) Fetch JWKS (cached)
