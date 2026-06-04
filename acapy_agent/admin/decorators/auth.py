@@ -7,6 +7,7 @@ from typing import List, Optional, Pattern
 from aiohttp import web
 
 from ...utils import general as general_utils
+from ..auth_context import get_auth_scopes, has_auth_scopes
 from ..request_context import AdminRequestContext
 
 
@@ -28,8 +29,8 @@ def admin_authentication(handler):
 
         # OAuth path: token was validated by setup_context middleware.
         # Require acapy:admin scope for admin-only routes.
-        if context.metadata and "scopes" in context.metadata:
-            if "acapy:admin" in context.metadata["scopes"]:
+        if has_auth_scopes(context):
+            if "acapy:admin" in get_auth_scopes(context):
                 return await handler(request)
             raise web.HTTPForbidden(
                 reason="acapy:admin scope required",
@@ -75,8 +76,8 @@ def tenant_authentication(handler):
         # OAuth path: token was validated by setup_context middleware.
         # acapy:tenant or acapy:admin both grant tenant-level access.
         # acapy:tenant:read grants read-only access (safe HTTP methods only).
-        if context.metadata and "scopes" in context.metadata:
-            scopes = context.metadata["scopes"]
+        if has_auth_scopes(context):
+            scopes = get_auth_scopes(context)
             if scopes & {"acapy:tenant", "acapy:admin"}:
                 return await handler(request)
             if "acapy:tenant:read" in scopes:
@@ -148,7 +149,7 @@ def require_scope(*required_scopes: str):
             context: AdminRequestContext = request["context"]
             if not context.profile.settings.get("admin.oauth_enabled"):
                 return await handler(request)
-            token_scopes: set = (context.metadata or {}).get("scopes", set())
+            token_scopes = get_auth_scopes(context)
             if not token_scopes.intersection(required_scopes):
                 raise web.HTTPForbidden(
                     reason="Insufficient scope",

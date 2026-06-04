@@ -387,7 +387,8 @@ class AdminGroup(ArgumentGroup):
                     raise ArgsParseError(
                         "Either --admin-api-key or --admin-insecure-mode "
                         "must be set but not both, unless --oauth-enabled (or "
-                        "--oauth-jwks-uri / --oauth-introspection-endpoint) is configured."
+                        "--oauth-jwks-uri / --oauth-introspection-endpoint) "
+                        "is configured."
                     )
 
             settings["admin.admin_api_key"] = admin_api_key

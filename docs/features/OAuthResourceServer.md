@@ -12,6 +12,7 @@ ACA-Py can be configured to act as an **OAuth2 Resource Server**, delegating all
   - [Environment Variables](#environment-variables)
   - [Token Validation Modes](#token-validation-modes)
 - [Multitenancy and the `wallet_id` Claim](#multitenancy-and-the-wallet_id-claim)
+- [Request Claim Storage and Compatibility](#request-claim-storage-and-compatibility)
 - [Annotating Routes with Scopes](#annotating-routes-with-scopes)
 - [Authorization Server Setup Guidance](#authorization-server-setup-guidance)
   - [Keycloak Example](#keycloak-example)
@@ -198,6 +199,54 @@ In Keycloak this is done with a **Protocol Mapper** of type *Hardcoded Claim*:
 
 ---
 
+## Request Claim Storage and Compatibility
+
+OAuth token-derived values (`scope`, `sub`, `wallet_id`) are attached to the
+request in `AdminRequestContext.metadata`.
+
+In addition, ACA-Py mirrors these values into **request-scoped settings** for
+compatibility with integrations that already read from `context.settings` /
+`context.profile.settings`.
+
+Request-scoped settings keys:
+
+| Claim | Request-scoped setting key |
+|---|---|
+| `scope` | `auth.scopes` |
+| `sub` | `auth.subject` |
+| `wallet_id` | `auth.wallet_id` |
+
+### Why both metadata and settings?
+
+- `metadata` is the canonical location for per-request auth claims.
+- Request-scoped settings provide a low-friction compatibility path for code
+  and plugins that already rely on settings access patterns.
+- This avoids storing OAuth claims in global/shared settings while still
+  reducing break risk for existing extensions.
+
+### Recommended access pattern for core and plugins
+
+Use helper functions from `acapy_agent.admin.auth_context` instead of reading
+`context.metadata` or settings directly. The helpers normalize values and
+handle both storage paths safely.
+
+```python
+from acapy_agent.admin.auth_context import (
+    get_auth_scopes,
+    get_auth_subject,
+    get_auth_wallet_id,
+    has_auth_wallet_id,
+)
+
+context = request["context"]
+scopes = get_auth_scopes(context)
+subject = get_auth_subject(context)
+wallet_id = get_auth_wallet_id(context)
+is_subwallet = has_auth_wallet_id(context)
+```
+
+---
+
 ## Annotating Routes with Scopes
 
 Use the `require_scope` decorator from `acapy_agent.admin.decorators.auth`. It must be stacked **inside** `tenant_authentication` (or `admin_authentication`) so that authentication is checked before scope enforcement.
@@ -214,13 +263,19 @@ async def credential_issue(request: web.Request) -> web.Response:
 
 A request passes if its token contains **any one** of the listed scopes. To require a scope that only admins hold, list only `"acapy:admin"`.
 
-The `scopes` set, `sub`, and `wallet_id` claims are available inside handlers via:
+For route logic, prefer the auth-context helpers:
 
 ```python
+from acapy_agent.admin.auth_context import (
+  get_auth_scopes,
+  get_auth_subject,
+  get_auth_wallet_id,
+)
+
 context = request["context"]
-scopes: set = context.metadata.get("scopes", set())
-subject: str = context.metadata.get("sub")
-wallet_id: str = context.metadata.get("wallet_id")
+scopes = get_auth_scopes(context)
+subject = get_auth_subject(context)
+wallet_id = get_auth_wallet_id(context)
 ```
 
 ---

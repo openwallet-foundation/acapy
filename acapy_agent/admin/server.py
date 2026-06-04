@@ -38,6 +38,12 @@ from ..version import __version__
 from ..wallet import singletons
 from ..wallet.anoncreds_upgrade import check_upgrade_completion_loop
 from ..wallet.models.wallet_record import WalletRecord
+from .auth_context import (
+    AUTH_SCOPES_SETTING,
+    AUTH_SUBJECT_SETTING,
+    AUTH_WALLET_ID_SETTING,
+    has_auth_wallet_id,
+)
 from .base_server import BaseAdminServer
 from .error import AdminSetupError
 from .oauth_validator import OAuthTokenValidator
@@ -219,7 +225,7 @@ async def upgrade_middleware(request: web.BaseRequest, handler: Coroutine):
             # If we get here, than another instance started an upgrade
             # We need to check for completion (or fail) in another process
             in_progress_upgrades.set_wallet(context.profile.name)
-            is_subwallet = context.metadata and "wallet_id" in context.metadata
+            is_subwallet = has_auth_wallet_id(context)
 
             # Create background task and store reference to prevent garbage collection
             task = asyncio.create_task(
@@ -309,7 +315,9 @@ class AdminServer(BaseAdminServer):
             or context.settings.get("oauth.jwks_uri")
             or context.settings.get("oauth.introspection_endpoint")
         )
-        self.oauth_validator = OAuthTokenValidator(context.settings) if oauth_mode else None
+        self.oauth_validator = (
+            OAuthTokenValidator(context.settings) if oauth_mode else None
+        )
 
     async def make_application(self) -> web.Application:
         """Get the aiohttp application instance."""
@@ -328,6 +336,7 @@ class AdminServer(BaseAdminServer):
             authorization_header = request.headers.get("Authorization")
             profile = self.root_profile
             meta_data = {}
+            request_settings = {}
 
             if self.oauth_validator and authorization_header:
                 # OAuth2 Resource Server path — token issued by external AS.
@@ -339,6 +348,9 @@ class AdminServer(BaseAdminServer):
                 claims = await self.oauth_validator.validate(token)
                 scopes = set(claims.get("scope", "").split())
                 meta_data = {"scopes": scopes, "sub": claims.get("sub")}
+                request_settings[AUTH_SCOPES_SETTING] = tuple(sorted(scopes))
+                if claims.get("sub"):
+                    request_settings[AUTH_SUBJECT_SETTING] = claims["sub"]
 
                 if self.multitenant_manager:
                     wallet_id = claims.get("wallet_id")
@@ -353,9 +365,13 @@ class AdminServer(BaseAdminServer):
                             )
                             context_wallet_id.set(wallet_id)
                             meta_data["wallet_id"] = wallet_id
+                            request_settings[AUTH_WALLET_ID_SETTING] = wallet_id
                         except StorageNotFoundError:
                             raise web.HTTPUnauthorized(
-                                reason=f"Wallet not found for wallet_id claim: {wallet_id}"
+                                reason=(
+                                    "Wallet not found for wallet_id claim: "
+                                    f"{wallet_id}"
+                                )
                             )
 
             elif self.multitenant_manager and authorization_header:
@@ -382,6 +398,7 @@ class AdminServer(BaseAdminServer):
                         "wallet_id": walletid,
                         "wallet_key": walletkey,
                     }
+                    request_settings[AUTH_WALLET_ID_SETTING] = walletid
                 except MultitenantManagerError as err:
                     raise web.HTTPUnauthorized(reason=err.roll_up)
                 except (jwt.InvalidTokenError, StorageNotFoundError):
@@ -398,11 +415,13 @@ class AdminServer(BaseAdminServer):
                 admin_context = AdminRequestContext(
                     profile=profile,
                     root_profile=self.root_profile,
+                    settings=request_settings,
                     metadata=meta_data,
                 )
             else:
                 admin_context = AdminRequestContext(
                     profile=profile,
+                    settings=request_settings,
                 )
 
             request["context"] = admin_context
@@ -597,7 +616,9 @@ class AdminServer(BaseAdminServer):
                     "type": "apiKey",
                     "in": "header",
                     "name": "Authorization",
-                    "description": "Bearer token. Be sure to prepend token with 'Bearer '",
+                    "description": (
+                        "Bearer token. Be sure to prepend token with 'Bearer '"
+                    ),
                 }
 
                 multitenant_security = {"AuthorizationHeader": []}
@@ -687,10 +708,15 @@ class AdminServer(BaseAdminServer):
                                 msg_api_key = msg_received.get("x-api-key")
                             except Exception:
                                 LOGGER.exception("Exception in websocket receiving task:")
-                            if not self.oauth_validator and self.admin_api_key and general_utils.const_compare(
-                                self.admin_api_key, msg_api_key
+                            if (
+                                not self.oauth_validator
+                                and self.admin_api_key
+                                and general_utils.const_compare(
+                                    self.admin_api_key, msg_api_key
+                                )
                             ):
-                                # authenticated via websocket message (legacy api-key mode)
+                                # authenticated via websocket message
+                                # (legacy api-key mode)
                                 queue.authenticated = True
 
                             receive = loop.create_task(ws.receive_json())

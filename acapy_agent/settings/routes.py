@@ -104,8 +104,9 @@ async def update_profile_settings(request: web.BaseRequest):
         async with root_profile.session() as session:
             multitenant_mgr = session.inject_or(BaseMultitenantManager)
             if multitenant_mgr:
-                wallet_id = context.metadata.get("wallet_id")
-                wallet_key = context.metadata.get("wallet_key")
+                _meta = getattr(context, "metadata", None) or {}
+                wallet_id = _meta.get("wallet_id")
+                wallet_key = _meta.get("wallet_key")
                 wallet_record = await multitenant_mgr.update_wallet(
                     wallet_id, extra_settings
                 )
@@ -142,8 +143,9 @@ async def get_profile_settings(request: web.BaseRequest):
         async with root_profile.session() as session:
             multitenant_mgr = session.inject_or(BaseMultitenantManager)
             if multitenant_mgr:
-                wallet_id = context.metadata.get("wallet_id")
-                wallet_key = context.metadata.get("wallet_key")
+                _meta = getattr(context, "metadata", None) or {}
+                wallet_id = _meta.get("wallet_id")
+                wallet_key = _meta.get("wallet_key")
                 wallet_record, profile = await multitenant_mgr.get_wallet_and_profile(
                     root_profile.context, wallet_id, wallet_key
                 )

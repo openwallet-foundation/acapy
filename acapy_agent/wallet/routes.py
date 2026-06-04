@@ -9,6 +9,7 @@ from aiohttp import web
 from aiohttp_apispec import docs, querystring_schema, request_schema, response_schema
 from marshmallow import fields, validate
 
+from ..admin.auth_context import has_auth_wallet_id
 from ..admin.decorators.auth import require_scope, tenant_authentication
 from ..admin.request_context import AdminRequestContext
 from ..config.injection_context import InjectionContext
@@ -1397,7 +1398,7 @@ async def upgrade_anoncreds(request: web.BaseRequest):
             UPGRADING_RECORD_IN_PROGRESS,
         )
         await storage.add_record(upgrading_record)
-        is_subwallet = context.metadata and "wallet_id" in context.metadata
+        is_subwallet = has_auth_wallet_id(context)
         # Create background task and store reference to prevent garbage collection
         task = asyncio.create_task(
             upgrade_wallet_to_anoncreds_if_requested(profile, is_subwallet)

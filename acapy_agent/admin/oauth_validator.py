@@ -54,6 +54,7 @@ class OAuthTokenValidator:
 
         Returns:
             dict: Validated token claims.
+
         """
         if self._jwks_client:
             try:
