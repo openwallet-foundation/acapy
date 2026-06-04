@@ -232,7 +232,7 @@ jobs:
       packages: write
     strategy:
       matrix:
-        python-version: ["3.12"]
+        python-version: ["3.12", "3.13"]
         image-name: ["acapy-agent", "acapy-agent-bbs"]
     
     steps:
