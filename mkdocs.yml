@@ -82,6 +82,7 @@ nav:
     - ACA-Py README: README.md
     - Release Notes: CHANGELOG.md
     - ACA-Py Long Term Support (LTS) Policy: LTS-Strategy.md
+    - ACA-Py OpenWallet Foundation Project Mapping: ACA-Py-OWF-Project-Mapping.md
 - Features:
     - Developer Introduction: features/DevReadMe.md
     - DevContainer Support: features/devcontainer.md

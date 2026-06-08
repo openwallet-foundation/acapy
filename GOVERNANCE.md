@@ -1,6 +1,6 @@
 # ACA-Py Governance
 
-The Adaptive Cloud Agent-Python (ACA-Py) project is governed by the [Technical Charter](TECHNICAL_CHARTER.md).
+The Adaptive Cloud Agent-Python (ACA-Py) project is governed by the [Technical Charter](TECHNICAL-CHARTER.pdf).
 
 Per the Linux Foundation:
 
