@@ -38,7 +38,6 @@
 - [OPM31: Adoption Strategy](#opm31-adoption-strategy)
 - [OPM32: Adopters Index](#opm32-adopters-index)
 
-
 ## OPM01: The Basics
 
 | Item | Details |
@@ -57,8 +56,6 @@
 | License | Notes |
 | :--- | :--- |
 | [Apache License 2.0](https://github.com/openwallet-foundation/acapy/blob/main/LICENSE) | This is the license for the ACA-Py core repository, consistent with OWF standard preferences. Third-party dependencies may carry their own compatible open-source licenses; the dependency checklist maintained by the OWF Project Mapping group covers these in detail. |
-
----
 
 ## OPM03: How Do You Publish Your Work?
 
