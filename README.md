@@ -53,7 +53,7 @@ a consistent and maintained version line.
 You can pull the latest LTS image for version `1.6` using the following image tag:
 
 ```bash
-ghcr.io/openwallet-foundation/acapy-agent:py3.12-1.6-lts
+FROM ghcr.io/openwallet-foundation/acapy-agent:py3.13-1.6-lts
 ```
 
 The `-lts` tags are kept up to date with the latest patch releases from the corresponding 
