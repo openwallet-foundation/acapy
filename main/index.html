@@ -3552,7 +3552,7 @@ corresponding Docker images to the GitHub Container Registry (GHCR) for each LTS
 Docker images are tagged with a stable <code>-lts</code> suffix, making it easier for developers to rely on 
 a consistent and maintained version line.</p>
 <p>You can pull the latest LTS image for version <code>1.6</code> using the following image tag:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>ghcr.io/openwallet-foundation/acapy-agent:py3.12-1.6-lts
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>FROM<span class="w"> </span>ghcr.io/openwallet-foundation/acapy-agent:py3.13-1.6-lts
 </code></pre></div>
 <p>The <code>-lts</code> tags are kept up to date with the latest patch releases from the corresponding 
 <code>*.lts</code> branches. This ensures that consumers of the LTS Docker images always receive the most recent, 
