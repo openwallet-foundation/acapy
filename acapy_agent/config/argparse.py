@@ -304,6 +304,69 @@ class AdminGroup(ArgumentGroup):
             env_var="ACAPY_ADMIN_CLIENT_MAX_REQUEST_SIZE",
             help="Maximum client request size to admin server, in megabytes: default 1",
         )
+        parser.add_argument(
+            "--oauth-enabled",
+            action="store_true",
+            env_var="ACAPY_OAUTH_ENABLED",
+            help=(
+                "Enable OAuth2 Resource Server mode. ACA-Py will accept Bearer tokens "
+                "issued by an external Authorization Server and enforce scope-based "
+                "access control. Neither --admin-api-key nor --admin-insecure-mode is "
+                "required when this flag is set. Usually combined with --oauth-jwks-uri "
+                "and/or --oauth-introspection-endpoint."
+            ),
+        )
+        parser.add_argument(
+            "--oauth-jwks-uri",
+            type=str,
+            metavar="<url>",
+            env_var="ACAPY_OAUTH_JWKS_URI",
+            help=(
+                "JWKS endpoint of the OAuth2 Authorization Server used to validate "
+                "JWT access tokens (e.g. https://as.example.com/.well-known/jwks.json). "
+                "Implicitly enables --oauth-enabled. Neither --admin-api-key nor "
+                "--admin-insecure-mode is required when this is set."
+            ),
+        )
+        parser.add_argument(
+            "--oauth-issuer",
+            type=str,
+            metavar="<issuer>",
+            env_var="ACAPY_OAUTH_ISSUER",
+            help="Expected 'iss' claim value in OAuth2 JWT access tokens.",
+        )
+        parser.add_argument(
+            "--oauth-audience",
+            type=str,
+            metavar="<audience>",
+            env_var="ACAPY_OAUTH_AUDIENCE",
+            help="Expected 'aud' claim value in OAuth2 JWT access tokens.",
+        )
+        parser.add_argument(
+            "--oauth-introspection-endpoint",
+            type=str,
+            metavar="<url>",
+            env_var="ACAPY_OAUTH_INTROSPECTION_ENDPOINT",
+            help=(
+                "RFC 7662 token introspection endpoint for validating opaque access "
+                "tokens. Used as a fallback when JWT validation via JWKS is not "
+                "possible. Requires --oauth-introspection-client-id."
+            ),
+        )
+        parser.add_argument(
+            "--oauth-introspection-client-id",
+            type=str,
+            metavar="<client-id>",
+            env_var="ACAPY_OAUTH_INTROSPECTION_CLIENT_ID",
+            help="Client ID used for HTTP Basic Auth on the introspection endpoint.",
+        )
+        parser.add_argument(
+            "--oauth-introspection-client-secret",
+            type=str,
+            metavar="<client-secret>",
+            env_var="ACAPY_OAUTH_INTROSPECTION_CLIENT_SECRET",
+            help="Client secret used for HTTP Basic Auth on the introspection endpoint.",
+        )
 
     def get_settings(self, args: Namespace):
         """Extract admin settings."""
@@ -311,17 +374,47 @@ class AdminGroup(ArgumentGroup):
         if args.admin:
             admin_api_key = args.admin_api_key
             admin_insecure_mode = args.admin_insecure_mode
+            oauth_mode = bool(
+                getattr(args, "oauth_enabled", False)
+                or getattr(args, "oauth_jwks_uri", None)
+                or getattr(args, "oauth_introspection_endpoint", None)
+            )
 
-            if (admin_api_key and admin_insecure_mode) or not (
-                admin_api_key or admin_insecure_mode
-            ):
-                raise ArgsParseError(
-                    "Either --admin-api-key or --admin-insecure-mode "
-                    "must be set but not both."
-                )
+            if not oauth_mode:
+                if (admin_api_key and admin_insecure_mode) or not (
+                    admin_api_key or admin_insecure_mode
+                ):
+                    raise ArgsParseError(
+                        "Either --admin-api-key or --admin-insecure-mode "
+                        "must be set but not both, unless --oauth-enabled (or "
+                        "--oauth-jwks-uri / --oauth-introspection-endpoint) "
+                        "is configured."
+                    )
 
             settings["admin.admin_api_key"] = admin_api_key
             settings["admin.admin_insecure_mode"] = admin_insecure_mode
+
+            if oauth_mode:
+                settings["admin.oauth_enabled"] = True
+
+            if getattr(args, "oauth_jwks_uri", None):
+                settings["oauth.jwks_uri"] = args.oauth_jwks_uri
+            if getattr(args, "oauth_issuer", None):
+                settings["oauth.issuer"] = args.oauth_issuer
+            if getattr(args, "oauth_audience", None):
+                settings["oauth.audience"] = args.oauth_audience
+            if getattr(args, "oauth_introspection_endpoint", None):
+                settings["oauth.introspection_endpoint"] = (
+                    args.oauth_introspection_endpoint
+                )
+            if getattr(args, "oauth_introspection_client_id", None):
+                settings["oauth.introspection_client_id"] = (
+                    args.oauth_introspection_client_id
+                )
+            if getattr(args, "oauth_introspection_client_secret", None):
+                settings["oauth.introspection_client_secret"] = (
+                    args.oauth_introspection_client_secret
+                )
 
             settings["admin.enabled"] = True
             settings["admin.host"] = args.admin[0]

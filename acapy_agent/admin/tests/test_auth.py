@@ -4,7 +4,7 @@ from aiohttp import web
 
 from ...tests import mock
 from ...utils.testing import create_test_profile
-from ..decorators.auth import admin_authentication, tenant_authentication
+from ..decorators.auth import admin_authentication, require_scope, tenant_authentication
 from ..request_context import AdminRequestContext
 
 
@@ -174,3 +174,59 @@ class TestTenantAuthentication(IsolatedAsyncioTestCase):
         decor_func = tenant_authentication(self.decorated_handler)
         with self.assertRaises(web.HTTPUnauthorized):
             await decor_func(self.request)
+
+
+class TestRequireScope(IsolatedAsyncioTestCase):
+    async def asyncSetUp(self) -> None:
+        self.profile = await create_test_profile()
+        self.decorated_handler = mock.CoroutineMock()
+
+    def _make_request(self, scopes=None, method="POST"):
+        metadata = {"scopes": set(scopes)} if scopes is not None else None
+        context = AdminRequestContext(profile=self.profile, metadata=metadata)
+        return mock.MagicMock(
+            __getitem__=lambda _, k: {"context": context}[k],
+            headers={},
+            method=method,
+        )
+
+    async def test_options_always_passes(self):
+        request = self._make_request(method="OPTIONS")
+        decor = require_scope("acapy:tenant")(self.decorated_handler)
+        await decor(request)
+        self.decorated_handler.assert_called_once_with(request)
+
+    async def test_non_oauth_mode_passes_without_scopes(self):
+        """require_scope is a no-op when admin.oauth_enabled is not set."""
+        request = self._make_request()  # no metadata / no scopes
+        decor = require_scope("acapy:tenant")(self.decorated_handler)
+        await decor(request)
+        self.decorated_handler.assert_called_once_with(request)
+
+    async def test_oauth_mode_passes_with_required_scope(self):
+        self.profile.settings["admin.oauth_enabled"] = True
+        request = self._make_request(scopes=["acapy:tenant"])
+        decor = require_scope("acapy:tenant", "acapy:admin")(self.decorated_handler)
+        await decor(request)
+        self.decorated_handler.assert_called_once_with(request)
+
+    async def test_oauth_mode_admin_scope_satisfies_any_requirement(self):
+        self.profile.settings["admin.oauth_enabled"] = True
+        request = self._make_request(scopes=["acapy:admin"])
+        decor = require_scope("acapy:wallet:create", "acapy:admin")(self.decorated_handler)
+        await decor(request)
+        self.decorated_handler.assert_called_once_with(request)
+
+    async def test_oauth_mode_raises_403_on_insufficient_scope(self):
+        self.profile.settings["admin.oauth_enabled"] = True
+        request = self._make_request(scopes=["acapy:tenant:read"])
+        decor = require_scope("acapy:wallet:create", "acapy:admin")(self.decorated_handler)
+        with self.assertRaises(web.HTTPForbidden):
+            await decor(request)
+
+    async def test_oauth_mode_raises_403_when_no_scopes_in_token(self):
+        self.profile.settings["admin.oauth_enabled"] = True
+        request = self._make_request(scopes=[])
+        decor = require_scope("acapy:tenant")(self.decorated_handler)
+        with self.assertRaises(web.HTTPForbidden):
+            await decor(request)
