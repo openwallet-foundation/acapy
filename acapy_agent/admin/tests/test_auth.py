@@ -213,14 +213,18 @@ class TestRequireScope(IsolatedAsyncioTestCase):
     async def test_oauth_mode_admin_scope_satisfies_any_requirement(self):
         self.profile.settings["admin.oauth_enabled"] = True
         request = self._make_request(scopes=["acapy:admin"])
-        decor = require_scope("acapy:wallet:create", "acapy:admin")(self.decorated_handler)
+        decor = require_scope("acapy:wallet:create", "acapy:admin")(
+            self.decorated_handler
+        )
         await decor(request)
         self.decorated_handler.assert_called_once_with(request)
 
     async def test_oauth_mode_raises_403_on_insufficient_scope(self):
         self.profile.settings["admin.oauth_enabled"] = True
         request = self._make_request(scopes=["acapy:tenant:read"])
-        decor = require_scope("acapy:wallet:create", "acapy:admin")(self.decorated_handler)
+        decor = require_scope("acapy:wallet:create", "acapy:admin")(
+            self.decorated_handler
+        )
         with self.assertRaises(web.HTTPForbidden):
             await decor(request)
 

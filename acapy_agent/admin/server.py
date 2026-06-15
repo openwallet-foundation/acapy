@@ -369,8 +369,7 @@ class AdminServer(BaseAdminServer):
                         except StorageNotFoundError:
                             raise web.HTTPUnauthorized(
                                 reason=(
-                                    "Wallet not found for wallet_id claim: "
-                                    f"{wallet_id}"
+                                    f"Wallet not found for wallet_id claim: {wallet_id}"
                                 )
                             )
 
