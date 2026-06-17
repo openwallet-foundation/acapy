@@ -1,0 +1,4638 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+        <link rel="prev" href="../LTS-Strategy/">
+      
+      
+        <link rel="next" href="../features/DevReadMe/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="https://raw.githubusercontent.com/hyperledger/aries-rfcs/main/collateral/favicon.ico">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.0">
+    
+    
+      
+        <title>ACA-Py OpenWallet Foundation Project Mapping - ACA-Py Docs</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.618322db.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#owf-project-mapping-aca-py" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      <div data-md-color-scheme="default" data-md-component="outdated" hidden>
+        
+      </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="ACA-Py Docs" class="md-header__button md-logo" aria-label="ACA-Py Docs" data-md-component="logo">
+      
+  <img src="https://raw.githubusercontent.com/hyperledger/aries-rfcs/main/collateral/Hyperledger_Aries_Logo_White.png" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            ACA-Py Docs
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              ACA-Py OpenWallet Foundation Project Mapping
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/openwallet-foundation/acapy" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    openwallet-foundation/acapy
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href=".." class="md-tabs__link">
+          
+  
+  
+  Welcome!
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../features/DevReadMe/" class="md-tabs__link">
+          
+  
+  
+  Features
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../demo/ACA-Py-Workshop/" class="md-tabs__link">
+          
+  
+  
+  Demos
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../gettingStarted/" class="md-tabs__link">
+          
+  
+  
+  Getting Started
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../deploying/deploymentModel/" class="md-tabs__link">
+          
+  
+  
+  Deploying
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../testing/UnitTests/" class="md-tabs__link">
+          
+  
+  
+  Testing/Troubleshooting
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../CONTRIBUTING/" class="md-tabs__link">
+          
+  
+  
+  Contributing
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="ACA-Py Docs" class="md-nav__button md-logo" aria-label="ACA-Py Docs" data-md-component="logo">
+      
+  <img src="https://raw.githubusercontent.com/hyperledger/aries-rfcs/main/collateral/Hyperledger_Aries_Logo_White.png" alt="logo">
+
+    </a>
+    ACA-Py Docs
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/openwallet-foundation/acapy" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    openwallet-foundation/acapy
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_1" id="__nav_1_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Welcome!
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_1_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_1">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Welcome!
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ACA-Py README
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../CHANGELOG/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Release Notes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../LTS-Strategy/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ACA-Py Long Term Support (LTS) Policy
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ACA-Py OpenWallet Foundation Project Mapping
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ACA-Py OpenWallet Foundation Project Mapping
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#opm01-the-basics" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        OPM01: The Basics
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#opm02-what-license-does-your-project-use" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        OPM02: What License Does Your Project Use?
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#opm03-how-do-you-publish-your-work" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        OPM03: How Do You Publish Your Work?
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#opm04-visualisation-map" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        OPM04: Visualisation Map
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#opm06-dependency-checklist" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        OPM06: Dependency Checklist
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#opm07-use-cases" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        OPM07: Use Cases
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#opm08-ecosystems" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        OPM08: Ecosystems
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#opm09-project-roadmap" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        OPM09: Project Roadmap
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#opm10-how-do-i-build-aca-py-on-linux" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        OPM10: How Do I Build ACA-Py on Linux?
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#opm11-how-do-i-build-aca-py-on-macos" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        OPM11: How Do I Build ACA-Py on macOS?
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#opm12-how-do-i-build-aca-py-for-ios" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        OPM12: How Do I Build ACA-Py for iOS?
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#opm13-how-do-i-build-aca-py-for-android" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        OPM13: How Do I Build ACA-Py for Android?
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#opm14-how-do-i-build-aca-py-on-windows" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        OPM14: How Do I Build ACA-Py on Windows?
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#opm15-how-do-i-run-aca-py" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        OPM15: How Do I Run ACA-Py?
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#opm16-component-resource-demand" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        OPM16: Component Resource Demand
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#opm17-project-interoperability" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        OPM17: Project Interoperability
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="OPM17: Project Interoperability">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#owf-projects" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        OWF Projects
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#other-projects-and-standards-bodies" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Other Projects and Standards Bodies
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#opm18-what-is-missing-or-out-of-date" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        OPM18: What Is Missing or Out-of-Date?
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#opm19-standards" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        OPM19: Standards
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#opm20-testing-strategy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        OPM20: Testing Strategy
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#opm21-threat-modelling-and-incident-handling" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        OPM21: Threat Modelling and Incident Handling
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#opm22-security-track-record" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        OPM22: Security Track Record
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#opm23-version-control" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        OPM23: Version Control
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#opm24-release-management-and-support" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        OPM24: Release Management and Support
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#opm25-experience-layer" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        OPM25: Experience Layer
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#opm26-gaps-to-fill" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        OPM26: Gaps to Fill
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#opm27-documentation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        OPM27: Documentation
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#opm28-issues-on-github-good-first-tickets" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        OPM28: Issues on GitHub / Good First Tickets
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#opm29-adoption-support" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        OPM29: Adoption Support
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#opm30-contributor-guide" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        OPM30: Contributor Guide
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#opm31-adoption-strategy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        OPM31: Adoption Strategy
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#opm32-adopters-index" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        OPM32: Adopters Index
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Features
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Features
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../features/DevReadMe/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Developer Introduction
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../features/devcontainer/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DevContainer Support
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../features/SupportedRFCs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Supported Aries Interop Profiles and RFCs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../features/AdminAPI/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    The Admin API
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../features/KanonStorage/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Kanon Storage
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../features/PlugIns/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ACA-Py Plugins
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../features/Multitenancy/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Multitenant ACA-Py
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../features/QualifiedDIDs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Qualified DIDs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../features/DIDMethods/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DID Methods
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../features/DIDResolution/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DID Resolution
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../features/ReuseConnection/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reusing DIDComm Connections Between Agents
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../features/AnonCredsMethods/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Publishing AnonCreds Objects To Other Ledgers/Verifiable Data Registries
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../features/Multiledger/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Configuring Multiple Indy Ledgers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../features/Endorser/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automatically Endorsing Indy Transactions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../features/JsonLdCredentials/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Using W3C JSON-LD Signed Credentials
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../features/W3cCredentials/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Issuing and Presenting W3C Data Integrity VCs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../features/SelectiveDisclosureJWTs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Using SD-JWTs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../features/AnonCredsProofValidation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    AnonCreds Presentation Validation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../features/AnonCredsRevocationAutoRecovery/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    AnonCreds Revocation Auto Recovery
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../features/Multicredentials/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Multiple Credential Types
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../features/UsingOpenAPI/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Code Generation with the Open API
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../features/Mediation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ACA-Py as a DIDComm Mediator
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Demos
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Demos
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../demo/ACA-Py-Workshop/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ACA-Py / AnonCreds Workshop
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../demo/WebVH-Workshop/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ACA-Py / AnonCreds / did:webvh Workshop
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../demo/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    The Alice-Faber Demo
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../demo/OpenAPIDemo/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Open API Tutorial
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../demo/AliceGetsAPhone/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Alice Gets a Phone
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../demo/Endorser/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Hyperledger Indy Endorser In Action
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../demo/AliceWantsAJsonCredential/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Using W3C JSON-LD Credentials
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../demo/AcmeDemoWorkshop/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DIY -- ACME Controller Workshop
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../demo/PostmanDemo/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ACA-Py Using Postman Demo
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../demo/ReusingAConnection/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reusing a Connection Between Agents
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Getting Started
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../gettingStarted/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Becoming an ACA-Py Developer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../gettingStarted/IndyBasics/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Hyperledger Indy Basics
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../gettingStarted/ACA-PyBasics/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ACA-Py Basics
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../gettingStarted/DecentralizedIdentityDemos/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Decentralized Identity Demos
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../gettingStarted/ACA-PyBigPicture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ACA-Py - The Big Picture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../gettingStarted/ACA-PyAgentArchitecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ACA-Py Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../gettingStarted/DIDCommMessaging/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ACA-Py Messaging
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../gettingStarted/ACA-PyDeveloperDemos/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ACA-Py Developer Demos
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../gettingStarted/AgentConnections/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Agent Connections
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../gettingStarted/IssuingAnonCredsCredentials/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Issuing AnonCreds Credentials
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../gettingStarted/PresentingAnonCredsProofs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Presenting AnonCreds Proofs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../gettingStarted/YourOwnACA-PyAgent/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Making Your Own ACA-Py Agent
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../gettingStarted/IndyACA-PyDevOptions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ACA-Py Developer Options
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../gettingStarted/DIDcommMsgs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DIDComm Messaging
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../gettingStarted/RoutingEncryption/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DIDComm Message Routing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../gettingStarted/DIDCommRoutingExample/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    DIDComm Message Routing Example
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../gettingStarted/ConnectIndyNetwork/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    TODO Connecting to an Indy Network
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../gettingStarted/CredentialRevocation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    AnonCreds Credential Revocation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Deploying
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Deploying
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../deploying/deploymentModel/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Deployment Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../deploying/UpgradingACA-Py/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Upgrading ACA-Py
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../deploying/upgradingToAipv2/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Upgrading ACA-Py from AIPv1 to AIPv2
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../deploying/BBSSignatures/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Enabling BBS Signatures support
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../deploying/IndySDKtoAskarMigration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Indy SDK to Askar Migration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../deploying/AnonCredsControllerMigration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Controller Migration to use the askar-anoncreds Wallet Type
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../deploying/Poetry/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    The Use of Poetry in ACA-Py
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../deploying/ContainerImagesAndGithubActions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ACA-Py Container Images
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../deploying/Databases/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Databases
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../deploying/RedisPlugins/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Persistent Queues and Caching
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../deploying/AnonCredsWalletType/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    The askar-anoncreds Wallet Type
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../deploying/IndyToWebVHMigration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Migrating AnonCreds Issuance from Indy to did:webvh
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Testing/Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Testing/Troubleshooting
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../testing/UnitTests/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Running and Creating Unit Tests
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../testing/IntegrationTests/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Integration Tests
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../testing/Logging/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Managing Logging
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../testing/BDDTests/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ACA-Py Integration BDD Tests
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../testing/AgentTracing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Protocol Tracing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../testing/Troubleshooting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Contributing
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Contributing
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../CONTRIBUTING/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    How to Contribute
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../MAINTAINERS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Maintainers
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../GOVERNANCE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Governance
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../CODE_OF_CONDUCT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Code of Conduct
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../SECURITY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security Vulnerability Reporting
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../PUBLISHING/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Publishing an ACA-Py Release
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../Managing-ACA-Py-Doc-Site/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Managing the ACA-Py Documentation Site
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../UpdateRTD/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Updating the ACA-Py ReadTheDocs Site
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#opm01-the-basics" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        OPM01: The Basics
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#opm02-what-license-does-your-project-use" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        OPM02: What License Does Your Project Use?
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#opm03-how-do-you-publish-your-work" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        OPM03: How Do You Publish Your Work?
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#opm04-visualisation-map" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        OPM04: Visualisation Map
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#opm06-dependency-checklist" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        OPM06: Dependency Checklist
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#opm07-use-cases" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        OPM07: Use Cases
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#opm08-ecosystems" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        OPM08: Ecosystems
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#opm09-project-roadmap" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        OPM09: Project Roadmap
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#opm10-how-do-i-build-aca-py-on-linux" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        OPM10: How Do I Build ACA-Py on Linux?
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#opm11-how-do-i-build-aca-py-on-macos" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        OPM11: How Do I Build ACA-Py on macOS?
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#opm12-how-do-i-build-aca-py-for-ios" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        OPM12: How Do I Build ACA-Py for iOS?
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#opm13-how-do-i-build-aca-py-for-android" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        OPM13: How Do I Build ACA-Py for Android?
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#opm14-how-do-i-build-aca-py-on-windows" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        OPM14: How Do I Build ACA-Py on Windows?
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#opm15-how-do-i-run-aca-py" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        OPM15: How Do I Run ACA-Py?
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#opm16-component-resource-demand" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        OPM16: Component Resource Demand
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#opm17-project-interoperability" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        OPM17: Project Interoperability
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="OPM17: Project Interoperability">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#owf-projects" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        OWF Projects
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#other-projects-and-standards-bodies" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Other Projects and Standards Bodies
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#opm18-what-is-missing-or-out-of-date" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        OPM18: What Is Missing or Out-of-Date?
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#opm19-standards" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        OPM19: Standards
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#opm20-testing-strategy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        OPM20: Testing Strategy
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#opm21-threat-modelling-and-incident-handling" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        OPM21: Threat Modelling and Incident Handling
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#opm22-security-track-record" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        OPM22: Security Track Record
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#opm23-version-control" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        OPM23: Version Control
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#opm24-release-management-and-support" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        OPM24: Release Management and Support
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#opm25-experience-layer" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        OPM25: Experience Layer
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#opm26-gaps-to-fill" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        OPM26: Gaps to Fill
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#opm27-documentation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        OPM27: Documentation
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#opm28-issues-on-github-good-first-tickets" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        OPM28: Issues on GitHub / Good First Tickets
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#opm29-adoption-support" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        OPM29: Adoption Support
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#opm30-contributor-guide" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        OPM30: Contributor Guide
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#opm31-adoption-strategy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        OPM31: Adoption Strategy
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#opm32-adopters-index" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        OPM32: Adopters Index
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="owf-project-mapping-aca-py">OWF Project Mapping: ACA-Py<!-- omit in toc --><a class="headerlink" href="#owf-project-mapping-aca-py" title="Permanent link">&para;</a></h1>
+<blockquote>
+<p><strong>Note to reviewers:</strong> This document follows the <a href="https://github.com/openwallet-foundation/architecture-sig/blob/main/./papers/architecture-whitepaper.md#openwallet-foundation-project-maps">OpenWallet Foundation Project Mapping</a> (OPM) template. Where information already exists in the ACA-Py repository or documentation site, this document provides a short summary and links rather than duplicating content. The authoritative source is always the linked document.</p>
+</blockquote>
+<ul>
+<li><a href="#opm01-the-basics">OPM01: The Basics</a></li>
+<li><a href="#opm02-what-license-does-your-project-use">OPM02: What License Does Your Project Use?</a></li>
+<li><a href="#opm03-how-do-you-publish-your-work">OPM03: How Do You Publish Your Work?</a></li>
+<li><a href="#opm04-visualisation-map">OPM04: Visualisation Map</a></li>
+<li><a href="#opm06-dependency-checklist">OPM06: Dependency Checklist</a></li>
+<li><a href="#opm07-use-cases">OPM07: Use Cases</a></li>
+<li><a href="#opm08-ecosystems">OPM08: Ecosystems</a></li>
+<li><a href="#opm09-project-roadmap">OPM09: Project Roadmap</a></li>
+<li><a href="#opm10-how-do-i-build-aca-py-on-linux">OPM10: How Do I Build ACA-Py on Linux?</a></li>
+<li><a href="#opm11-how-do-i-build-aca-py-on-macos">OPM11: How Do I Build ACA-Py on macOS?</a></li>
+<li><a href="#opm12-how-do-i-build-aca-py-for-ios">OPM12: How Do I Build ACA-Py for iOS?</a></li>
+<li><a href="#opm13-how-do-i-build-aca-py-for-android">OPM13: How Do I Build ACA-Py for Android?</a></li>
+<li><a href="#opm14-how-do-i-build-aca-py-on-windows">OPM14: How Do I Build ACA-Py on Windows?</a></li>
+<li><a href="#opm15-how-do-i-run-aca-py">OPM15: How Do I Run ACA-Py?</a></li>
+<li><a href="#opm16-component-resource-demand">OPM16: Component Resource Demand</a></li>
+<li><a href="#opm17-project-interoperability">OPM17: Project Interoperability</a></li>
+<li><a href="#owf-projects">OWF Projects</a></li>
+<li><a href="#other-projects-and-standards-bodies">Other Projects and Standards Bodies</a></li>
+<li><a href="#opm18-what-is-missing-or-out-of-date">OPM18: What Is Missing or Out-of-Date?</a></li>
+<li><a href="#opm19-standards">OPM19: Standards</a></li>
+<li><a href="#opm20-testing-strategy">OPM20: Testing Strategy</a></li>
+<li><a href="#opm21-threat-modelling-and-incident-handling">OPM21: Threat Modelling and Incident Handling</a></li>
+<li><a href="#opm22-security-track-record">OPM22: Security Track Record</a></li>
+<li><a href="#opm23-version-control">OPM23: Version Control</a></li>
+<li><a href="#opm24-release-management-and-support">OPM24: Release Management and Support</a></li>
+<li><a href="#opm25-experience-layer">OPM25: Experience Layer</a></li>
+<li><a href="#opm26-gaps-to-fill">OPM26: Gaps to Fill</a></li>
+<li><a href="#opm27-documentation">OPM27: Documentation</a></li>
+<li><a href="#opm28-issues-on-github--good-first-tickets">OPM28: Issues on GitHub / Good First Tickets</a></li>
+<li><a href="#opm29-adoption-support">OPM29: Adoption Support</a></li>
+<li><a href="#opm30-contributor-guide">OPM30: Contributor Guide</a></li>
+<li><a href="#opm31-adoption-strategy">OPM31: Adoption Strategy</a></li>
+<li><a href="#opm32-adopters-index">OPM32: Adopters Index</a></li>
+</ul>
+<h2 id="opm01-the-basics">OPM01: The Basics<a class="headerlink" href="#opm01-the-basics" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Item</th>
+<th style="text-align: left;">Details</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><strong>What is your project?</strong></td>
+<td style="text-align: left;">ACA-Py (Adaptive Cloud Agent – Python) is a production-ready, open-source framework for building non-mobile decentralized trust services — verifiable credential issuers, holders, and verifiers — using any language capable of sending and receiving HTTP requests. It is maintained at the OpenWallet Foundation. See the <a href="https://github.com/openwallet-foundation/acapy/blob/main/README.md">README</a> for a full description.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>GitHub location</strong></td>
+<td style="text-align: left;"><a href="https://github.com/openwallet-foundation/acapy">https://github.com/openwallet-foundation/acapy</a></td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Documentation Site</strong></td>
+<td style="text-align: left;"><a href="https://aca-py.org">https://aca-py.org</a></td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Current version</strong></td>
+<td style="text-align: left;">1.6.0 (latest release). Active LTS branches: <code>1.6</code> and <code>1.3</code>. See <a href="https://github.com/openwallet-foundation/acapy/releases">GitHub Releases</a> for release notes.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Where did the project originate?</strong></td>
+<td style="text-align: left;">ACA-Py began as <em>Aries Cloud Agent – Python</em>, initiated by the Government of British Columbia's Digital Trust Team, circa 2017. An initial version was developed and iterated on for approximately 18 months, after which the codebase was restarted from scratch to produce the clean, plugin-friendly architecture that forms the current core. The project was originally hosted under the Hyperledger organization (as <code>hyperledger/aries-cloudagent-python</code>). In 2024 it moved to the <a href="https://www.openwallet.foundation/">OpenWallet Foundation</a> (OWF) as <code>openwallet-foundation/acapy</code>, with release 1.1.0 being the first release from OWF. The move is documented in the <a href="https://github.com/openwallet-foundation/acapy/blob/main/CHANGELOG.md">CHANGELOG</a>.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>How old is the project?</strong></td>
+<td style="text-align: left;">The project has been in active development since approximately 2019. It joined the OpenWallet Foundation in 2024.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="opm02-what-license-does-your-project-use">OPM02: What License Does Your Project Use?<a class="headerlink" href="#opm02-what-license-does-your-project-use" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">License</th>
+<th style="text-align: left;">Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><a href="https://github.com/openwallet-foundation/acapy/blob/main/LICENSE">Apache License 2.0</a></td>
+<td style="text-align: left;">This is the license for the ACA-Py core repository, consistent with OWF standard preferences. Third-party dependencies may carry their own compatible open-source licenses; the dependency checklist maintained by the OWF Project Mapping group covers these in detail.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="opm03-how-do-you-publish-your-work">OPM03: How Do You Publish Your Work?<a class="headerlink" href="#opm03-how-do-you-publish-your-work" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Location</th>
+<th style="text-align: left;">What is published there</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><a href="https://github.com/openwallet-foundation/acapy">GitHub – openwallet-foundation/acapy</a></td>
+<td style="text-align: left;">Source code, releases, issues, discussions, and all in-repo documentation. Published under the OWF organization.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="https://pypi.org/project/acapy-agent/">PyPI – acapy-agent</a></td>
+<td style="text-align: left;">Python package releases. Published under the OWF organization.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="https://github.com/openwallet-foundation/acapy/pkgs/container/acapy-agent">GitHub Container Registry</a></td>
+<td style="text-align: left;">Docker images, including LTS-tagged images (<code>py3.12-1.3-lts</code>, <code>py3.12-1.6-lts</code>). Published under the OWF organization.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="https://aca-py.org">aca-py.org</a></td>
+<td style="text-align: left;">Organised documentation site aggregating all markdown docs from the repo. Published as OWF.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="https://discord.gg/openwalletfoundation">OWF Discord – #aca-py channel</a></td>
+<td style="text-align: left;">Community support and announcements.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="https://github.com/openwallet-foundation/acapy-plugins">GitHub – openwallet-foundation/acapy-plugins</a></td>
+<td style="text-align: left;">Maintained plugin repository with companion documentation at <a href="https://plugins.aca-py.org">plugins.aca-py.org</a>. Published as OWF.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="opm04-visualisation-map">OPM04: Visualisation Map<a class="headerlink" href="#opm04-visualisation-map" title="Permanent link">&para;</a></h2>
+<p><em>Managed by the OWF Project Mapping group. No action required from the project at this time.</em></p>
+<h2 id="opm06-dependency-checklist">OPM06: Dependency Checklist<a class="headerlink" href="#opm06-dependency-checklist" title="Permanent link">&para;</a></h2>
+<p><em>Managed by the OWF Project Mapping group. Maintainers should notify the group when a major release is made so the dependency check can be refreshed.</em></p>
+<h2 id="opm07-use-cases">OPM07: Use Cases<a class="headerlink" href="#opm07-use-cases" title="Permanent link">&para;</a></h2>
+<p>ACA-Py is a general-purpose agent framework and can be used in a wide-variety of
+domains. The following verticals represent some of the areas where ACA-Py has
+been deployed or is being actively used:</p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Use Case</th>
+<th style="text-align: left;">Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">Government credentials</td>
+<td style="text-align: left;">Digital identity documents, licences, permits, and benefit entitlements issued by government agencies as verifiable credentials.</td>
+</tr>
+<tr>
+<td style="text-align: left;">Education credentials</td>
+<td style="text-align: left;">Academic transcripts, diplomas, and professional certifications issued by educational institutions.</td>
+</tr>
+<tr>
+<td style="text-align: left;">Supply chain</td>
+<td style="text-align: left;">Provenance and compliance attestations for goods and materials moving through supply chains.</td>
+</tr>
+<tr>
+<td style="text-align: left;">Healthcare</td>
+<td style="text-align: left;">Patient credentials, professional licences, and vaccination records as privacy-preserving verifiable credentials.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="opm08-ecosystems">OPM08: Ecosystems<a class="headerlink" href="#opm08-ecosystems" title="Permanent link">&para;</a></h2>
+<p>ACA-Py has been deployed across a range of jurisdictions and ecosystems. A formal <code>ADOPTERS.md</code> is in progress (see OPM32). Known deployment contexts include Canada, the European Union, the US, South Africa, and various international digital identity initiatives, but a curated, permission-cleared list is not yet available.</p>
+<h2 id="opm09-project-roadmap">OPM09: Project Roadmap<a class="headerlink" href="#opm09-project-roadmap" title="Permanent link">&para;</a></h2>
+<p><strong>History</strong></p>
+<p>See OPM01 for the full project history. In brief: ACA-Py originated as <em>Aries Cloud Agent – Python</em> at the Government of British Columbia, went through an early prototype phase (~18 months), was restarted on the architecture that exists today, evolved for several years under Hyperledger, and moved to the OpenWallet Foundation in 2024.</p>
+<p><strong>Current direction</strong></p>
+<p>There is not a formal published roadmap document at this time. Current priorities are:</p>
+<ul>
+<li><strong>Reducing Indy coupling</strong> — pushing Hyperledger Indy-specific functionality out of the core and into a plugin, on equal footing with other verifiable data registry integrations. This makes ACA-Py a more general-purpose framework rather than an Indy-centric one.</li>
+<li><strong>Extensibility</strong> — continued investment in making it straightforward to adopt new technology stacks and credential formats via the plugin architecture.</li>
+</ul>
+<p><strong>Longer term</strong></p>
+<p>Ongoing alignment with emerging standards (see OPM19) and continued expansion of the plugin ecosystem to support new credential formats and exchange protocols.</p>
+<h2 id="opm10-how-do-i-build-aca-py-on-linux">OPM10: How Do I Build ACA-Py on Linux?<a class="headerlink" href="#opm10-how-do-i-build-aca-py-on-linux" title="Permanent link">&para;</a></h2>
+<p>See the <a href="https://github.com/openwallet-foundation/acapy/blob/main/./features/DevReadMe.md">Developer README</a> and the <a href="https://github.com/openwallet-foundation/acapy/blob/main/./gettingStarted/README.md">Getting Started Guide</a> on <a href="https://aca-py.org">aca-py.org</a> for full build and installation instructions on Linux, including prerequisites (Python 3.12, pip, optional Docker). The recommended approach for most developers is to use Docker, which abstracts away platform-specific differences and provides a consistent environment. For those who prefer to build from source, the Developer README includes detailed instructions for setting up a Python virtual environment and installing dependencies. AFAWK, most production deployments are also on container orchestrated Linux environments for horizontal scaling, so Docker is also the most common path to production.</p>
+<h2 id="opm11-how-do-i-build-aca-py-on-macos">OPM11: How Do I Build ACA-Py on macOS?<a class="headerlink" href="#opm11-how-do-i-build-aca-py-on-macos" title="Permanent link">&para;</a></h2>
+<p>The same instructions as Linux apply. See the <a href="https://github.com/openwallet-foundation/acapy/blob/main/./features/DevReadMe.md">Developer README</a> and <a href="https://github.com/openwallet-foundation/acapy/blob/main/./gettingStarted/README.md">Getting Started Guide</a>. macOS users should be aware of platform-specific differences in Python environment management (e.g. using <code>brew</code> or <code>pyenv</code>).</p>
+<h2 id="opm12-how-do-i-build-aca-py-for-ios">OPM12: How Do I Build ACA-Py for iOS?<a class="headerlink" href="#opm12-how-do-i-build-aca-py-for-ios" title="Permanent link">&para;</a></h2>
+<p>Not Applicable: ACA-Py is a server-side (non-mobile) framework and is not intended for deployment on iOS. Mobile wallet implementations that communicate with ACA-Py agents typically use purpose-built mobile frameworks (e.g. <a href="https://github.com/openwallet-foundation/credo-ts">Credo-TS</a> or <a href="https://github.com/openwallet-foundation/bifold-wallet">Bifold Wallet</a>).</p>
+<h2 id="opm13-how-do-i-build-aca-py-for-android">OPM13: How Do I Build ACA-Py for Android?<a class="headerlink" href="#opm13-how-do-i-build-aca-py-for-android" title="Permanent link">&para;</a></h2>
+<p>Not Applicable: ACA-Py is a server-side (non-mobile) framework and is not intended for deployment on Android. See OPM12 for notes on mobile wallet frameworks that can interact with ACA-Py.</p>
+<h2 id="opm14-how-do-i-build-aca-py-on-windows">OPM14: How Do I Build ACA-Py on Windows?<a class="headerlink" href="#opm14-how-do-i-build-aca-py-on-windows" title="Permanent link">&para;</a></h2>
+<p>The <a href="https://github.com/openwallet-foundation/acapy/blob/main/./features/DevReadMe.md">Developer README</a> covers Windows. The recommended approach for Windows users is to use Docker or WSL2 (Windows Subsystem for Linux), as the primary development platform, and the production target is typically Linux.</p>
+<h2 id="opm15-how-do-i-run-aca-py">OPM15: How Do I Run ACA-Py?<a class="headerlink" href="#opm15-how-do-i-run-aca-py" title="Permanent link">&para;</a></h2>
+<p>ACA-Py can be run as a Python package (<code>pip install acapy-agent</code>) or via Docker. Published Docker images are available on the <a href="https://github.com/openwallet-foundation/acapy/pkgs/container/acapy-agent">GitHub Container Registry</a>, including LTS-tagged images. Configuration options are plentiful (set by environment variables or command-line arguments) and are documented in the <a href="https://github.com/openwallet-foundation/acapy/blob/main/./features/DevReadMe.md">Developer README</a>. Further, a given environment is likely to use several ACA-Py plugins, each with their own configuration options — these are documented in the <a href="https://github.com/openwallet-foundation/acapy-plugins">acapy-plugins</a> repository.</p>
+<p>Full runtime documentation — configuration options, startup arguments, multi-tenant operation, and more — is available at <a href="https://aca-py.org">aca-py.org</a> and in the <a href="https://github.com/openwallet-foundation/acapy/blob/main/./features/DevReadMe.md">Developer README</a>.</p>
+<p>ACA-Py has been deployed on hardware ranging from Raspberry Pi devices to large-scale data-centre servers.</p>
+<h2 id="opm16-component-resource-demand">OPM16: Component Resource Demand<a class="headerlink" href="#opm16-component-resource-demand" title="Permanent link">&para;</a></h2>
+<p>No formal benchmarks or sizing guidelines have been published at this time. ACA-Py has demonstrated a wide deployment range — from low-power single-board computers (e.g. Raspberry Pi) to horizontally-scaled cloud deployments. Detailed benchmarking is identified as a future area of work.</p>
+<h2 id="opm17-project-interoperability">OPM17: Project Interoperability<a class="headerlink" href="#opm17-project-interoperability" title="Permanent link">&para;</a></h2>
+<h3 id="owf-projects">OWF Projects<a class="headerlink" href="#owf-projects" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Project</th>
+<th style="text-align: left;">How ACA-Py interacts</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><a href="https://github.com/openwallet-foundation/acapy-plugins">acapy-plugins</a></td>
+<td style="text-align: left;">The official OWF-maintained plugin repository. Plugins extend ACA-Py with additional credential formats, protocols, and integrations. See <a href="https://plugins.aca-py.org">plugins.aca-py.org</a>.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="https://github.com/openwallet-foundation/acapy-vc-authn-oidc">acapy-vc-authn-oidc</a></td>
+<td style="text-align: left;">An OWF project that acts as an OpenID Connect identity provider backed by ACA-Py. It allows existing OIDC-compatible applications to authenticate users via verifiable credential presentation — without those applications needing to implement VC interactions directly. The OP acts as the ACA-Py verifier, requests a credential presentation (via QR code or deep-link to a mobile identity wallet), and maps the result back to a standard OIDC ID token returned to the relying party.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="https://github.com/openwallet-foundation/askar">askar</a></td>
+<td style="text-align: left;">ACA-Py's default secure storage and key management backend. Askar provides encrypted-at-rest storage (backed by SQLite or PostgreSQL) and cryptographic key management. It is a Rust implementation with a Python wrapper used directly by ACA-Py, and supersedes the legacy Indy SDK wallet. Migration tooling for upgrading from Indy SDK storage to Askar is available in acapy-tools.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="https://github.com/openwallet-foundation/credo-ts">Credo-TS</a></td>
+<td style="text-align: left;">A TypeScript agent framework. ACA-Py and Credo-TS agents are interoperable where both implement the same credential formats (W3C VCDM, SD-JWTs, AnonCreds, mDL/mDocs) and exchange protocols (DIDComm, OpenID4VCs, mDL).</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="https://github.com/openwallet-foundation/bifold-wallet">Bifold Wallet</a></td>
+<td style="text-align: left;">A mobile wallet built on Credo-TS that communicates with ACA-Py agents using DIDComm and standard credential protocols.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="other-projects-and-standards-bodies">Other Projects and Standards Bodies<a class="headerlink" href="#other-projects-and-standards-bodies" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Project / Standard</th>
+<th style="text-align: left;">How ACA-Py interacts</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><a href="https://www.w3.org/TR/vc-data-model-2.0/">W3C Verifiable Credentials Data Model v2.0</a></td>
+<td style="text-align: left;">ACA-Py issues, holds, and verifies W3C VCs in core and via plugins.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="https://www.w3.org/TR/did-1.0/">W3C Decentralized Identifiers (DIDs) v1.0</a></td>
+<td style="text-align: left;">ACA-Py resolves and registers DIDs across multiple DID methods via its pluggable resolver and registrar interfaces.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="https://identity.foundation/didcomm-messaging/spec/">DIDComm v1</a></td>
+<td style="text-align: left;">ACA-Py uses DIDComm v1 as its primary agent-to-agent messaging envelope for all credential exchange protocols. Support for DIDComm v2 has started, but is incomplete.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="https://hyperledger.github.io/anoncreds-spec/">AnonCreds</a></td>
+<td style="text-align: left;">ACA-Py implements AnonCreds issuance, presentation, and revocation natively; this support is being migrated to a plugin to reduce core coupling.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="https://openid.net/sg/openid4vc/specifications/">OpenID for Verifiable Credentials (OID4VC / OID4VP)</a></td>
+<td style="text-align: left;">ACA-Py supports OID4VCI and OID4VP credential issuance and presentation flows via plugins — see <a href="https://plugins.aca-py.org">plugins.aca-py.org</a>.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="https://datatracker.ietf.org/doc/draft-ietf-oauth-sd-jwt-vc/">SD-JWT VC</a></td>
+<td style="text-align: left;">ACA-Py issues and verifies SD-JWT-based verifiable credentials via plugins.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="https://www.iso.org/standard/69084.html">ISO/IEC 18013-5 mDL / mdoc</a></td>
+<td style="text-align: left;">ACA-Py supports issuance and verification of ISO mdoc/mDL credentials via the <code>mso_mdoc</code> module in the <code>oid4vc</code> plugin — see <a href="https://plugins.aca-py.org">plugins.aca-py.org</a>.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="https://github.com/bcgov/traction">Traction</a></td>
+<td style="text-align: left;">A multi-tenant ACA-Py implementation with an admin UI built by the BC Government, enabling multiple controllers (e.g., business areas) to share a common ACA-Py instance.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="https://www.lfdecentralizedtrust.org/projects/hyperledger-indy">Hyperledger Indy</a></td>
+<td style="text-align: left;">ACA-Py currently includes native support for Indy ledgers and AnonCreds credentials. This is being progressively moved into a plugin to reduce core coupling.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="https://github.com/openwallet-foundation/acapy/blob/main/./features/SupportedRFCs.md">DIDComm AIP 2.0</a></td>
+<td style="text-align: left;">ACA-Py implements the Aries Interop Profile 2.0 suite of DIDComm protocols. Full details in <a href="https://github.com/openwallet-foundation/acapy/blob/main/./features/SupportedRFCs.md">SupportedRFCs.md</a>.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="https://plugins.aca-py.org/latest/hedera/">Hedera / Hiero</a></td>
+<td style="text-align: left;">ACA-Py supports the Hedera network as a Verifiable Data Registry via the <code>hedera</code> plugin in the OWF acapy-plugins repo. The plugin implements <code>did:hedera</code> resolution and registration, and AnonCreds object storage on the Hedera Consensus Service (HCS), providing an enterprise-grade alternative VDR to Hyperledger Indy.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="https://docs.cheqd.io/product/sdk/aca-py">cheqd</a></td>
+<td style="text-align: left;">ACA-Py supports <code>did:cheqd</code> and DID-Linked Resources via a cheqd plugin. The plugin integrates with the cheqd network for DID registration (via the Universal Registrar), AnonCreds object methods, and W3C credential workflows, enabling ACA-Py deployments to use cheqd as a VDR alongside or instead of Indy.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="opm18-what-is-missing-or-out-of-date">OPM18: What Is Missing or Out-of-Date?<a class="headerlink" href="#opm18-what-is-missing-or-out-of-date" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Item</th>
+<th style="text-align: left;">Status</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><code>ADOPTERS.md</code></td>
+<td style="text-align: left;">Does not yet exist. In progress — requires permission from known adopters before names can be published.</td>
+</tr>
+<tr>
+<td style="text-align: left;">Formal roadmap document</td>
+<td style="text-align: left;">Not yet published. Current direction is captured in OPM09 above.</td>
+</tr>
+<tr>
+<td style="text-align: left;">Performance benchmarks</td>
+<td style="text-align: left;">No published benchmarks. Identified as future work.</td>
+</tr>
+<tr>
+<td style="text-align: left;">Indy decoupling</td>
+<td style="text-align: left;">Partially complete. Indy-specific code is progressively being moved into a plugin as the core generalises to support multiple verifiable data registries.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="opm19-standards">OPM19: Standards<a class="headerlink" href="#opm19-standards" title="Permanent link">&para;</a></h2>
+<p>The following table summarises key standards relevant to ACA-Py. The <a href="https://github.com/openwallet-foundation/acapy/blob/main/./features/SupportedRFCs.md">SupportedRFCs.md</a> document is the authoritative reference for DIDComm protocol support. Additional standard support is delivered via the <a href="https://github.com/openwallet-foundation/acapy-plugins">acapy-plugins</a> repository.</p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Standard</th>
+<th style="text-align: left;">Status</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><a href="https://github.com/openwallet-foundation/acapy/blob/main/./features/SupportedRFCs.md">Aries Interop Profile (AIP) 2.0</a></td>
+<td style="text-align: left;">Compliant — see SupportedRFCs.md for detail</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="https://www.w3.org/TR/vc-data-model-2.0/">W3C Verifiable Credentials Data Model v2.0</a></td>
+<td style="text-align: left;">Supported (via core and plugins)</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="https://www.w3.org/TR/did-1.0/">W3C Decentralized Identifiers (DIDs) v1.0</a></td>
+<td style="text-align: left;">Supported for multiple DID methods</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="https://identity.foundation/didcomm-messaging/spec/">DIDComm v1</a></td>
+<td style="text-align: left;">Supported</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="https://hyperledger.github.io/anoncreds-spec/">AnonCreds</a></td>
+<td style="text-align: left;">Supported (natively; migration to plugin in progress)</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="https://openid.net/sg/openid4vc/specifications/">OpenID4VCs (OID4VC / OID4VP)</a></td>
+<td style="text-align: left;">Supported via plugins — see <a href="https://plugins.aca-py.org">plugins.aca-py.org</a></td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="https://datatracker.ietf.org/doc/draft-ietf-oauth-sd-jwt-vc/">SD-JWT VC</a></td>
+<td style="text-align: left;">Supported via plugins</td>
+</tr>
+<tr>
+<td style="text-align: left;"><a href="https://www.iso.org/standard/69084.html">ISO/IEC 18013-5 mDL / mdoc</a></td>
+<td style="text-align: left;">Supported via the <code>mso_mdoc</code> module in the <code>oid4vc</code> plugin — see <a href="https://plugins.aca-py.org">plugins.aca-py.org</a></td>
+</tr>
+</tbody>
+</table>
+<h2 id="opm20-testing-strategy">OPM20: Testing Strategy<a class="headerlink" href="#opm20-testing-strategy" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Area</th>
+<th style="text-align: left;">Approach</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><strong>Unit tests</strong></td>
+<td style="text-align: left;">Extensive unit test suite included in the core repository, run on every pull request via GitHub Actions.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Integration tests</strong></td>
+<td style="text-align: left;">Integration tests run against real or simulated ledgers and agent-to-agent scenarios.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Interoperability</strong></td>
+<td style="text-align: left;">ACA-Py participates in interoperability testing with other DIDComm-compatible agents via the OWF <a href="https://github.com/openwallet-foundation/owl-agent-test-harness">OWL Agent Test Harness</a>.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Security</strong></td>
+<td style="text-align: left;">Dependency scanning and vulnerability reporting via GitHub security advisories (see OPM21/22). Dependency updates are continuously raised as pull requests by Dependabot, tested via the CI pipeline, and merged by maintainers.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Regression</strong></td>
+<td style="text-align: left;">All PRs must pass the full CI pipeline before merging. LTS branches receive targeted regression testing for patch releases.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>End-to-end</strong></td>
+<td style="text-align: left;">Demo scenarios (see <a href="https://github.com/openwallet-foundation/acapy/blob/main/./demo/README.md">demo/README.md</a>) provide end-to-end validation of common workflows.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Certification</strong></td>
+<td style="text-align: left;">No formal external certification at this time.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Load testing</strong></td>
+<td style="text-align: left;">A load testing capability is available via <a href="https://github.com/openwallet-foundation/owl-akrida">OWL Akrida</a>, an OWF project that uses Locust to generate DIDComm-based load against ACA-Py deployments.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="opm21-threat-modelling-and-incident-handling">OPM21: Threat Modelling and Incident Handling<a class="headerlink" href="#opm21-threat-modelling-and-incident-handling" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Item</th>
+<th style="text-align: left;">Details</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><strong>Threat modelling</strong></td>
+<td style="text-align: left;">No formal published threat model document exists at this time.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Incident / vulnerability reporting</strong></td>
+<td style="text-align: left;">Vulnerabilities should be reported via GitHub Security Advisories: open a new draft security advisory from the <a href="https://github.com/openwallet-foundation/acapy/security/advisories">Security Advisories tab</a> of the ACA-Py repository. Full details are in <a href="https://github.com/openwallet-foundation/acapy/blob/main/SECURITY.md">SECURITY.md</a>.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Security team</strong></td>
+<td style="text-align: left;">The security team consists of at least three project Maintainers. Team composition is managed via the OWF governance repo's <code>access-control.yaml</code>. See <a href="https://github.com/openwallet-foundation/acapy/blob/main/SECURITY.md">SECURITY.md</a>.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Recovery</strong></td>
+<td style="text-align: left;">Patch releases on supported branches (including LTS) are issued to address confirmed vulnerabilities. Communication is via GitHub releases and the OWF Discord.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="opm22-security-track-record">OPM22: Security Track Record<a class="headerlink" href="#opm22-security-track-record" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Item</th>
+<th style="text-align: left;">Details</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><strong>Past CVEs</strong></td>
+<td style="text-align: left;">Security advisories are tracked via <a href="https://github.com/openwallet-foundation/acapy/security/advisories">GitHub Security Advisories</a>.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Policy and process</strong></td>
+<td style="text-align: left;">Documented in <a href="https://github.com/openwallet-foundation/acapy/blob/main/SECURITY.md">SECURITY.md</a>, which covers reporting channels, triage process, disclosure timelines, and maintainer responsibilities.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="opm23-version-control">OPM23: Version Control<a class="headerlink" href="#opm23-version-control" title="Permanent link">&para;</a></h2>
+<p>ACA-Py uses <a href="https://semver.org/">Semantic Versioning</a> (<code>MAJOR.MINOR.PATCH</code>):</p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Version change</th>
+<th style="text-align: left;">Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">MAJOR (e.g. 1.x → 2.0)</td>
+<td style="text-align: left;">Breaking changes requiring migration steps. Migration guidance is included in the CHANGELOG.</td>
+</tr>
+<tr>
+<td style="text-align: left;">MINOR (e.g. 1.5 → 1.6)</td>
+<td style="text-align: left;">New features or significant changes, backwards compatible unless noted in the Breaking Changes section of the CHANGELOG.</td>
+</tr>
+<tr>
+<td style="text-align: left;">PATCH (e.g. 1.6.0 → 1.6.1)</td>
+<td style="text-align: left;">Bug fixes and security patches. LTS patch releases are guaranteed to deploy without an upgrade process from the prior patch release.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="opm24-release-management-and-support">OPM24: Release Management and Support<a class="headerlink" href="#opm24-release-management-and-support" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Item</th>
+<th style="text-align: left;">Details</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><strong>LTS releases</strong></td>
+<td style="text-align: left;">LTS branches (<code>1.3</code>, <code>1.6</code>) receive ongoing patch releases. Docker images are published with <code>-lts</code> tags that are kept current with the latest patch on each LTS branch (e.g. <code>py3.12-1.6-lts</code>). LTS patch releases are backwards compatible with no upgrade steps required.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Release cadence</strong></td>
+<td style="text-align: left;">No fixed schedule; releases are driven by feature readiness and community need. See the <a href="https://github.com/openwallet-foundation/acapy/releases">GitHub Releases page</a> for recent history.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Communication</strong></td>
+<td style="text-align: left;">New releases are announced via GitHub Releases (with release notes in the CHANGELOG), and via the <code>#aca-py</code> channel on OWF Discord.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Semantic versioning</strong></td>
+<td style="text-align: left;">Yes — see OPM23.</td>
+</tr>
+</tbody>
+</table>
+<p>Releases are tagged in GitHub and documented in the <a href="https://github.com/openwallet-foundation/acapy/blob/main/CHANGELOG.md">CHANGELOG</a>. The full release publishing process — including tagging, generating release notes, publishing to PyPI, and the automatic triggering of Docker image builds to GHCR — is documented in <a href="https://aca-py.org/latest/PUBLISHING/">PUBLISHING.md</a>.</p>
+<p>The <a href="https://github.com/openwallet-foundation/acapy-plugins">acapy-plugins</a> repository maintains version alignment with ACA-Py core via a CI/CD release pipeline. When a new ACA-Py version is released, the pipeline automatically updates each plugin's ACA-Py dependency, runs the plugin test suites, and identifies which plugins have successfully passed against the new version. This ensures that the maintained plugins in the OWF plugin repository stay in sync with each ACA-Py release.</p>
+<h2 id="opm25-experience-layer">OPM25: Experience Layer<a class="headerlink" href="#opm25-experience-layer" title="Permanent link">&para;</a></h2>
+<p>ACA-Py is a backend (headless) agent framework. It exposes an HTTP Admin API that a controller application uses to drive agent behaviour. There is no bundled UI.</p>
+<p><a href="https://github.com/bcgov/traction">Traction</a> is a well-known open-source example of a controller built on top of ACA-Py: it provides an admin UI for a multi-tenant ACA-Py deployment and was developed by the BC Government's Digital Trust Team. Traction illustrates the typical pattern for adding an experience layer on top of ACA-Py.</p>
+<h2 id="opm26-gaps-to-fill">OPM26: Gaps to Fill<a class="headerlink" href="#opm26-gaps-to-fill" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Gap</th>
+<th style="text-align: left;">Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><strong>Indy decoupling (self)</strong></td>
+<td style="text-align: left;">Moving Indy-specific code from the core into a plugin is in progress. This is a multi-release effort.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Adopters list (self)</strong></td>
+<td style="text-align: left;">An <code>ADOPTERS.md</code> needs to be created and populated with permission from known adopters.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Formal roadmap (self)</strong></td>
+<td style="text-align: left;">A published roadmap document would help the community understand project direction.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Benchmark / sizing guidance (self)</strong></td>
+<td style="text-align: left;">Deployment sizing guidance would be valuable for new adopters.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Broader DID method support (ecosystem)</strong></td>
+<td style="text-align: left;">Continued community contributions for additional DID methods and verifiable data registries via the plugin model.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="opm27-documentation">OPM27: Documentation<a class="headerlink" href="#opm27-documentation" title="Permanent link">&para;</a></h2>
+<p>ACA-Py documentation is maintained in the repository as Markdown files and published at <a href="https://aca-py.org">aca-py.org</a>.</p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Resource</th>
+<th style="text-align: left;">Link</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;">Main documentation site</td>
+<td style="text-align: left;"><a href="https://aca-py.org">https://aca-py.org</a></td>
+</tr>
+<tr>
+<td style="text-align: left;">Getting Started Guide</td>
+<td style="text-align: left;"><a href="https://github.com/openwallet-foundation/acapy/blob/main/./gettingStarted/README.md">./gettingStarted/README.md</a></td>
+</tr>
+<tr>
+<td style="text-align: left;">Developer README</td>
+<td style="text-align: left;"><a href="https://github.com/openwallet-foundation/acapy/blob/main/./features/DevReadMe.md">./features/DevReadMe.md</a></td>
+</tr>
+<tr>
+<td style="text-align: left;">Supported RFCs / Protocols</td>
+<td style="text-align: left;"><a href="https://github.com/openwallet-foundation/acapy/blob/main/./features/SupportedRFCs.md">./features/SupportedRFCs.md</a></td>
+</tr>
+<tr>
+<td style="text-align: left;">Plugin documentation</td>
+<td style="text-align: left;"><a href="https://plugins.aca-py.org">https://plugins.aca-py.org</a></td>
+</tr>
+<tr>
+<td style="text-align: left;">CHANGELOG</td>
+<td style="text-align: left;"><a href="https://github.com/openwallet-foundation/acapy/blob/main/CHANGELOG.md">CHANGELOG.md</a></td>
+</tr>
+</tbody>
+</table>
+<h2 id="opm28-issues-on-github-good-first-tickets">OPM28: Issues on GitHub / Good First Tickets<a class="headerlink" href="#opm28-issues-on-github-good-first-tickets" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Item</th>
+<th style="text-align: left;">Details</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><strong>Issue tracker</strong></td>
+<td style="text-align: left;"><a href="https://github.com/openwallet-foundation/acapy/issues">https://github.com/openwallet-foundation/acapy/issues</a></td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Good First Issue label</strong></td>
+<td style="text-align: left;">Issues labelled <a href="https://github.com/openwallet-foundation/acapy/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22"><code>help wanted</code></a> are suitable entry points for new contributors who do not yet have deep ACA-Py knowledge.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="opm29-adoption-support">OPM29: Adoption Support<a class="headerlink" href="#opm29-adoption-support" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Audience</th>
+<th style="text-align: left;">Support channel</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><strong>Developers building on ACA-Py</strong></td>
+<td style="text-align: left;"><a href="https://discord.gg/openwalletfoundation">OWF Discord – #aca-py</a>: questions, troubleshooting, and community discussion.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>All users</strong></td>
+<td style="text-align: left;"><a href="https://github.com/openwallet-foundation/acapy/discussions">GitHub Discussions</a>: longer-form questions and design conversations.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Bug reports / issues</strong></td>
+<td style="text-align: left;"><a href="https://github.com/openwallet-foundation/acapy/issues">GitHub Issues</a></td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Security issues</strong></td>
+<td style="text-align: left;"><a href="https://github.com/openwallet-foundation/acapy/security/advisories">GitHub Security Advisories</a> — do not use public issue tracker for security bugs.</td>
+</tr>
+</tbody>
+</table>
+<p>ACA-Py is designed for developers and architects building decentralised identity services. The primary audience is engineering teams deploying issuer, holder, or verifier services.</p>
+<h2 id="opm30-contributor-guide">OPM30: Contributor Guide<a class="headerlink" href="#opm30-contributor-guide" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Resource</th>
+<th style="text-align: left;">Link</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><strong>Contributing guide</strong></td>
+<td style="text-align: left;"><a href="https://github.com/openwallet-foundation/acapy/blob/main/CONTRIBUTING.md">CONTRIBUTING.md</a></td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Maintainers guide</strong></td>
+<td style="text-align: left;"><a href="https://github.com/openwallet-foundation/acapy/blob/main/MAINTAINERS.md">MAINTAINERS.md</a></td>
+</tr>
+</tbody>
+</table>
+<p>Contributions are welcome in all forms: bug fixes, new features, documentation improvements, plugin development, and test coverage. The maintainer community actively reviews pull requests. Contributors who make a sustained and significant impact are encouraged to become Maintainers — the path to doing so is described in <a href="https://github.com/openwallet-foundation/acapy/blob/main/MAINTAINERS.md">MAINTAINERS.md</a>.</p>
+<h2 id="opm31-adoption-strategy">OPM31: Adoption Strategy<a class="headerlink" href="#opm31-adoption-strategy" title="Permanent link">&para;</a></h2>
+<p>ACA-Py lowers the barrier to building decentralised identity services by providing:</p>
+<ul>
+<li>A stable, production-proven Python framework deployable via <code>pip</code> or Docker.</li>
+<li>Extensive documentation at <a href="https://aca-py.org">aca-py.org</a>.</li>
+<li>A demo environment and sample controllers that new users can run immediately.</li>
+<li>A plugin model so that adopters can extend ACA-Py without forking the core.</li>
+<li>LTS releases that give deployers a stable, long-term supported target.</li>
+<li>An active community on OWF Discord for peer support.</li>
+</ul>
+<p>The project does not have a formal written adoption strategy document, but these mechanisms collectively reduce friction for new adopters.</p>
+<h2 id="opm32-adopters-index">OPM32: Adopters Index<a class="headerlink" href="#opm32-adopters-index" title="Permanent link">&para;</a></h2>
+<p>An <code>ADOPTERS.md</code> file does not yet exist in the repository. ACA-Py is known to be in production use across multiple organisations and jurisdictions globally, including government digital identity programmes in Canada and elsewhere. Populating this list requires obtaining explicit permission from each adopter. Contributions and nominations are welcome via a pull request or GitHub Discussion once the file is created.</p>
+<p><em>This document is maintained in the ACA-Py repository. For corrections or additions, please open a pull request or GitHub Issue.</em></p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="../LTS-Strategy/" class="md-footer__link md-footer__link--prev" aria-label="Previous: ACA-Py Long Term Support (LTS) Policy">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                ACA-Py Long Term Support (LTS) Policy
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="../features/DevReadMe/" class="md-footer__link md-footer__link--next" aria-label="Next: Developer Introduction">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              <div class="md-ellipsis">
+                Developer Introduction
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11z"/></svg>
+            </div>
+          </a>
+        
+      </nav>
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["content.code.copy", "navigation.expand", "navigation.footer", "navigation.instant", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "navigation.tracking", "toc.follow"], "search": "../assets/javascripts/workers/search.7a47a382.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.e71a0d61.min.js"></script>
+      
+    
+  </body>
+</html>
