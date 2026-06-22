@@ -2650,14 +2650,14 @@ crypto = ["cryptography (>=3.4.0)"]
 
 [[package]]
 name = "pyld"
-version = "3.0.0"
+version = "3.1.0"
 description = "Python implementation of the JSON-LD API"
 optional = false
 python-versions = "*"
 groups = ["main"]
 files = [
-    {file = "pyld-3.0.0-py3-none-any.whl", hash = "sha256:bfe0f5a476c67d8766d47c445ef2170b868a72654e535dbebc89c8e040b1fe88"},
-    {file = "pyld-3.0.0.tar.gz", hash = "sha256:b1913a06054f35a31e4d9916d184852909b2a3c5fea55c341bd00917cf8b22ef"},
+    {file = "pyld-3.1.0-py3-none-any.whl", hash = "sha256:bb6418dfdc159e354b8cb42673086c86ce928023559742366e84109723932ef3"},
+    {file = "pyld-3.1.0.tar.gz", hash = "sha256:7d02699af8e22f896cd7da094c0199063b5916dd018b1d2ec2a966d429270401"},
 ]
 
 [package.dependencies]
