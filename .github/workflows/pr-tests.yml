@@ -16,7 +16,7 @@ jobs:
       checks: write
     steps:
     - name: checkout
-      uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
+      uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
     - name: Tests
       uses: ./.github/actions/run-unit-tests
       with:
@@ -47,7 +47,7 @@ jobs:
           - 5432:5432
     steps:
     - name: checkout
-      uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
+      uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
     - name: PostgreSQL Integration Tests
       uses: ./.github/actions/run-postgres-tests
       with:
