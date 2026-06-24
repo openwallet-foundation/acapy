@@ -3,11 +3,8 @@
 from abc import ABC, abstractmethod
 from typing import List, Optional, Sequence, Tuple, Union
 
-from ..ledger.base import BaseLedger
-from ..ledger.endpoint_type import EndpointType
 from .did_info import DIDInfo, KeyInfo
-from .did_method import SOV, DIDMethod
-from .error import WalletError
+from .did_method import DIDMethod
 from .key_type import KeyType
 
 
@@ -288,47 +285,6 @@ class BaseWallet(ABC):
         return [
             info for info in await self.get_local_dids() if info.metadata.get("posted")
         ]
-
-    async def set_did_endpoint(
-        self,
-        did: str,
-        endpoint: str,
-        _ledger: BaseLedger,
-        endpoint_type: Optional[EndpointType] = None,
-        write_ledger: bool = True,
-        endorser_did: Optional[str] = None,
-        routing_keys: Optional[List[str]] = None,
-    ):
-        """Update the endpoint for a DID in the wallet, send to ledger if posted.
-
-        Args:
-            did (str): The DID for which to set the endpoint.
-            endpoint (str): The endpoint to set. Use None to clear the endpoint.
-            _ledger (BaseLedger): The ledger to which to send the endpoint update if the
-                DID is public or posted.
-            endpoint_type (EndpointType, optional): The type of the endpoint/service.
-                Only endpoint_type 'endpoint' affects the local wallet.
-            write_ledger (bool, optional): Whether to write the endpoint update to the
-                ledger. Defaults to True.
-            endorser_did (str, optional): The DID of the endorser. Defaults to None.
-            routing_keys (List[str], optional): The list of routing keys.
-                Defaults to None.
-
-        Raises:
-            WalletError: If the DID method is not 'did:sov'.
-
-        """
-        did_info = await self.get_local_did(did)
-
-        if did_info.method != SOV:
-            raise WalletError("Setting DID endpoint is only allowed for did:sov DIDs")
-        metadata = {**did_info.metadata}
-        if not endpoint_type:
-            endpoint_type = EndpointType.ENDPOINT
-        if endpoint_type == EndpointType.ENDPOINT:
-            metadata[endpoint_type.indy] = endpoint
-
-        await self.replace_local_did_metadata(did, metadata)
 
     @abstractmethod
     async def sign_message(

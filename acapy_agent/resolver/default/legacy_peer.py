@@ -15,7 +15,7 @@ from ...config.injection_context import InjectionContext
 from ...connections.base_manager import BaseConnectionManager
 from ...core.profile import Profile
 from ...did.did_key import DIDKey
-from ...messaging.valid import IndyDID
+from ...messaging.valid import UnqualifiedOrIndyDID
 from ...storage.error import StorageNotFoundError
 from ...wallet.key_type import ED25519
 from ..base import BaseDIDResolver, DIDNotFound, ResolverType
@@ -334,7 +334,7 @@ class LegacyPeerDIDResolver(BaseDIDResolver):
         Else, return False.
         """
         LOGGER.debug("Checking if resolver supports DID %s", did)
-        if IndyDID.PATTERN.match(did):
+        if UnqualifiedOrIndyDID.PATTERN.match(did):
             LOGGER.debug("DID is valid IndyDID %s", did)
             result = await self.fetch_did_document(profile, did)
             return result.is_local

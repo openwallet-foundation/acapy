@@ -19,13 +19,8 @@ from ....admin.request_context import AdminRequestContext
 from ....anoncreds.holder import AnonCredsHolder, AnonCredsHolderError
 from ....anoncreds.models.presentation_request import AnonCredsPresentationRequestSchema
 from ....anoncreds.models.proof import AnonCredsPresSpecSchema
+from ....anoncreds.util import generate_pr_nonce
 from ....connections.models.conn_record import ConnRecord
-from ....indy.holder import IndyHolder, IndyHolderError
-from ....indy.models.cred_precis import IndyCredPrecisSchema
-from ....indy.models.proof import IndyPresSpecSchema
-from ....indy.models.proof_request import IndyProofRequestSchema
-from ....indy.util import generate_pr_nonce
-from ....ledger.error import LedgerError
 from ....messaging.decorators.attach_decorator import AttachDecorator
 from ....messaging.models.base import BaseModelError
 from ....messaging.models.openapi import OpenAPISchema
@@ -34,8 +29,8 @@ from ....messaging.models.paginated_query import (
     get_paginated_query_params,
 )
 from ....messaging.valid import (
-    INDY_EXTRA_WQL_EXAMPLE,
-    INDY_EXTRA_WQL_VALIDATE,
+    EXTRA_WQL_EXAMPLE,
+    EXTRA_WQL_VALIDATE,
     NUM_STR_NATURAL_EXAMPLE,
     NUM_STR_NATURAL_VALIDATE,
     NUM_STR_WHOLE_EXAMPLE,
@@ -125,11 +120,6 @@ class V20PresProposalByFormatSchema(OpenAPISchema):
         required=False,
         metadata={"description": "Presentation proposal for anoncreds"},
     )
-    indy = fields.Nested(
-        IndyProofRequestSchema,
-        required=False,
-        metadata={"description": "Presentation proposal for indy"},
-    )
     dif = fields.Nested(
         DIFProofProposalSchema,
         required=False,
@@ -213,11 +203,6 @@ class V20PresRequestByFormatSchema(OpenAPISchema):
         AnonCredsPresentationRequestSchema,
         required=False,
         metadata={"description": "Presentation proposal for anoncreds"},
-    )
-    indy = fields.Nested(
-        IndyProofRequestSchema,
-        required=False,
-        metadata={"description": "Presentation request for indy"},
     )
     dif = fields.Nested(
         DIFProofRequestSchema,
@@ -341,11 +326,6 @@ class V20PresSpecByFormatRequestSchema(AdminAPIMessageTracingSchema):
         required=False,
         metadata={"description": "Presentation specification for anoncreds"},
     )
-    indy = fields.Nested(
-        IndyPresSpecSchema,
-        required=False,
-        metadata={"description": "Presentation specification for indy"},
-    )
     dif = fields.Nested(
         DIFPresSpecSchema,
         required=False,
@@ -439,10 +419,10 @@ class V20CredentialsFetchQueryStringSchema(OpenAPISchema):
     )
     extra_query = fields.Str(
         required=False,
-        validate=INDY_EXTRA_WQL_VALIDATE,
+        validate=EXTRA_WQL_VALIDATE,
         metadata={
             "description": "(JSON) object mapping referents to extra WQL queries",
-            "example": INDY_EXTRA_WQL_EXAMPLE,
+            "example": EXTRA_WQL_EXAMPLE,
         },
     )
 
@@ -594,7 +574,7 @@ async def present_proof_retrieve(request: web.BaseRequest):
 )
 @match_info_schema(V20PresExIdMatchInfoSchema())
 @querystring_schema(V20CredentialsFetchQueryStringSchema())
-@response_schema(IndyCredPrecisSchema(many=True), 200, description="")
+@response_schema(AnonCredsPresSpecSchema(many=True), 200, description="")
 @tenant_authentication
 async def present_proof_credentials_list(request: web.BaseRequest):
     """Request handler for searching applicable credential records.
@@ -635,11 +615,8 @@ async def present_proof_credentials_list(request: web.BaseRequest):
     encoded_extra_query = request.query.get("extra_query") or "{}"
     extra_query = json.loads(encoded_extra_query)
 
-    wallet_type = profile.settings.get_value("wallet.type")
-    if wallet_type in ("askar-anoncreds", "kanon-anoncreds"):
-        holder = AnonCredsHolder(profile)
-    else:
-        holder = profile.inject(IndyHolder)
+    holder = AnonCredsHolder(profile)
+
     credentials = []
     # ANONCREDS or INDY
     try:
@@ -647,10 +624,6 @@ async def present_proof_credentials_list(request: web.BaseRequest):
         pres_request = pres_ex_record.by_format["pres_request"].get(
             V20PresFormat.Format.ANONCREDS.api
         )
-        if not pres_request:
-            pres_request = pres_ex_record.by_format["pres_request"].get(
-                V20PresFormat.Format.INDY.api
-            )
         if pres_request:
             credentials = (
                 await holder.get_credentials_for_presentation_request_by_referent(
@@ -662,7 +635,7 @@ async def present_proof_credentials_list(request: web.BaseRequest):
                 )
             )
 
-    except (IndyHolderError, AnonCredsHolderError) as err:
+    except AnonCredsHolderError as err:
         if pres_ex_record:
             async with profile.session() as session:
                 await pres_ex_record.save_error_state(session, reason=err.roll_up)
@@ -1224,7 +1197,7 @@ async def present_proof_send_bound_request(request: web.BaseRequest):
             pres_request_message,
         ) = await pres_manager.create_bound_request(pres_ex_record)
         result = pres_ex_record.serialize()
-    except (BaseModelError, LedgerError, StorageError) as err:
+    except (BaseModelError, StorageError) as err:
         if pres_ex_record:
             async with profile.session() as session:
                 await pres_ex_record.save_error_state(session, reason=err.roll_up)
@@ -1340,9 +1313,7 @@ async def present_proof_send_presentation(request: web.BaseRequest):
         result = pres_ex_record.serialize()
     except (
         BaseModelError,
-        IndyHolderError,
         AnonCredsHolderError,
-        LedgerError,
         V20PresFormatHandlerError,
         StorageError,
         WalletNotFoundError,
@@ -1416,7 +1387,7 @@ async def present_proof_verify_presentation(request: web.BaseRequest):
     try:
         pres_ex_record = await pres_manager.verify_pres(pres_ex_record)
         result = pres_ex_record.serialize()
-    except (BaseModelError, LedgerError, StorageError) as err:
+    except (BaseModelError, StorageError) as err:
         if pres_ex_record:
             async with profile.session() as session:
                 await pres_ex_record.save_error_state(session, reason=err.roll_up)

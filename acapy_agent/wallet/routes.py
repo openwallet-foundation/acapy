@@ -1,6 +1,5 @@
 """Wallet admin routes."""
 
-import asyncio
 import json
 import logging
 from typing import List, Optional, Tuple, Union
@@ -14,15 +13,9 @@ from ..admin.request_context import AdminRequestContext
 from ..config.injection_context import InjectionContext
 from ..connections.base_manager import BaseConnectionManager
 from ..connections.models.conn_record import ConnRecord
-from ..core.event_bus import Event, EventBus
 from ..core.profile import Profile
-from ..ledger.base import BaseLedger
-from ..ledger.endpoint_type import EndpointType
-from ..ledger.error import LedgerConfigError, LedgerError
 from ..messaging.jsonld.error import BadJWSHeaderError, InvalidVerificationMethod
-from ..messaging.models.base import BaseModelError
 from ..messaging.models.openapi import OpenAPISchema
-from ..messaging.responder import BaseResponder
 from ..messaging.valid import (
     DID_POSTURE_EXAMPLE,
     DID_POSTURE_VALIDATE,
@@ -32,8 +25,6 @@ from ..messaging.valid import (
     ENDPOINT_VALIDATE,
     GENERIC_DID_EXAMPLE,
     GENERIC_DID_VALIDATE,
-    INDY_DID_EXAMPLE,
-    INDY_DID_VALIDATE,
     JWT_EXAMPLE,
     JWT_VALIDATE,
     NON_SD_LIST_EXAMPLE,
@@ -42,32 +33,18 @@ from ..messaging.valid import (
     RAW_ED25519_2018_PUBLIC_KEY_VALIDATE,
     SD_JWT_EXAMPLE,
     SD_JWT_VALIDATE,
+    UNQUALIFIED_OR_INDY_DID_EXAMPLE,
+    UNQUALIFIED_OR_INDY_DID_VALIDATE,
     UUID4_EXAMPLE,
     UUID4_VALIDATE,
-    IndyDID,
     StrOrDictField,
+    UnqualifiedOrIndyDID,
     Uri,
 )
 from ..protocols.coordinate_mediation.v1_0.route_manager import RouteManager
-from ..protocols.endorse_transaction.v1_0.manager import (
-    TransactionManager,
-    TransactionManagerError,
-)
-from ..protocols.endorse_transaction.v1_0.util import (
-    get_endorser_connection_id,
-    is_author_role,
-)
 from ..resolver.base import ResolverError
-from ..storage.base import BaseStorage
-from ..storage.error import StorageError, StorageNotFoundError
-from ..storage.record import StorageRecord
-from ..storage.type import RECORD_TYPE_ACAPY_UPGRADING
 from ..wallet.jwt import jwt_sign, jwt_verify
 from ..wallet.sd_jwt import sd_jwt_sign, sd_jwt_verify
-from .anoncreds_upgrade import (
-    UPGRADING_RECORD_IN_PROGRESS,
-    upgrade_wallet_to_anoncreds_if_requested,
-)
 from .base import BaseWallet
 from .did_info import DIDInfo
 from .did_method import (
@@ -83,8 +60,6 @@ from .did_method import (
 from .did_posture import DIDPosture
 from .error import WalletError, WalletNotFoundError
 from .key_type import BLS12381G2, ED25519, P256, KeyTypes
-from .singletons import UpgradeInProgressSingleton
-from .util import EVENT_LISTENER_PATTERN
 
 LOGGER = logging.getLogger(__name__)
 
@@ -163,8 +138,11 @@ class DIDEndpointWithTypeSchema(OpenAPISchema):
 
     did = fields.Str(
         required=True,
-        validate=INDY_DID_VALIDATE,
-        metadata={"description": "DID of interest", "example": INDY_DID_EXAMPLE},
+        validate=UNQUALIFIED_OR_INDY_DID_VALIDATE,
+        metadata={
+            "description": "DID of interest",
+            "example": UNQUALIFIED_OR_INDY_DID_EXAMPLE,
+        },
     )
     endpoint = fields.Str(
         required=False,
@@ -179,8 +157,7 @@ class DIDEndpointWithTypeSchema(OpenAPISchema):
         validate=ENDPOINT_TYPE_VALIDATE,
         metadata={
             "description": (
-                f"Endpoint type to set (default '{EndpointType.ENDPOINT.w3c}'); affects"
-                " only public or posted DIDs"
+                "Endpoint type to set (default 'w3c'); affects only public or posted DIDs"
             ),
             "example": ENDPOINT_TYPE_EXAMPLE,
         },
@@ -281,8 +258,11 @@ class DIDEndpointSchema(OpenAPISchema):
 
     did = fields.Str(
         required=True,
-        validate=INDY_DID_VALIDATE,
-        metadata={"description": "DID of interest", "example": INDY_DID_EXAMPLE},
+        validate=UNQUALIFIED_OR_INDY_DID_VALIDATE,
+        metadata={
+            "description": "DID of interest",
+            "example": UNQUALIFIED_OR_INDY_DID_EXAMPLE,
+        },
     )
     endpoint = fields.Str(
         required=False,
@@ -738,17 +718,6 @@ async def wallet_set_public_did(request: web.BaseRequest):
     connection_id = request.query.get("conn_id")
     attrib_def = None
 
-    # check if we need to endorse
-    if is_author_role(context.profile):
-        # authors cannot write to the ledger
-        write_ledger = False
-        create_transaction_for_endorser = True
-        if not connection_id:
-            # author has not provided a connection id, so determine which to use
-            connection_id = await get_endorser_connection_id(context.profile)
-            if not connection_id:
-                raise web.HTTPBadRequest(reason="No endorser connection found")
-
     async with context.session() as session:
         wallet = session.inject_or(BaseWallet)
         if not wallet:
@@ -786,38 +755,8 @@ async def wallet_set_public_did(request: web.BaseRequest):
         raise web.HTTPForbidden(reason=str(err)) from err
     except WalletNotFoundError as err:
         raise web.HTTPNotFound(reason=err.roll_up) from err
-    except (LedgerError, WalletError) as err:
-        raise web.HTTPBadRequest(reason=err.roll_up) from err
 
-    if not create_transaction_for_endorser:
-        return web.json_response({"result": format_did_info(info)})
-    else:
-        # DID is already posted to ledger
-        if not attrib_def:
-            return web.json_response({"result": format_did_info(info)})
-
-        transaction_mgr = TransactionManager(context.profile)
-        try:
-            transaction = await transaction_mgr.create_record(
-                messages_attach=attrib_def["signed_txn"], connection_id=connection_id
-            )
-        except StorageError as err:
-            raise web.HTTPBadRequest(reason=err.roll_up) from err
-
-        # if auto-request, send the request to the endorser
-        if context.settings.get_value("endorser.auto_request"):
-            try:
-                transaction, transaction_request = await transaction_mgr.create_request(
-                    transaction=transaction,
-                    # TODO see if we need to parametrize these params
-                    # expires_time=expires_time,
-                )
-            except (StorageError, TransactionManagerError) as err:
-                raise web.HTTPBadRequest(reason=err.roll_up) from err
-
-            await outbound_handler(transaction_request, connection_id=connection_id)
-
-        return web.json_response({"txn": transaction.serialize()})
+    return web.json_response({"result": format_did_info(info)})
 
 
 async def promote_wallet_public_did(
@@ -834,7 +773,7 @@ async def promote_wallet_public_did(
     info: Optional[DIDInfo] = None
     endorser_did = None
 
-    is_indy_did = bool(IndyDID.PATTERN.match(did))
+    is_indy_did = bool(UnqualifiedOrIndyDID.PATTERN.match(did))
     # write only Indy DID
     write_ledger = is_indy_did and write_ledger
     is_ctx_admin_request = True
@@ -849,88 +788,6 @@ async def promote_wallet_public_did(
                     "AdminRequestContext does."
                 )
             )
-    ledger = (
-        context.profile.inject_or(BaseLedger)
-        if is_ctx_admin_request
-        else profile.inject_or(BaseLedger)
-    )
-
-    if is_indy_did:
-        if not ledger:
-            reason = "No ledger available"
-            if not context.settings.get_value("wallet.type"):
-                reason += ": missing wallet-type?"
-            LOGGER.info("Cannot promote DID %s to public DID: %s", did, reason)
-            raise PermissionError(reason)
-
-        async with ledger:
-            if not await ledger.get_key_for_did(did):
-                LOGGER.info("Cannot promote DID %s; it is not posted to the ledger", did)
-                raise LookupError(f"DID {did} is not posted to the ledger")
-
-        is_author_profile = (
-            is_author_role(context.profile)
-            if is_ctx_admin_request
-            else is_author_role(profile)
-        )
-
-        # check if we need to endorse
-        if is_author_profile:
-            # authors cannot write to the ledger
-            write_ledger = False
-
-            LOGGER.debug("No connection id provided; determining which to use")
-            if not connection_id:
-                connection_id = (
-                    await get_endorser_connection_id(context.profile)
-                    if is_ctx_admin_request
-                    else await get_endorser_connection_id(profile)
-                )
-            if not connection_id:
-                LOGGER.info("Cannot promote DID %s; no endorser connection found", did)
-                raise web.HTTPBadRequest(reason="No endorser connection found")
-        if not write_ledger:
-            async with (
-                context.session() if is_ctx_admin_request else profile.session()
-            ) as session:
-                try:
-                    connection_record = await ConnRecord.retrieve_by_id(
-                        session, connection_id
-                    )
-                except StorageNotFoundError as err:
-                    LOGGER.info("Connection record not found: %s", err.roll_up)
-                    raise web.HTTPNotFound(reason=err.roll_up) from err
-                except BaseModelError as err:
-                    LOGGER.error("Base model error: %s", err.roll_up)
-                    raise web.HTTPBadRequest(reason=err.roll_up) from err
-                endorser_info = await connection_record.metadata_get(
-                    session, "endorser_info"
-                )
-
-            if not endorser_info:
-                LOGGER.info(
-                    "Cannot promote %s; endorser info not set up in connection metadata",
-                    did,
-                )
-                raise web.HTTPForbidden(
-                    reason=(
-                        "Endorser Info is not set up in "
-                        "connection metadata for this connection record"
-                    )
-                )
-            if "endorser_did" not in endorser_info.keys():
-                LOGGER.info(
-                    'Cannot promote DID %s; "endorser_did" not set in "endorser_info"',
-                    did,
-                )
-                raise web.HTTPForbidden(
-                    reason=(
-                        ' "endorser_did" is not set in "endorser_info"'
-                        " in connection metadata for this connection record"
-                    )
-                )
-            endorser_did = endorser_info["endorser_did"]
-            LOGGER.debug("Endorser DID %s found in connection metadata", endorser_did)
 
     did_info: Optional[DIDInfo] = None
     attrib_def = None
@@ -941,23 +798,6 @@ async def promote_wallet_public_did(
         did_info = await wallet.get_local_did(did)
         info = await wallet.set_public_did(did_info)
         LOGGER.info("DID %s set as public DID", info.did)
-
-        if info:
-            # Publish endpoint if necessary
-            endpoint = did_info.metadata.get("endpoint")
-
-            if is_indy_did and not endpoint:
-                endpoint = mediator_endpoint or context.settings.get("default_endpoint")
-                LOGGER.debug("Setting endpoint for DID %s to %s", info.did, endpoint)
-                attrib_def = await wallet.set_did_endpoint(
-                    info.did,
-                    endpoint,
-                    ledger,
-                    write_ledger=write_ledger,
-                    endorser_did=endorser_did,
-                    routing_keys=routing_keys,
-                )
-                LOGGER.debug("Endpoint set for DID %s: %s", info.did, endpoint)
 
     if info:
         LOGGER.debug("Routing public DID %s", info.did)
@@ -971,141 +811,6 @@ async def promote_wallet_public_did(
 
     LOGGER.debug("Completed promotion of DID %s", did)
     return info, attrib_def
-
-
-@docs(
-    tags=[WALLET_TAG_TITLE],
-    summary="Update endpoint in wallet and on ledger if posted to it",
-)
-@request_schema(DIDEndpointWithTypeSchema)
-@querystring_schema(CreateAttribTxnForEndorserOptionSchema())
-@querystring_schema(AttribConnIdMatchInfoSchema())
-@response_schema(WalletModuleResponseSchema(), description="")
-@tenant_authentication
-async def wallet_set_did_endpoint(request: web.BaseRequest):
-    """Request handler for setting an endpoint for a DID.
-
-    Args:
-        request: aiohttp request object
-
-    """
-    context: AdminRequestContext = request["context"]
-
-    outbound_handler = request["outbound_message_router"]
-
-    body = await request.json()
-    did = body["did"]
-    endpoint = body.get("endpoint")
-    endpoint_type = EndpointType.get(body.get("endpoint_type", EndpointType.ENDPOINT.w3c))
-    mediation_id = body.get("mediation_id")
-
-    create_transaction_for_endorser = json.loads(
-        request.query.get("create_transaction_for_endorser", "false")
-    )
-    write_ledger = not create_transaction_for_endorser
-    endorser_did = None
-    connection_id = request.query.get("conn_id")
-    attrib_def = None
-
-    profile = context.profile
-    route_manager = profile.inject(RouteManager)
-    mediation_record = await route_manager.mediation_record_if_id(
-        profile=profile, mediation_id=mediation_id, or_default=True
-    )
-    routing_keys, mediator_endpoint = await route_manager.routing_info(
-        profile,
-        mediation_record,
-    )
-    LOGGER.debug("Mediation info: %s, %s", routing_keys, mediator_endpoint)
-
-    # check if we need to endorse
-    if is_author_role(context.profile):
-        # authors cannot write to the ledger
-        write_ledger = False
-        create_transaction_for_endorser = True
-        if not connection_id:
-            # author has not provided a connection id, so determine which to use
-            connection_id = await get_endorser_connection_id(context.profile)
-            if not connection_id:
-                raise web.HTTPBadRequest(reason="No endorser connection found")
-
-    if not write_ledger:
-        try:
-            async with context.session() as session:
-                connection_record = await ConnRecord.retrieve_by_id(
-                    session, connection_id
-                )
-        except StorageNotFoundError as err:
-            raise web.HTTPNotFound(reason=err.roll_up) from err
-        except BaseModelError as err:
-            raise web.HTTPBadRequest(reason=err.roll_up) from err
-
-        async with context.session() as session:
-            endorser_info = await connection_record.metadata_get(session, "endorser_info")
-        if not endorser_info:
-            raise web.HTTPForbidden(
-                reason=(
-                    "Endorser Info is not set up in "
-                    "connection metadata for this connection record"
-                )
-            )
-        if "endorser_did" not in endorser_info.keys():
-            raise web.HTTPForbidden(
-                reason=(
-                    ' "endorser_did" is not set in "endorser_info"'
-                    " in connection metadata for this connection record"
-                )
-            )
-        endorser_did = endorser_info["endorser_did"]
-
-    async with context.session() as session:
-        wallet = session.inject_or(BaseWallet)
-        if not wallet:
-            raise web.HTTPForbidden(reason="No wallet available")
-        try:
-            endpoint = mediator_endpoint or endpoint
-            ledger = context.profile.inject_or(BaseLedger)
-            attrib_def = await wallet.set_did_endpoint(
-                did,
-                endpoint,
-                ledger,
-                endpoint_type,
-                write_ledger=write_ledger,
-                endorser_did=endorser_did,
-                routing_keys=routing_keys,
-            )
-        except WalletNotFoundError as err:
-            raise web.HTTPNotFound(reason=err.roll_up) from err
-        except LedgerConfigError as err:
-            raise web.HTTPForbidden(reason=err.roll_up) from err
-        except (LedgerError, WalletError) as err:
-            raise web.HTTPBadRequest(reason=err.roll_up) from err
-
-    if not create_transaction_for_endorser:
-        return web.json_response({})
-    else:
-        transaction_mgr = TransactionManager(context.profile)
-        try:
-            transaction = await transaction_mgr.create_record(
-                messages_attach=attrib_def["signed_txn"], connection_id=connection_id
-            )
-        except StorageError as err:
-            raise web.HTTPBadRequest(reason=err.roll_up) from err
-
-        # if auto-request, send the request to the endorser
-        if context.settings.get_value("endorser.auto_request"):
-            try:
-                transaction, transaction_request = await transaction_mgr.create_request(
-                    transaction=transaction,
-                    # TODO see if we need to parametrize these params
-                    # expires_time=expires_time,
-                )
-            except (StorageError, TransactionManagerError) as err:
-                raise web.HTTPBadRequest(reason=err.roll_up) from err
-
-            await outbound_handler(transaction_request, connection_id=connection_id)
-
-        return web.json_response({"txn": transaction.serialize()})
 
 
 @docs(tags=[WALLET_TAG_TITLE], summary="Create a jws using did keys with a given payload")
@@ -1359,136 +1064,6 @@ class UpgradeResultSchema(OpenAPISchema):
     """Result schema for upgrade."""
 
 
-@docs(
-    tags=[UPGRADE_TAG_TITLE],
-    summary="Upgrade the wallet from askar to askar-anoncreds OR kanon to "
-    "kanon-anoncreds. Be very careful with this! You cannot go back! "
-    "See migration guide for more information.",
-)
-@querystring_schema(UpgradeVerificationSchema())
-@response_schema(UpgradeResultSchema(), description="")
-@tenant_authentication
-async def upgrade_anoncreds(request: web.BaseRequest):
-    """Request handler for triggering an upgrade to anoncreds.
-
-    Args:
-        request: aiohttp request object
-
-    Returns:
-        An empty JSON response
-
-    """
-    context: AdminRequestContext = request["context"]
-    profile = context.profile
-
-    if profile.settings.get("wallet.name") != request.query.get("wallet_name"):
-        raise web.HTTPBadRequest(
-            reason="Wallet name parameter does not match the agent which triggered the upgrade"  # noqa: E501
-        )
-
-    if profile.settings.get("wallet.type") in ("askar-anoncreds", "kanon-anoncreds"):
-        raise web.HTTPBadRequest(reason="Wallet type is already anoncreds")
-
-    async with profile.session() as session:
-        storage = session.inject(BaseStorage)
-        upgrading_record = StorageRecord(
-            RECORD_TYPE_ACAPY_UPGRADING,
-            UPGRADING_RECORD_IN_PROGRESS,
-        )
-        await storage.add_record(upgrading_record)
-        is_subwallet = context.metadata and "wallet_id" in context.metadata
-        # Create background task and store reference to prevent garbage collection
-        task = asyncio.create_task(
-            upgrade_wallet_to_anoncreds_if_requested(profile, is_subwallet)
-        )
-        # Store task reference to prevent garbage collection
-        if not hasattr(profile, "_background_tasks"):
-            profile._background_tasks = set()
-        profile._background_tasks.add(task)
-        # Remove task from set when it completes to prevent memory leaks
-        task.add_done_callback(profile._background_tasks.discard)
-        UpgradeInProgressSingleton().set_wallet(profile.name)
-
-    return web.json_response(
-        {
-            "success": True,
-            "message": f"Upgrade to anoncreds has been triggered for wallet {profile.name}",  # noqa: E501
-        }
-    )
-
-
-def register_events(event_bus: EventBus):
-    """Subscribe to any events we need to support."""
-    event_bus.subscribe(EVENT_LISTENER_PATTERN, on_register_nym_event)
-
-
-async def on_register_nym_event(profile: Profile, event: Event):
-    """Handle any events we need to support."""
-    # after the nym record is written, promote to wallet public DID
-    if is_author_role(profile) and profile.context.settings.get_value(
-        "endorser.auto_promote_author_did"
-    ):
-        did = event.payload["did"]
-        connection_id = event.payload.get("connection_id")
-        try:
-            _info, attrib_def = await promote_wallet_public_did(
-                context=profile.context,
-                did=did,
-                connection_id=connection_id,
-                profile=profile,
-            )
-        except Exception as err:
-            # log the error, but continue
-            LOGGER.exception(
-                "Error promoting to public DID: %s",
-                err,
-            )
-            return
-
-        transaction_mgr = TransactionManager(profile)
-        try:
-            transaction = await transaction_mgr.create_record(
-                messages_attach=attrib_def["signed_txn"], connection_id=connection_id
-            )
-        except StorageError as err:
-            # log the error, but continue
-            LOGGER.exception(
-                "Error accepting endorser invitation/configuring endorser connection: %s",
-                err,
-            )
-            return
-
-        # if auto-request, send the request to the endorser
-        if profile.settings.get_value("endorser.auto_request"):
-            try:
-                transaction, transaction_request = await transaction_mgr.create_request(
-                    transaction=transaction,
-                    # TODO see if we need to parametrize these params
-                    # expires_time=expires_time,
-                )
-            except (StorageError, TransactionManagerError) as err:
-                # log the error, but continue
-                LOGGER.exception(
-                    "Error creating endorser transaction request: %s",
-                    err,
-                )
-
-            # TODO not sure how to get outbound_handler in an event ...
-            # await outbound_handler(transaction_request, connection_id=connection_id)
-            responder = profile.inject_or(BaseResponder)
-            if responder:
-                await responder.send(
-                    transaction_request,
-                    connection_id=connection_id,
-                )
-            else:
-                LOGGER.warning(
-                    "Configuration has no BaseResponder: cannot update "
-                    "ATTRIB record on DID: %s",
-                    did,
-                )
-
-
 async def register(app: web.Application):
     """Register routes."""
     app.add_routes(
@@ -1497,7 +1072,6 @@ async def register(app: web.Application):
             web.post("/wallet/did/create", wallet_create_did),
             web.get("/wallet/did/public", wallet_get_public_did, allow_head=False),
             web.post("/wallet/did/public", wallet_set_public_did),
-            web.post("/wallet/set-did-endpoint", wallet_set_did_endpoint),
             web.post("/wallet/jwt/sign", wallet_jwt_sign),
             web.post("/wallet/jwt/verify", wallet_jwt_verify),
             web.post("/wallet/sd-jwt/sign", wallet_sd_jwt_sign),
@@ -1506,7 +1080,6 @@ async def register(app: web.Application):
                 "/wallet/get-did-endpoint", wallet_get_did_endpoint, allow_head=False
             ),
             web.patch("/wallet/did/local/rotate-keypair", wallet_rotate_did_keypair),
-            web.post("/anoncreds/wallet/upgrade", upgrade_anoncreds),
         ]
     )
 

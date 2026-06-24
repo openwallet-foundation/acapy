@@ -13,9 +13,9 @@ from ...messaging.valid import (
     ANONCREDS_DID_VALIDATE,
     ANONCREDS_SCHEMA_ID_EXAMPLE,
     ANONCREDS_SCHEMA_ID_VALIDATE,
-    INDY_DID_VALIDATE,
     MAJOR_MINOR_VERSION_EXAMPLE,
     MAJOR_MINOR_VERSION_VALIDATE,
+    UNQUALIFIED_OR_INDY_DID_VALIDATE,
 )
 
 
@@ -34,7 +34,9 @@ class AnonCredsCredentialDefinitionProposal(OpenAPISchema):
         required=False,
         # TODO: INDY_DID_VALIDATE should be removed when indy sov did's
         # are represented by did:sov:{nym} in acapy
-        validate=validate.NoneOf([ANONCREDS_DID_VALIDATE, INDY_DID_VALIDATE]),
+        validate=validate.NoneOf(
+            [ANONCREDS_DID_VALIDATE, UNQUALIFIED_OR_INDY_DID_VALIDATE]
+        ),
         metadata={"description": "Issuer DID", "example": ANONCREDS_DID_EXAMPLE},
     )
     schema_id = fields.Str(
@@ -49,7 +51,9 @@ class AnonCredsCredentialDefinitionProposal(OpenAPISchema):
         required=False,
         # TODO: INDY_DID_VALIDATE should be removed when indy sov did's
         # are represented by did:sov:{nym} in acapy
-        validate=validate.NoneOf([ANONCREDS_DID_VALIDATE, INDY_DID_VALIDATE]),
+        validate=validate.NoneOf(
+            [ANONCREDS_DID_VALIDATE, UNQUALIFIED_OR_INDY_DID_VALIDATE]
+        ),
         metadata={
             "description": "Schema identifier",
             "example": ANONCREDS_SCHEMA_ID_EXAMPLE,

@@ -1,26 +1,27 @@
-"""Admin routes for presentations."""
+"""Credential info model for AnonCreds holder credentials."""
 
 from typing import Mapping, Optional
 
 from marshmallow import EXCLUDE, fields
 
-from ...messaging.models.base import BaseModel, BaseModelSchema
-from ...messaging.models.openapi import OpenAPISchema
-from ...messaging.valid import (
-    INDY_CRED_DEF_ID_EXAMPLE,
-    INDY_CRED_DEF_ID_VALIDATE,
-    INDY_CRED_REV_ID_EXAMPLE,
-    INDY_CRED_REV_ID_VALIDATE,
-    INDY_REV_REG_ID_EXAMPLE,
-    INDY_REV_REG_ID_VALIDATE,
-    INDY_SCHEMA_ID_EXAMPLE,
-    INDY_SCHEMA_ID_VALIDATE,
+from acapy_agent.messaging.models.base import BaseModel, BaseModelSchema
+from acapy_agent.messaging.models.openapi import OpenAPISchema
+from acapy_agent.messaging.valid import (
+    ANONCREDS_CRED_DEF_ID_EXAMPLE,
+    ANONCREDS_CRED_DEF_ID_VALIDATE,
+    ANONCREDS_CRED_REV_ID_EXAMPLE,
+    ANONCREDS_CRED_REV_ID_VALIDATE,
+    ANONCREDS_REV_REG_ID_EXAMPLE,
+    ANONCREDS_REV_REG_ID_VALIDATE,
+    ANONCREDS_SCHEMA_ID_EXAMPLE,
+    ANONCREDS_SCHEMA_ID_VALIDATE,
     UUID4_EXAMPLE,
 )
-from .non_rev_interval import IndyNonRevocationIntervalSchema
+
+from .non_rev_interval import AnonCredsNonRevocationInterval
 
 
-class IndyCredInfo(BaseModel):
+class CredInfo(BaseModel):
     """Indy cred info, as holder gets via indy-sdk."""
 
     class Meta:
@@ -46,13 +47,13 @@ class IndyCredInfo(BaseModel):
         self.cred_rev_id = cred_rev_id
 
 
-class IndyCredInfoSchema(BaseModelSchema):
+class CredInfoSchema(BaseModelSchema):
     """Schema for indy cred-info."""
 
     class Meta:
         """Schema metadata."""
 
-        model_class = IndyCredInfo
+        model_class = CredInfo
         unknown = EXCLUDE
 
     referent = fields.Str(
@@ -64,47 +65,47 @@ class IndyCredInfoSchema(BaseModelSchema):
         metadata={"description": "Attribute names and value"},
     )
     schema_id = fields.Str(
-        validate=INDY_SCHEMA_ID_VALIDATE,
+        validate=ANONCREDS_SCHEMA_ID_VALIDATE,
         metadata={
             "description": "Schema identifier",
-            "example": INDY_SCHEMA_ID_EXAMPLE,
+            "example": ANONCREDS_SCHEMA_ID_EXAMPLE,
         },
     )
     cred_def_id = fields.Str(
-        validate=INDY_CRED_DEF_ID_VALIDATE,
+        validate=ANONCREDS_CRED_DEF_ID_VALIDATE,
         metadata={
             "description": "Credential definition identifier",
-            "example": INDY_CRED_DEF_ID_EXAMPLE,
+            "example": ANONCREDS_CRED_DEF_ID_EXAMPLE,
         },
     )
     rev_reg_id = fields.Str(
-        validate=INDY_REV_REG_ID_VALIDATE,
+        validate=ANONCREDS_REV_REG_ID_VALIDATE,
         allow_none=True,
         metadata={
             "description": "Revocation registry identifier",
-            "example": INDY_REV_REG_ID_EXAMPLE,
+            "example": ANONCREDS_REV_REG_ID_EXAMPLE,
         },
     )
     cred_rev_id = fields.Str(
-        validate=INDY_CRED_REV_ID_VALIDATE,
+        validate=ANONCREDS_CRED_REV_ID_VALIDATE,
         allow_none=True,
         metadata={
             "description": "Credential revocation identifier",
-            "example": INDY_CRED_REV_ID_EXAMPLE,
+            "example": ANONCREDS_CRED_REV_ID_EXAMPLE,
         },
     )
 
 
-class IndyCredPrecisSchema(OpenAPISchema):
+class CredPrecisSchema(OpenAPISchema):
     """Schema for precis that indy credential search returns (and aca-py augments)."""
 
     cred_info = fields.Nested(
-        IndyCredInfoSchema(),
+        CredInfoSchema(),
         metadata={"description": "Credential info"},
         required=True,
     )
     interval = fields.Nested(
-        IndyNonRevocationIntervalSchema(),
+        AnonCredsNonRevocationInterval(),
         metadata={"description": "Non-revocation interval from presentation request"},
     )
     presentation_referents = fields.List(

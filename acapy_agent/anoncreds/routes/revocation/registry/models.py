@@ -15,13 +15,10 @@ from .....messaging.valid import (
     WHOLE_NUM_EXAMPLE,
     WHOLE_NUM_VALIDATE,
 )
-from .....revocation.models.issuer_rev_reg_record import (
-    IssuerRevRegRecordSchema,
-)
 from ....models.issuer_cred_rev_record import (
     IssuerCredRevRecordSchemaAnonCreds,
 )
-from ....models.revocation import RevRegDefState
+from ....models.revocation import RevRegDefSchema, RevRegDefState
 from ...common.schemas import (
     CredRevRecordQueryStringMixin,
     EndorserOptionsSchema,
@@ -85,7 +82,7 @@ class RevRegCreateRequestSchemaAnonCreds(OpenAPISchema):
 class RevRegResultSchemaAnonCreds(OpenAPISchema):
     """Result schema for revocation registry creation request."""
 
-    result = fields.Nested(IssuerRevRegRecordSchema())
+    result = fields.Nested(RevRegDefSchema())
 
 
 class CredRevRecordQueryStringSchema(CredRevRecordQueryStringMixin):

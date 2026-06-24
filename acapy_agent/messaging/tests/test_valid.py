@@ -15,14 +15,12 @@ from ..valid import (
     DID_WEBVH_VALIDATE,
     ENDPOINT_TYPE_VALIDATE,
     ENDPOINT_VALIDATE,
+    EXTRA_WQL_VALIDATE,
     INDY_CRED_DEF_ID_VALIDATE,
     INDY_CRED_REV_ID_VALIDATE,
-    INDY_DID_VALIDATE,
-    INDY_EXTRA_WQL_VALIDATE,
     INDY_REV_REG_ID_VALIDATE,
     INDY_REV_REG_SIZE_VALIDATE,
     INDY_SCHEMA_ID_VALIDATE,
-    INDY_WQL_VALIDATE,
     INT_EPOCH_VALIDATE,
     ISO8601_DATETIME_VALIDATE,
     JWS_HEADER_KID_VALIDATE,
@@ -34,8 +32,10 @@ from ..valid import (
     PREDICATE_VALIDATE,
     RAW_ED25519_2018_PUBLIC_KEY_VALIDATE,
     SHA256_VALIDATE,
+    UNQUALIFIED_OR_INDY_DID_VALIDATE,
     UUID4_VALIDATE,
     WHOLE_NUM_VALIDATE,
+    WQL_VALIDATE,
 )
 
 
@@ -110,10 +110,10 @@ class TestValid(TestCase):
         ]
         for non_indy_did in non_indy_dids:
             with self.assertRaises(ValidationError):
-                INDY_DID_VALIDATE(non_indy_did)
+                UNQUALIFIED_OR_INDY_DID_VALIDATE(non_indy_did)
 
-        INDY_DID_VALIDATE("Q4zqM7aXqm7gDQkUVLng9h")
-        INDY_DID_VALIDATE("did:sov:Q4zqM7aXqm7gDQkUVLng9h")
+        UNQUALIFIED_OR_INDY_DID_VALIDATE("Q4zqM7aXqm7gDQkUVLng9h")
+        UNQUALIFIED_OR_INDY_DID_VALIDATE("did:sov:Q4zqM7aXqm7gDQkUVLng9h")
 
     def test_webvh_did(self):
         valid_webvh_dids = [
@@ -357,12 +357,12 @@ class TestValid(TestCase):
         ]
         for non_wql in non_wqls:
             with self.assertRaises(ValidationError):
-                INDY_WQL_VALIDATE(non_wql)
+                WQL_VALIDATE(non_wql)
 
-        INDY_WQL_VALIDATE(json.dumps({}))
-        INDY_WQL_VALIDATE(json.dumps({"a": "1234"}))
-        INDY_WQL_VALIDATE(json.dumps({"a": "1234", "b": {"$not": "0"}}))
-        INDY_WQL_VALIDATE(json.dumps({"$or": {"a": "1234", "b": "0"}}))
+        WQL_VALIDATE(json.dumps({}))
+        WQL_VALIDATE(json.dumps({"a": "1234"}))
+        WQL_VALIDATE(json.dumps({"a": "1234", "b": {"$not": "0"}}))
+        WQL_VALIDATE(json.dumps({"$or": {"a": "1234", "b": "0"}}))
 
     def test_indy_extra_wql(self):
         non_xwqls = [
@@ -382,10 +382,10 @@ class TestValid(TestCase):
         ]
         for non_xwql in non_xwqls:
             with self.assertRaises(ValidationError):
-                INDY_EXTRA_WQL_VALIDATE(non_xwql)
+                EXTRA_WQL_VALIDATE(non_xwql)
 
-        INDY_EXTRA_WQL_VALIDATE(json.dumps({"uuid0": {"name::ident::marker": "1"}}))
-        INDY_EXTRA_WQL_VALIDATE(
+        EXTRA_WQL_VALIDATE(json.dumps({"uuid0": {"name::ident::marker": "1"}}))
+        EXTRA_WQL_VALIDATE(
             json.dumps(
                 {
                     "uuid0": {"attr::ident::marker": "1"},

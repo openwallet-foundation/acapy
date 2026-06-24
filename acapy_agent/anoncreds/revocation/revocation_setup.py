@@ -8,7 +8,6 @@ from typing import Any
 
 from ...core.event_bus import Event, EventBus
 from ...core.profile import Profile
-from ...revocation.util import notify_revocation_published_event
 from ...storage.type import (
     RECORD_TYPE_REV_LIST_CREATE_EVENT,
     RECORD_TYPE_REV_LIST_STORE_EVENT,
@@ -39,7 +38,6 @@ from ..events import (
     RevRegFullHandlingResponseEvent,
 )
 from ..issuer import STATE_FINISHED
-from ..revocation import AnonCredsRevocation
 from .auto_recovery import (
     EventStorageManager,
     calculate_event_expiry_timestamp,
@@ -48,6 +46,8 @@ from .auto_recovery import (
     generate_request_id,
     serialize_event_payload,
 )
+from .revocation import AnonCredsRevocation
+from .util import notify_revocation_published_event
 
 LOGGER = logging.getLogger(__name__)
 

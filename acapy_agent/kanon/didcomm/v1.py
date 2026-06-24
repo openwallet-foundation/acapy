@@ -8,8 +8,8 @@ from aries_askar.bindings import key_get_secret_bytes
 from marshmallow import ValidationError
 
 from ...utils.jwe import JweEnvelope, JweRecipient, b64url
-from ...wallet.base import WalletError
 from ...wallet.crypto import extract_pack_recipients
+from ...wallet.error import WalletError
 from ...wallet.util import b58_to_bytes, bytes_to_b58
 
 

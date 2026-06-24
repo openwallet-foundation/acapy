@@ -365,8 +365,6 @@ class V20CredManager:
             cred_offer = cred_ex_record.cred_offer
 
             input_formats = cred_offer.formats
-        # start with request (not allowed for indy -> checked in indy format handler)
-        # use proposal formats
         else:
             cred_proposal = cred_ex_record.cred_proposal
             input_formats = cred_proposal.formats
@@ -596,11 +594,10 @@ class V20CredManager:
         handled_formats = []
 
         def _check_formats():
-            """Allow indy issue fomat and anoncreds req format or matching formats."""
-            return (
-                issue_formats == [V20CredFormat.Format.INDY]
-                and req_formats == [V20CredFormat.Format.ANONCREDS]
-            ) or len(set(issue_formats) - set(req_formats)) == 0
+            """Allow anoncreds req format or matching formats."""
+            return (req_formats == [V20CredFormat.Format.ANONCREDS]) or len(
+                set(issue_formats) - set(req_formats)
+            ) == 0
 
         if not _check_formats():
             raise V20CredManagerError(
