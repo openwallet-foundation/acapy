@@ -182,3 +182,7 @@ Pull requests are welcome! Please read our [contributions guide](./CONTRIBUTING.
 ## License
 
 [Apache License Version 2.0](https://github.com/openwallet-foundation/acapy/blob/main/LICENSE)
+
+## Governance
+
+The Project Charter for Adaptive Cloud Agent - Python (ACA-py) can be found here: [https://github.com/openwallet-foundation/technical-project-charters/blob/main/aca-py_Technical%20Charter_05-11-2026.pdf](https://github.com/openwallet-foundation/technical-project-charters/blob/main/aca-py_Technical%20Charter_05-11-2026.pdf)
