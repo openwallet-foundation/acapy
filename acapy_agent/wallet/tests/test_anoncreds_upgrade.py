@@ -27,6 +27,7 @@ from ...storage.type import (
 from ...tests import mock
 from ...utils.testing import create_test_profile
 from .. import anoncreds_upgrade
+from ..singletons import UpgradeInProgressSingleton
 
 
 class TestAnonCredsUpgrade(IsolatedAsyncioTestCase):
@@ -361,11 +362,15 @@ class TestAnonCredsUpgrade(IsolatedAsyncioTestCase):
                         Exception("Error"),
                     ]
                 )
+                # Add wallet to upgrade in progress singleton
+                UpgradeInProgressSingleton().set_wallet(self.profile.name)
                 await anoncreds_upgrade.upgrade_wallet_to_anoncreds_if_requested(
                     self.profile
                 )
                 assert mock_rollback.called
                 assert not mock_commit.called
+                # Verify wallet has been removed from singleton
+                assert self.profile.name not in UpgradeInProgressSingleton().wallets
                 # Upgrading record should not be deleted
                 with self.assertRaises(Exception):
                     await storage.find_record(
