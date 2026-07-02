@@ -580,6 +580,7 @@ async def retry_converting_records(
     async def fail_upgrade():
         async with profile.session() as session:
             storage = session.inject(BaseStorage)
+            UpgradeInProgressSingleton().remove_wallet(profile.name)
             await storage.delete_record(upgrading_record)
 
     try:
@@ -597,7 +598,8 @@ async def retry_converting_records(
         else:
             LOGGER.error(
                 f"Failed to upgrade wallet: {profile.name} after 5 retries. "
-                "Try fixing any connection issues and re-running the update"
+                "Try fixing any connection issues or repairing the wallet and re-running "
+                "the update"
             )
             await fail_upgrade()
 
