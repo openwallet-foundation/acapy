@@ -259,7 +259,8 @@ echo ""
 echo " Claims:"
 echo "${ACCESS_TOKEN}" \
   | cut -d. -f2 \
-  | (cat; echo) \
+  | tr '_-' '/+' \
+  | awk '{l=length($0)%4; if(l==2) print $0"=="; else if(l==3) print $0"="; else print $0}' \
   | base64 -d 2>/dev/null \
   | jq '{sub, scope, wallet_id, aud, exp}'
 echo ""
