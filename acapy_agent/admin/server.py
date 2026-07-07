@@ -372,6 +372,15 @@ class AdminServer(BaseAdminServer):
                                     f"Wallet not found for wallet_id claim: {wallet_id}"
                                 )
                             )
+                    elif "acapy:admin" not in scopes:
+                        # Without a wallet_id claim the request would run against
+                        # the base wallet; only admin-scoped tokens may do that.
+                        raise web.HTTPUnauthorized(
+                            reason=(
+                                "Token must include a wallet_id claim (or the "
+                                "acapy:admin scope) in multitenant mode"
+                            )
+                        )
 
             elif self.multitenant_manager and authorization_header:
                 # Legacy ACA-Py JWT path (multitenant without OAuth).
@@ -575,6 +584,9 @@ class AdminServer(BaseAdminServer):
 
     async def stop(self) -> None:
         """Stop the webserver."""
+        if self.oauth_validator:
+            await self.oauth_validator.close()
+
         # Stopped before admin server is created
         if not self.app:
             return
@@ -636,12 +648,45 @@ class AdminServer(BaseAdminServer):
         self.app._state["ready"] = False
         self.app._state["alive"] = False
 
+    def _authorize_ws_from_claims(self, queue, claims: dict) -> None:
+        """Set websocket authorization on the queue from validated token claims.
+
+        Mirrors the HTTP auth decorators so the admin event stream honours the
+        same scope and tenant-isolation rules:
+
+        - ``acapy:admin`` receives the full cross-wallet event stream.
+        - ``acapy:tenant`` / ``acapy:tenant:read`` receives only its own wallet's
+          events; in multitenant mode a ``wallet_id`` claim is required.
+        - Any other token is treated as unauthenticated (no events delivered).
+        """
+        scopes = set(claims.get("scope", "").split())
+        wallet_id = claims.get("wallet_id")
+
+        if "acapy:admin" in scopes:
+            queue.authenticated = True
+            queue.receive_all = True
+        elif scopes & {"acapy:tenant", "acapy:tenant:read"}:
+            if self.multitenant_manager and not wallet_id:
+                # A tenant token with no wallet binding must not receive events.
+                queue.authenticated = False
+            else:
+                queue.authenticated = True
+                queue.wallet_id = wallet_id
+                queue.receive_all = not self.multitenant_manager
+        else:
+            queue.authenticated = False
+
     async def websocket_handler(self, request):
         """Send notifications to admin client over websocket."""
         ws = web.WebSocketResponse()
         await ws.prepare(request)
         socket_id = str(uuid4())
         queue = BasicMessageQueue()
+        # Which wallet's events this socket may receive. receive_all grants the
+        # full cross-wallet stream (base-wallet / admin identities); otherwise
+        # only events for wallet_id are delivered. See send_webhook.
+        queue.wallet_id = None
+        queue.receive_all = True
         loop = asyncio.get_event_loop()
 
         if self.oauth_validator:
@@ -650,8 +695,8 @@ class AdminServer(BaseAdminServer):
                 bearer, _, token = authorization_header.partition(" ")
                 try:
                     if bearer == "Bearer":
-                        await self.oauth_validator.validate(token)
-                        queue.authenticated = True
+                        claims = await self.oauth_validator.validate(token)
+                        self._authorize_ws_from_claims(queue, claims)
                     else:
                         queue.authenticated = False
                 except Exception:
@@ -790,5 +835,12 @@ class AdminServer(BaseAdminServer):
             webhook_body["wallet_id"] = wallet_id
 
         for queue in self.websocket_queues.values():
-            if queue.authenticated or topic in ("ping", "settings"):
+            if topic in ("ping", "settings"):
+                await queue.enqueue(webhook_body)
+            elif queue.authenticated and (
+                getattr(queue, "receive_all", True)
+                or getattr(queue, "wallet_id", None) == wallet_id
+            ):
+                # Deliver only to sockets authorized for this event's wallet;
+                # receive_all covers base-wallet / admin identities.
                 await queue.enqueue(webhook_body)

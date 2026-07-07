@@ -50,3 +50,21 @@ class TestAuthContextHelpers(TestCase):
 
         assert has_auth_wallet_id(context)
         assert get_auth_wallet_id(context) == "settings-wallet"
+
+    def test_non_mapping_settings_treated_as_empty(self):
+        context = _DummyContext(settings="not-a-mapping")
+
+        assert not has_auth_scopes(context)
+        assert get_auth_scopes(context) == set()
+        assert get_auth_subject(context) is None
+        assert get_auth_wallet_id(context) is None
+
+    def test_scopes_from_string_and_invalid_types(self):
+        context = _DummyContext(metadata={"scopes": "acapy:tenant acapy:admin"})
+        assert get_auth_scopes(context) == {"acapy:tenant", "acapy:admin"}
+
+        context = _DummyContext(metadata={"scopes": {"acapy:tenant", 42}})
+        assert get_auth_scopes(context) == {"acapy:tenant"}
+
+        context = _DummyContext(metadata={"scopes": 42})
+        assert get_auth_scopes(context) == set()

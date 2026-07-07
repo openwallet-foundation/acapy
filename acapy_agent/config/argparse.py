@@ -367,6 +367,17 @@ class AdminGroup(ArgumentGroup):
             env_var="ACAPY_OAUTH_INTROSPECTION_CLIENT_SECRET",
             help="Client secret used for HTTP Basic Auth on the introspection endpoint.",
         )
+        parser.add_argument(
+            "--oauth-http-timeout",
+            type=BoundedInt(min=1, max=300),
+            default=10,
+            metavar="<seconds>",
+            env_var="ACAPY_OAUTH_HTTP_TIMEOUT",
+            help=(
+                "Timeout in seconds for HTTP calls to the OAuth2 Authorization "
+                "Server (JWKS key fetches and token introspection): default 10."
+            ),
+        )
 
     def get_settings(self, args: Namespace):
         """Extract admin settings."""
@@ -390,12 +401,40 @@ class AdminGroup(ArgumentGroup):
                         "--oauth-jwks-uri / --oauth-introspection-endpoint) "
                         "is configured."
                     )
+            else:
+                if not (
+                    getattr(args, "oauth_jwks_uri", None)
+                    or getattr(args, "oauth_introspection_endpoint", None)
+                ):
+                    raise ArgsParseError(
+                        "OAuth mode requires a token validation method: set "
+                        "--oauth-jwks-uri and/or --oauth-introspection-endpoint."
+                    )
+                if getattr(args, "oauth_introspection_endpoint", None) and not getattr(
+                    args, "oauth_introspection_client_id", None
+                ):
+                    raise ArgsParseError(
+                        "--oauth-introspection-endpoint requires "
+                        "--oauth-introspection-client-id."
+                    )
+                if getattr(args, "oauth_jwks_uri", None) and not getattr(
+                    args, "oauth_audience", None
+                ):
+                    # Without an expected audience, any signature-valid token from
+                    # the JWKS is accepted regardless of its intended recipient,
+                    # allowing token reuse / confused-deputy on a shared AS.
+                    raise ArgsParseError(
+                        "--oauth-jwks-uri requires --oauth-audience so that JWT "
+                        "access tokens are bound to this resource server (the "
+                        "'aud' claim is verified)."
+                    )
 
             settings["admin.admin_api_key"] = admin_api_key
             settings["admin.admin_insecure_mode"] = admin_insecure_mode
 
             if oauth_mode:
                 settings["admin.oauth_enabled"] = True
+                settings["oauth.http_timeout"] = getattr(args, "oauth_http_timeout", None)
 
             if getattr(args, "oauth_jwks_uri", None):
                 settings["oauth.jwks_uri"] = args.oauth_jwks_uri

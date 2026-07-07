@@ -59,6 +59,34 @@ class TestAdminAuthentication(IsolatedAsyncioTestCase):
         await decor_func(self.request)
         self.decorated_handler.assert_called_once_with(self.request)
 
+    def _make_oauth_request(self, scopes, method="POST"):
+        context = AdminRequestContext(
+            profile=self.profile, metadata={"scopes": set(scopes)}
+        )
+        return mock.MagicMock(
+            __getitem__=lambda _, k: {"context": context}[k],
+            headers={},
+            method=method,
+        )
+
+    async def test_oauth_admin_scope_allowed(self):
+        request = self._make_oauth_request(["acapy:admin"])
+        decor_func = admin_authentication(self.decorated_handler)
+        await decor_func(request)
+        self.decorated_handler.assert_called_once_with(request)
+
+    async def test_oauth_tenant_scope_forbidden(self):
+        request = self._make_oauth_request(["acapy:tenant"])
+        decor_func = admin_authentication(self.decorated_handler)
+        with self.assertRaises(web.HTTPForbidden):
+            await decor_func(request)
+
+    async def test_oauth_no_scopes_forbidden(self):
+        request = self._make_oauth_request([])
+        decor_func = admin_authentication(self.decorated_handler)
+        with self.assertRaises(web.HTTPForbidden):
+            await decor_func(request)
+
 
 class TestTenantAuthentication(IsolatedAsyncioTestCase):
     async def asyncSetUp(self) -> None:
@@ -174,6 +202,46 @@ class TestTenantAuthentication(IsolatedAsyncioTestCase):
         decor_func = tenant_authentication(self.decorated_handler)
         with self.assertRaises(web.HTTPUnauthorized):
             await decor_func(self.request)
+
+    def _make_oauth_request(self, scopes, method="POST"):
+        context = AdminRequestContext(
+            profile=self.profile, metadata={"scopes": set(scopes)}
+        )
+        return mock.MagicMock(
+            __getitem__=lambda _, k: {"context": context}[k],
+            headers={},
+            method=method,
+        )
+
+    async def test_oauth_tenant_scope_allowed(self):
+        request = self._make_oauth_request(["acapy:tenant"])
+        decor_func = tenant_authentication(self.decorated_handler)
+        await decor_func(request)
+        self.decorated_handler.assert_called_once_with(request)
+
+    async def test_oauth_admin_scope_allowed_on_tenant_route(self):
+        request = self._make_oauth_request(["acapy:admin"])
+        decor_func = tenant_authentication(self.decorated_handler)
+        await decor_func(request)
+        self.decorated_handler.assert_called_once_with(request)
+
+    async def test_oauth_read_scope_allows_get(self):
+        request = self._make_oauth_request(["acapy:tenant:read"], method="GET")
+        decor_func = tenant_authentication(self.decorated_handler)
+        await decor_func(request)
+        self.decorated_handler.assert_called_once_with(request)
+
+    async def test_oauth_read_scope_forbids_write(self):
+        request = self._make_oauth_request(["acapy:tenant:read"], method="POST")
+        decor_func = tenant_authentication(self.decorated_handler)
+        with self.assertRaises(web.HTTPForbidden):
+            await decor_func(request)
+
+    async def test_oauth_unrelated_scope_forbidden(self):
+        request = self._make_oauth_request(["profile email"])
+        decor_func = tenant_authentication(self.decorated_handler)
+        with self.assertRaises(web.HTTPForbidden):
+            await decor_func(request)
 
 
 class TestRequireScope(IsolatedAsyncioTestCase):

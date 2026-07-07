@@ -111,14 +111,22 @@ A request passes scope enforcement if it holds **at least one** of the required 
 
 | Parameter | Description |
 |---|---|
+| `--oauth-enabled` | Enable OAuth2 RS mode explicitly. Implied by either of the two parameters below. |
 | `--oauth-jwks-uri <url>` | JWKS endpoint of the AS. ACA-Py fetches and caches signing keys from here to validate JWT access tokens locally. |
 | `--oauth-issuer <issuer>` | Expected value of the `iss` claim. Tokens with a different issuer are rejected. |
-| `--oauth-audience <audience>` | Expected value of the `aud` claim. Optional but recommended for production. |
+| `--oauth-audience <audience>` | Expected value of the `aud` claim. **Required whenever `--oauth-jwks-uri` is set** — ACA-Py refuses to start without it, so JWT access tokens are always bound to this resource server. |
 | `--oauth-introspection-endpoint <url>` | RFC 7662 introspection endpoint. Used as a fallback for opaque tokens, or as the sole validation method when `--oauth-jwks-uri` is not set. |
-| `--oauth-introspection-client-id <id>` | Client ID for HTTP Basic Auth on the introspection endpoint. |
+| `--oauth-introspection-client-id <id>` | Client ID for HTTP Basic Auth on the introspection endpoint. Required when the introspection endpoint is configured. |
 | `--oauth-introspection-client-secret <secret>` | Client secret for HTTP Basic Auth on the introspection endpoint. |
+| `--oauth-http-timeout <seconds>` | Timeout for HTTP calls to the AS (JWKS key fetches and token introspection). Default 10. |
 
 When any of `--oauth-jwks-uri` or `--oauth-introspection-endpoint` is provided, **neither `--admin-api-key` nor `--admin-insecure-mode` is required**.
+
+Configuration is validated at startup and ACA-Py refuses to start when:
+
+- OAuth mode is enabled (via any of the three flags) but neither `--oauth-jwks-uri` nor `--oauth-introspection-endpoint` is set — there would be no way to validate tokens.
+- `--oauth-introspection-endpoint` is set without `--oauth-introspection-client-id`.
+- `--oauth-jwks-uri` is set without `--oauth-audience` — without an expected audience, any signature-valid token from the JWKS would be accepted regardless of its intended recipient (token reuse / confused-deputy on a shared Authorization Server).
 
 Example startup using JWKS validation:
 
@@ -156,6 +164,7 @@ Each parameter has a corresponding environment variable:
 | `--oauth-introspection-endpoint` | `ACAPY_OAUTH_INTROSPECTION_ENDPOINT` |
 | `--oauth-introspection-client-id` | `ACAPY_OAUTH_INTROSPECTION_CLIENT_ID` |
 | `--oauth-introspection-client-secret` | `ACAPY_OAUTH_INTROSPECTION_CLIENT_SECRET` |
+| `--oauth-http-timeout` | `ACAPY_OAUTH_HTTP_TIMEOUT` |
 
 ### Token Validation Modes
 
@@ -163,9 +172,13 @@ Each parameter has a corresponding environment variable:
 
 ACA-Py uses `PyJWKClient` (bundled with `pyjwt >= 2.x`) to fetch signing keys from the JWKS endpoint and validate tokens locally. Signature, expiry, issuer, and audience are all checked. Supported algorithms: RS256/384/512, ES256/384/512, PS256/384/512.
 
+JWKS key fetches happen on a cache miss (first request, or key rotation) and are subject to `--oauth-http-timeout`. The fetch runs in a worker thread so a slow AS does not block other requests.
+
 **Introspection fallback**
 
 If JWKS validation fails with a decode error (e.g. the token is opaque, not a JWT) and `--oauth-introspection-endpoint` is configured, ACA-Py falls back to RFC 7662 introspection. The introspection response must include `"active": true`; the `scope` field is used for scope enforcement.
+
+Introspection calls use a shared HTTP session with a timeout of `--oauth-http-timeout` seconds (default 10). If the AS cannot be reached (network error or timeout), ACA-Py responds with `503 Service Unavailable` rather than `401`, since the failure says nothing about the token's validity.
 
 **Combined mode**
 
@@ -184,7 +197,7 @@ When ACA-Py receives a request:
 3. The corresponding `WalletRecord` is loaded from storage.
 4. The request is executed in that wallet's profile context.
 
-If `wallet_id` is absent from the token, the request runs against the **base wallet** (suitable for admin operations with `acapy:admin` scope).
+If `wallet_id` is absent from the token, the request is **rejected with `401 Unauthorized` unless the token carries the `acapy:admin` scope**. Admin-scoped tokens without a `wallet_id` run against the **base wallet**. This prevents a misconfigured AS (e.g. a tenant client missing its `wallet_id` mapper) from silently granting tenant tokens access to base-wallet data.
 
 ### Provisioning flow
 
@@ -402,5 +415,5 @@ curl -s -H "Authorization: Bearer $TOKEN" http://localhost:8031/multitenancy/wal
 ## Limitations
 
 - **Unmanaged wallets are not supported in OAuth mode.** The ACA-Py-issued JWT could carry a `wallet_key` for wallets whose keys are not stored by ACA-Py. An OAuth access token from an external AS must not contain cryptographic wallet keys; use managed wallets (`key_management_mode: managed`) with OAuth.
-- **WebSocket authentication** uses the same bearer token presented in the initial HTTP upgrade request. In-message `x-api-key` re-authentication is not available in OAuth mode.
+- **WebSocket authentication** uses the same bearer token presented in the initial HTTP upgrade request. In-message `x-api-key` re-authentication is not available in OAuth mode. The admin event stream (`GET /ws` on the admin port) is scope- and wallet-aware: an `acapy:admin` token receives events for all wallets, while an `acapy:tenant` / `acapy:tenant:read` token receives only events for the `wallet_id` in its token (and, in multitenant mode, a token without a `wallet_id` is not permitted to receive events). This mirrors the tenant isolation enforced on the HTTP routes. Note this is the admin notification websocket, distinct from any DIDComm WebSocket inbound transport.
 - **JWKS key rotation** is handled automatically by `PyJWKClient`'s built-in cache, which re-fetches the key set when a token references an unknown key ID (`kid`). No ACA-Py restart is required.

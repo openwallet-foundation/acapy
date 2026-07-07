@@ -1,5 +1,6 @@
 """OAuth2 token validator for ACA-Py acting as a Resource Server."""
 
+import asyncio
 import logging
 from typing import Optional
 
@@ -8,6 +9,8 @@ import jwt
 from aiohttp import web
 
 LOGGER = logging.getLogger(__name__)
+
+DEFAULT_HTTP_TIMEOUT = 10
 
 _SUPPORTED_ALGORITHMS = [
     "RS256",
@@ -43,11 +46,34 @@ class OAuthTokenValidator:
         self.introspection_client_secret: Optional[str] = settings.get(
             "oauth.introspection_client_secret"
         )
+        self.http_timeout: float = (
+            settings.get("oauth.http_timeout") or DEFAULT_HTTP_TIMEOUT
+        )
 
         # PyJWKClient handles JWKS fetching and caching internally.
         self._jwks_client = (
-            jwt.PyJWKClient(self.jwks_uri, cache_keys=True) if self.jwks_uri else None
+            jwt.PyJWKClient(self.jwks_uri, cache_keys=True, timeout=self.http_timeout)
+            if self.jwks_uri
+            else None
         )
+
+        # Shared HTTP session for introspection calls, created lazily on first
+        # use and closed via close().
+        self._session: Optional[aiohttp.ClientSession] = None
+
+    def _get_session(self) -> aiohttp.ClientSession:
+        """Return the shared introspection HTTP session, creating it if needed."""
+        if self._session is None or self._session.closed:
+            self._session = aiohttp.ClientSession(
+                timeout=aiohttp.ClientTimeout(total=self.http_timeout)
+            )
+        return self._session
+
+    async def close(self):
+        """Release the HTTP session used for introspection calls."""
+        if self._session and not self._session.closed:
+            await self._session.close()
+        self._session = None
 
     async def validate(self, token: str) -> dict:
         """Validate an access token and return its claims.
@@ -64,7 +90,7 @@ class OAuthTokenValidator:
         """
         if self._jwks_client:
             try:
-                return self._validate_jwt(token)
+                return await self._validate_jwt(token)
             except jwt.exceptions.PyJWKClientError as exc:
                 # JWKS infrastructure error — only fall through if introspection is
                 # configured as a fallback, otherwise the token cannot be validated.
@@ -87,13 +113,22 @@ class OAuthTokenValidator:
             "oauth.introspection_endpoint"
         )
 
-    def _validate_jwt(self, token: str) -> dict:
+    async def _validate_jwt(self, token: str) -> dict:
         """Validate a JWT access token using the configured JWKS endpoint."""
-        signing_key = self._jwks_client.get_signing_key_from_jwt(token)
+        # PyJWKClient fetches the JWKS synchronously (urllib) on a cache miss;
+        # run it in a thread so a slow AS doesn't block the event loop.
+        signing_key = await asyncio.get_running_loop().run_in_executor(
+            None, self._jwks_client.get_signing_key_from_jwt, token
+        )
 
         decode_kwargs = dict(
             algorithms=_SUPPORTED_ALGORITHMS,
-            options={"require": ["exp", "iss", "sub"]},
+            # Without verify_aud=False, PyJWT rejects any token carrying an
+            # aud claim when no expected audience is configured.
+            options={
+                "require": ["exp", "iss", "sub"],
+                "verify_aud": self.audience is not None,
+            },
         )
         if self.issuer:
             decode_kwargs["issuer"] = self.issuer
@@ -111,17 +146,24 @@ class OAuthTokenValidator:
                 self.introspection_client_secret or "",
             )
 
-        async with aiohttp.ClientSession() as session:
-            resp = await session.post(
+        try:
+            async with self._get_session().post(
                 self.introspection_endpoint,
                 data={"token": token, "token_type_hint": "access_token"},
                 auth=auth,
-            )
-            if resp.status != 200:
-                raise web.HTTPUnauthorized(
-                    reason=f"Token introspection returned HTTP {resp.status}"
-                )
-            body = await resp.json()
+            ) as resp:
+                if resp.status != 200:
+                    raise web.HTTPUnauthorized(
+                        reason=f"Token introspection returned HTTP {resp.status}"
+                    )
+                body = await resp.json()
+        except (aiohttp.ClientError, asyncio.TimeoutError) as exc:
+            # The Authorization Server being unreachable is a server-side
+            # failure, not a statement about the token's validity.
+            LOGGER.warning("Token introspection request failed: %s", exc)
+            raise web.HTTPServiceUnavailable(
+                reason="Token introspection unavailable"
+            ) from exc
 
         if not body.get("active"):
             raise web.HTTPUnauthorized(reason="Token is not active")

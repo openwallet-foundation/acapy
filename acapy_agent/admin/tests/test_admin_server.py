@@ -6,7 +6,13 @@ from unittest import IsolatedAsyncioTestCase
 import jwt
 import pytest
 import pytest_asyncio
-from aiohttp import ClientSession, DummyCookieJar, TCPConnector, web
+from aiohttp import (
+    ClientSession,
+    DummyCookieJar,
+    TCPConnector,
+    WSServerHandshakeError,
+    web,
+)
 from aiohttp.test_utils import unused_port
 from marshmallow import ValidationError
 
@@ -16,12 +22,14 @@ from ...config.injection_context import InjectionContext
 from ...core.event_bus import Event
 from ...core.goal_code_registry import GoalCodeRegistry
 from ...core.protocol_registry import ProtocolRegistry
+from ...multitenant.base import BaseMultitenantManager
 from ...multitenant.error import MultitenantManagerError
 from ...storage.base import BaseStorage
 from ...storage.error import StorageNotFoundError
 from ...storage.record import StorageRecord
 from ...storage.type import RECORD_TYPE_ACAPY_UPGRADING
 from ...tests import mock
+from ...transport.queue.basic import BasicMessageQueue
 from ...utils.stats import Collector
 from ...utils.task_queue import TaskQueue
 from ...utils.testing import create_test_profile
@@ -454,6 +462,7 @@ class TestAdminServer(IsolatedAsyncioTestCase):
             "wallet.rekey": "def456",
             "wallet.seed": "00000000000000000000000000000000",
             "wallet.storage.creds": "secret",
+            "oauth.introspection_client_secret": "introspect-secret",
         }
         server = await self.get_admin_server(settings)
         await server.start()
@@ -473,6 +482,7 @@ class TestAdminServer(IsolatedAsyncioTestCase):
                     "wallet.rekey",
                     "wallet.seed",
                     "wallet.storage_creds",
+                    "oauth.introspection_client_secret",
                 ]
             )
             assert config["admin.webhook_urls"] == [
@@ -590,6 +600,324 @@ class TestAdminServer(IsolatedAsyncioTestCase):
             # Upgrade in progress with cache
             singletons.IsAnonCredsSingleton().set_wallet(profile.name)
             await test_module.upgrade_middleware(request, handler)
+
+    async def get_oauth_admin_server(
+        self, claims: dict, multitenant: bool = False
+    ) -> AdminServer:
+        """Admin server in OAuth mode whose validator returns the given claims."""
+        settings = {"admin.oauth_enabled": True}
+        if multitenant:
+            settings["multitenant.enabled"] = True
+        context = InjectionContext()
+        if multitenant:
+            self.multitenant_manager = mock.MagicMock(
+                BaseMultitenantManager, autospec=True
+            )
+            context.injector.bind_instance(
+                BaseMultitenantManager, self.multitenant_manager
+            )
+        server = await self.get_admin_server(settings, context)
+        server.oauth_validator.validate = mock.CoroutineMock(return_value=claims)
+        return server
+
+    async def test_oauth_admin_scope_allows_admin_route(self):
+        server = await self.get_oauth_admin_server(
+            {"scope": "acapy:admin", "sub": "svc-admin"}
+        )
+        await server.start()
+
+        async with self.client_session.get(
+            f"http://127.0.0.1:{self.port}/status",
+            headers={"Authorization": "Bearer valid-token"},
+        ) as response:
+            assert response.status == 200
+        server.oauth_validator.validate.assert_awaited_with("valid-token")
+
+        await server.stop()
+
+    async def test_oauth_tenant_scope_forbidden_on_admin_route(self):
+        server = await self.get_oauth_admin_server(
+            {"scope": "acapy:tenant", "sub": "user-1"}
+        )
+        await server.start()
+
+        async with self.client_session.get(
+            f"http://127.0.0.1:{self.port}/status",
+            headers={"Authorization": "Bearer valid-token"},
+        ) as response:
+            assert response.status == 403
+
+        await server.stop()
+
+    async def test_oauth_malformed_authorization_header(self):
+        server = await self.get_oauth_admin_server({"scope": "acapy:admin"})
+        await server.start()
+
+        async with self.client_session.get(
+            f"http://127.0.0.1:{self.port}/status",
+            headers={"Authorization": "Basic dXNlcjpwYXNz"},
+        ) as response:
+            assert response.status == 401
+
+        async with self.client_session.get(
+            f"http://127.0.0.1:{self.port}/status", headers={}
+        ) as response:
+            assert response.status == 401
+
+        await server.stop()
+
+    async def test_oauth_invalid_token_rejected(self):
+        server = await self.get_oauth_admin_server({})
+        server.oauth_validator.validate = mock.CoroutineMock(
+            side_effect=web.HTTPUnauthorized(reason="Token validation failed")
+        )
+        await server.start()
+
+        async with self.client_session.get(
+            f"http://127.0.0.1:{self.port}/status",
+            headers={"Authorization": "Bearer bad-token"},
+        ) as response:
+            assert response.status == 401
+
+        await server.stop()
+
+    async def test_oauth_multitenant_wallet_id_claim_selects_profile(self):
+        server = await self.get_oauth_admin_server(
+            {"scope": "acapy:admin", "sub": "user-1", "wallet_id": "wallet-1"},
+            multitenant=True,
+        )
+        self.multitenant_manager.get_wallet_profile = mock.CoroutineMock(
+            return_value=self.profile
+        )
+        await server.start()
+
+        with mock.patch.object(
+            test_module.WalletRecord,
+            "retrieve_by_id",
+            mock.CoroutineMock(return_value=mock.MagicMock()),
+        ) as mock_retrieve:
+            async with self.client_session.get(
+                f"http://127.0.0.1:{self.port}/status",
+                headers={"Authorization": "Bearer valid-token"},
+            ) as response:
+                assert response.status == 200
+            assert mock_retrieve.call_args.args[1] == "wallet-1"
+            self.multitenant_manager.get_wallet_profile.assert_awaited_once()
+
+        await server.stop()
+
+    async def test_oauth_multitenant_unknown_wallet_id_rejected(self):
+        server = await self.get_oauth_admin_server(
+            {"scope": "acapy:admin", "wallet_id": "no-such-wallet"},
+            multitenant=True,
+        )
+        await server.start()
+
+        with mock.patch.object(
+            test_module.WalletRecord,
+            "retrieve_by_id",
+            mock.CoroutineMock(side_effect=StorageNotFoundError()),
+        ):
+            async with self.client_session.get(
+                f"http://127.0.0.1:{self.port}/status",
+                headers={"Authorization": "Bearer valid-token"},
+            ) as response:
+                assert response.status == 401
+
+        await server.stop()
+
+    async def test_oauth_multitenant_missing_wallet_id_rejected_for_non_admin(self):
+        server = await self.get_oauth_admin_server(
+            {"scope": "acapy:tenant", "sub": "user-1"}, multitenant=True
+        )
+        await server.start()
+
+        async with self.client_session.get(
+            f"http://127.0.0.1:{self.port}/status",
+            headers={"Authorization": "Bearer valid-token"},
+        ) as response:
+            assert response.status == 401
+
+        await server.stop()
+
+    async def test_oauth_multitenant_missing_wallet_id_allowed_for_admin(self):
+        server = await self.get_oauth_admin_server(
+            {"scope": "acapy:admin", "sub": "svc-admin"}, multitenant=True
+        )
+        await server.start()
+
+        async with self.client_session.get(
+            f"http://127.0.0.1:{self.port}/status",
+            headers={"Authorization": "Bearer valid-token"},
+        ) as response:
+            assert response.status == 200
+
+        await server.stop()
+
+    async def test_legacy_multitenant_bearer_token(self):
+        """Multitenant without OAuth still uses ACA-Py issued JWTs."""
+        settings = {
+            "admin.admin_insecure_mode": True,
+            "multitenant.enabled": True,
+        }
+        context = InjectionContext()
+        multitenant_manager = mock.MagicMock(BaseMultitenantManager, autospec=True)
+        context.injector.bind_instance(BaseMultitenantManager, multitenant_manager)
+        server = await self.get_admin_server(settings, context)
+        multitenant_manager.get_profile_for_token = mock.CoroutineMock(
+            return_value=self.profile
+        )
+        multitenant_manager.get_wallet_details_from_token = mock.MagicMock(
+            return_value=("wallet-1", "wallet-key")
+        )
+        await server.start()
+
+        async with self.client_session.get(
+            f"http://127.0.0.1:{self.port}/status",
+            headers={"Authorization": "Bearer acapy-jwt"},
+        ) as response:
+            assert response.status == 200
+        multitenant_manager.get_profile_for_token.assert_awaited_once()
+
+        multitenant_manager.get_profile_for_token = mock.CoroutineMock(
+            side_effect=MultitenantManagerError("bad token")
+        )
+        async with self.client_session.get(
+            f"http://127.0.0.1:{self.port}/status",
+            headers={"Authorization": "Bearer acapy-jwt"},
+        ) as response:
+            assert response.status == 401
+
+        await server.stop()
+
+    async def test_oauth_swagger_security_definitions(self):
+        server = await self.get_oauth_admin_server({"scope": "acapy:admin"})
+        await server.start()
+
+        swagger = server.app["swagger_dict"]
+        assert "OAuth2Bearer" in swagger["securityDefinitions"]
+        assert {"OAuth2Bearer": []} in swagger["security"]
+
+        await server.stop()
+
+    async def test_oauth_websocket_authentication(self):
+        server = await self.get_oauth_admin_server({"scope": "acapy:admin"})
+        await server.start()
+
+        async with self.client_session.ws_connect(
+            f"http://127.0.0.1:{self.port}/ws",
+            headers={"Authorization": "Bearer valid-token"},
+        ) as ws:
+            result = await ws.receive_json()
+            assert result["topic"] == "settings"
+            assert result["payload"]["authenticated"] is True
+
+        # An invalid token is rejected by the setup_context middleware before
+        # the websocket handler runs, failing the handshake outright.
+        server.oauth_validator.validate = mock.CoroutineMock(
+            side_effect=web.HTTPUnauthorized()
+        )
+        with self.assertRaises(WSServerHandshakeError):
+            await self.client_session.ws_connect(
+                f"http://127.0.0.1:{self.port}/ws",
+                headers={"Authorization": "Bearer bad-token"},
+            )
+
+        async with self.client_session.ws_connect(
+            f"http://127.0.0.1:{self.port}/ws"
+        ) as ws:
+            result = await ws.receive_json()
+            assert result["payload"]["authenticated"] is False
+
+        await server.stop()
+
+    async def test_authorize_ws_admin_scope_receives_all(self):
+        server = await self.get_oauth_admin_server({}, multitenant=True)
+        queue = BasicMessageQueue()
+        queue.wallet_id = None
+        queue.receive_all = True
+        server._authorize_ws_from_claims(
+            queue, {"scope": "acapy:admin", "wallet_id": "wallet-1"}
+        )
+        assert queue.authenticated is True
+        assert queue.receive_all is True
+
+    async def test_authorize_ws_tenant_scope_scoped_to_wallet(self):
+        server = await self.get_oauth_admin_server({}, multitenant=True)
+        queue = BasicMessageQueue()
+        queue.wallet_id = None
+        queue.receive_all = True
+        server._authorize_ws_from_claims(
+            queue, {"scope": "acapy:tenant", "wallet_id": "wallet-A"}
+        )
+        assert queue.authenticated is True
+        assert queue.receive_all is False
+        assert queue.wallet_id == "wallet-A"
+
+    async def test_authorize_ws_tenant_scope_without_wallet_rejected(self):
+        server = await self.get_oauth_admin_server({}, multitenant=True)
+        queue = BasicMessageQueue()
+        queue.wallet_id = None
+        queue.receive_all = True
+        server._authorize_ws_from_claims(queue, {"scope": "acapy:tenant"})
+        assert queue.authenticated is False
+
+    async def test_authorize_ws_tenant_scope_single_tenant_receives_all(self):
+        server = await self.get_oauth_admin_server({})  # no multitenant manager
+        queue = BasicMessageQueue()
+        queue.wallet_id = None
+        queue.receive_all = True
+        server._authorize_ws_from_claims(queue, {"scope": "acapy:tenant:read"})
+        assert queue.authenticated is True
+        assert queue.receive_all is True
+
+    async def test_authorize_ws_unrecognized_scope_not_authenticated(self):
+        server = await self.get_oauth_admin_server({}, multitenant=True)
+        queue = BasicMessageQueue()
+        queue.wallet_id = None
+        queue.receive_all = True
+        server._authorize_ws_from_claims(
+            queue, {"scope": "openid profile", "wallet_id": "wallet-A"}
+        )
+        assert queue.authenticated is False
+
+    async def test_send_webhook_filters_by_wallet(self):
+        server = await self.get_admin_server({"admin.admin_insecure_mode": True})
+
+        def _queue(authenticated, receive_all, wallet_id):
+            q = BasicMessageQueue()
+            q.authenticated = authenticated
+            q.receive_all = receive_all
+            q.wallet_id = wallet_id
+            return q
+
+        q_admin = _queue(True, True, None)
+        q_tenant_a = _queue(True, False, "wallet-A")
+        q_tenant_b = _queue(True, False, "wallet-B")
+        q_unauth = _queue(False, False, "wallet-A")
+        server.websocket_queues = {
+            "admin": q_admin,
+            "A": q_tenant_a,
+            "B": q_tenant_b,
+            "unauth": q_unauth,
+        }
+
+        profile = mock.MagicMock()
+        profile.settings = {"wallet.id": "wallet-A", "admin.webhook_urls": []}
+
+        await server.send_webhook(profile, "connections", {"foo": "bar"})
+
+        # admin (receive_all) and the matching tenant get the event;
+        # the other tenant and the unauthenticated socket do not.
+        assert q_admin.queue.qsize() == 1
+        assert q_tenant_a.queue.qsize() == 1
+        assert q_tenant_b.queue.qsize() == 0
+        assert q_unauth.queue.qsize() == 0
+
+        # settings/ping are delivered to every socket regardless of auth
+        await server.send_webhook(profile, "settings", {})
+        assert q_unauth.queue.qsize() == 1
+        assert q_tenant_b.queue.qsize() == 1
 
 
 @pytest_asyncio.fixture

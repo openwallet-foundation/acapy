@@ -85,7 +85,7 @@ http_post() {
 }
 
 http_post_form() {
-  local url="$1" token="${2:-}" body="${3:-}"
+  local url="$1" token="${2:-}"
   if [[ -n "$token" ]]; then
     curl -s -o /dev/null -w "%{http_code}" -X POST \
       -H "Authorization: Bearer $token" \
