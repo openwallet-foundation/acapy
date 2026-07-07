@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event.workflow_run.conclusion == 'success' && github.repository == 'openwallet-foundation/acapy'
     steps:
-      - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
             fetch-depth: 0
       - name: Download PR number artifact
@@ -36,7 +36,7 @@ jobs:
           run_id: ${{ github.event.workflow_run.id }}
           name: TEST_COV
       - name: Request GitHub API for PR data
-        uses: octokit/request-action@45eef13998ff762839b0a0de9bbcf41970fd056d # v2.x
+        uses: octokit/request-action@b66ca9cd744693e9c29b490fc08831ab66c4a970 # v2.x
         id: get_pr_data
         with:
           route: GET /repos/${{ github.event.repository.full_name }}/pulls/${{ steps.pr_number.outputs.content }}
@@ -56,7 +56,7 @@ jobs:
 
           git checkout -B temp-branch-for-scanning upstream/${{ fromJson(steps.get_pr_data.outputs.data).head.ref }}
       - name: SonarCloud Scan
-        uses: SonarSource/sonarqube-scan-action@7006c4492b2e0ee0f816d36501671557c97f5995 # master
+        uses: SonarSource/sonarqube-scan-action@713881670b6b3676cda39549040e2d88c70d582e # master
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} 
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}

@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     if: github.repository == 'openwallet-foundation/acapy' && github.actor != 'dependabot[bot]'
     steps:
-      - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
             fetch-depth: 0 
       - name: Tests
@@ -23,7 +23,7 @@ jobs:
             os: "ubuntu-latest"
             is_pr: "false" 
       - name: SonarCloud Scan
-        uses: SonarSource/sonarqube-scan-action@7006c4492b2e0ee0f816d36501671557c97f5995 # master
+        uses: SonarSource/sonarqube-scan-action@713881670b6b3676cda39549040e2d88c70d582e # master
         env:
             GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
             SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}

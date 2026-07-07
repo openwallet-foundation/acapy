@@ -12,6 +12,7 @@ if [[ "$1" == "clean" ]]; then
         docs/CONTRIBUTING.md \
         docs/MAINTAINERS.md \
         docs/GOVERNANCE.md \
+        docs/TECHNICAL-CHARTER.pdf \
         docs/PUBLISHING.md \
         docs/LTS-Strategy.md \
         docs/aca-py_architecture.png \
@@ -22,6 +23,8 @@ if [[ "$1" == "clean" ]]; then
 else
     # Copy all of the root level md files into the docs folder for deployment, tweaking the relative paths
     for i in *.md; do sed -e "s#docs/#./#g" $i >docs/$i; done
+    # Copy the Technical Charter to the docs folder for deployment
+    cp TECHNICAL-CHARTER.pdf docs
     # Redo README to delete the lines about https://aca-py.org
     sed -e "s#docs/#./#g" -e "/Full access to an organized set/,+2d" README.md >docs/README.md
     # Copy the architecture drawing

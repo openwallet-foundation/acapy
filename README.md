@@ -53,7 +53,7 @@ a consistent and maintained version line.
 You can pull the latest LTS image for version `1.6` using the following image tag:
 
 ```bash
-ghcr.io/openwallet-foundation/acapy-agent:py3.12-1.6-lts
+FROM ghcr.io/openwallet-foundation/acapy-agent:py3.13-1.6-lts
 ```
 
 The `-lts` tags are kept up to date with the latest patch releases from the corresponding 
@@ -182,3 +182,7 @@ Pull requests are welcome! Please read our [contributions guide](./CONTRIBUTING.
 ## License
 
 [Apache License Version 2.0](https://github.com/openwallet-foundation/acapy/blob/main/LICENSE)
+
+## Governance
+
+The Project Charter for Adaptive Cloud Agent - Python (ACA-py) can be found here: [https://github.com/openwallet-foundation/technical-project-charters/blob/main/aca-py_Technical%20Charter_05-11-2026.pdf](https://github.com/openwallet-foundation/technical-project-charters/blob/main/aca-py_Technical%20Charter_05-11-2026.pdf)
