@@ -153,8 +153,8 @@ WALLET_ID=$(echo "${TENANT_TOKEN}" \
 
 if [[ -z "${WALLET_ID}" || "${WALLET_ID}" == "PLACEHOLDER_WALLET_ID" ]]; then
   echo ""
-  echo "ERROR: tenant token does not contain a valid wallet_id claim."
-  echo "       Run ./scripts/setup-tenant.sh first."
+  echo "ERROR: tenant token does not contain a valid wallet_id claim." >&2
+  echo "       Run ./scripts/setup-tenant.sh first." >&2
   exit 1
 fi
 echo "    wallet_id:    ${WALLET_ID}"

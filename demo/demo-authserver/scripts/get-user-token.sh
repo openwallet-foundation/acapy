@@ -79,7 +79,7 @@ WALLET_ID=$(curl -sf \
   | jq -r '.[] | select(.name == "wallet-id") | .config["claim.value"] // empty')
 
 if [[ -z "${WALLET_ID}" || "${WALLET_ID}" == "PLACEHOLDER_WALLET_ID" ]]; then
-  echo "ERROR: wallet_id not set on '${TENANT_CLIENT_ID}'. Run ./scripts/setup-tenant.sh first."
+  echo "ERROR: wallet_id not set on '${TENANT_CLIENT_ID}'. Run ./scripts/setup-tenant.sh first." >&2
   exit 1
 fi
 
@@ -225,7 +225,7 @@ print(result[0] if result else '')
 ")
 
 if [[ -z "${AUTH_CODE}" ]]; then
-  echo "ERROR: No authorization code received."
+  echo "ERROR: No authorization code received." >&2
   exit 1
 fi
 
@@ -244,8 +244,8 @@ TOKEN_RESPONSE=$(curl -s -X POST "${TOKEN_ENDPOINT}" \
 ACCESS_TOKEN=$(echo "${TOKEN_RESPONSE}" | jq -r '.access_token // empty')
 
 if [[ -z "${ACCESS_TOKEN}" ]]; then
-  echo "ERROR: Token exchange failed."
-  echo "       Response: ${TOKEN_RESPONSE}"
+  echo "ERROR: Token exchange failed." >&2
+  echo "       Response: ${TOKEN_RESPONSE}" >&2
   exit 1
 fi
 

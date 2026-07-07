@@ -74,23 +74,9 @@ def tenant_authentication(handler):
             return await handler(request)
 
         # OAuth path: token was validated by setup_context middleware.
-        # acapy:tenant or acapy:admin both grant tenant-level access.
-        # acapy:tenant:read grants read-only access (safe HTTP methods only).
         if has_auth_scopes(context):
-            scopes = get_auth_scopes(context)
-            if scopes & {"acapy:tenant", "acapy:admin"}:
-                return await handler(request)
-            if "acapy:tenant:read" in scopes:
-                if request.method in ("GET", "HEAD"):
-                    return await handler(request)
-                raise web.HTTPForbidden(
-                    reason="acapy:tenant:read scope does not permit write operations",
-                    text="acapy:tenant:read scope does not permit write operations",
-                )
-            raise web.HTTPForbidden(
-                reason="acapy:tenant scope required",
-                text="acapy:tenant scope required",
-            )
+            _enforce_tenant_scope(get_auth_scopes(context), request.method)
+            return await handler(request)
 
         authorization_header = request.headers.get("Authorization")
         header_admin_api_key = request.headers.get("x-api-key")
@@ -160,6 +146,27 @@ def require_scope(*required_scopes: str):
         return scope_check
 
     return decorator
+
+
+def _enforce_tenant_scope(scopes: set, method: str) -> None:
+    """Authorize a tenant request by its OAuth scopes, else raise HTTPForbidden.
+
+    ``acapy:tenant`` or ``acapy:admin`` grant tenant-level access;
+    ``acapy:tenant:read`` grants read-only access (safe HTTP methods only).
+    """
+    if scopes & {"acapy:tenant", "acapy:admin"}:
+        return
+    if "acapy:tenant:read" in scopes:
+        if method in ("GET", "HEAD"):
+            return
+        raise web.HTTPForbidden(
+            reason="acapy:tenant:read scope does not permit write operations",
+            text="acapy:tenant:read scope does not permit write operations",
+        )
+    raise web.HTTPForbidden(
+        reason="acapy:tenant scope required",
+        text="acapy:tenant scope required",
+    )
 
 
 def _base_wallet_route_access(additional_routes: List[str], request_path: str) -> bool:

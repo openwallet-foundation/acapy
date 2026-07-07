@@ -379,6 +379,76 @@ class AdminGroup(ArgumentGroup):
             ),
         )
 
+    @staticmethod
+    def _validate_admin_auth_args(
+        args: Namespace, oauth_mode: bool, admin_api_key, admin_insecure_mode
+    ):
+        """Validate admin authentication argument combinations.
+
+        Raises:
+            ArgsParseError: if the admin auth flags are inconsistent.
+
+        """
+        if not oauth_mode:
+            if (admin_api_key and admin_insecure_mode) or not (
+                admin_api_key or admin_insecure_mode
+            ):
+                raise ArgsParseError(
+                    "Either --admin-api-key or --admin-insecure-mode "
+                    "must be set but not both, unless --oauth-enabled (or "
+                    "--oauth-jwks-uri / --oauth-introspection-endpoint) "
+                    "is configured."
+                )
+            return
+
+        if not (
+            getattr(args, "oauth_jwks_uri", None)
+            or getattr(args, "oauth_introspection_endpoint", None)
+        ):
+            raise ArgsParseError(
+                "OAuth mode requires a token validation method: set "
+                "--oauth-jwks-uri and/or --oauth-introspection-endpoint."
+            )
+        if getattr(args, "oauth_introspection_endpoint", None) and not getattr(
+            args, "oauth_introspection_client_id", None
+        ):
+            raise ArgsParseError(
+                "--oauth-introspection-endpoint requires --oauth-introspection-client-id."
+            )
+        if getattr(args, "oauth_jwks_uri", None) and not getattr(
+            args, "oauth_audience", None
+        ):
+            # Without an expected audience, any signature-valid token from the
+            # JWKS is accepted regardless of its intended recipient, allowing
+            # token reuse / confused-deputy on a shared AS.
+            raise ArgsParseError(
+                "--oauth-jwks-uri requires --oauth-audience so that JWT "
+                "access tokens are bound to this resource server (the "
+                "'aud' claim is verified)."
+            )
+
+    @staticmethod
+    def _oauth_settings(args: Namespace, oauth_mode: bool) -> dict:
+        """Build the oauth.* settings map from parsed arguments."""
+        settings = {}
+        if oauth_mode:
+            settings["admin.oauth_enabled"] = True
+            settings["oauth.http_timeout"] = getattr(args, "oauth_http_timeout", None)
+
+        arg_to_setting = {
+            "oauth_jwks_uri": "oauth.jwks_uri",
+            "oauth_issuer": "oauth.issuer",
+            "oauth_audience": "oauth.audience",
+            "oauth_introspection_endpoint": "oauth.introspection_endpoint",
+            "oauth_introspection_client_id": "oauth.introspection_client_id",
+            "oauth_introspection_client_secret": "oauth.introspection_client_secret",
+        }
+        for arg_name, setting_key in arg_to_setting.items():
+            value = getattr(args, arg_name, None)
+            if value:
+                settings[setting_key] = value
+        return settings
+
     def get_settings(self, args: Namespace):
         """Extract admin settings."""
         settings = {}
@@ -391,69 +461,13 @@ class AdminGroup(ArgumentGroup):
                 or getattr(args, "oauth_introspection_endpoint", None)
             )
 
-            if not oauth_mode:
-                if (admin_api_key and admin_insecure_mode) or not (
-                    admin_api_key or admin_insecure_mode
-                ):
-                    raise ArgsParseError(
-                        "Either --admin-api-key or --admin-insecure-mode "
-                        "must be set but not both, unless --oauth-enabled (or "
-                        "--oauth-jwks-uri / --oauth-introspection-endpoint) "
-                        "is configured."
-                    )
-            else:
-                if not (
-                    getattr(args, "oauth_jwks_uri", None)
-                    or getattr(args, "oauth_introspection_endpoint", None)
-                ):
-                    raise ArgsParseError(
-                        "OAuth mode requires a token validation method: set "
-                        "--oauth-jwks-uri and/or --oauth-introspection-endpoint."
-                    )
-                if getattr(args, "oauth_introspection_endpoint", None) and not getattr(
-                    args, "oauth_introspection_client_id", None
-                ):
-                    raise ArgsParseError(
-                        "--oauth-introspection-endpoint requires "
-                        "--oauth-introspection-client-id."
-                    )
-                if getattr(args, "oauth_jwks_uri", None) and not getattr(
-                    args, "oauth_audience", None
-                ):
-                    # Without an expected audience, any signature-valid token from
-                    # the JWKS is accepted regardless of its intended recipient,
-                    # allowing token reuse / confused-deputy on a shared AS.
-                    raise ArgsParseError(
-                        "--oauth-jwks-uri requires --oauth-audience so that JWT "
-                        "access tokens are bound to this resource server (the "
-                        "'aud' claim is verified)."
-                    )
+            self._validate_admin_auth_args(
+                args, oauth_mode, admin_api_key, admin_insecure_mode
+            )
 
             settings["admin.admin_api_key"] = admin_api_key
             settings["admin.admin_insecure_mode"] = admin_insecure_mode
-
-            if oauth_mode:
-                settings["admin.oauth_enabled"] = True
-                settings["oauth.http_timeout"] = getattr(args, "oauth_http_timeout", None)
-
-            if getattr(args, "oauth_jwks_uri", None):
-                settings["oauth.jwks_uri"] = args.oauth_jwks_uri
-            if getattr(args, "oauth_issuer", None):
-                settings["oauth.issuer"] = args.oauth_issuer
-            if getattr(args, "oauth_audience", None):
-                settings["oauth.audience"] = args.oauth_audience
-            if getattr(args, "oauth_introspection_endpoint", None):
-                settings["oauth.introspection_endpoint"] = (
-                    args.oauth_introspection_endpoint
-                )
-            if getattr(args, "oauth_introspection_client_id", None):
-                settings["oauth.introspection_client_id"] = (
-                    args.oauth_introspection_client_id
-                )
-            if getattr(args, "oauth_introspection_client_secret", None):
-                settings["oauth.introspection_client_secret"] = (
-                    args.oauth_introspection_client_secret
-                )
+            settings.update(self._oauth_settings(args, oauth_mode))
 
             settings["admin.enabled"] = True
             settings["admin.host"] = args.admin[0]

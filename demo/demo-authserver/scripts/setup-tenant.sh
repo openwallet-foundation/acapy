@@ -97,7 +97,7 @@ if [[ -z "${WALLET_ID}" ]]; then
 fi
 
 if [[ -z "${WALLET_ID}" ]]; then
-  echo "ERROR: Could not create or find wallet '${WALLET_NAME}'."
+  echo "ERROR: Could not create or find wallet '${WALLET_NAME}'." >&2
   exit 1
 fi
 echo "    wallet_id: ${WALLET_ID}"
@@ -112,7 +112,7 @@ KC_CLIENT_UUID=$(curl -sf \
   | jq -r '.[0].id // empty')
 
 if [[ -z "${KC_CLIENT_UUID}" ]]; then
-  echo "ERROR: Client '${TENANT_CLIENT_ID}' not found in Keycloak realm '${KEYCLOAK_REALM}'."
+  echo "ERROR: Client '${TENANT_CLIENT_ID}' not found in Keycloak realm '${KEYCLOAK_REALM}'." >&2
   exit 1
 fi
 echo "    client UUID: ${KC_CLIENT_UUID}"
@@ -152,7 +152,7 @@ CREATE_STATUS=$(curl -s -o /dev/null -w "%{http_code}" -X POST \
     }
   }")
 if [[ "${CREATE_STATUS}" != "201" ]]; then
-  echo "ERROR: Failed to create wallet-id mapper (HTTP ${CREATE_STATUS})."
+  echo "ERROR: Failed to create wallet-id mapper (HTTP ${CREATE_STATUS})." >&2
   exit 1
 fi
 echo "    Mapper created (HTTP ${CREATE_STATUS})."
@@ -164,7 +164,7 @@ ACTUAL_WALLET_ID=$(curl -sf \
   | jq -r '.[] | select(.name == "wallet-id") | .config["claim.value"] // empty')
 echo "    Verified claim.value in Keycloak: ${ACTUAL_WALLET_ID}"
 if [[ "${ACTUAL_WALLET_ID}" != "${WALLET_ID}" ]]; then
-  echo "ERROR: Keycloak mapper value does not match wallet_id (${ACTUAL_WALLET_ID} != ${WALLET_ID})."
+  echo "ERROR: Keycloak mapper value does not match wallet_id (${ACTUAL_WALLET_ID} != ${WALLET_ID})." >&2
   exit 1
 fi
 
@@ -268,8 +268,8 @@ WALLET_CREATE_SCOPE_UUID=$(curl -sf \
   | jq -r '.[] | select(.name == "acapy:wallet:create") | .id // empty')
 
 if [[ -z "${WALLET_CREATE_SCOPE_UUID}" ]]; then
-  echo "ERROR: 'acapy:wallet:create' client scope not found in realm '${KEYCLOAK_REALM}'."
-  echo "       Ensure the realm was imported from keycloak/realm-export.json."
+  echo "ERROR: 'acapy:wallet:create' client scope not found in realm '${KEYCLOAK_REALM}'." >&2
+  echo "       Ensure the realm was imported from keycloak/realm-export.json." >&2
   exit 1
 fi
 echo "    acapy:wallet:create scope UUID: ${WALLET_CREATE_SCOPE_UUID}"
@@ -281,7 +281,7 @@ ASSIGN_STATUS=$(curl -s -o /dev/null -w "%{http_code}" -X PUT \
 if [[ "${ASSIGN_STATUS}" == "204" || "${ASSIGN_STATUS}" == "409" ]]; then
   echo "    acapy:wallet:create scope assigned (HTTP ${ASSIGN_STATUS})."
 else
-  echo "ERROR: Failed to assign acapy:wallet:create scope (HTTP ${ASSIGN_STATUS})."
+  echo "ERROR: Failed to assign acapy:wallet:create scope (HTTP ${ASSIGN_STATUS})." >&2
   exit 1
 fi
 

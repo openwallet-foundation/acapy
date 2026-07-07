@@ -121,15 +121,15 @@ class OAuthTokenValidator:
             None, self._jwks_client.get_signing_key_from_jwt, token
         )
 
-        decode_kwargs = dict(
-            algorithms=_SUPPORTED_ALGORITHMS,
+        decode_kwargs = {
+            "algorithms": _SUPPORTED_ALGORITHMS,
             # Without verify_aud=False, PyJWT rejects any token carrying an
             # aud claim when no expected audience is configured.
-            options={
+            "options": {
                 "require": ["exp", "iss", "sub"],
                 "verify_aud": self.audience is not None,
             },
-        )
+        }
         if self.issuer:
             decode_kwargs["issuer"] = self.issuer
         if self.audience:
