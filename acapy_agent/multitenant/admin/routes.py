@@ -579,12 +579,24 @@ async def wallet_update(request: web.BaseRequest):
     return web.json_response(result)
 
 
-@docs(tags=["multitenancy"], summary="Get auth token for a subwallet")
+@docs(
+    tags=["multitenancy"],
+    summary="Get auth token for a subwallet",
+    description=(
+        "Issue a new auth token for a subwallet. Issuing a new token invalidates "
+        "any token previously issued for the wallet: only the most recently "
+        "issued token is valid. Do not call this endpoint if another client may "
+        "still be using a previously issued token for the wallet."
+    ),
+)
 @request_schema(CreateWalletTokenRequestSchema)
 @response_schema(CreateWalletTokenResponseSchema(), 200, description="")
 @admin_authentication
 async def wallet_create_token(request: web.BaseRequest):
     """Request handler for creating an authorization token for a specific subwallet.
+
+    Issuing a new token invalidates any token previously issued for the wallet;
+    only the most recently issued token is valid.
 
     Args:
         request: aiohttp request object
