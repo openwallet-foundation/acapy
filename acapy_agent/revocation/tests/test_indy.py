@@ -318,11 +318,51 @@ class TestIndyRevocation(IsolatedAsyncioTestCase):
             ],
         ],
     )
+    @mock.patch.object(IssuerRevRegRecord, "upload_tails_file", mock.CoroutineMock())
+    @mock.patch.object(IssuerRevRegRecord, "send_entry", mock.CoroutineMock())
     async def test_get_or_create_active_registry_has_no_active_with_posted(self, *_):
         result = await self.revoc.get_or_create_active_registry("cred_def_id")
 
         assert not result
-        assert (
-            self.revoc._set_registry_status.call_args.kwargs["state"]
-            == IssuerRevRegRecord.STATE_ACTIVE
-        )
+        # the stalled setup pipeline is completed rather than bare-activated:
+        # the tails file is uploaded and the initial entry published (which
+        # transitions the record posted -> active)
+        IssuerRevRegRecord.upload_tails_file.assert_awaited_once()
+        IssuerRevRegRecord.send_entry.assert_awaited_once()
+        self.revoc._set_registry_status.assert_not_called()
+
+    @mock.patch(
+        "acapy_agent.revocation.indy.IndyRevocation.get_active_issuer_rev_reg_record",
+        mock.CoroutineMock(side_effect=StorageNotFoundError("No such record")),
+    )
+    @mock.patch(
+        "acapy_agent.revocation.indy.IndyRevocation._set_registry_status",
+        mock.CoroutineMock(return_value=None),
+    )
+    @mock.patch.object(
+        IssuerRevRegRecord,
+        "query_by_cred_def_id",
+        side_effect=[
+            [IssuerRevRegRecord(max_cred_num=3)],
+            [
+                IssuerRevRegRecord(
+                    revoc_reg_id="test-rev-reg-id",
+                    state=IssuerRevRegRecord.STATE_POSTED,
+                )
+            ],
+        ],
+    )
+    @mock.patch.object(
+        IssuerRevRegRecord,
+        "upload_tails_file",
+        mock.CoroutineMock(side_effect=RevocationError("tails server unavailable")),
+    )
+    @mock.patch.object(IssuerRevRegRecord, "send_entry", mock.CoroutineMock())
+    async def test_get_or_create_active_registry_posted_setup_incomplete(self, *_):
+        result = await self.revoc.get_or_create_active_registry("cred_def_id")
+
+        assert not result
+        # the registry must stay posted: activating it without a tails file
+        # on the server would break credentials issued against it
+        IssuerRevRegRecord.send_entry.assert_not_called()
+        self.revoc._set_registry_status.assert_not_called()
