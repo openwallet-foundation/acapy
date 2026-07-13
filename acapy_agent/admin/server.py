@@ -216,31 +216,30 @@ async def upgrade_middleware(request: web.BaseRequest, handler: Coroutine):
     async with context.profile.session() as session:
         storage = session.inject(BaseStorage)
         upgrade_initiated = await storage.find_all_records(RECORD_TYPE_ACAPY_UPGRADING)
-        if upgrade_initiated:
-            # Check if the upgrade is actually in progress (not finished)
-            if upgrade_initiated[0].value == UPGRADING_RECORD_IN_PROGRESS:
-                # If we get here, than another instance started an upgrade
-                # We need to check for completion (or fail) in another process
-                in_progress_upgrades.set_wallet(context.profile.name)
-                is_subwallet = context.metadata and "wallet_id" in context.metadata
+        # Check if the upgrade is actually in progress (not finished)
+        if upgrade_initiated and upgrade_initiated[0].value == UPGRADING_RECORD_IN_PROGRESS:
+            # If we get here, than another instance started an upgrade
+            # We need to check for completion (or fail) in another process
+            in_progress_upgrades.set_wallet(context.profile.name)
+            is_subwallet = context.metadata and "wallet_id" in context.metadata
 
-                # Create background task and store reference to prevent garbage collection
-                task = asyncio.create_task(
-                    check_upgrade_completion_loop(
-                        context.profile,
-                        is_subwallet,
-                    )
+            # Create background task and store reference to prevent garbage collection
+            task = asyncio.create_task(
+                check_upgrade_completion_loop(
+                    context.profile,
+                    is_subwallet,
                 )
+            )
 
-                # Store task reference on the app to prevent garbage collection
-                if not hasattr(request.app, "_background_tasks"):
-                    request.app._background_tasks = set()
-                request.app._background_tasks.add(task)
+            # Store task reference on the app to prevent garbage collection
+            if not hasattr(request.app, "_background_tasks"):
+                request.app._background_tasks = set()
+            request.app._background_tasks.add(task)
 
-                # Remove task from set when it completes to prevent memory leaks
-                task.add_done_callback(request.app._background_tasks.discard)
+            # Remove task from set when it completes to prevent memory leaks
+            task.add_done_callback(request.app._background_tasks.discard)
 
-                raise web.HTTPServiceUnavailable(reason="Upgrade in progress")
+            raise web.HTTPServiceUnavailable(reason="Upgrade in progress")
 
     return await handler(request)
 
