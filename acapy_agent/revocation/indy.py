@@ -7,6 +7,7 @@ from uuid_utils import uuid4
 
 from ..core.profile import Profile
 from ..ledger.base import BaseLedger
+from ..ledger.error import LedgerError
 from ..ledger.multiple_ledger.ledger_requests_executor import (
     GET_CRED_DEF,
     GET_REVOC_REG_DEF,
@@ -260,6 +261,7 @@ class IndyRevocation:
         except StorageNotFoundError:
             pass
 
+        posted_registries = []
         async with self._profile.session() as session:
             full_registries = await IssuerRevRegRecord.query_by_cred_def_id(
                 session, cred_def_id, None, IssuerRevRegRecord.STATE_FULL, 1
@@ -280,19 +282,30 @@ class IndyRevocation:
                     cred_def_id,
                     max_cred_num=any_registry.max_cred_num,
                 )
-            # if there is a posted registry, activate oldest
+            # if there is a posted registry, complete its setup and activate it
             else:
                 posted_registries = await IssuerRevRegRecord.query_by_cred_def_id(
                     session, cred_def_id, IssuerRevRegRecord.STATE_POSTED, None, None
                 )
-                if posted_registries:
-                    posted_registries = sorted(
-                        posted_registries, key=lambda r: r.created_at
-                    )
-                    await self._set_registry_status(
-                        revoc_reg_id=posted_registries[0].revoc_reg_id,
-                        state=IssuerRevRegRecord.STATE_ACTIVE,
-                    )
+
+        if posted_registries:
+            # A registry is only left posted when its setup stalled after the
+            # definition reached the ledger: the tails file upload and/or the
+            # initial accumulator entry are still outstanding. Complete those
+            # steps instead of activating with a bare state change, which would
+            # break every credential later issued against the registry
+            # (unresolvable tailsLocation, missing initial entry).
+            rec = min(posted_registries, key=lambda r: r.created_at)
+            try:
+                await rec.upload_tails_file(self._profile)
+                # publishing the initial entry transitions posted -> active
+                await rec.send_entry(self._profile)
+            except (RevocationError, LedgerError):
+                LOGGER.exception(
+                    "Setup of posted revocation registry %s could not be completed; "
+                    "not activating (will retry on next issuance attempt)",
+                    rec.revoc_reg_id,
+                )
         return None
 
     async def get_ledger_registry(self, revoc_reg_id: str) -> RevocationRegistry:
