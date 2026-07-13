@@ -1,11 +1,22 @@
 import json
+import os
 from unittest import IsolatedAsyncioTestCase
 from unittest.mock import ANY
 
+import pytest
+
 from ...connections.models.conn_record import ConnRecord
+from ...core.event_bus import EventBus
 from ...messaging.decorators.attach_decorator import AttachDecorator
 from ...messaging.decorators.service_decorator import ServiceDecorator
 from ...messaging.request_context import RequestContext
+from ...messaging.responder import BaseResponder, MockResponder
+from ...protocols.coordinate_mediation.v1_0.route_manager import RouteManager
+from ...protocols.issue_credential.v2_0.manager import V20CredManager
+from ...protocols.issue_credential.v2_0.messages.cred_offer import V20CredOffer
+from ...protocols.issue_credential.v2_0.messages.cred_request import V20CredRequest
+from ...protocols.issue_credential.v2_0.models.cred_ex_record import V20CredExRecord
+from ...protocols.out_of_band.v1_0.manager import OutOfBandManager
 from ...protocols.out_of_band.v1_0.messages.invitation import InvitationMessage
 from ...protocols.out_of_band.v1_0.models.oob_record import OobRecord
 from ...storage.error import StorageNotFoundError
@@ -456,6 +467,57 @@ class TestOobProcessor(IsolatedAsyncioTestCase):
 
             assert self.oob_record.connection_id == "another-connection-id"
 
+    async def test_find_oob_record_for_inbound_message_self_connection_not_deleted(
+        self,
+    ):
+        """Regression test for issue #3300 bug #2.
+
+        In a self-connection (one wallet playing both the inviter and invitee
+        roles for one OOB invitation with both handshake_protocols and an
+        attachment), the "old" connection associated with the OobRecord is the
+        *other role's own* ConnRecord -- reciprocal DIDs with the inbound
+        message's connection -- not a stale/superseded connection from a real
+        connection-reuse race. It must not be deleted, or the still-pending
+        DIDXComplete for that connection later fails with DIDXManagerError:
+        "No corresponding connection request found".
+        """
+        old_conn_record = mock.MagicMock(
+            my_did="old-my-did",
+            their_did="new-my-did",
+            delete_record=mock.CoroutineMock(),
+        )
+        with (
+            mock.patch.object(
+                OobRecord,
+                "retrieve_by_tag_filter",
+                mock.CoroutineMock(return_value=self.oob_record),
+            ) as mock_retrieve,
+            mock.patch.object(
+                ConnRecord,
+                "retrieve_by_id",
+                mock.CoroutineMock(return_value=old_conn_record),
+            ) as mock_retrieve_conn,
+        ):
+            self.oob_record.role = OobRecord.ROLE_SENDER
+            self.oob_record.state = OobRecord.STATE_AWAIT_RESPONSE
+            self.context.connection_record = mock.MagicMock(
+                connection_id="another-connection-id",
+                my_did="new-my-did",
+                their_did="old-my-did",
+            )
+            self.context.message_receipt = MessageReceipt(
+                thread_id="the-thid", parent_thread_id="the-pthid"
+            )
+
+            assert await self.oob_processor.find_oob_record_for_inbound_message(
+                self.context
+            )
+            mock_retrieve.assert_called_once()
+            mock_retrieve_conn.assert_called_once_with(ANY, "a-connection-id")
+            old_conn_record.delete_record.assert_not_called()
+
+            assert self.oob_record.connection_id == "another-connection-id"
+
     async def test_find_oob_record_for_inbound_message_attach_thread_id_set(self):
         # No attach thread_id
         self.oob_record.attach_thread_id = None
@@ -748,3 +810,234 @@ class TestOobProcessor(IsolatedAsyncioTestCase):
 
         assert self.oob_processor.get_thread_id(message_w_thread) == "the-thread-id"
         assert self.oob_processor.get_thread_id(message_wo_thread) == "the-message-id"
+
+
+# --- Regression tests for self-issuance via OOB attachment without a prior
+# --- connection (aries-rfcs/acapy issue #3300, bug #1): creating an OOB
+# --- invitation with an attached credential-offer and then receiving that
+# --- same invitation back into the same wallet used to raise
+# --- StorageDuplicateError from find_oob_record_for_inbound_message, because
+# --- the invi_msg_id is shared by two OobRecords (role=sender, role=receiver).
+
+
+def _wallet_settings(wallet_type: str) -> dict:
+    settings = {
+        "wallet.type": wallet_type,
+        "auto_provision": True,
+        "default_endpoint": "http://example.com/endpoint",
+        "default_label": "self-issuer",
+    }
+    if wallet_type == "kanon-anoncreds":
+        postgres_url = os.getenv("POSTGRES_URL")
+        settings.update(
+            {
+                "wallet.storage_type": "postgres",
+                "wallet.storage_config": {"url": postgres_url},
+                "wallet.storage_creds": {
+                    "account": "postgres",
+                    "password": "postgres",
+                },
+                "dbstore_storage_type": "postgres",
+                "dbstore_storage_config": {"url": postgres_url},
+                "dbstore_storage_creds": {
+                    "account": "postgres",
+                    "password": "postgres",
+                },
+                "dbstore_schema_config": "normalize",
+            }
+        )
+    return settings
+
+
+WALLET_TYPES = [
+    "askar",
+    "askar-anoncreds",
+    pytest.param(
+        "kanon-anoncreds",
+        marks=pytest.mark.skipif(
+            not os.getenv("POSTGRES_URL"),
+            reason="Kanon PostgreSQL integration tests disabled: set POSTGRES_URL "
+            "to enable",
+        ),
+    ),
+]
+
+
+def _bind_oob_manager_deps(profile):
+    """Bind the dependencies OutOfBandManager needs, for direct manager tests."""
+    route_manager = mock.MagicMock(RouteManager, autospec=True)
+    route_manager.routing_info = mock.CoroutineMock(return_value=([], None))
+    route_manager.mediation_record_if_id = mock.CoroutineMock(return_value=None)
+    route_manager.route_invitation = mock.CoroutineMock(return_value=None)
+    route_manager.route_verkey = mock.CoroutineMock(return_value=None)
+    profile.context.injector.bind_instance(RouteManager, route_manager)
+    profile.context.injector.bind_instance(BaseResponder, MockResponder())
+    profile.context.injector.bind_instance(EventBus, EventBus())
+    return route_manager
+
+
+@pytest.mark.parametrize("wallet_type", WALLET_TYPES)
+async def test_self_issuance_oob_attachment_without_connection(wallet_type):
+    """An OOB invitation with an attached cred-offer, received by its own
+    creator, must not raise StorageDuplicateError when the attached message
+    is routed back through find_oob_record_for_inbound_message.
+    """
+    profile = await create_test_profile(settings=_wallet_settings(wallet_type))
+    oob_processor = OobMessageProcessor(inbound_message_router=mock.MagicMock())
+    profile.context.injector.bind_instance(OobMessageProcessor, oob_processor)
+    _bind_oob_manager_deps(profile)
+
+    oob_mgr = OutOfBandManager(profile)
+
+    offer = V20CredOffer(formats=[], offers_attach=[])
+    cred_ex = V20CredExRecord(
+        cred_ex_id=None,
+        state=V20CredExRecord.STATE_OFFER_SENT,
+        cred_offer=offer.serialize(),
+    )
+    async with profile.session() as session:
+        await cred_ex.save(session)
+
+    invitation_record = await oob_mgr.create_invitation(
+        my_label="self-issuer",
+        attachments=[{"id": cred_ex.cred_ex_id, "type": "credential-offer"}],
+    )
+
+    # Two OobRecords with the same invi_msg_id now exist: role=sender (from
+    # create_invitation) and role=receiver (from receive_invitation below).
+    oob_record = await oob_mgr.receive_invitation(invitation_record.invitation)
+    assert oob_record.role == OobRecord.ROLE_RECEIVER
+
+    async with profile.session() as session:
+        oob_records = await OobRecord.query(
+            session, tag_filter={"invi_msg_id": invitation_record.invi_msg_id}
+        )
+    assert len(oob_records) == 2
+    assert {r.role for r in oob_records} == {
+        OobRecord.ROLE_SENDER,
+        OobRecord.ROLE_RECEIVER,
+    }
+
+    # Simulate the attached credential-offer message being routed back
+    # through the inbound pipeline: this is exactly where
+    # find_oob_record_for_inbound_message previously raised
+    # StorageDuplicateError.
+    context = RequestContext.test_context(profile)
+    context.message = offer
+    context.message_receipt = MessageReceipt(
+        thread_id=offer._id,
+        parent_thread_id=invitation_record.invi_msg_id,
+    )
+
+    result = await oob_processor.find_oob_record_for_inbound_message(context)
+
+    assert result is not None
+    assert result.role == OobRecord.ROLE_RECEIVER
+
+
+@pytest.mark.parametrize("wallet_type", WALLET_TYPES)
+async def test_self_issuance_connectionless_full_round_trip(wallet_type):
+    """Full connectionless self-issuance (bug #3, downstream of issue #3300).
+
+    Create an OOB invitation with an attached credential offer (no
+    handshake_protocols), receive it back into the same wallet, then drive the
+    holder side to send a credential request back into the same wallet. The
+    credential-request lookup used to come back empty (find_oob_record_for_inbound
+    _message returning None -- not even hitting the "Multiple OOB records" branch
+    that bug #1 fixed) because the duplicate-record disambiguation defaulted every
+    non-didexchange message type to role=receiver, when a *reply* message flowing
+    holder -> issuer (like issue-credential's request-credential) actually belongs
+    to the role=sender record.
+    """
+    profile = await create_test_profile(settings=_wallet_settings(wallet_type))
+    inbound_messages = []
+
+    def inbound_router(profile_, inbound_message, can_respond):
+        inbound_messages.append(inbound_message)
+
+    oob_processor = OobMessageProcessor(inbound_message_router=inbound_router)
+    profile.context.injector.bind_instance(OobMessageProcessor, oob_processor)
+    _bind_oob_manager_deps(profile)
+
+    oob_mgr = OutOfBandManager(profile)
+
+    offer = V20CredOffer(formats=[], offers_attach=[])
+    cred_ex = V20CredExRecord(
+        cred_ex_id=None,
+        state=V20CredExRecord.STATE_OFFER_SENT,
+        cred_offer=offer.serialize(),
+    )
+    async with profile.session() as session:
+        await cred_ex.save(session)
+
+    invitation_record = await oob_mgr.create_invitation(
+        my_label="self-issuer",
+        attachments=[{"id": cred_ex.cred_ex_id, "type": "credential-offer"}],
+    )
+
+    # Receiving our own invitation processes the attached offer and delivers it
+    # to the inbound router, exactly like a real inbound transport would.
+    await oob_mgr.receive_invitation(invitation_record.invitation)
+    assert len(inbound_messages) == 1
+    offer_inbound = inbound_messages[0]
+
+    offer_context = RequestContext.test_context(profile)
+    offer_context.message = offer
+    offer_context.message_receipt = offer_inbound.receipt
+
+    oob_record_for_offer = await oob_processor.find_oob_record_for_inbound_message(
+        offer_context
+    )
+    assert oob_record_for_offer is not None
+    assert oob_record_for_offer.role == OobRecord.ROLE_RECEIVER
+
+    # Holder side: receive the offer and build a credential request reply.
+    cred_manager = V20CredManager(profile)
+    holder_cred_ex = await cred_manager.receive_offer(offer, None)
+
+    cred_request_message = V20CredRequest(formats=[], requests_attach=[])
+    cred_request_message.assign_thread_from(offer)
+    holder_cred_ex.thread_id = cred_request_message._thread_id
+    holder_cred_ex.state = V20CredExRecord.STATE_REQUEST_SENT
+    holder_cred_ex.cred_request = cred_request_message
+    async with profile.session() as session:
+        await holder_cred_ex.save(session, reason="test credential request")
+
+    # Simulate sending the request: this is exactly what the outbound transport
+    # manager does before delivering the message (attaches ~service/~thread.pthid
+    # and resolves the delivery target/recipient key from the OOB record).
+    outbound = OutboundMessage(
+        reply_thread_id=cred_request_message._thread_id,
+        payload=cred_request_message.serialize(as_string=True),
+    )
+    target = await oob_processor.find_oob_target_for_outbound_message(
+        profile, outbound
+    )
+    assert target is not None
+
+    # Simulate that same request being delivered back inbound, as it is in the
+    # real self-issuance-without-handshake deployment scenario: recipient_verkey
+    # is the key the message was actually decrypted with (the issuer's/sender's
+    # connectionless key -- what the outbound target resolved to), and
+    # sender_verkey is the holder's own connectionless key (carried in the
+    # message's own ~service block, used by the recipient to reply).
+    payload = json.loads(outbound.payload)
+    request_context = RequestContext.test_context(profile)
+    request_context.message = V20CredRequest.deserialize(payload)
+    request_context.message_receipt = MessageReceipt(
+        thread_id=payload["~thread"]["thid"],
+        parent_thread_id=payload["~thread"].get("pthid"),
+        recipient_verkey=target.recipient_keys[0],
+        sender_verkey=payload["~service"]["recipientKeys"][0],
+    )
+
+    oob_record_for_request = await oob_processor.find_oob_record_for_inbound_message(
+        request_context
+    )
+
+    # This is the fix under test: previously this came back None, and
+    # V20CredRequestHandler.handle raised "No connection or associated
+    # connectionless exchange found for credential request".
+    assert oob_record_for_request is not None
+    assert oob_record_for_request.role == OobRecord.ROLE_SENDER
+    assert oob_record_for_request.invi_msg_id == invitation_record.invi_msg_id

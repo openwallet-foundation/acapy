@@ -10,10 +10,13 @@ from ..messaging.agent_message import AgentMessage
 from ..messaging.decorators.service_decorator import ServiceDecorator
 from ..messaging.request_context import RequestContext
 from ..protocols.didcomm_prefix import DIDCommPrefix
+from ..protocols.didexchange.v1_0.message_types import ARIES_PROTOCOL as DIDEX_1_1
+from ..protocols.didexchange.v1_0.message_types import DIDEX_1_0
 from ..protocols.issue_credential.v2_0.message_types import CRED_20_OFFER
+from ..protocols.out_of_band.v1_0.message_types import MESSAGE_REUSE
 from ..protocols.out_of_band.v1_0.models.oob_record import OobRecord
 from ..protocols.present_proof.v2_0.message_types import PRES_20_REQUEST
-from ..storage.error import StorageNotFoundError
+from ..storage.error import StorageDuplicateError, StorageNotFoundError
 from ..transport.inbound.message import InboundMessage
 from ..transport.outbound.message import OutboundMessage
 from ..transport.wire_format import JsonWireFormat
@@ -21,6 +24,16 @@ from .error import BaseError
 from .profile import Profile
 
 LOGGER = logging.getLogger(__name__)
+
+# Message types that, per the OOB/DID-exchange protocols, are always sent by the
+# *receiver* of an invitation back to the *sender* (e.g. a connection request in
+# response to a handshake, or a request to reuse an existing connection). These are
+# processed by the party holding the role=sender OobRecord for the invitation.
+_SENDER_ROLE_MESSAGE_TYPES = {
+    f"{DIDEX_1_0}/request",
+    f"{DIDEX_1_1}/request",
+    MESSAGE_REUSE,
+}
 
 
 class OobMessageProcessorError(BaseError):
@@ -137,6 +150,84 @@ class OobMessageProcessor:
                 except StorageNotFoundError:
                     # Fine if record is not found
                     pass
+                except StorageDuplicateError:
+                    # Multiple oob records share this invi_msg_id. This happens when
+                    # an agent creates an OOB invitation and then receives that same
+                    # invitation back into the same wallet (e.g. self-issuance): one
+                    # OobRecord has role=sender (from create-invitation) and another
+                    # has role=receiver (from receive-invitation).
+                    #
+                    # Disambiguate primarily using the recipient verkey the inbound
+                    # message was actually delivered to: each side of a connectionless
+                    # exchange uses its own key (OobRecord.our_recipient_key), so the
+                    # recipient_verkey on the envelope tells us unambiguously which of
+                    # the two records this message belongs to, regardless of protocol
+                    # or message type (credential offers/requests, presentation
+                    # requests/presentations/acks, did-exchange requests, handshake
+                    # reuse, ...).
+                    if context.message_receipt.recipient_verkey:
+                        try:
+                            oob_record = await OobRecord.retrieve_by_tag_filter(
+                                session,
+                                {
+                                    "invi_msg_id": (
+                                        context.message_receipt.parent_thread_id
+                                    ),
+                                    "our_recipient_key": (
+                                        context.message_receipt.recipient_verkey
+                                    ),
+                                },
+                            )
+                            LOGGER.debug(
+                                "Multiple OOB records found for invi_msg_id %s; "
+                                "disambiguated using recipient verkey %s to oob "
+                                "record %s",
+                                context.message_receipt.parent_thread_id,
+                                context.message_receipt.recipient_verkey,
+                                oob_record.oob_id,
+                            )
+                        except (StorageNotFoundError, StorageDuplicateError):
+                            # Fine if record is not found (or, unexpectedly, still
+                            # ambiguous); fall back to the message-type heuristic
+                            oob_record = None
+
+                    # Fall back to disambiguating by message type. This is needed
+                    # when the message was delivered without going through the wire
+                    # format (e.g. the initial oob attachment message, which is
+                    # handled locally and therefore has no recipient_verkey). Some
+                    # message types are always sent by the receiver of an invitation
+                    # back to the sender, so we must be looking for our role=sender
+                    # record to process them; all other message types (e.g. attached
+                    # protocol messages like credential offers) are sent by the
+                    # sender to the receiver, so we must be looking for our
+                    # role=receiver record.
+                    if not oob_record:
+                        expected_role = (
+                            OobRecord.ROLE_SENDER
+                            if DIDCommPrefix.unqualify(message_type)
+                            in _SENDER_ROLE_MESSAGE_TYPES
+                            else OobRecord.ROLE_RECEIVER
+                        )
+                        LOGGER.debug(
+                            "Multiple OOB records found for invi_msg_id %s; "
+                            "disambiguating using role %s for message type %s",
+                            context.message_receipt.parent_thread_id,
+                            expected_role,
+                            message_type,
+                        )
+                        try:
+                            oob_record = await OobRecord.retrieve_by_tag_filter(
+                                session,
+                                {
+                                    "invi_msg_id": (
+                                        context.message_receipt.parent_thread_id
+                                    )
+                                },
+                                {"role": expected_role},
+                            )
+                        except StorageNotFoundError:
+                            # Fine if record is not found
+                            pass
             # Otherwise try to find it using the attach thread id. This is only needed
             # for connectionless exchanges where every handler needs the context of the
             # oob record for verification. We could attach the oob_record to all messages,
@@ -208,17 +299,46 @@ class OobMessageProcessor:
                 oob_record.invitation.requests_attach
                 and oob_record.state == OobRecord.STATE_AWAIT_RESPONSE
             ):
-                LOGGER.debug(
-                    f"Removing stale connection {oob_record.connection_id} due "
-                    "to connection reuse"
-                )
-                # Remove stale connection due to connection reuse
+                # Remove stale connection due to connection reuse. But first check
+                # whether the "old" connection is actually the mirror-image
+                # ConnRecord of a self-connection: when an agent's own wallet plays
+                # both the inviter and invitee roles for one invitation (e.g.
+                # self-issuance), each role gets its own ConnRecord, and both DIDs
+                # are reciprocal (old.my_did == new.their_did and vice versa). That
+                # "old" record is not stale -- it is still awaiting its own
+                # DIDXComplete -- so deleting it here causes accept_complete to
+                # fail with "No corresponding connection request found".
+                old_conn_record = None
                 if oob_record.connection_id:
                     async with context.profile.session() as session:
-                        old_conn_record = await ConnRecord.retrieve_by_id(
-                            session, oob_record.connection_id
-                        )
+                        try:
+                            old_conn_record = await ConnRecord.retrieve_by_id(
+                                session, oob_record.connection_id
+                            )
+                        except StorageNotFoundError:
+                            old_conn_record = None
+
+                is_self_connection_mirror = bool(
+                    old_conn_record
+                    and old_conn_record.my_did
+                    and old_conn_record.their_did
+                    and old_conn_record.my_did == context.connection_record.their_did
+                    and old_conn_record.their_did == context.connection_record.my_did
+                )
+
+                if old_conn_record and not is_self_connection_mirror:
+                    LOGGER.debug(
+                        f"Removing stale connection {oob_record.connection_id} due "
+                        "to connection reuse"
+                    )
+                    async with context.profile.session() as session:
                         await old_conn_record.delete_record(session)
+                elif is_self_connection_mirror:
+                    LOGGER.debug(
+                        f"Not removing connection {oob_record.connection_id}: it is "
+                        "the other role's own ConnRecord for this self-connection "
+                        "and is still awaiting its own handshake completion"
+                    )
 
                 oob_record.connection_id = context.connection_record.connection_id
 
