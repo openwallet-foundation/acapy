@@ -217,7 +217,10 @@ async def upgrade_middleware(request: web.BaseRequest, handler: Coroutine):
         storage = session.inject(BaseStorage)
         upgrade_initiated = await storage.find_all_records(RECORD_TYPE_ACAPY_UPGRADING)
         # Check if the upgrade is actually in progress (not finished)
-        if upgrade_initiated and upgrade_initiated[0].value == UPGRADING_RECORD_IN_PROGRESS:
+        if (
+            upgrade_initiated
+            and upgrade_initiated[0].value == UPGRADING_RECORD_IN_PROGRESS
+        ):
             # If we get here, than another instance started an upgrade
             # We need to check for completion (or fail) in another process
             in_progress_upgrades.set_wallet(context.profile.name)
