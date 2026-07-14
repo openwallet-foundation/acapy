@@ -37,15 +37,13 @@ from ..utils.task_queue import TaskQueue
 from ..version import __version__
 from ..wallet import singletons
 from ..wallet.anoncreds_upgrade import check_upgrade_completion_loop
-from ..wallet.models.wallet_record import WalletRecord
 from .auth_context import (
-    AUTH_SCOPES_SETTING,
-    AUTH_SUBJECT_SETTING,
     AUTH_WALLET_ID_SETTING,
     has_auth_wallet_id,
 )
 from .base_server import BaseAdminServer
 from .error import AdminSetupError
+from .oauth_context import OAuthRequestAuthenticator
 from .oauth_validator import OAuthTokenValidator
 from .request_context import AdminRequestContext
 from .routes import (
@@ -318,6 +316,16 @@ class AdminServer(BaseAdminServer):
         self.oauth_validator = (
             OAuthTokenValidator(context.settings) if oauth_mode else None
         )
+        self.oauth_authenticator = (
+            OAuthRequestAuthenticator(
+                self.oauth_validator,
+                self.multitenant_manager,
+                root_profile,
+                context,
+            )
+            if oauth_mode
+            else None
+        )
 
     async def make_application(self) -> web.Application:
         """Get the aiohttp application instance."""
@@ -338,49 +346,15 @@ class AdminServer(BaseAdminServer):
             meta_data = {}
             request_settings = {}
 
-            if self.oauth_validator and authorization_header:
+            if self.oauth_authenticator and authorization_header:
                 # OAuth2 Resource Server path — token issued by external AS.
-                bearer, _, token = authorization_header.partition(" ")
-                if bearer != "Bearer":
-                    raise web.HTTPUnauthorized(
-                        reason="Invalid Authorization header structure"
-                    )
-                claims = await self.oauth_validator.validate(token)
-                scopes = set(claims.get("scope", "").split())
-                meta_data = {"scopes": scopes, "sub": claims.get("sub")}
-                request_settings[AUTH_SCOPES_SETTING] = tuple(sorted(scopes))
-                if claims.get("sub"):
-                    request_settings[AUTH_SUBJECT_SETTING] = claims["sub"]
-
-                if self.multitenant_manager:
-                    wallet_id = claims.get("wallet_id")
-                    if wallet_id:
-                        try:
-                            async with self.root_profile.session() as session:
-                                wallet = await WalletRecord.retrieve_by_id(
-                                    session, wallet_id
-                                )
-                            profile = await self.multitenant_manager.get_wallet_profile(
-                                self.context, wallet
-                            )
-                            context_wallet_id.set(wallet_id)
-                            meta_data["wallet_id"] = wallet_id
-                            request_settings[AUTH_WALLET_ID_SETTING] = wallet_id
-                        except StorageNotFoundError:
-                            raise web.HTTPUnauthorized(
-                                reason=(
-                                    f"Wallet not found for wallet_id claim: {wallet_id}"
-                                )
-                            )
-                    elif "acapy:admin" not in scopes:
-                        # Without a wallet_id claim the request would run against
-                        # the base wallet; only admin-scoped tokens may do that.
-                        raise web.HTTPUnauthorized(
-                            reason=(
-                                "Token must include a wallet_id claim (or the "
-                                "acapy:admin scope) in multitenant mode"
-                            )
-                        )
+                (
+                    profile,
+                    meta_data,
+                    request_settings,
+                ) = await self.oauth_authenticator.authenticate_request(
+                    authorization_header
+                )
 
             elif self.multitenant_manager and authorization_header:
                 # Legacy ACA-Py JWT path (multitenant without OAuth).
@@ -648,34 +622,6 @@ class AdminServer(BaseAdminServer):
         self.app._state["ready"] = False
         self.app._state["alive"] = False
 
-    def _authorize_ws_from_claims(self, queue, claims: dict) -> None:
-        """Set websocket authorization on the queue from validated token claims.
-
-        Mirrors the HTTP auth decorators so the admin event stream honours the
-        same scope and tenant-isolation rules:
-
-        - ``acapy:admin`` receives the full cross-wallet event stream.
-        - ``acapy:tenant`` / ``acapy:tenant:read`` receives only its own wallet's
-          events; in multitenant mode a ``wallet_id`` claim is required.
-        - Any other token is treated as unauthenticated (no events delivered).
-        """
-        scopes = set(claims.get("scope", "").split())
-        wallet_id = claims.get("wallet_id")
-
-        if "acapy:admin" in scopes:
-            queue.authenticated = True
-            queue.receive_all = True
-        elif scopes & {"acapy:tenant", "acapy:tenant:read"}:
-            if self.multitenant_manager and not wallet_id:
-                # A tenant token with no wallet binding must not receive events.
-                queue.authenticated = False
-            else:
-                queue.authenticated = True
-                queue.wallet_id = wallet_id
-                queue.receive_all = not self.multitenant_manager
-        else:
-            queue.authenticated = False
-
     async def websocket_handler(self, request):
         """Send notifications to admin client over websocket."""
         ws = web.WebSocketResponse()
@@ -696,7 +642,7 @@ class AdminServer(BaseAdminServer):
                 try:
                     if bearer == "Bearer":
                         claims = await self.oauth_validator.validate(token)
-                        self._authorize_ws_from_claims(queue, claims)
+                        self.oauth_authenticator.authorize_websocket(claims, queue)
                     else:
                         queue.authenticated = False
                 except Exception:

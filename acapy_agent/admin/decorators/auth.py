@@ -7,6 +7,7 @@ from typing import List, Optional, Pattern
 from aiohttp import web
 
 from ...utils import general as general_utils
+from .. import scopes
 from ..auth_context import get_auth_scopes, has_auth_scopes
 from ..request_context import AdminRequestContext
 
@@ -30,11 +31,11 @@ def admin_authentication(handler):
         # OAuth path: token was validated by setup_context middleware.
         # Require acapy:admin scope for admin-only routes.
         if has_auth_scopes(context):
-            if "acapy:admin" in get_auth_scopes(context):
+            if scopes.ADMIN in get_auth_scopes(context):
                 return await handler(request)
             raise web.HTTPForbidden(
-                reason="acapy:admin scope required",
-                text="acapy:admin scope required",
+                reason=f"{scopes.ADMIN} scope required",
+                text=f"{scopes.ADMIN} scope required",
             )
 
         header_admin_api_key = request.headers.get("x-api-key")
@@ -148,24 +149,24 @@ def require_scope(*required_scopes: str):
     return decorator
 
 
-def _enforce_tenant_scope(scopes: set, method: str) -> None:
+def _enforce_tenant_scope(token_scopes: set, method: str) -> None:
     """Authorize a tenant request by its OAuth scopes, else raise HTTPForbidden.
 
     ``acapy:tenant`` or ``acapy:admin`` grant tenant-level access;
     ``acapy:tenant:read`` grants read-only access (safe HTTP methods only).
     """
-    if scopes & {"acapy:tenant", "acapy:admin"}:
+    if token_scopes & scopes.TENANT_LEVEL:
         return
-    if "acapy:tenant:read" in scopes:
+    if scopes.TENANT_READ in token_scopes:
         if method in ("GET", "HEAD"):
             return
         raise web.HTTPForbidden(
-            reason="acapy:tenant:read scope does not permit write operations",
-            text="acapy:tenant:read scope does not permit write operations",
+            reason=f"{scopes.TENANT_READ} scope does not permit write operations",
+            text=f"{scopes.TENANT_READ} scope does not permit write operations",
         )
     raise web.HTTPForbidden(
-        reason="acapy:tenant scope required",
-        text="acapy:tenant scope required",
+        reason=f"{scopes.TENANT} scope required",
+        text=f"{scopes.TENANT} scope required",
     )
 
 

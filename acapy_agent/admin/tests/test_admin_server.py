@@ -35,6 +35,7 @@ from ...utils.task_queue import TaskQueue
 from ...utils.testing import create_test_profile
 from ...wallet import singletons
 from ...wallet.anoncreds_upgrade import UPGRADING_RECORD_IN_PROGRESS
+from .. import oauth_context
 from .. import server as test_module
 from ..request_context import AdminRequestContext
 from ..server import AdminServer, AdminSetupError
@@ -692,7 +693,7 @@ class TestAdminServer(IsolatedAsyncioTestCase):
         await server.start()
 
         with mock.patch.object(
-            test_module.WalletRecord,
+            oauth_context.WalletRecord,
             "retrieve_by_id",
             mock.CoroutineMock(return_value=mock.MagicMock()),
         ) as mock_retrieve:
@@ -714,7 +715,7 @@ class TestAdminServer(IsolatedAsyncioTestCase):
         await server.start()
 
         with mock.patch.object(
-            test_module.WalletRecord,
+            oauth_context.WalletRecord,
             "retrieve_by_id",
             mock.CoroutineMock(side_effect=StorageNotFoundError()),
         ):
@@ -830,56 +831,6 @@ class TestAdminServer(IsolatedAsyncioTestCase):
             assert result["payload"]["authenticated"] is False
 
         await server.stop()
-
-    async def test_authorize_ws_admin_scope_receives_all(self):
-        server = await self.get_oauth_admin_server({}, multitenant=True)
-        queue = BasicMessageQueue()
-        queue.wallet_id = None
-        queue.receive_all = True
-        server._authorize_ws_from_claims(
-            queue, {"scope": "acapy:admin", "wallet_id": "wallet-1"}
-        )
-        assert queue.authenticated is True
-        assert queue.receive_all is True
-
-    async def test_authorize_ws_tenant_scope_scoped_to_wallet(self):
-        server = await self.get_oauth_admin_server({}, multitenant=True)
-        queue = BasicMessageQueue()
-        queue.wallet_id = None
-        queue.receive_all = True
-        server._authorize_ws_from_claims(
-            queue, {"scope": "acapy:tenant", "wallet_id": "wallet-A"}
-        )
-        assert queue.authenticated is True
-        assert queue.receive_all is False
-        assert queue.wallet_id == "wallet-A"
-
-    async def test_authorize_ws_tenant_scope_without_wallet_rejected(self):
-        server = await self.get_oauth_admin_server({}, multitenant=True)
-        queue = BasicMessageQueue()
-        queue.wallet_id = None
-        queue.receive_all = True
-        server._authorize_ws_from_claims(queue, {"scope": "acapy:tenant"})
-        assert queue.authenticated is False
-
-    async def test_authorize_ws_tenant_scope_single_tenant_receives_all(self):
-        server = await self.get_oauth_admin_server({})  # no multitenant manager
-        queue = BasicMessageQueue()
-        queue.wallet_id = None
-        queue.receive_all = True
-        server._authorize_ws_from_claims(queue, {"scope": "acapy:tenant:read"})
-        assert queue.authenticated is True
-        assert queue.receive_all is True
-
-    async def test_authorize_ws_unrecognized_scope_not_authenticated(self):
-        server = await self.get_oauth_admin_server({}, multitenant=True)
-        queue = BasicMessageQueue()
-        queue.wallet_id = None
-        queue.receive_all = True
-        server._authorize_ws_from_claims(
-            queue, {"scope": "openid profile", "wallet_id": "wallet-A"}
-        )
-        assert queue.authenticated is False
 
     async def test_send_webhook_filters_by_wallet(self):
         server = await self.get_admin_server({"admin.admin_insecure_mode": True})
