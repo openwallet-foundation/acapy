@@ -2,6 +2,8 @@
 
 This demo runs ACA-Py as an OAuth2 Resource Server backed by Keycloak as the Authorization Server. Access tokens are issued by Keycloak and presented to ACA-Py — no ACA-Py API key or ACA-Py-issued JWT is involved.
 
+> This directory is the human-facing walkthrough. For the automated regression test that runs in CI, see [`scenarios/examples/oauth_resource_server`](../../scenarios/examples/oauth_resource_server). The two share the same Keycloak realm export — keep them in sync when changing client or scope configuration.
+
 ## Services
 
 | Service | Port | Purpose |
