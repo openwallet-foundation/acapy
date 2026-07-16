@@ -1,5 +1,4 @@
 import asyncio
-import json
 from time import time
 from unittest import IsolatedAsyncioTestCase
 
@@ -423,12 +422,6 @@ class TestAnonCredsUpgrade(IsolatedAsyncioTestCase):
                 cred_rev_id=cred_rev_id,
             )
             await record.save(session)
-            storage_record = StorageRecord(
-                IssuerCredRevRecord.RECORD_TYPE,
-                json.dumps(record.serialize()),
-                tags={"cred_rev_id": cred_rev_id},
-                id=record.record_id,
-            )
             rev_list = RevList(
                 issuer_id="issuer",
                 rev_reg_def_id=rev_reg_id,
@@ -439,7 +432,7 @@ class TestAnonCredsUpgrade(IsolatedAsyncioTestCase):
                 rev_list=rev_list,
                 pending=None,
                 rev_reg_def_id=rev_reg_id,
-                cred_rev_records=[storage_record],
+                max_cred_rev_id=int(cred_rev_id),
             )
             await anoncreds_upgrade.upgrade_and_delete_rev_entry_records(
                 session, rev_list_upgrade_obj
