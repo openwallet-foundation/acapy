@@ -356,9 +356,7 @@ class BaseRecord(BaseModel):
         def _post_filter_match(vals: dict) -> bool:
             return match_post_filter(
                 vals, post_filter_positive, positive=True, alt=alt
-            ) and match_post_filter(
-                vals, post_filter_negative, positive=False, alt=alt
-            )
+            ) and match_post_filter(vals, post_filter_negative, positive=False, alt=alt)
 
         if not paginated:
             # Unpaginated post-filter: preserve legacy behavior of returning every

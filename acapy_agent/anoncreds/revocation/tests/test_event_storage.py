@@ -416,9 +416,7 @@ class TestEventStorageManager(IsolatedAsyncioTestCase):
         recent_time = current_time - timedelta(hours=1)
 
         # A full first page (batch size 2): one kept (recent) + one deleted (old).
-        kept = self.create_test_record(
-            "kept", EVENT_STATE_RESPONSE_SUCCESS, recent_time
-        )
+        kept = self.create_test_record("kept", EVENT_STATE_RESPONSE_SUCCESS, recent_time)
         deleted = self.create_test_record(
             "deleted", EVENT_STATE_RESPONSE_SUCCESS, old_time
         )
