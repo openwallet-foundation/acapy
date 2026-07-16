@@ -3,18 +3,20 @@
 import json
 from datetime import datetime, timedelta, timezone
 from unittest import IsolatedAsyncioTestCase
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
 from ....storage.base import BaseStorage
 from ....storage.record import StorageRecord
 from ....storage.type import (
+    EVENT_STATE_REQUESTED,
     EVENT_STATE_RESPONSE_FAILURE,
     EVENT_STATE_RESPONSE_SUCCESS,
     RECORD_TYPE_REV_REG_DEF_CREATE_EVENT,
 )
 from ....utils.testing import create_test_profile
+from ..auto_recovery import event_storage as event_storage_module
 from ..auto_recovery.event_storage import EventStorageManager
 
 
@@ -69,7 +71,7 @@ class TestEventStorageManager(IsolatedAsyncioTestCase):
         )
 
         mock_storage = AsyncMock(spec=BaseStorage)
-        mock_storage.find_all_records.side_effect = [
+        mock_storage.find_paginated_records.side_effect = [
             [old_success_record],  # Success records
             [old_failure_record],  # Failure records
         ]
@@ -103,7 +105,7 @@ class TestEventStorageManager(IsolatedAsyncioTestCase):
         )
 
         mock_storage = AsyncMock(spec=BaseStorage)
-        mock_storage.find_all_records.side_effect = [
+        mock_storage.find_paginated_records.side_effect = [
             [recent_success_record],  # Success records
             [recent_failure_record],  # Failure records
         ]
@@ -136,7 +138,7 @@ class TestEventStorageManager(IsolatedAsyncioTestCase):
         )
 
         mock_storage = AsyncMock(spec=BaseStorage)
-        mock_storage.find_all_records.side_effect = [
+        mock_storage.find_paginated_records.side_effect = [
             [record_with_future_expiry],  # Success records
             [],  # Failure records
         ]
@@ -169,7 +171,7 @@ class TestEventStorageManager(IsolatedAsyncioTestCase):
         )
 
         mock_storage = AsyncMock(spec=BaseStorage)
-        mock_storage.find_all_records.side_effect = [
+        mock_storage.find_paginated_records.side_effect = [
             [record_with_past_expiry],  # Success records
             [],  # Failure records
         ]
@@ -210,7 +212,7 @@ class TestEventStorageManager(IsolatedAsyncioTestCase):
         )
 
         mock_storage = AsyncMock(spec=BaseStorage)
-        mock_storage.find_all_records.side_effect = [
+        mock_storage.find_paginated_records.side_effect = [
             [record_without_created_at],  # Success records
             [],  # Failure records
         ]
@@ -242,7 +244,7 @@ class TestEventStorageManager(IsolatedAsyncioTestCase):
         )
 
         mock_storage = AsyncMock(spec=BaseStorage)
-        mock_storage.find_all_records.side_effect = [
+        mock_storage.find_paginated_records.side_effect = [
             [invalid_record],  # Success records
             [],  # Failure records
         ]
@@ -287,7 +289,7 @@ class TestEventStorageManager(IsolatedAsyncioTestCase):
         )
 
         mock_storage = AsyncMock(spec=BaseStorage)
-        mock_storage.find_all_records.side_effect = [
+        mock_storage.find_paginated_records.side_effect = [
             [
                 old_cleanable,
                 old_with_future_expiry,
@@ -323,7 +325,7 @@ class TestEventStorageManager(IsolatedAsyncioTestCase):
 
         mock_storage = AsyncMock(spec=BaseStorage)
         # Mock will be called for each event type in all_event_types
-        mock_storage.find_all_records.return_value = [old_record]
+        mock_storage.find_paginated_records.return_value = [old_record]
 
         self.session.inject = MagicMock(return_value=mock_storage)
         storage_manager = EventStorageManager(self.session)
@@ -341,7 +343,7 @@ class TestEventStorageManager(IsolatedAsyncioTestCase):
     async def test_cleanup_completed_events_storage_error(self):
         """Test cleanup handles storage errors gracefully."""
         mock_storage = AsyncMock(spec=BaseStorage)
-        mock_storage.find_all_records.side_effect = Exception("Storage error")
+        mock_storage.find_paginated_records.side_effect = Exception("Storage error")
 
         self.session.inject = MagicMock(return_value=mock_storage)
         storage_manager = EventStorageManager(self.session)
@@ -354,3 +356,97 @@ class TestEventStorageManager(IsolatedAsyncioTestCase):
 
         # Should return 0 due to error
         assert cleaned_up == 0
+
+    async def test_get_failed_events_pages_through_storage(self):
+        """Failed-event retrieval pages through storage instead of loading all."""
+        current_time = datetime.now(timezone.utc)
+        records = [
+            self.create_test_record(
+                f"failed_{i}", EVENT_STATE_RESPONSE_FAILURE, current_time
+            )
+            for i in range(3)
+        ]
+
+        mock_storage = AsyncMock(spec=BaseStorage)
+        # With a batch size of 2: a full first page then a partial page ends paging.
+        mock_storage.find_paginated_records.side_effect = [records[:2], records[2:]]
+        self.session.inject = MagicMock(return_value=mock_storage)
+        storage_manager = EventStorageManager(self.session)
+
+        with patch.object(event_storage_module, "EVENT_SCAN_BATCH_SIZE", 2):
+            failed = await storage_manager.get_failed_events(
+                event_type=RECORD_TYPE_REV_REG_DEF_CREATE_EVENT
+            )
+
+        mock_storage.find_all_records.assert_not_called()
+        assert len(failed) == 3
+        assert mock_storage.find_paginated_records.await_count == 2
+        calls = mock_storage.find_paginated_records.await_args_list
+        assert calls[0].kwargs["offset"] == 0
+        assert calls[0].kwargs["tag_query"] == {"state": EVENT_STATE_RESPONSE_FAILURE}
+        assert calls[1].kwargs["offset"] == 2
+
+    async def test_get_in_progress_events_pages_through_storage(self):
+        """In-progress retrieval pages through storage and filters by state."""
+        current_time = datetime.now(timezone.utc)
+        records = [
+            self.create_test_record(f"req_{i}", EVENT_STATE_REQUESTED, current_time)
+            for i in range(3)
+        ]
+
+        mock_storage = AsyncMock(spec=BaseStorage)
+        mock_storage.find_paginated_records.side_effect = [records[:2], records[2:]]
+        self.session.inject = MagicMock(return_value=mock_storage)
+        storage_manager = EventStorageManager(self.session)
+
+        with patch.object(event_storage_module, "EVENT_SCAN_BATCH_SIZE", 2):
+            in_progress = await storage_manager.get_in_progress_events(
+                event_type=RECORD_TYPE_REV_REG_DEF_CREATE_EVENT
+            )
+
+        mock_storage.find_all_records.assert_not_called()
+        assert len(in_progress) == 3
+        calls = mock_storage.find_paginated_records.await_args_list
+        assert calls[0].kwargs["tag_query"] == {"state": EVENT_STATE_REQUESTED}
+
+    async def test_cleanup_pages_and_accounts_for_deletions(self):
+        """Cleanup pages through storage and advances offset past kept records."""
+        current_time = datetime.now(timezone.utc)
+        old_time = current_time - timedelta(hours=25)
+        recent_time = current_time - timedelta(hours=1)
+
+        # A full first page (batch size 2): one kept (recent) + one deleted (old).
+        kept = self.create_test_record(
+            "kept", EVENT_STATE_RESPONSE_SUCCESS, recent_time
+        )
+        deleted = self.create_test_record(
+            "deleted", EVENT_STATE_RESPONSE_SUCCESS, old_time
+        )
+
+        mock_storage = AsyncMock(spec=BaseStorage)
+        # SUCCESS: full page [kept, deleted] then empty; FAILURE: empty.
+        mock_storage.find_paginated_records.side_effect = [
+            [kept, deleted],
+            [],
+            [],
+        ]
+        self.session.inject = MagicMock(return_value=mock_storage)
+        storage_manager = EventStorageManager(self.session)
+
+        with patch.object(event_storage_module, "EVENT_SCAN_BATCH_SIZE", 2):
+            cleaned_up = await storage_manager.cleanup_completed_events(
+                event_type=RECORD_TYPE_REV_REG_DEF_CREATE_EVENT,
+                max_age_hours=24,
+            )
+
+        assert cleaned_up == 1
+        mock_storage.delete_record.assert_called_once_with(deleted)
+        success_calls = [
+            c
+            for c in mock_storage.find_paginated_records.await_args_list
+            if c.kwargs["tag_query"] == {"state": EVENT_STATE_RESPONSE_SUCCESS}
+        ]
+        # One record was deleted from the full first page, so the next SUCCESS page
+        # is fetched at offset 1 (2 scanned - 1 removed).
+        assert success_calls[0].kwargs["offset"] == 0
+        assert success_calls[1].kwargs["offset"] == 1
