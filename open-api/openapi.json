@@ -3932,10 +3932,8 @@
         "summary" : "Update a subwallet",
         "tags" : [ "multitenancy" ],
         "x-codegen-request-body-name" : "body"
-      }
-    },
-    "/multitenancy/wallet/{wallet_id}/remove" : {
-      "post" : {
+      },
+      "delete" : {
         "parameters" : [ {
           "description" : "Subwallet identifier",
           "in" : "path",

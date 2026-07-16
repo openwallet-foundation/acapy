@@ -691,7 +691,7 @@ async def register(app: web.Application):
             web.get("/multitenancy/wallet/{wallet_id}", wallet_get, allow_head=False),
             web.put("/multitenancy/wallet/{wallet_id}", wallet_update),
             web.post("/multitenancy/wallet/{wallet_id}/token", wallet_create_token),
-            web.post("/multitenancy/wallet/{wallet_id}/remove", wallet_remove),
+            web.delete("/multitenancy/wallet/{wallet_id}", wallet_remove),
         ]
     )
 

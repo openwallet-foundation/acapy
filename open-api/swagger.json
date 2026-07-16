@@ -3244,10 +3244,8 @@
             }
           }
         }
-      }
-    },
-    "/multitenancy/wallet/{wallet_id}/remove" : {
-      "post" : {
+      },
+      "delete" : {
         "tags" : [ "multitenancy" ],
         "summary" : "Remove a subwallet",
         "produces" : [ "application/json" ],
