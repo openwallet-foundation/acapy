@@ -321,55 +321,91 @@ class BaseRecord(BaseModel):
         limit = limit or DEFAULT_PAGE_SIZE
         offset = offset or 0
 
-        if not post_filter and paginated:
-            # Only fetch paginated records if post-filter is not being applied
-            rows = await storage.find_paginated_records(
-                type_filter=cls.RECORD_TYPE,
-                tag_query=tag_query,
-                limit=limit,
-                offset=offset,
-                order_by=order_by,
-                descending=descending,
+        def _record_vals(record: StorageRecord) -> dict:
+            try:
+                return json.loads(record.value)
+            except (json.JSONDecodeError, TypeError) as err:
+                raise BaseModelError(f"{err}, for record id {record.id}")
+
+        def _build_record(record: StorageRecord, vals: dict) -> RecordType:
+            try:
+                return cls.from_storage(record.id, vals)
+            except BaseModelError as err:
+                raise BaseModelError(f"{err}, for record id {record.id}")
+
+        if not post_filter:
+            # No post-filter: storage applies pagination (or a full fetch) directly.
+            if paginated:
+                rows = await storage.find_paginated_records(
+                    type_filter=cls.RECORD_TYPE,
+                    tag_query=tag_query,
+                    limit=limit,
+                    offset=offset,
+                    order_by=order_by,
+                    descending=descending,
+                )
+            else:
+                rows = await storage.find_all_records(
+                    type_filter=cls.RECORD_TYPE,
+                    tag_query=tag_query,
+                    order_by=order_by,
+                    descending=descending,
+                )
+            return [_build_record(record, _record_vals(record)) for record in rows]
+
+        def _post_filter_match(vals: dict) -> bool:
+            return match_post_filter(
+                vals, post_filter_positive, positive=True, alt=alt
+            ) and match_post_filter(
+                vals, post_filter_negative, positive=False, alt=alt
             )
-        else:
+
+        if not paginated:
+            # Unpaginated post-filter: preserve legacy behavior of returning every
+            # matching record.
             rows = await storage.find_all_records(
                 type_filter=cls.RECORD_TYPE,
                 tag_query=tag_query,
                 order_by=order_by,
                 descending=descending,
             )
+            result = []
+            for record in rows:
+                vals = _record_vals(record)
+                if _post_filter_match(vals):
+                    result.append(_build_record(record, vals))
+            return result
 
-        num_results_post_filter = 0  # used if applying pagination post-filter
-        num_records_to_match = limit + offset  # ignored if not paginated
-
+        # Paginated post-filter: page through storage in bounded batches so the
+        # entire record category is never loaded into memory at once.
         result = []
-        for record in rows:
-            try:
-                vals = json.loads(record.value)
-                if not post_filter:  # pagination would already be applied if requested
-                    result.append(cls.from_storage(record.id, vals))
-                else:
-                    continue_processing = (
-                        not paginated or num_results_post_filter < num_records_to_match
-                    )
-                    if not continue_processing:
-                        break
-
-                    post_filter_match = match_post_filter(
-                        vals, post_filter_positive, positive=True, alt=alt
-                    ) and match_post_filter(
-                        vals, post_filter_negative, positive=False, alt=alt
-                    )
-
-                    if not post_filter_match:
-                        continue
-
-                    if num_results_post_filter >= offset:  # append only after offset
-                        result.append(cls.from_storage(record.id, vals))
-
-                    num_results_post_filter += 1
-            except (BaseModelError, json.JSONDecodeError, TypeError) as err:
-                raise BaseModelError(f"{err}, for record id {record.id}")
+        num_matched = 0
+        num_records_to_match = limit + offset  # matches to observe for this page
+        batch_size = max(limit, DEFAULT_PAGE_SIZE)
+        scan_offset = 0
+        while num_matched < num_records_to_match:
+            rows = await storage.find_paginated_records(
+                type_filter=cls.RECORD_TYPE,
+                tag_query=tag_query,
+                limit=batch_size,
+                offset=scan_offset,
+                order_by=order_by,
+                descending=descending,
+            )
+            if not rows:
+                break
+            for record in rows:
+                vals = _record_vals(record)
+                if not _post_filter_match(vals):
+                    continue
+                if num_matched >= offset:  # append only after offset
+                    result.append(_build_record(record, vals))
+                num_matched += 1
+                if num_matched >= num_records_to_match:
+                    break
+            if len(rows) < batch_size:  # storage exhausted
+                break
+            scan_offset += batch_size
         return result
 
     async def save(
