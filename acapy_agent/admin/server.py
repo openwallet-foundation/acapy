@@ -36,7 +36,10 @@ from ..utils.stats import Collector
 from ..utils.task_queue import TaskQueue
 from ..version import __version__
 from ..wallet import singletons
-from ..wallet.anoncreds_upgrade import check_upgrade_completion_loop
+from ..wallet.anoncreds_upgrade import (
+    UPGRADING_RECORD_IN_PROGRESS,
+    check_upgrade_completion_loop,
+)
 from .auth_context import (
     AUTH_WALLET_ID_SETTING,
     has_auth_wallet_id,
@@ -219,7 +222,11 @@ async def upgrade_middleware(request: web.BaseRequest, handler: Coroutine):
     async with context.profile.session() as session:
         storage = session.inject(BaseStorage)
         upgrade_initiated = await storage.find_all_records(RECORD_TYPE_ACAPY_UPGRADING)
-        if upgrade_initiated:
+        # Check if the upgrade is actually in progress (not finished)
+        if (
+            upgrade_initiated
+            and upgrade_initiated[0].value == UPGRADING_RECORD_IN_PROGRESS
+        ):
             # If we get here, than another instance started an upgrade
             # We need to check for completion (or fail) in another process
             in_progress_upgrades.set_wallet(context.profile.name)
