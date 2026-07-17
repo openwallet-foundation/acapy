@@ -436,7 +436,9 @@ class V20CredManager:
         # connection_id is None in the record if this is in response to
         # an request~attach from an OOB message. If so, we do not want to filter
         # the record by connection_id.
-        connection_id = None if oob_record else connection_record.connection_id
+        connection_id = None if oob_record else (
+            connection_record.connection_id if connection_record else None
+        )
 
         handlers = [
             f.handler(self.profile)
@@ -449,12 +451,34 @@ class V20CredManager:
 
         async with self._profile.session() as session:
             try:
-                cred_ex_record = await V20CredExRecord.retrieve_by_conn_and_thread(
-                    session,
-                    connection_id,
-                    cred_request_message._thread_id,
-                    role=V20CredExRecord.ROLE_ISSUER,
-                )
+                try:
+                    cred_ex_record = await V20CredExRecord.retrieve_by_conn_and_thread(
+                        session,
+                        connection_id,
+                        cred_request_message._thread_id,
+                        role=V20CredExRecord.ROLE_ISSUER,
+                    )
+                except StorageNotFoundError:
+                    if not connection_id:
+                        raise
+                    # The issuer's exchange record may have been created without a
+                    # connection (offer attached to an OOB invitation) while the
+                    # request arrives over the connection established by that same
+                    # invitation (e.g. after the OobRecord has been cleaned up, as
+                    # in a self-connection). Retry matching on thread and role only,
+                    # but never adopt a record already bound to another connection.
+                    cred_ex_record = await V20CredExRecord.retrieve_by_conn_and_thread(
+                        session,
+                        None,
+                        cred_request_message._thread_id,
+                        role=V20CredExRecord.ROLE_ISSUER,
+                    )
+                    if cred_ex_record.connection_id:
+                        raise StorageNotFoundError(
+                            "Credential exchange record for thread "
+                            f"{cred_request_message._thread_id} belongs to another "
+                            "connection"
+                        )
             except StorageNotFoundError as ex:
                 # holder sent this request free of any offer
                 if handlers_without_offer:

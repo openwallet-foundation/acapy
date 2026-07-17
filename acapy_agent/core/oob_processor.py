@@ -35,6 +35,20 @@ _SENDER_ROLE_MESSAGE_TYPES = {
     MESSAGE_REUSE,
 }
 
+# Message types that are always sent by the *sender* of an invitation to its
+# *receiver* (the attachable messages). An inbound message of one of these types can
+# therefore never belong to our own role=sender OobRecord: it can only match our
+# role=receiver record. This matters for self-connections (one wallet playing both
+# roles for one invitation): once the receiver-role record has been consumed, an
+# inbound attached offer/present-request must not consume the sender-role record,
+# which is still needed to process the receiver's reply (e.g. request-credential).
+_RECEIVER_ROLE_MESSAGE_TYPES = {
+    CRED_20_OFFER,
+    PRES_20_REQUEST,
+    "issue-credential/1.0/offer-credential",
+    "present-proof/1.0/request-presentation",
+}
+
 
 class OobMessageProcessorError(BaseError):
     """Base error for OobMessageProcessor."""
@@ -228,6 +242,27 @@ class OobMessageProcessor:
                         except StorageNotFoundError:
                             # Fine if record is not found
                             pass
+
+                # An attached message (offer, presentation request, ...) always
+                # flows sender -> receiver, so it can never belong to our own
+                # role=sender OobRecord. This happens in a self-connection when
+                # the receiver-role record has already been consumed (deleted
+                # after the handshake): the attached offer must not consume the
+                # sender-role record here, or the later reply from the receiver
+                # (e.g. request-credential) finds no OobRecord at all.
+                if (
+                    oob_record
+                    and oob_record.role == OobRecord.ROLE_SENDER
+                    and DIDCommPrefix.unqualify(message_type)
+                    in _RECEIVER_ROLE_MESSAGE_TYPES
+                ):
+                    LOGGER.debug(
+                        "Ignoring role=sender OOB record %s for inbound "
+                        "receiver-bound message type %s",
+                        oob_record.oob_id,
+                        message_type,
+                    )
+                    oob_record = None
             # Otherwise try to find it using the attach thread id. This is only needed
             # for connectionless exchanges where every handler needs the context of the
             # oob record for verification. We could attach the oob_record to all messages,

@@ -518,6 +518,41 @@ class TestOobProcessor(IsolatedAsyncioTestCase):
 
             assert self.oob_record.connection_id == "another-connection-id"
 
+    async def test_find_oob_record_inbound_offer_does_not_consume_sender_record(
+        self,
+    ):
+        """Regression test for issue #3300 (self-issuance, bug #4).
+
+        An inbound credential offer flows sender -> receiver, so it can never
+        belong to our own role=sender OobRecord. In a self-connection the
+        receiver-role record may already be gone (deleted after the handshake),
+        leaving only the sender record to match the offer's pthid: the offer
+        must NOT consume (update/delete) that sender record, or the later
+        request-credential reply finds no OobRecord at all.
+        """
+        self.oob_record.role = OobRecord.ROLE_SENDER
+
+        with mock.patch.object(
+            OobRecord,
+            "retrieve_by_tag_filter",
+            mock.CoroutineMock(return_value=self.oob_record),
+        ):
+            self.context.message = V20CredOffer(formats=[], offers_attach=[])
+            self.context.connection_record = mock.MagicMock(
+                connection_id="receiver-role-connection-id"
+            )
+            self.context.message_receipt = MessageReceipt(
+                thread_id="the-thid", parent_thread_id="the-pthid"
+            )
+
+            result = await self.oob_processor.find_oob_record_for_inbound_message(
+                self.context
+            )
+
+            assert result is None
+            self.oob_record.delete_record.assert_not_called()
+            self.oob_record.save.assert_not_called()
+
     async def test_find_oob_record_for_inbound_message_attach_thread_id_set(self):
         # No attach thread_id
         self.oob_record.attach_thread_id = None
