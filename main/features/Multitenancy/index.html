@@ -3887,7 +3887,7 @@
 <li>{Admin_Api_Key} if admin is protected</li>
 </ul>
 <p>Example</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span><span class="s2">&quot;</span><span class="si">${</span><span class="nv">ACAPY_ADMIN_URL</span><span class="si">}</span><span class="s2">/multitenancy/wallet/{wallet_id}/remove&quot;</span><span class="w"> </span><span class="se">\</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>curl<span class="w"> </span>-X<span class="w"> </span>DELETE<span class="w"> </span><span class="s2">&quot;</span><span class="si">${</span><span class="nv">ACAPY_ADMIN_URL</span><span class="si">}</span><span class="s2">/multitenancy/wallet/{wallet_id}&quot;</span><span class="w"> </span><span class="se">\</span>
 <a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a><span class="w">   </span>-H<span class="w"> </span><span class="s2">&quot;Content-Type: application/json&quot;</span><span class="w"> </span><span class="se">\</span>
 <a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a><span class="w">   </span>-H<span class="w"> </span><span class="s2">&quot;x-api-key: </span><span class="nv">$ACAPY_ADMIN_URL_API_KEY</span><span class="s2">&quot;</span><span class="w"> </span><span class="se">\</span>
 <a id="__codelineno-16-4" name="__codelineno-16-4" href="#__codelineno-16-4"></a><span class="w">   </span>-d<span class="w"> </span><span class="s1">&#39;{ &quot;wallet_key&quot;: &quot;example-encryption-key-02&quot; }&#39;</span>
@@ -3895,6 +3895,11 @@
 <p><strong><code>Response</code></strong></p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a>{}
 </code></pre></div>
+<blockquote>
+<p>The <code>POST /multitenancy/wallet/{wallet_id}/remove</code> endpoint is deprecated and
+will be removed in a future release. Use <code>DELETE /multitenancy/wallet/{wallet_id}</code>
+instead.</p>
+</blockquote>
 <h3 id="per-tenant-settings">Per tenant settings<a class="headerlink" href="#per-tenant-settings" title="Permanent link">&para;</a></h3>
 <p>To allow the configuring of ACA-Py startup parameters/environment variables at a tenant/subwallet level. <a href="https://github.com/openwallet-foundation/acapy/pull/2233">PR#2233</a> will provide the ability to update the following subset of settings when creating or updating the subwallet:</p>
 <table>
