@@ -367,7 +367,7 @@ The following information is required to delete a tenant:
 Example
 
 ```sh
-curl -X POST "${ACAPY_ADMIN_URL}/multitenancy/wallet/{wallet_id}/remove" \
+curl -X DELETE "${ACAPY_ADMIN_URL}/multitenancy/wallet/{wallet_id}" \
    -H "Content-Type: application/json" \
    -H "x-api-key: $ACAPY_ADMIN_URL_API_KEY" \
    -d '{ "wallet_key": "example-encryption-key-02" }'
@@ -378,6 +378,10 @@ curl -X POST "${ACAPY_ADMIN_URL}/multitenancy/wallet/{wallet_id}/remove" \
 ```jsonc
 {}
 ```
+
+> The `POST /multitenancy/wallet/{wallet_id}/remove` endpoint is deprecated and
+> will be removed in a future release. Use `DELETE /multitenancy/wallet/{wallet_id}`
+> instead.
 
 ### Per tenant settings
 

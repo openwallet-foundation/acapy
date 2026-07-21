@@ -3932,10 +3932,47 @@
         "summary" : "Update a subwallet",
         "tags" : [ "multitenancy" ],
         "x-codegen-request-body-name" : "body"
+      },
+      "delete" : {
+        "parameters" : [ {
+          "description" : "Subwallet identifier",
+          "in" : "path",
+          "name" : "wallet_id",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "*/*" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/RemoveWalletRequest"
+              }
+            }
+          },
+          "required" : false
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/MultitenantModuleResponse"
+                }
+              }
+            },
+            "description" : ""
+          }
+        },
+        "summary" : "Remove a subwallet",
+        "tags" : [ "multitenancy" ],
+        "x-codegen-request-body-name" : "body"
       }
     },
     "/multitenancy/wallet/{wallet_id}/remove" : {
       "post" : {
+        "deprecated" : true,
         "parameters" : [ {
           "description" : "Subwallet identifier",
           "in" : "path",

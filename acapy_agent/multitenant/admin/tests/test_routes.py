@@ -833,6 +833,27 @@ class TestMultitenantRoutes(IsolatedAsyncioTestCase):
             mock_response.assert_called_once_with({})
             assert result == mock_response.return_value
 
+    async def test_wallet_remove_deprecated_delegates(self):
+        self.request.has_body = False
+        self.request.match_info = {"wallet_id": "dummy"}
+        mock_multitenant_mgr = mock.AsyncMock(BaseMultitenantManager, autospec=True)
+        mock_multitenant_mgr.remove_wallet = mock.CoroutineMock()
+        self.profile.context.injector.bind_instance(
+            BaseMultitenantManager, mock_multitenant_mgr
+        )
+
+        with (
+            mock.patch.object(test_module.web, "json_response") as mock_response,
+            mock.patch.object(
+                test_module.WalletRecord, "retrieve_by_id", mock.CoroutineMock()
+            ),
+        ):
+            result = await test_module.wallet_remove_deprecated(self.request)
+
+            mock_multitenant_mgr.remove_wallet.assert_called_once_with("dummy", None)
+            mock_response.assert_called_once_with({})
+            assert result == mock_response.return_value
+
     async def test_wallet_remove_unmanaged(self):
         self.request.match_info = {"wallet_id": "dummy"}
         self.request.json = mock.CoroutineMock(return_value={"wallet_key": "dummy_key"})
