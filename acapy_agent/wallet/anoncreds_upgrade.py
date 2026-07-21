@@ -47,7 +47,7 @@ from ..messaging.schemas.util import SCHEMA_SENT_RECORD_TYPE
 from ..multitenant.base import BaseMultitenantManager
 from ..revocation.models.issuer_cred_rev_record import IssuerCredRevRecord
 from ..revocation.models.issuer_rev_reg_record import IssuerRevRegRecord
-from ..storage.base import BaseStorage
+from ..storage.base import DEFAULT_PAGE_SIZE, BaseStorage
 from ..storage.error import StorageNotFoundError
 from ..storage.record import StorageRecord
 from ..storage.type import (
@@ -62,6 +62,11 @@ LOGGER = logging.getLogger(__name__)
 
 UPGRADING_RECORD_IN_PROGRESS = "anoncreds_in_progress"
 UPGRADING_RECORD_FINISHED = "anoncreds_finished"
+
+# Number of records fetched per storage page during migration so large record
+# categories (e.g. per-registry credential revocation records) are never loaded
+# into memory all at once.
+UPGRADE_SCAN_BATCH_SIZE = DEFAULT_PAGE_SIZE
 
 # Number of times to retry upgrading records
 max_retries = 5
@@ -138,13 +143,13 @@ class RevListUpgradeObj:
         rev_list: RevList,
         pending: list,
         rev_reg_def_id: str,
-        cred_rev_records: list[StorageRecord],
+        max_cred_rev_id: int,
     ):
         """Initialize rev entry upgrade object."""
         self.rev_list = rev_list
         self.pending = pending
         self.rev_reg_def_id = rev_reg_def_id
-        self.cred_rev_records = cred_rev_records
+        self.max_cred_rev_id = max_cred_rev_id
 
 
 async def get_schema_upgrade_object(
@@ -279,20 +284,36 @@ async def get_rev_list_upgrade_object(
 ) -> RevListUpgradeObj:
     """Get revocation entry upgrade object."""
     rev_reg = rev_reg_def_upgrade_obj.rev_reg_def
-    async with profile.session() as session:
-        storage = session.inject(BaseStorage)
-        askar_cred_rev_records = await storage.find_all_records(
-            IssuerCredRevRecord.RECORD_TYPE,
-            {"rev_reg_id": rev_reg_def_upgrade_obj.rev_reg_def_id},
-        )
 
     # We need to increase the list by 1 here because the first index
     # is reserved by the cryptographic algorithm and the previous record
     # goes up to max_cred_num as numbers and not a list of truthy values
     revocation_list = [0] * (rev_reg.value.max_cred_num + 1)
-    for askar_cred_rev_record in askar_cred_rev_records:
-        if askar_cred_rev_record.tags.get("state") == "revoked":
-            revocation_list[int(askar_cred_rev_record.tags.get("cred_rev_id"))] = 1
+
+    # A single registry can hold tens of thousands of credential revocation
+    # records; page through them so they are not all held in memory at once.
+    # 0 index is reserved by the crypto algorithm.
+    max_cred_rev_id = 1
+    async with profile.session() as session:
+        storage = session.inject(BaseStorage)
+        offset = 0
+        while True:
+            page = await storage.find_paginated_records(
+                type_filter=IssuerCredRevRecord.RECORD_TYPE,
+                tag_query={"rev_reg_id": rev_reg_def_upgrade_obj.rev_reg_def_id},
+                limit=UPGRADE_SCAN_BATCH_SIZE,
+                offset=offset,
+            )
+            if not page:
+                break
+            for record in page:
+                cred_rev_id = int(record.tags.get("cred_rev_id"))
+                max_cred_rev_id = max(max_cred_rev_id, cred_rev_id)
+                if record.tags.get("state") == "revoked":
+                    revocation_list[cred_rev_id] = 1
+            if len(page) < UPGRADE_SCAN_BATCH_SIZE:
+                break
+            offset += UPGRADE_SCAN_BATCH_SIZE
 
     rev_list = RevList(
         issuer_id=rev_reg.issuer_id,
@@ -305,7 +326,7 @@ async def get_rev_list_upgrade_object(
         rev_list,
         json.loads(rev_reg_def_upgrade_obj.askar_issuer_rev_reg_def.value)["pending_pub"],
         rev_reg_def_upgrade_obj.rev_reg_def_id,
-        askar_cred_rev_records,
+        max_cred_rev_id,
     )
 
 
@@ -411,10 +432,7 @@ async def upgrade_and_delete_rev_entry_records(
 ) -> None:
     """Upgrade and delete revocation entry records."""
     # 0 index is reserved by the crypto algorithm
-    next_index = 1
-    for cred_rev_record in rev_list_upgrade_obj.cred_rev_records:
-        if int(cred_rev_record.tags.get("cred_rev_id")) > next_index:
-            next_index = int(cred_rev_record.tags.get("cred_rev_id"))
+    next_index = max(1, rev_list_upgrade_obj.max_cred_rev_id)
 
     await txn.handle.insert(
         CATEGORY_REV_LIST,
