@@ -379,6 +379,10 @@ curl -X DELETE "${ACAPY_ADMIN_URL}/multitenancy/wallet/{wallet_id}" \
 {}
 ```
 
+> The `POST /multitenancy/wallet/{wallet_id}/remove` endpoint is deprecated and
+> will be removed in a future release. Use `DELETE /multitenancy/wallet/{wallet_id}`
+> instead.
+
 ### Per tenant settings
 
 To allow the configuring of ACA-Py startup parameters/environment variables at a tenant/subwallet level. [PR#2233](https://github.com/openwallet-foundation/acapy/pull/2233) will provide the ability to update the following subset of settings when creating or updating the subwallet:

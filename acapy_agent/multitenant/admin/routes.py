@@ -677,6 +677,23 @@ async def wallet_remove(request: web.BaseRequest):
     return web.json_response({})
 
 
+@docs(
+    tags=["multitenancy"],
+    summary="Remove a subwallet",
+    deprecated=True,
+)
+@match_info_schema(WalletIdMatchInfoSchema())
+@request_schema(RemoveWalletRequestSchema)
+@response_schema(MultitenantModuleResponseSchema(), 200, description="")
+@admin_authentication
+async def wallet_remove_deprecated(request: web.BaseRequest):
+    """Deprecated alias for wallet_remove.
+
+    Use ``DELETE /multitenancy/wallet/{wallet_id}`` instead.
+    """
+    return await wallet_remove(request)
+
+
 # MTODO: add wallet import route
 # MTODO: add wallet export route
 # MTODO: add rotate wallet key route
@@ -692,6 +709,7 @@ async def register(app: web.Application):
             web.put("/multitenancy/wallet/{wallet_id}", wallet_update),
             web.post("/multitenancy/wallet/{wallet_id}/token", wallet_create_token),
             web.delete("/multitenancy/wallet/{wallet_id}", wallet_remove),
+            web.post("/multitenancy/wallet/{wallet_id}/remove", wallet_remove_deprecated),
         ]
     )
 
