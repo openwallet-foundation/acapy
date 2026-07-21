@@ -422,6 +422,10 @@ class TestCoordinateMediationRoutes(IsolatedAsyncioTestCase):
             mock_query.assert_called_once_with(
                 mock_session.return_value,
                 {"connection_id": "test-id", "role": MediationRecord.ROLE_SERVER},
+                limit=100,
+                offset=0,
+                order_by="id",
+                descending=False,
             )
 
     async def test_get_keylist_no_matching_records(self):
@@ -440,7 +444,14 @@ class TestCoordinateMediationRoutes(IsolatedAsyncioTestCase):
             mock.patch.object(test_module.web, "json_response") as mock_response,
         ):
             await test_module.get_keylist(self.request)
-            mock_query.assert_called_once_with(mock_session.return_value, {})
+            mock_query.assert_called_once_with(
+                mock_session.return_value,
+                {},
+                limit=100,
+                offset=0,
+                order_by="id",
+                descending=False,
+            )
             mock_response.assert_called_once_with({"results": []}, status=200)
 
     async def test_get_keylist_storage_error(self):

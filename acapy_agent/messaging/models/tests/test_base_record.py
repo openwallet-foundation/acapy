@@ -430,7 +430,8 @@ class TestBaseRecord(IsolatedAsyncioTestCase):
                 {"code": "red"},
                 record_id,
             )
-            mock_storage.find_all_records.return_value = [
+            # single storage page holds all matching records
+            mock_storage.find_paginated_records.return_value = [
                 stored
             ] * 15  # return 15 records
 
@@ -442,14 +443,101 @@ class TestBaseRecord(IsolatedAsyncioTestCase):
                 offset=5,
                 post_filter_positive={"a": "one"},
             )
-            mock_storage.find_all_records.assert_awaited_once_with(
+            # A post-filter with pagination must NOT load the whole category; it
+            # pages through storage instead.
+            mock_storage.find_all_records.assert_not_awaited()
+            mock_storage.find_paginated_records.assert_awaited_once_with(
                 type_filter=ARecordImpl.RECORD_TYPE,
+                tag_query=tag_filter,
+                limit=DEFAULT_PAGE_SIZE,  # batch size = max(limit, DEFAULT_PAGE_SIZE)
+                offset=0,
                 order_by=None,
                 descending=False,
-                tag_query=tag_filter,
             )
             assert len(result) == 10
             assert result and isinstance(result[0], ARecordImpl)
             assert result[0]._id == record_id
             assert result[0].value == record_value
             assert result[0].a == "one"
+
+    async def test_query_paginated_post_filter_pages_through_storage(self):
+        async with self.profile.session() as session:
+            mock_storage = mock.MagicMock(BaseStorage, autospec=True)
+            session.context.injector.bind_instance(BaseStorage, mock_storage)
+            tag_filter = {"code": "red"}
+
+            def _stored(ident: str, a_val: str) -> StorageRecord:
+                a_record = ARecordImpl(ident=ident, a=a_val, b="two", code="red")
+                value = a_record.record_value
+                value.update({"created_at": time_now(), "updated_at": time_now()})
+                return StorageRecord(
+                    ARecordImpl.RECORD_TYPE,
+                    json.dumps(value),
+                    {"code": "red"},
+                    ident,
+                )
+
+            # First batch: DEFAULT_PAGE_SIZE records, none match the post-filter.
+            # Second batch: a handful of matching records. A naive "load all" would
+            # never terminate on a huge category; batched paging must span pages.
+            first_batch = [_stored(f"miss-{i}", "two") for i in range(DEFAULT_PAGE_SIZE)]
+            second_batch = [_stored(f"hit-{i}", "one") for i in range(3)]
+            mock_storage.find_paginated_records.side_effect = [
+                first_batch,
+                second_batch,
+            ]
+
+            result = await ARecordImpl.query(
+                session,
+                tag_filter,
+                limit=2,
+                post_filter_positive={"a": "one"},
+            )
+
+            mock_storage.find_all_records.assert_not_awaited()
+            assert mock_storage.find_paginated_records.await_count == 2
+            # batch size is DEFAULT_PAGE_SIZE, second call advances the offset
+            first_call, second_call = mock_storage.find_paginated_records.await_args_list
+            assert first_call.kwargs["offset"] == 0
+            assert first_call.kwargs["limit"] == DEFAULT_PAGE_SIZE
+            assert second_call.kwargs["offset"] == DEFAULT_PAGE_SIZE
+            assert len(result) == 2
+            assert all(r.a == "one" for r in result)
+
+    async def test_query_unpaginated_post_filter_returns_all_matches(self):
+        async with self.profile.session() as session:
+            mock_storage = mock.MagicMock(BaseStorage, autospec=True)
+            session.context.injector.bind_instance(BaseStorage, mock_storage)
+            tag_filter = {"code": "red"}
+
+            def _stored(ident: str, a_val: str) -> StorageRecord:
+                a_record = ARecordImpl(ident=ident, a=a_val, b="two", code="red")
+                value = a_record.record_value
+                value.update({"created_at": time_now(), "updated_at": time_now()})
+                return StorageRecord(
+                    ARecordImpl.RECORD_TYPE,
+                    json.dumps(value),
+                    {"code": "red"},
+                    ident,
+                )
+
+            rows = [_stored(f"hit-{i}", "one") for i in range(7)]
+            rows += [_stored(f"miss-{i}", "two") for i in range(3)]
+            mock_storage.find_all_records.return_value = rows
+
+            # No limit/offset: legacy behavior returns every matching record.
+            result = await ARecordImpl.query(
+                session,
+                tag_filter,
+                post_filter_positive={"a": "one"},
+            )
+
+            mock_storage.find_paginated_records.assert_not_awaited()
+            mock_storage.find_all_records.assert_awaited_once_with(
+                type_filter=ARecordImpl.RECORD_TYPE,
+                tag_query=tag_filter,
+                order_by=None,
+                descending=False,
+            )
+            assert len(result) == 7
+            assert all(r.a == "one" for r in result)
