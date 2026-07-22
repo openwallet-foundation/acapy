@@ -554,6 +554,67 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#161rc0" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1.6.1rc0
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="1.6.1rc0">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#july-21-2026" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        July 21, 2026
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#161-breaking-changes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1.6.1 Breaking Changes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#161-deprecation-notices" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1.6.1 Deprecation Notices
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#161-categorized-pr-list" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1.6.1 Categorized PR List
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#160" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -4662,6 +4723,67 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#161rc0" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1.6.1rc0
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="1.6.1rc0">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#july-21-2026" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        July 21, 2026
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#161-breaking-changes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1.6.1 Breaking Changes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#161-deprecation-notices" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1.6.1 Deprecation Notices
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#161-categorized-pr-list" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1.6.1 Categorized PR List
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#160" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -6210,6 +6332,54 @@
 
 
 <h1 id="aca-py-changelog">ACA-Py Changelog<a class="headerlink" href="#aca-py-changelog" title="Permanent link">&para;</a></h1>
+<h2 id="161rc0">1.6.1rc0<a class="headerlink" href="#161rc0" title="Permanent link">&para;</a></h2>
+<h3 id="july-21-2026">July 21, 2026<a class="headerlink" href="#july-21-2026" title="Permanent link">&para;</a></h3>
+<p>ACA-Py 1.6.1rc0 includes fixes found from continued production use of the <code>askar-anoncreds</code> wallet migration and revocation processes, and a fix to bound the memory usage of record queries and maintenance/upgrade scans, improving stability for larger deployments. The multitenancy subwallet removal endpoint has been updated to use <code>DELETE</code> for REST consistency, with the previous <code>POST .../remove</code> endpoint now deprecated. Many <code>dependabot</code> PRs are included to keep dependencies current and secure.</p>
+<p>Several PRs in this release complete the work to make ACA-Py 1.6 an official LTS release, with several fixes to the LTS CI/CD image tagging and publishing process</p>
+<p>New governance documentation, including a Technical Charter and an OWF Project Mapping Document, are included.</p>
+<h3 id="161-breaking-changes">1.6.1 Breaking Changes<a class="headerlink" href="#161-breaking-changes" title="Permanent link">&para;</a></h3>
+<p>There are no breaking changes in this release.</p>
+<h3 id="161-deprecation-notices">1.6.1 Deprecation Notices<a class="headerlink" href="#161-deprecation-notices" title="Permanent link">&para;</a></h3>
+<p>The <code>acapy_agent.revocation_anoncreds</code> package has been deprecated and relocated to <code>acapy_agent.anoncreds.revocation</code> for improved consistency across the codebase. The change should only affect <a href="https://plugins.aca-py.org">ACA-Py Plugins</a> that implement AnonCreds, but other developers should also take note.</p>
+<p>The <code>wallet-type</code> configuration value <code>askar</code> is now deprecated and all deployments still using that wallet type should migrate to either the <code>askar-anoncreds</code> or (ideally) <code>kanon-anoncreds</code> wallet types.</p>
+<p>For REST consistency the <code>POST /multitenancy/wallet/{wallet_id}/remove</code> endpoint is deprecated, replaced with the <code>DELETE /multitenancy/wallet/{wallet_id}</code> endpoint. Implementers should update plugins and their own code to use the new endpoint. The old endpoint will be removed in a future release.</p>
+<h3 id="161-categorized-pr-list">1.6.1 Categorized PR List<a class="headerlink" href="#161-categorized-pr-list" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Core Platform and Multitenancy</strong><ul>
+<li>feat: use DELETE for multitenancy subwallet removal <a href="https://github.com/openwallet-foundation/acapy/pull/4172">#4172</a> <a href="https://github.com/esune">esune</a></li>
+<li>fix: bound memory usage of record queries and maintenance/upgrade scans <a href="https://github.com/openwallet-foundation/acapy/pull/4171">#4171</a> <a href="https://github.com/esune">esune</a></li>
+</ul>
+</li>
+<li><strong>AnonCreds Revocation and Wallet Migration</strong><ul>
+<li>fix: Check RECORD_TYPE_ACAPY_UPGRADING type for clustered upgrade check <a href="https://github.com/openwallet-foundation/acapy/pull/4167">#4167</a> <a href="https://github.com/jamshale">jamshale</a></li>
+<li>fix: complete stalled setup when activating a posted revocation registry <a href="https://github.com/openwallet-foundation/acapy/pull/4164">#4164</a> <a href="https://github.com/kukgini">kukgini</a></li>
+<li>Fix anoncreds upgrade failure in-memory in-progress check <a href="https://github.com/openwallet-foundation/acapy/pull/4163">#4163</a> <a href="https://github.com/jamshale">jamshale</a></li>
+</ul>
+</li>
+<li><strong>Documentation and Governance</strong><ul>
+<li>docs: warn that the subwallet token endpoint invalidates previous tokens <a href="https://github.com/openwallet-foundation/acapy/pull/4166">#4166</a> <a href="https://github.com/kukgini">kukgini</a></li>
+<li>Update README.md <a href="https://github.com/openwallet-foundation/acapy/pull/4158">#4158</a> <a href="https://github.com/SeanBohan">SeanBohan</a></li>
+<li>Add ACA-Py OWF Project Mapping Document <a href="https://github.com/openwallet-foundation/acapy/pull/4147">#4147</a> <a href="https://github.com/swcurran">swcurran</a></li>
+<li>Add Technical Charter plus minor updates to the Readme for the new Adaptive Cloud Agent-Python name <a href="https://github.com/openwallet-foundation/acapy/pull/4143">#4143</a> <a href="https://github.com/swcurran">swcurran</a></li>
+</ul>
+</li>
+<li><strong>LTS Release CI/CD</strong><ul>
+<li>Update LTS Docker image tag to py3.13-1.6-lts <a href="https://github.com/openwallet-foundation/acapy/pull/4151">#4151</a> <a href="https://github.com/swcurran">swcurran</a></li>
+<li>fix(ci): use correct python version per LTS release when tagging images <a href="https://github.com/openwallet-foundation/acapy/pull/4150">#4150</a> <a href="https://github.com/esune">esune</a></li>
+<li>Fix/lts release cicd <a href="https://github.com/openwallet-foundation/acapy/pull/4149">#4149</a> <a href="https://github.com/esune">esune</a></li>
+<li>fix(ci): update python version in LTS image tagging to match publish workflow <a href="https://github.com/openwallet-foundation/acapy/pull/4142">#4142</a> <a href="https://github.com/esune">esune</a></li>
+<li>Make ACA-Py 1.6 an LTS release <a href="https://github.com/openwallet-foundation/acapy/pull/4127">#4127</a> <a href="https://github.com/swcurran">swcurran</a></li>
+</ul>
+</li>
+<li><strong>Dependabot PRs</strong><ul>
+<li><a href="https://github.com/openwallet-foundation/acapy/pulls?q=is%3Apr+is%3Amerged+merged%3A2026-04-01..2026-07-21+author%3Aapp%2Fdependabot+">Link to list of Dependabot PRs in this release</a></li>
+</ul>
+</li>
+<li><strong>Release management pull requests</strong>:<ul>
+<li>1.6.1rc0 <a href="https://github.com/openwallet-foundation/acapy/pull/4178">#4178</a> <a href="https://github.com/swcurran">swcurran</a></li>
+</ul>
+</li>
+</ul>
 <h2 id="160">1.6.0<a class="headerlink" href="#160" title="Permanent link">&para;</a></h2>
 <h3 id="april-1-2026">April 1, 2026<a class="headerlink" href="#april-1-2026" title="Permanent link">&para;</a></h3>
 <p>ACA-Py Release 1.6.0 continues the clean up of the migration of deployments moving from the <code>askar</code> wallet type to <code>askar-anoncreds</code>. More use case specific issues have been found with the upgrade and corrected in this release, notably when revokable AnonCreds credentials rooted in Indy, with Endorsers and when an initial revocation publication operation fails. The proper handle of such a condition is again properly handled. Also added is an interoperability improvement with the <a href="https://github.com/openwallet-foundation/credo-ts">Credo-TS</a> framework around the handling of JWS verification.</p>
