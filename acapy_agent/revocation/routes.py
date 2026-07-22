@@ -30,6 +30,10 @@ from ..ledger.multiple_ledger.base_manager import BaseMultipleLedgerManager
 from ..messaging.credential_definitions.util import CRED_DEF_SENT_RECORD_TYPE
 from ..messaging.models.base import BaseModelError
 from ..messaging.models.openapi import OpenAPISchema
+from ..messaging.models.paginated_query import (
+    PaginatedQuerySchema,
+    get_paginated_query_params,
+)
 from ..messaging.responder import BaseResponder
 from ..messaging.valid import (
     INDY_CRED_DEF_ID_EXAMPLE,
@@ -402,7 +406,7 @@ class RevRegUpdateTailsFileUriSchema(OpenAPISchema):
     )
 
 
-class RevRegsCreatedQueryStringSchema(OpenAPISchema):
+class RevRegsCreatedQueryStringSchema(PaginatedQuerySchema):
     """Query string parameters and validators for rev regs created request."""
 
     cred_def_id = fields.Str(
@@ -826,13 +830,23 @@ async def rev_regs_created(request: web.BaseRequest):
 
     is_anoncreds_profile_raise_web_exception(context.profile)
 
-    search_tags = list(vars(RevRegsCreatedQueryStringSchema)["_declared_fields"])
+    # `cred_def_id` and `state` are indexed tags on IssuerRevRegRecord.
+    search_tags = ("cred_def_id", "state")
     tag_filter = {tag: request.query[tag] for tag in search_tags if tag in request.query}
+    # Exclude STATE_INIT via the tag query ($not) so pagination does not require
+    # loading every revocation registry record into memory.
+    tag_filter["$not"] = {"state": IssuerRevRegRecord.STATE_INIT}
+
+    limit, offset, order_by, descending = get_paginated_query_params(request)
+
     async with context.profile.session() as session:
         found = await IssuerRevRegRecord.query(
             session,
             tag_filter,
-            post_filter_negative={"state": IssuerRevRegRecord.STATE_INIT},
+            limit=limit,
+            offset=offset,
+            order_by=order_by,
+            descending=descending,
         )
 
     return web.json_response(

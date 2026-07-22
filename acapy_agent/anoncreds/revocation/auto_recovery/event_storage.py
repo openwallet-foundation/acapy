@@ -11,7 +11,7 @@ from uuid_utils import uuid4
 from ....core.profile import ProfileSession
 from ....messaging.models.base import BaseModel
 from ....messaging.util import datetime_to_str, epoch_to_str
-from ....storage.base import BaseStorage
+from ....storage.base import DEFAULT_PAGE_SIZE, BaseStorage
 from ....storage.error import StorageNotFoundError
 from ....storage.record import StorageRecord
 from ....storage.type import (
@@ -32,6 +32,10 @@ from .retry_utils import (
 )
 
 LOGGER = logging.getLogger(__name__)
+
+# Number of records fetched per storage page when sweeping event records so the
+# entire event category is never loaded into memory at once.
+EVENT_SCAN_BATCH_SIZE = DEFAULT_PAGE_SIZE
 
 all_event_types = [
     RECORD_TYPE_REV_REG_DEF_CREATE_EVENT,
@@ -413,6 +417,34 @@ class EventStorageManager:
                 correlation_id,
             )
 
+    async def _iter_records_paginated(
+        self,
+        type_filter: str,
+        tag_query: dict,
+        batch_size: Optional[int] = None,
+    ):
+        """Yield stored records for a type/tag query, paging through storage.
+
+        Reads a bounded page at a time so the entire record category is never
+        held in memory at once.
+        """
+        batch = batch_size or EVENT_SCAN_BATCH_SIZE
+        offset = 0
+        while True:
+            page = await self.storage.find_paginated_records(
+                type_filter=type_filter,
+                tag_query=tag_query,
+                limit=batch,
+                offset=offset,
+            )
+            if not page:
+                return
+            for record in page:
+                yield record
+            if len(page) < batch:
+                return
+            offset += batch
+
     async def get_in_progress_events(
         self,
         event_type: Optional[str] = None,
@@ -433,13 +465,10 @@ class EventStorageManager:
 
         for etype in event_types_to_search:
             try:
-                # Search for events that are not completed
-                records = await self.storage.find_all_records(
-                    type_filter=etype,
-                    tag_query={"state": EVENT_STATE_REQUESTED},
-                )
-
-                for record in records:
+                # Search for events that are not completed, paging through storage
+                async for record in self._iter_records_paginated(
+                    etype, {"state": EVENT_STATE_REQUESTED}
+                ):
                     record_data = json.loads(record.value)
 
                     # Apply expiry timestamp filtering if requested
@@ -504,13 +533,10 @@ class EventStorageManager:
 
         for etype in event_types_to_search:
             try:
-                # Search for events that failed
-                records = await self.storage.find_all_records(
-                    type_filter=etype,
-                    tag_query={"state": EVENT_STATE_RESPONSE_FAILURE},
-                )
-
-                for record in records:
+                # Search for events that failed, paging through storage
+                async for record in self._iter_records_paginated(
+                    etype, {"state": EVENT_STATE_RESPONSE_FAILURE}
+                ):
                     record_data = json.loads(record.value)
                     failed_events.append(
                         {
@@ -539,6 +565,69 @@ class EventStorageManager:
 
         return failed_events
 
+    async def _cleanup_record_if_expired(
+        self, record: StorageRecord, max_age_hours: int
+    ) -> bool:
+        """Delete a completed event record if it is past its cleanup time.
+
+        Returns:
+            True if the record was deleted, False otherwise.
+
+        """
+        try:
+            record_data = json.loads(record.value)
+            created_at_str = record_data.get("created_at")
+            expiry_timestamp = record_data.get("expiry_timestamp")
+
+            if not created_at_str:
+                # If no created_at timestamp, skip this record
+                LOGGER.warning(
+                    "Event record %s missing created_at timestamp, skipping cleanup.",
+                    record.id,
+                )
+                return False
+
+            created_at = datetime.fromisoformat(created_at_str.replace("Z", "+00:00"))
+            current_time = datetime.now(timezone.utc)
+
+            # Cleanup threshold: created_at + max_age_hours
+            cleanup_threshold = created_at.timestamp() + (max_age_hours * 3600)
+            current_timestamp = current_time.timestamp()
+
+            # Earliest cleanup time is the later of the age threshold and expiry
+            earliest_cleanup_time = cleanup_threshold
+            if expiry_timestamp:
+                earliest_cleanup_time = max(cleanup_threshold, expiry_timestamp)
+
+            # Only clean up once current time is past the earliest cleanup time
+            if current_timestamp >= earliest_cleanup_time:
+                await self.storage.delete_record(record)
+                LOGGER.debug(
+                    "Cleaned up event record %s (created: %s, cleanup_threshold: %s, "
+                    "expiry: %s, current: %s)",
+                    record.id,
+                    created_at_str,
+                    epoch_to_str(cleanup_threshold),
+                    epoch_to_str(expiry_timestamp) if expiry_timestamp else "None",
+                    epoch_to_str(current_timestamp),
+                )
+                return True
+
+            LOGGER.debug(
+                "Event record %s not ready for cleanup (earliest: %s, current: %s)",
+                record.id,
+                epoch_to_str(earliest_cleanup_time),
+                epoch_to_str(current_timestamp),
+            )
+            return False
+        except (ValueError, KeyError) as e:
+            LOGGER.warning(
+                "Error parsing event record %s for cleanup: %s",
+                record.id,
+                str(e),
+            )
+            return False
+
     async def cleanup_completed_events(
         self,
         event_type: Optional[str] = None,
@@ -559,82 +648,36 @@ class EventStorageManager:
 
         for etype in event_types_to_search:
             try:
-                # Search for completed events (SUCCESS and FAILURE states)
-                success_records = await self.storage.find_all_records(
-                    type_filter=etype,
-                    tag_query={"state": EVENT_STATE_RESPONSE_SUCCESS},
-                )
-                failure_records = await self.storage.find_all_records(
-                    type_filter=etype,
-                    tag_query={"state": EVENT_STATE_RESPONSE_FAILURE},
-                )
-
-                for record in success_records + failure_records:
-                    # Parse record data to get timestamps
-                    try:
-                        record_data = json.loads(record.value)
-                        created_at_str = record_data.get("created_at")
-                        expiry_timestamp = record_data.get("expiry_timestamp")
-
-                        if not created_at_str:
-                            # If no created_at timestamp, skip this record
-                            LOGGER.warning(
-                                "Event record %s missing created_at timestamp, "
-                                "skipping cleanup.",
-                                record.id,
-                            )
-                            continue
-
-                        # Parse created_at timestamp
-                        created_at = datetime.fromisoformat(
-                            created_at_str.replace("Z", "+00:00")
+                # Page through completed events (SUCCESS then FAILURE states) so the
+                # entire event category is never loaded into memory at once.
+                for state in (
+                    EVENT_STATE_RESPONSE_SUCCESS,
+                    EVENT_STATE_RESPONSE_FAILURE,
+                ):
+                    offset = 0
+                    while True:
+                        page = await self.storage.find_paginated_records(
+                            type_filter=etype,
+                            tag_query={"state": state},
+                            limit=EVENT_SCAN_BATCH_SIZE,
+                            offset=offset,
                         )
-                        current_time = datetime.now(timezone.utc)
+                        if not page:
+                            break
 
-                        # Calculate cleanup threshold: created_at + max_age_hours
-                        cleanup_threshold = created_at.timestamp() + (
-                            max_age_hours * 3600
-                        )
-                        current_timestamp = current_time.timestamp()
+                        deleted_in_page = 0
+                        for record in page:
+                            if await self._cleanup_record_if_expired(
+                                record, max_age_hours
+                            ):
+                                cleaned_up += 1
+                                deleted_in_page += 1
 
-                        # Determine the earliest time we can clean up this record
-                        # Use the maximum of cleanup_threshold and expiry_timestamp
-                        earliest_cleanup_time = cleanup_threshold
-                        if expiry_timestamp:
-                            earliest_cleanup_time = max(
-                                cleanup_threshold, expiry_timestamp
-                            )
-
-                        # Only clean up if current time is past the earliest cleanup time
-                        if current_timestamp >= earliest_cleanup_time:
-                            await self.storage.delete_record(record)
-                            cleaned_up += 1
-                            LOGGER.debug(
-                                "Cleaned up event record %s (created: %s, "
-                                "cleanup_threshold: %s, expiry: %s, current: %s)",
-                                record.id,
-                                created_at_str,
-                                epoch_to_str(cleanup_threshold),
-                                epoch_to_str(expiry_timestamp)
-                                if expiry_timestamp
-                                else "None",
-                                epoch_to_str(current_timestamp),
-                            )
-                        else:
-                            LOGGER.debug(
-                                "Event record %s not ready for cleanup "
-                                "(earliest: %s, current: %s)",
-                                record.id,
-                                epoch_to_str(earliest_cleanup_time),
-                                epoch_to_str(current_timestamp),
-                            )
-
-                    except (ValueError, KeyError) as e:
-                        LOGGER.warning(
-                            "Error parsing event record %s for cleanup: %s",
-                            record.id,
-                            str(e),
-                        )
+                        if len(page) < EVENT_SCAN_BATCH_SIZE:
+                            break
+                        # Deleted records shift later rows back, so only advance the
+                        # offset past records that were kept.
+                        offset += len(page) - deleted_in_page
 
             except Exception as e:
                 LOGGER.warning(

@@ -1,7 +1,7 @@
 {
   "swagger" : "2.0",
   "info" : {
-    "version" : "v1.6.0",
+    "version" : "v1.6.1rc0",
     "title" : "Aries Cloud Agent"
   },
   "tags" : [ {
@@ -2882,6 +2882,38 @@
           "required" : false,
           "type" : "string"
         }, {
+          "name" : "descending",
+          "in" : "query",
+          "description" : "Order results in descending order if true",
+          "required" : false,
+          "type" : "boolean",
+          "default" : false
+        }, {
+          "name" : "limit",
+          "in" : "query",
+          "description" : "Number of results to return",
+          "required" : false,
+          "type" : "integer",
+          "default" : 100,
+          "maximum" : 10000,
+          "minimum" : 1
+        }, {
+          "name" : "offset",
+          "in" : "query",
+          "description" : "Offset for pagination",
+          "required" : false,
+          "type" : "integer",
+          "default" : 0,
+          "minimum" : 0
+        }, {
+          "name" : "order_by",
+          "in" : "query",
+          "description" : "The column to order results by. Only \"id\" is currently supported.",
+          "required" : false,
+          "type" : "string",
+          "default" : "id",
+          "enum" : [ "id" ]
+        }, {
           "name" : "role",
           "in" : "query",
           "description" : "Filer on role, 'client' for keys mediated by other agents, 'server' for keys mediated by this agent",
@@ -3244,10 +3276,8 @@
             }
           }
         }
-      }
-    },
-    "/multitenancy/wallet/{wallet_id}/remove" : {
-      "post" : {
+      },
+      "delete" : {
         "tags" : [ "multitenancy" ],
         "summary" : "Remove a subwallet",
         "produces" : [ "application/json" ],
@@ -3275,10 +3305,41 @@
         }
       }
     },
+    "/multitenancy/wallet/{wallet_id}/remove" : {
+      "post" : {
+        "tags" : [ "multitenancy" ],
+        "summary" : "Remove a subwallet",
+        "produces" : [ "application/json" ],
+        "parameters" : [ {
+          "in" : "body",
+          "name" : "body",
+          "required" : false,
+          "schema" : {
+            "$ref" : "#/definitions/RemoveWalletRequest"
+          }
+        }, {
+          "name" : "wallet_id",
+          "in" : "path",
+          "description" : "Subwallet identifier",
+          "required" : true,
+          "type" : "string"
+        } ],
+        "deprecated" : true,
+        "responses" : {
+          "200" : {
+            "description" : "",
+            "schema" : {
+              "$ref" : "#/definitions/MultitenantModuleResponse"
+            }
+          }
+        }
+      }
+    },
     "/multitenancy/wallet/{wallet_id}/token" : {
       "post" : {
         "tags" : [ "multitenancy" ],
         "summary" : "Get auth token for a subwallet",
+        "description" : "Issue a new auth token for a subwallet. Issuing a new token invalidates any token previously issued for the wallet: only the most recently issued token is valid. Do not call this endpoint if another client may still be using a previously issued token for the wallet.",
         "produces" : [ "application/json" ],
         "parameters" : [ {
           "in" : "body",
@@ -4153,6 +4214,38 @@
           "required" : false,
           "type" : "string",
           "pattern" : "^([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}):3:CL:(([1-9][0-9]*)|([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}:2:.+:[0-9.]+)):(.+)?$"
+        }, {
+          "name" : "descending",
+          "in" : "query",
+          "description" : "Order results in descending order if true",
+          "required" : false,
+          "type" : "boolean",
+          "default" : false
+        }, {
+          "name" : "limit",
+          "in" : "query",
+          "description" : "Number of results to return",
+          "required" : false,
+          "type" : "integer",
+          "default" : 100,
+          "maximum" : 10000,
+          "minimum" : 1
+        }, {
+          "name" : "offset",
+          "in" : "query",
+          "description" : "Offset for pagination",
+          "required" : false,
+          "type" : "integer",
+          "default" : 0,
+          "minimum" : 0
+        }, {
+          "name" : "order_by",
+          "in" : "query",
+          "description" : "The column to order results by. Only \"id\" is currently supported.",
+          "required" : false,
+          "type" : "string",
+          "default" : "id",
+          "enum" : [ "id" ]
         }, {
           "name" : "state",
           "in" : "query",

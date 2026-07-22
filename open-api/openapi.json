@@ -2,7 +2,7 @@
   "openapi" : "3.0.1",
   "info" : {
     "title" : "Aries Cloud Agent",
-    "version" : "v1.6.0"
+    "version" : "v1.6.1rc0"
   },
   "servers" : [ {
     "url" : "/"
@@ -3471,6 +3471,42 @@
             "type" : "string"
           }
         }, {
+          "description" : "Order results in descending order if true",
+          "in" : "query",
+          "name" : "descending",
+          "schema" : {
+            "default" : false,
+            "type" : "boolean"
+          }
+        }, {
+          "description" : "Number of results to return",
+          "in" : "query",
+          "name" : "limit",
+          "schema" : {
+            "default" : 100,
+            "maximum" : 10000,
+            "minimum" : 1,
+            "type" : "integer"
+          }
+        }, {
+          "description" : "Offset for pagination",
+          "in" : "query",
+          "name" : "offset",
+          "schema" : {
+            "default" : 0,
+            "minimum" : 0,
+            "type" : "integer"
+          }
+        }, {
+          "description" : "The column to order results by. Only \"id\" is currently supported.",
+          "in" : "query",
+          "name" : "order_by",
+          "schema" : {
+            "default" : "id",
+            "enum" : [ "id" ],
+            "type" : "string"
+          }
+        }, {
           "description" : "Filer on role, 'client' for keys mediated by other agents, 'server' for keys mediated by this agent",
           "in" : "query",
           "name" : "role",
@@ -3872,6 +3908,42 @@
       }
     },
     "/multitenancy/wallet/{wallet_id}" : {
+      "delete" : {
+        "parameters" : [ {
+          "description" : "Subwallet identifier",
+          "in" : "path",
+          "name" : "wallet_id",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "*/*" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/RemoveWalletRequest"
+              }
+            }
+          },
+          "required" : false
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/MultitenantModuleResponse"
+                }
+              }
+            },
+            "description" : ""
+          }
+        },
+        "summary" : "Remove a subwallet",
+        "tags" : [ "multitenancy" ],
+        "x-codegen-request-body-name" : "body"
+      },
       "get" : {
         "parameters" : [ {
           "description" : "Subwallet identifier",
@@ -3936,6 +4008,7 @@
     },
     "/multitenancy/wallet/{wallet_id}/remove" : {
       "post" : {
+        "deprecated" : true,
         "parameters" : [ {
           "description" : "Subwallet identifier",
           "in" : "path",
@@ -3974,6 +4047,7 @@
     },
     "/multitenancy/wallet/{wallet_id}/token" : {
       "post" : {
+        "description" : "Issue a new auth token for a subwallet. Issuing a new token invalidates any token previously issued for the wallet: only the most recently issued token is valid. Do not call this endpoint if another client may still be using a previously issued token for the wallet.",
         "parameters" : [ {
           "in" : "path",
           "name" : "wallet_id",
@@ -5031,6 +5105,42 @@
           "name" : "cred_def_id",
           "schema" : {
             "pattern" : "^([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}):3:CL:(([1-9][0-9]*)|([123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]{21,22}:2:.+:[0-9.]+)):(.+)?$",
+            "type" : "string"
+          }
+        }, {
+          "description" : "Order results in descending order if true",
+          "in" : "query",
+          "name" : "descending",
+          "schema" : {
+            "default" : false,
+            "type" : "boolean"
+          }
+        }, {
+          "description" : "Number of results to return",
+          "in" : "query",
+          "name" : "limit",
+          "schema" : {
+            "default" : 100,
+            "maximum" : 10000,
+            "minimum" : 1,
+            "type" : "integer"
+          }
+        }, {
+          "description" : "Offset for pagination",
+          "in" : "query",
+          "name" : "offset",
+          "schema" : {
+            "default" : 0,
+            "minimum" : 0,
+            "type" : "integer"
+          }
+        }, {
+          "description" : "The column to order results by. Only \"id\" is currently supported.",
+          "in" : "query",
+          "name" : "order_by",
+          "schema" : {
+            "default" : "id",
+            "enum" : [ "id" ],
             "type" : "string"
           }
         }, {
