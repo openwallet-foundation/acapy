@@ -7,6 +7,8 @@ from typing import List, Optional, Pattern
 from aiohttp import web
 
 from ...utils import general as general_utils
+from .. import scopes
+from ..auth_context import get_auth_scopes, has_auth_scopes
 from ..request_context import AdminRequestContext
 
 
@@ -22,23 +24,33 @@ def admin_authentication(handler):
     async def admin_auth(request):
         context: AdminRequestContext = request["context"]
         profile = context.profile
+
+        if request.method == "OPTIONS":
+            return await handler(request)
+
+        # OAuth path: token was validated by setup_context middleware.
+        # Require acapy:admin scope for admin-only routes.
+        if has_auth_scopes(context):
+            if scopes.ADMIN in get_auth_scopes(context):
+                return await handler(request)
+            raise web.HTTPForbidden(
+                reason=f"{scopes.ADMIN} scope required",
+                text=f"{scopes.ADMIN} scope required",
+            )
+
         header_admin_api_key = request.headers.get("x-api-key")
         valid_key = general_utils.const_compare(
             profile.settings.get("admin.admin_api_key"), header_admin_api_key
         )
         insecure_mode = bool(profile.settings.get("admin.admin_insecure_mode"))
 
-        # We have to allow OPTIONS method access to paths without a key since
-        # browsers performing CORS requests will never include the original
-        # x-api-key header from the method that triggered the preflight
-        # OPTIONS check.
-        if insecure_mode or valid_key or (request.method == "OPTIONS"):
+        if insecure_mode or valid_key:
             return await handler(request)
-        else:
-            raise web.HTTPUnauthorized(
-                reason="API Key invalid or missing",
-                text="API Key invalid or missing",
-            )
+
+        raise web.HTTPUnauthorized(
+            reason="API Key invalid or missing",
+            text="API Key invalid or missing",
+        )
 
     return admin_auth
 
@@ -58,6 +70,15 @@ def tenant_authentication(handler):
     async def tenant_auth(request):
         context: AdminRequestContext = request["context"]
         profile = context.profile
+
+        if request.method == "OPTIONS":
+            return await handler(request)
+
+        # OAuth path: token was validated by setup_context middleware.
+        if has_auth_scopes(context):
+            _enforce_tenant_scope(get_auth_scopes(context), request.method)
+            return await handler(request)
+
         authorization_header = request.headers.get("Authorization")
         header_admin_api_key = request.headers.get("x-api-key")
         valid_key = general_utils.const_compare(
@@ -73,23 +94,80 @@ def tenant_authentication(handler):
             request.path,
         )
 
-        # CORS fix: allow OPTIONS method access to paths without a token
         if (
             (multitenant_enabled and authorization_header)
             or (not multitenant_enabled and valid_key)
             or (multitenant_enabled and valid_key and base_wallet_allowed_route)
             or (insecure_mode and not multitenant_enabled)
-            or request.method == "OPTIONS"
         ):
             return await handler(request)
-        else:
-            auth_mode = "Authorization token" if multitenant_enabled else "API key"
-            raise web.HTTPUnauthorized(
-                reason=f"{auth_mode} missing or invalid",
-                text=f"{auth_mode} missing or invalid",
-            )
+
+        auth_mode = "Authorization token" if multitenant_enabled else "API key"
+        raise web.HTTPUnauthorized(
+            reason=f"{auth_mode} missing or invalid",
+            text=f"{auth_mode} missing or invalid",
+        )
 
     return tenant_auth
+
+
+def require_scope(*required_scopes: str):
+    """Require at least one of the given OAuth2 scopes on the request token.
+
+    No-op when OAuth mode is not enabled (admin.oauth_enabled is not True), so
+    routes decorated with require_scope continue to work with API key / insecure
+    mode without any changes.
+
+    Must be stacked inside tenant_authentication or admin_authentication so that
+    authentication is checked before scope enforcement.
+
+    Example::
+
+        @tenant_authentication
+        @require_scope("acapy:tenant", "acapy:admin")
+        async def my_handler(request): ...
+    """
+
+    def decorator(handler):
+        @functools.wraps(handler)
+        async def scope_check(request):
+            if request.method == "OPTIONS":
+                return await handler(request)
+            context: AdminRequestContext = request["context"]
+            if not context.profile.settings.get("admin.oauth_enabled"):
+                return await handler(request)
+            token_scopes = get_auth_scopes(context)
+            if not token_scopes.intersection(required_scopes):
+                raise web.HTTPForbidden(
+                    reason="Insufficient scope",
+                    text="Insufficient scope",
+                )
+            return await handler(request)
+
+        return scope_check
+
+    return decorator
+
+
+def _enforce_tenant_scope(token_scopes: set, method: str) -> None:
+    """Authorize a tenant request by its OAuth scopes, else raise HTTPForbidden.
+
+    ``acapy:tenant`` or ``acapy:admin`` grant tenant-level access;
+    ``acapy:tenant:read`` grants read-only access (safe HTTP methods only).
+    """
+    if token_scopes & scopes.TENANT_LEVEL:
+        return
+    if scopes.TENANT_READ in token_scopes:
+        if method in ("GET", "HEAD"):
+            return
+        raise web.HTTPForbidden(
+            reason=f"{scopes.TENANT_READ} scope does not permit write operations",
+            text=f"{scopes.TENANT_READ} scope does not permit write operations",
+        )
+    raise web.HTTPForbidden(
+        reason=f"{scopes.TENANT} scope required",
+        text=f"{scopes.TENANT} scope required",
+    )
 
 
 def _base_wallet_route_access(additional_routes: List[str], request_path: str) -> bool:

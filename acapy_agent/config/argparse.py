@@ -304,6 +304,150 @@ class AdminGroup(ArgumentGroup):
             env_var="ACAPY_ADMIN_CLIENT_MAX_REQUEST_SIZE",
             help="Maximum client request size to admin server, in megabytes: default 1",
         )
+        parser.add_argument(
+            "--oauth-enabled",
+            action="store_true",
+            env_var="ACAPY_OAUTH_ENABLED",
+            help=(
+                "Enable OAuth2 Resource Server mode. ACA-Py will accept Bearer tokens "
+                "issued by an external Authorization Server and enforce scope-based "
+                "access control. Neither --admin-api-key nor --admin-insecure-mode is "
+                "required when this flag is set. Usually combined with --oauth-jwks-uri "
+                "and/or --oauth-introspection-endpoint."
+            ),
+        )
+        parser.add_argument(
+            "--oauth-jwks-uri",
+            type=str,
+            metavar="<url>",
+            env_var="ACAPY_OAUTH_JWKS_URI",
+            help=(
+                "JWKS endpoint of the OAuth2 Authorization Server used to validate "
+                "JWT access tokens (e.g. https://as.example.com/.well-known/jwks.json). "
+                "Implicitly enables --oauth-enabled. Neither --admin-api-key nor "
+                "--admin-insecure-mode is required when this is set."
+            ),
+        )
+        parser.add_argument(
+            "--oauth-issuer",
+            type=str,
+            metavar="<issuer>",
+            env_var="ACAPY_OAUTH_ISSUER",
+            help="Expected 'iss' claim value in OAuth2 JWT access tokens.",
+        )
+        parser.add_argument(
+            "--oauth-audience",
+            type=str,
+            metavar="<audience>",
+            env_var="ACAPY_OAUTH_AUDIENCE",
+            help="Expected 'aud' claim value in OAuth2 JWT access tokens.",
+        )
+        parser.add_argument(
+            "--oauth-introspection-endpoint",
+            type=str,
+            metavar="<url>",
+            env_var="ACAPY_OAUTH_INTROSPECTION_ENDPOINT",
+            help=(
+                "RFC 7662 token introspection endpoint for validating opaque access "
+                "tokens. Used as a fallback when JWT validation via JWKS is not "
+                "possible. Requires --oauth-introspection-client-id."
+            ),
+        )
+        parser.add_argument(
+            "--oauth-introspection-client-id",
+            type=str,
+            metavar="<client-id>",
+            env_var="ACAPY_OAUTH_INTROSPECTION_CLIENT_ID",
+            help="Client ID used for HTTP Basic Auth on the introspection endpoint.",
+        )
+        parser.add_argument(
+            "--oauth-introspection-client-secret",
+            type=str,
+            metavar="<client-secret>",
+            env_var="ACAPY_OAUTH_INTROSPECTION_CLIENT_SECRET",
+            help="Client secret used for HTTP Basic Auth on the introspection endpoint.",
+        )
+        parser.add_argument(
+            "--oauth-http-timeout",
+            type=BoundedInt(min=1, max=300),
+            default=10,
+            metavar="<seconds>",
+            env_var="ACAPY_OAUTH_HTTP_TIMEOUT",
+            help=(
+                "Timeout in seconds for HTTP calls to the OAuth2 Authorization "
+                "Server (JWKS key fetches and token introspection): default 10."
+            ),
+        )
+
+    @staticmethod
+    def _validate_admin_auth_args(
+        args: Namespace, oauth_mode: bool, admin_api_key, admin_insecure_mode
+    ):
+        """Validate admin authentication argument combinations.
+
+        Raises:
+            ArgsParseError: if the admin auth flags are inconsistent.
+
+        """
+        if not oauth_mode:
+            if (admin_api_key and admin_insecure_mode) or not (
+                admin_api_key or admin_insecure_mode
+            ):
+                raise ArgsParseError(
+                    "Either --admin-api-key or --admin-insecure-mode "
+                    "must be set but not both, unless --oauth-enabled (or "
+                    "--oauth-jwks-uri / --oauth-introspection-endpoint) "
+                    "is configured."
+                )
+            return
+
+        if not (
+            getattr(args, "oauth_jwks_uri", None)
+            or getattr(args, "oauth_introspection_endpoint", None)
+        ):
+            raise ArgsParseError(
+                "OAuth mode requires a token validation method: set "
+                "--oauth-jwks-uri and/or --oauth-introspection-endpoint."
+            )
+        if getattr(args, "oauth_introspection_endpoint", None) and not getattr(
+            args, "oauth_introspection_client_id", None
+        ):
+            raise ArgsParseError(
+                "--oauth-introspection-endpoint requires --oauth-introspection-client-id."
+            )
+        if getattr(args, "oauth_jwks_uri", None) and not getattr(
+            args, "oauth_audience", None
+        ):
+            # Without an expected audience, any signature-valid token from the
+            # JWKS is accepted regardless of its intended recipient, allowing
+            # token reuse / confused-deputy on a shared AS.
+            raise ArgsParseError(
+                "--oauth-jwks-uri requires --oauth-audience so that JWT "
+                "access tokens are bound to this resource server (the "
+                "'aud' claim is verified)."
+            )
+
+    @staticmethod
+    def _oauth_settings(args: Namespace, oauth_mode: bool) -> dict:
+        """Build the oauth.* settings map from parsed arguments."""
+        settings = {}
+        if oauth_mode:
+            settings["admin.oauth_enabled"] = True
+            settings["oauth.http_timeout"] = getattr(args, "oauth_http_timeout", None)
+
+        arg_to_setting = {
+            "oauth_jwks_uri": "oauth.jwks_uri",
+            "oauth_issuer": "oauth.issuer",
+            "oauth_audience": "oauth.audience",
+            "oauth_introspection_endpoint": "oauth.introspection_endpoint",
+            "oauth_introspection_client_id": "oauth.introspection_client_id",
+            "oauth_introspection_client_secret": "oauth.introspection_client_secret",
+        }
+        for arg_name, setting_key in arg_to_setting.items():
+            value = getattr(args, arg_name, None)
+            if value:
+                settings[setting_key] = value
+        return settings
 
     def get_settings(self, args: Namespace):
         """Extract admin settings."""
@@ -311,17 +455,19 @@ class AdminGroup(ArgumentGroup):
         if args.admin:
             admin_api_key = args.admin_api_key
             admin_insecure_mode = args.admin_insecure_mode
+            oauth_mode = bool(
+                getattr(args, "oauth_enabled", False)
+                or getattr(args, "oauth_jwks_uri", None)
+                or getattr(args, "oauth_introspection_endpoint", None)
+            )
 
-            if (admin_api_key and admin_insecure_mode) or not (
-                admin_api_key or admin_insecure_mode
-            ):
-                raise ArgsParseError(
-                    "Either --admin-api-key or --admin-insecure-mode "
-                    "must be set but not both."
-                )
+            self._validate_admin_auth_args(
+                args, oauth_mode, admin_api_key, admin_insecure_mode
+            )
 
             settings["admin.admin_api_key"] = admin_api_key
             settings["admin.admin_insecure_mode"] = admin_insecure_mode
+            settings.update(self._oauth_settings(args, oauth_mode))
 
             settings["admin.enabled"] = True
             settings["admin.host"] = args.admin[0]

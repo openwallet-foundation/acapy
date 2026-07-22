@@ -1,0 +1,102 @@
+# Demo: ACA-Py as an OAuth2 Resource Server backed by Keycloak
+#
+# Services:
+#   keycloak   - Authorization Server (Keycloak 24, dev mode, pre-loaded realm)
+#   wallet-db  - PostgreSQL for ACA-Py wallet storage
+#   acapy      - ACA-Py agent configured as an OAuth2 Resource Server
+#
+# Quick start:
+#   docker compose up --build
+#   ./scripts/setup-tenant.sh   (in a second terminal, once all services are healthy)
+
+networks:
+  demo-net:
+    name: acapy-oauth-demo
+    driver: bridge
+
+services:
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:24.0.5
+    command: start-dev --import-realm
+    environment:
+      KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN:-admin}
+      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-admin}
+      KC_HTTP_PORT: 8080
+      # Fix iss claim to always use the host-accessible URL so ACA-Py's
+      # --oauth-issuer check matches tokens obtained by scripts running on the host.
+      KC_HOSTNAME: localhost
+      KC_HOSTNAME_PORT: "${KEYCLOAK_PORT:-8080}"
+      KC_HOSTNAME_STRICT: "false"
+      KC_HOSTNAME_STRICT_HTTPS: "false"
+      KC_HTTP_ENABLED: "true"
+      KC_HEALTH_ENABLED: "true"
+    ports:
+      - "${KEYCLOAK_PORT:-8080}:8080"
+    volumes:
+      - ./keycloak/realm-export.json:/opt/keycloak/data/import/realm-export.json:ro
+    networks:
+      - demo-net
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8080/health/ready"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 30s
+
+  wallet-db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-acapy}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-acapy-secret}
+      POSTGRES_DB: ${POSTGRES_DB:-acapy}
+    volumes:
+      - wallet-db-data:/var/lib/postgresql/data
+    networks:
+      - demo-net
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "acapy"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  acapy:
+    build:
+      context: ../..
+      dockerfile: docker/Dockerfile.run
+      args:
+        all_extras: ""   # empty disables --all-extras (avoids BBS+ which has no ARM build)
+    depends_on:
+      wallet-db:
+        condition: service_healthy
+      keycloak:
+        condition: service_started
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-acapy}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-acapy-secret}
+      POSTGRES_HOST: wallet-db
+      POSTGRES_PORT: 5432
+      KEYCLOAK_REALM_URL: http://keycloak:8080/realms/acapy
+      ACAPY_OAUTH_ISSUER: http://localhost:${KEYCLOAK_PORT:-8080}/realms/${KEYCLOAK_REALM:-acapy}
+      ACAPY_OAUTH_AUDIENCE: ${ACAPY_OAUTH_AUDIENCE:-acapy-resource-server}
+      ACAPY_JWT_SECRET: ${ACAPY_JWT_SECRET:-demo-jwt-secret-unused-in-oauth-mode}
+      ACAPY_WALLET_KEY: ${ACAPY_WALLET_KEY:-demo-base-wallet-key}
+      ACAPY_LOG_LEVEL: ${ACAPY_LOG_LEVEL:-info}
+    ports:
+      - "${ACAPY_ADMIN_PORT:-8031}:8031"
+      - "${ACAPY_HTTP_PORT:-8001}:8001"
+    entrypoint: /bin/bash
+    command: ["/usr/src/app/start-acapy.sh"]
+    volumes:
+      - ./scripts/start-acapy.sh:/usr/src/app/start-acapy.sh:ro
+    networks:
+      - demo-net
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8031/status/ready"]
+      interval: 10s
+      timeout: 5s
+      retries: 15
+      start_period: 20s
+
+volumes:
+  wallet-db-data:

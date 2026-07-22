@@ -9,7 +9,9 @@ from aiohttp import web
 from aiohttp_apispec import docs, querystring_schema, request_schema, response_schema
 from marshmallow import fields, validate
 
-from ..admin.decorators.auth import tenant_authentication
+from ..admin import scopes
+from ..admin.auth_context import has_auth_wallet_id
+from ..admin.decorators.auth import require_scope, tenant_authentication
 from ..admin.request_context import AdminRequestContext
 from ..config.injection_context import InjectionContext
 from ..connections.base_manager import BaseConnectionManager
@@ -560,6 +562,7 @@ async def wallet_did_list(request: web.BaseRequest):
 @request_schema(DIDCreateSchema())
 @response_schema(DIDResultSchema, 200, description="")
 @tenant_authentication
+@require_scope(scopes.WALLET_CREATE, scopes.ADMIN)
 async def wallet_create_did(request: web.BaseRequest):
     """Request handler for creating a new local DID in the wallet.
 
@@ -1396,7 +1399,7 @@ async def upgrade_anoncreds(request: web.BaseRequest):
             UPGRADING_RECORD_IN_PROGRESS,
         )
         await storage.add_record(upgrading_record)
-        is_subwallet = context.metadata and "wallet_id" in context.metadata
+        is_subwallet = has_auth_wallet_id(context)
         # Create background task and store reference to prevent garbage collection
         task = asyncio.create_task(
             upgrade_wallet_to_anoncreds_if_requested(profile, is_subwallet)
