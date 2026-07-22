@@ -77,7 +77,7 @@ sequenceDiagram
     RS-->>C: (8) API response
 ```
 
-  JWT validation occurs on every request; introspection is only used for opaque tokens or when JWT decoding falls back to introspection. JWKS keys are cached in memory by `PyJWKClient` so the round-trip to the AS only occurs when the key set changes.
+  JWT validation occurs on every request. Introspection is only used for opaque tokens or when JWT decoding falls back to introspection. JWKS keys are cached in memory by `PyJWKClient` so the round-trip to the AS only occurs when the key set changes.
 
 ---
 

@@ -88,6 +88,7 @@ nav:
     - DevContainer Support: features/devcontainer.md
     - Supported Aries Interop Profiles and RFCs: features/SupportedRFCs.md
     - The Admin API: features/AdminAPI.md
+    - OAuth 2.0 Resource Server: features/OAuthResourceServer.md
     - Kanon Storage: features/KanonStorage.md
     - ACA-Py Plugins: features/PlugIns.md
     - Multitenant ACA-Py: features/Multitenancy.md
