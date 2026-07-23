@@ -221,9 +221,11 @@ class Dispatcher:
         context.injector.bind_instance(BaseResponder, responder)
 
         # When processing oob attach message we supply the connection id
-        # associated with the inbound message
+        # associated with the inbound message. The connection must be looked up
+        # in the profile the message belongs to (e.g. a multitenant subwallet),
+        # not the dispatcher's root profile.
         if inbound_message.connection_id:
-            async with self.profile.session() as session:
+            async with profile.session() as session:
                 connection = await ConnRecord.retrieve_by_id(
                     session, inbound_message.connection_id
                 )

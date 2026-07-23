@@ -1,4 +1,5 @@
 import json
+import os
 from unittest import IsolatedAsyncioTestCase
 
 import pytest
@@ -2426,3 +2427,293 @@ class TestDidExchangeManager(IsolatedAsyncioTestCase, TestConfig):
         request = DIDXRequest.deserialize(raw_request)
         assert request._version == "1.0"
         assert self.manager._handshake_protocol_to_use(request) == DIDEX_1_0
+
+
+# --- Regression tests for self-connection did-exchange handshakes
+# (aries-rfcs/acapy issue #3300, bug #2): an agent creating an OOB
+# invitation with a didexchange handshake protocol and then receiving that
+# same invitation back into its own wallet must be able to drive the
+# handshake (request -> response -> complete) all the way to completion for
+# *both* of its own ConnRecords, without either one regressing back to an
+# earlier state or accept_complete failing to find its ConnRecord.
+
+
+def _didx_wallet_settings(wallet_type: str) -> dict:
+    settings = {
+        "wallet.type": wallet_type,
+        "auto_provision": True,
+        "default_endpoint": "http://example.com/endpoint",
+        "default_label": "self-connector",
+        "debug.auto_accept_invites": True,
+        "debug.auto_accept_requests": True,
+    }
+    if wallet_type == "kanon-anoncreds":
+        postgres_url = os.getenv("POSTGRES_URL")
+        settings.update(
+            {
+                "wallet.storage_type": "postgres",
+                "wallet.storage_config": {"url": postgres_url},
+                "wallet.storage_creds": {
+                    "account": "postgres",
+                    "password": "postgres",
+                },
+                "dbstore_storage_type": "postgres",
+                "dbstore_storage_config": {"url": postgres_url},
+                "dbstore_storage_creds": {
+                    "account": "postgres",
+                    "password": "postgres",
+                },
+                "dbstore_schema_config": "normalize",
+            }
+        )
+    return settings
+
+
+DIDX_WALLET_TYPES = [
+    "askar",
+    "askar-anoncreds",
+    pytest.param(
+        "kanon-anoncreds",
+        marks=pytest.mark.skipif(
+            not os.getenv("POSTGRES_URL"),
+            reason="Kanon PostgreSQL integration tests disabled: set POSTGRES_URL "
+            "to enable",
+        ),
+    ),
+]
+
+
+def _bind_didx_manager_deps(profile):
+    """Bind the dependencies DIDXManager/OutOfBandManager need for direct tests."""
+    route_manager = mock.MagicMock(RouteManager, autospec=True)
+    route_manager.routing_info = mock.CoroutineMock(return_value=([], None))
+    route_manager.mediation_record_if_id = mock.CoroutineMock(return_value=None)
+    route_manager.mediation_records_for_connection = mock.CoroutineMock(
+        return_value=[]
+    )
+    route_manager.route_invitation = mock.CoroutineMock(return_value=None)
+    route_manager.route_verkey = mock.CoroutineMock(return_value=None)
+    route_manager.route_connection_as_invitee = mock.CoroutineMock(return_value=None)
+    route_manager.route_connection_as_inviter = mock.CoroutineMock(return_value=None)
+    route_manager.save_mediator_for_connection = mock.CoroutineMock(return_value=None)
+    profile.context.injector.bind_instance(RouteManager, route_manager)
+    profile.context.injector.bind_instance(
+        OobMessageProcessor,
+        OobMessageProcessor(inbound_message_router=mock.MagicMock()),
+    )
+    profile.context.injector.bind_instance(DIDMethods, DIDMethods())
+    profile.context.injector.bind_instance(KeyTypes, KeyTypes())
+
+    resolver = mock.MagicMock(DIDResolver, autospec=True)
+    did_doc = DIDDocument.deserialize(DOC)
+    resolver.resolve = mock.CoroutineMock(return_value=did_doc.serialize())
+    resolver.dereference_verification_method = mock.CoroutineMock(
+        return_value=did_doc.verification_method[0]
+    )
+    profile.context.injector.bind_instance(DIDResolver, resolver)
+
+
+class _LoopbackResponder(BaseResponder):
+    """Responder that immediately re-delivers messages to a DIDXManager.
+
+    Used to drive a self-connection handshake the way a real self-addressed
+    DIDComm delivery would: the party creating an invitation and the party
+    receiving it are the same wallet, so sending a message is equivalent to
+    processing it as an inbound message (potentially recursively/
+    synchronously, exactly as real auto-accept handling does for a
+    self-connection).
+    """
+
+    def __init__(self, didx_mgr: DIDXManager):
+        super().__init__()
+        self.didx_mgr = didx_mgr
+        self.messages = []
+
+    async def _deliver(self, message):
+        self.messages.append(message)
+        receipt = MessageReceipt()
+        if isinstance(message, DIDXRequest):
+            conn_rec = await self.didx_mgr.receive_request(
+                request=message,
+                recipient_did=None,
+                recipient_verkey="loopback-verkey",
+            )
+            if conn_rec.accept == ConnRecord.ACCEPT_AUTO:
+                response = await self.didx_mgr.create_response(conn_rec)
+                await self.send_reply(response, connection_id=conn_rec.connection_id)
+        elif isinstance(message, test_module.DIDXResponse):
+            await self.didx_mgr.accept_response(message, receipt)
+        elif isinstance(message, test_module.DIDXComplete):
+            await self.didx_mgr.accept_complete(message, receipt)
+
+    async def send(self, message, **kwargs):
+        await self._deliver(message)
+        return None
+
+    async def send_reply(self, message, **kwargs):
+        await self._deliver(message)
+        return None
+
+    async def send_outbound(self, message, **kwargs):
+        return None
+
+    async def send_webhook(self, topic, payload):
+        return None
+
+    async def send_fn(self, profile, outbound_message):
+        """Used when wrapped in an AdminResponder, mirroring the real send_fn."""
+        payload = json.loads(outbound_message.payload)
+        msg_type = payload.get("@type", "")
+        if msg_type.endswith("/request"):
+            message = DIDXRequest.deserialize(payload)
+        elif msg_type.endswith("/response"):
+            message = test_module.DIDXResponse.deserialize(payload)
+        elif msg_type.endswith("/complete"):
+            message = test_module.DIDXComplete.deserialize(payload)
+        else:
+            return None
+        await self._deliver(message)
+        return None
+
+
+class _RecordingResponder(MockResponder):
+    """MockResponder that also supports being wrapped in an AdminResponder.
+
+    DIDXManager.receive_invitation()'s auto-accept path wraps the injected
+    BaseResponder in an AdminResponder using its `send_fn`. Plain
+    MockResponder doesn't define that attribute, so provide one that decodes
+    the outbound message and records it like the other send* methods do.
+    """
+
+    async def send_fn(self, profile, outbound_message):
+        payload = json.loads(outbound_message.payload)
+        msg_type = payload.get("@type", "")
+        if msg_type.endswith("/request"):
+            message = DIDXRequest.deserialize(payload)
+        elif msg_type.endswith("/response"):
+            message = test_module.DIDXResponse.deserialize(payload)
+        elif msg_type.endswith("/complete"):
+            message = test_module.DIDXComplete.deserialize(payload)
+        else:
+            return None
+        self.messages.append((message, {}))
+        return None
+
+
+@pytest.mark.parametrize("wallet_type", DIDX_WALLET_TYPES)
+async def test_self_connection_didx_handshake_to_completion(wallet_type):
+    """Self-connection did-exchange handshake must complete for both sides.
+
+    Regression test for issue #3300 bug #2: previously, driving a
+    self-connection's request/response/complete cascade could leave one or
+    both of the wallet's own ConnRecords stuck in an earlier state (e.g.
+    "request" or "response") instead of "active", because manager/handler
+    code re-saved a stale in-memory ConnRecord's state *after* sending a
+    message whose (self-)delivery had already synchronously advanced that
+    same ConnRecord further.
+    """
+    profile = await create_test_profile(settings=_didx_wallet_settings(wallet_type))
+    _bind_didx_manager_deps(profile)
+
+    didx_mgr = DIDXManager(profile)
+    # DID doc resolution/key-recording is unrelated to the ConnRecord state
+    # machine under test; stub it out.
+    didx_mgr.record_keys_for_resolvable_did = mock.CoroutineMock(return_value=None)
+
+    responder = _LoopbackResponder(didx_mgr)
+    profile.context.injector.bind_instance(BaseResponder, responder)
+
+    oob_mgr = OutOfBandManager(profile)
+
+    invitation_record = await oob_mgr.create_invitation(
+        my_label="inviter",
+        hs_protos=[HSProto.RFC23],
+        auto_accept=True,
+    )
+
+    await oob_mgr.receive_invitation(invitation_record.invitation, auto_accept=True)
+
+    async with profile.session() as session:
+        conn_records = await ConnRecord.query(session)
+
+    assert len(conn_records) == 2
+    for conn_rec in conn_records:
+        assert ConnRecord.State.get(conn_rec.state) is ConnRecord.State.COMPLETED, (
+            f"connection {conn_rec.connection_id} (their_role={conn_rec.their_role}) "
+            f"did not reach the completed state: {conn_rec.state}"
+        )
+
+
+@pytest.mark.parametrize("wallet_type", DIDX_WALLET_TYPES)
+async def test_two_party_didx_handshake_no_regression(wallet_type):
+    """A normal (non-self) two-party did-exchange handshake still completes.
+
+    Regression guard to accompany the self-connection fix: confirms that
+    removing the redundant post-send state saves in
+    DIDXManager.receive_invitation and DIDXRequestHandler.handle does not
+    break the ordinary case where invitee and inviter are different wallets.
+    """
+    inviter_profile = await create_test_profile(
+        settings=_didx_wallet_settings(wallet_type)
+    )
+    _bind_didx_manager_deps(inviter_profile)
+    invitee_profile = await create_test_profile(
+        settings=_didx_wallet_settings(wallet_type)
+    )
+    _bind_didx_manager_deps(invitee_profile)
+
+    inviter_didx_mgr = DIDXManager(inviter_profile)
+    inviter_didx_mgr.record_keys_for_resolvable_did = mock.CoroutineMock(
+        return_value=None
+    )
+    invitee_didx_mgr = DIDXManager(invitee_profile)
+    invitee_didx_mgr.record_keys_for_resolvable_did = mock.CoroutineMock(
+        return_value=None
+    )
+
+    inviter_responder = _RecordingResponder()
+    inviter_profile.context.injector.bind_instance(BaseResponder, inviter_responder)
+    invitee_responder = _RecordingResponder()
+    invitee_profile.context.injector.bind_instance(BaseResponder, invitee_responder)
+
+    oob_mgr = OutOfBandManager(inviter_profile)
+    invitation_record = await oob_mgr.create_invitation(
+        my_label="inviter",
+        hs_protos=[HSProto.RFC23],
+        auto_accept=True,
+    )
+
+    # Invitee receives the invitation and (auto_accept) sends a request
+    invitee_conn = await invitee_didx_mgr.receive_invitation(
+        invitation_record.invitation, auto_accept=True
+    )
+    assert invitee_responder.messages, "invitee did not send a request"
+    request, _ = invitee_responder.messages[-1]
+
+    # Inviter receives the request and (auto_accept) sends a response
+    async with inviter_profile.session() as session:
+        inviter_conn_recs = await ConnRecord.query(session)
+    inviter_conn = inviter_conn_recs[0]
+    inviter_conn = await inviter_didx_mgr.receive_request(
+        request=request,
+        recipient_did=None,
+        recipient_verkey=inviter_conn.invitation_key,
+    )
+    if inviter_conn.accept == ConnRecord.ACCEPT_AUTO:
+        response = await inviter_didx_mgr.create_response(inviter_conn)
+        await inviter_responder.send_reply(
+            response, connection_id=inviter_conn.connection_id
+        )
+    assert inviter_responder.messages, "inviter did not send a response"
+    response, _ = inviter_responder.messages[-1]
+
+    # Invitee receives the response and sends a complete message
+    invitee_conn = await invitee_didx_mgr.accept_response(response, MessageReceipt())
+    assert invitee_responder.messages[-1][0] is not request
+    complete, _ = invitee_responder.messages[-1]
+
+    # Inviter receives the complete message
+    inviter_conn = await inviter_didx_mgr.accept_complete(complete, MessageReceipt())
+
+    assert ConnRecord.State.get(invitee_conn.state) is ConnRecord.State.COMPLETED
+    assert ConnRecord.State.get(inviter_conn.state) is ConnRecord.State.COMPLETED

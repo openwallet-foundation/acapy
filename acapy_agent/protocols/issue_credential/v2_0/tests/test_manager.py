@@ -552,7 +552,10 @@ class TestV20CredManager(IsolatedAsyncioTestCase):
             mock.patch.object(V20CredFormat.Format, "handler") as mock_handler,
         ):
             mock_handler.return_value.receive_offer = mock.CoroutineMock()
-            mock_retrieve.side_effect = (StorageNotFoundError(),)
+            mock_retrieve.side_effect = (
+                StorageNotFoundError(),
+                StorageNotFoundError(),
+            )
             cx_rec = await self.manager.receive_offer(cred_offer, connection_id)
 
             mock_handler.return_value.receive_offer.assert_called_once_with(
@@ -754,7 +757,10 @@ class TestV20CredManager(IsolatedAsyncioTestCase):
             ) as mock_retrieve,
             mock.patch.object(V20CredFormat.Format, "handler") as mock_handler,
         ):
-            mock_retrieve.side_effect = (StorageNotFoundError(),)
+            mock_retrieve.side_effect = (
+                StorageNotFoundError(),
+                StorageNotFoundError(),
+            )
             mock_handler.return_value.receive_request = mock.CoroutineMock()
 
             cx_rec = await self.manager.receive_request(cred_request, mock_conn, None)
@@ -834,7 +840,10 @@ class TestV20CredManager(IsolatedAsyncioTestCase):
             ) as mock_retrieve,
             mock.patch.object(V20CredFormat.Format, "handler") as mock_handler,
         ):
-            mock_retrieve.side_effect = (StorageNotFoundError(),)
+            mock_retrieve.side_effect = (
+                StorageNotFoundError(),
+                StorageNotFoundError(),
+            )
             mock_handler.return_value.receive_request = mock.CoroutineMock()
 
             cx_rec = await self.manager.receive_request(cred_request, mock_conn, None)
@@ -843,6 +852,99 @@ class TestV20CredManager(IsolatedAsyncioTestCase):
             mock_handler.return_value.receive_request.assert_called_once_with(
                 cx_rec, cred_request
             )
+
+    async def test_receive_request_connectionless_record_via_connection(self):
+        """Regression test for issue #3300 (self-issuance, bug #4).
+
+        An issuer exchange record created as an OOB attachment has no
+        connection_id. When the credential request later arrives over the
+        connection established by that same invitation and the OobRecord has
+        already been cleaned up (as happens in a self-connection), the record
+        must still be found by falling back to a thread/role-only lookup.
+        """
+        stored_cx_rec = V20CredExRecord(
+            cred_ex_id="dummy-cxid",
+            connection_id=None,
+            initiator=V20CredExRecord.INITIATOR_SELF,
+            role=V20CredExRecord.ROLE_ISSUER,
+            state=V20CredExRecord.STATE_OFFER_SENT,
+            thread_id="test_id",
+        )
+        cred_request = V20CredRequest(
+            formats=[
+                V20CredFormat(
+                    attach_id="0",
+                    format_=ATTACHMENT_FORMAT[CRED_20_REQUEST][
+                        V20CredFormat.Format.INDY.api
+                    ],
+                )
+            ],
+            requests_attach=[AttachDecorator.data_base64(INDY_CRED_REQ, ident="0")],
+        )
+        mock_conn = mock.MagicMock(connection_id="test_conn_id")
+
+        with (
+            mock.patch.object(V20CredExRecord, "save", autospec=True) as mock_save,
+            mock.patch.object(
+                V20CredExRecord, "retrieve_by_conn_and_thread", mock.CoroutineMock()
+            ) as mock_retrieve,
+            mock.patch.object(V20CredFormat.Format, "handler") as mock_handler,
+        ):
+            mock_retrieve.side_effect = (StorageNotFoundError(), stored_cx_rec)
+            mock_handler.return_value.receive_request = mock.CoroutineMock()
+
+            cx_rec = await self.manager.receive_request(cred_request, mock_conn, None)
+
+            assert mock_retrieve.call_count == 2
+            first_call, second_call = mock_retrieve.call_args_list
+            assert first_call.args[1] == "test_conn_id"
+            assert second_call.args[1] is None
+
+            mock_save.assert_called_once()
+            assert cx_rec is stored_cx_rec
+            assert cx_rec.connection_id == "test_conn_id"
+            assert cx_rec.state == V20CredExRecord.STATE_REQUEST_RECEIVED
+
+    async def test_receive_request_fallback_rejects_other_connection_record(self):
+        """The thread/role-only fallback must not adopt a record that is
+        already bound to a different connection.
+        """
+        stored_cx_rec = V20CredExRecord(
+            cred_ex_id="dummy-cxid",
+            connection_id="other_conn_id",
+            initiator=V20CredExRecord.INITIATOR_SELF,
+            role=V20CredExRecord.ROLE_ISSUER,
+            state=V20CredExRecord.STATE_OFFER_SENT,
+            thread_id="test_id",
+        )
+        cred_request = V20CredRequest(
+            formats=[
+                V20CredFormat(
+                    attach_id="0",
+                    format_=ATTACHMENT_FORMAT[CRED_20_REQUEST][
+                        V20CredFormat.Format.INDY.api
+                    ],
+                )
+            ],
+            requests_attach=[AttachDecorator.data_base64(INDY_CRED_REQ, ident="0")],
+        )
+        mock_conn = mock.MagicMock(connection_id="test_conn_id")
+
+        with (
+            mock.patch.object(V20CredExRecord, "save", autospec=True),
+            mock.patch.object(
+                V20CredExRecord, "retrieve_by_conn_and_thread", mock.CoroutineMock()
+            ) as mock_retrieve,
+            mock.patch.object(V20CredFormat.Format, "handler") as mock_handler,
+        ):
+            mock_retrieve.side_effect = (StorageNotFoundError(), stored_cx_rec)
+            mock_handler.return_value.receive_request = mock.CoroutineMock()
+            mock_handler.return_value.can_receive_request_without_offer = (
+                mock.MagicMock(return_value=False)
+            )
+
+            with self.assertRaises(StorageNotFoundError):
+                await self.manager.receive_request(cred_request, mock_conn, None)
 
     async def test_issue_credential_indy(self):
         connection_id = "test_conn_id"

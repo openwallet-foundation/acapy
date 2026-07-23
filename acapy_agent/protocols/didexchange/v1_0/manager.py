@@ -165,6 +165,13 @@ class DIDXManager(BaseConnectionManager):
         )
 
         if conn_rec.accept == ConnRecord.ACCEPT_AUTO:
+            # create_request() already transitions conn_rec to the request state
+            # and persists it (see below). We must NOT set/save that state again
+            # after sending: in a self-connection, delivering the request can
+            # synchronously drive the entire handshake (request -> response ->
+            # complete) to completion before send_reply() returns, and blindly
+            # overwriting the state here would regress an already-completed
+            # connection back to "request".
             request = await self.create_request(conn_rec, mediation_id=mediation_id)
             base_responder = self.profile.inject(BaseResponder)
             responder = AdminResponder(self.profile, base_responder.send_fn)
@@ -173,10 +180,6 @@ class DIDXManager(BaseConnectionManager):
                     request,
                     connection_id=conn_rec.connection_id,
                 )
-
-                conn_rec.state = ConnRecord.State.REQUEST.rfc160
-                async with self.profile.session() as session:
-                    await conn_rec.save(session, reason="Sent connection request")
         else:
             self._logger.debug("Connection invitation will await acceptance")
 
