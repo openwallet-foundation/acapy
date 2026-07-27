@@ -189,7 +189,7 @@ For the build test, the RTD Sphinx theme needs to be added to the docker image, 
 [publish.yml]: https://github.com/openwallet-foundation/acapy/blob/main/.github/workflows/publish.yml
 
 13. When a new release is tagged, create a new branch at the same commit with
-    the branch name in the format `docs-v<version>`, for example, `docs-v1.6.1rc0`.
+    the branch name in the format `docs-v<version>`, for example, `docs-v1.6.1`.
     The creation of the branch triggers the execution of the [publish-docs]
     GitHub Action which generates the documentation for the new release,
     publishing it at [https://aca-py.org]. The GitHub Action also executes when
