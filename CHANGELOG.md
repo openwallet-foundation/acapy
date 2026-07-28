@@ -1,10 +1,10 @@
 # ACA-Py Changelog
 
-## 1.6.1rc0
+## 1.6.1
 
-### July 21, 2026
+### July 28, 2026
 
-ACA-Py 1.6.1rc0 includes fixes found from continued production use of the `askar-anoncreds` wallet migration and revocation processes, and a fix to bound the memory usage of record queries and maintenance/upgrade scans, improving stability for larger deployments. The multitenancy subwallet removal endpoint has been updated to use `DELETE` for REST consistency, with the previous `POST .../remove` endpoint now deprecated. Many `dependabot` PRs are included to keep dependencies current and secure.
+ACA-Py 1.6.1 includes fixes found from continued production use of the `askar-anoncreds` wallet migration and revocation processes, and a fix to bound the memory usage of record queries and maintenance/upgrade scans, improving stability for larger deployments. The multitenancy subwallet removal endpoint has been updated to use `DELETE` for REST consistency, with the previous `POST .../remove` endpoint now deprecated. Many `dependabot` PRs are included to keep dependencies current and secure.
 
 Several PRs in this release complete the work to make ACA-Py 1.6 an official LTS release, with several fixes to the LTS CI/CD image tagging and publishing process
 
@@ -16,7 +16,7 @@ There are no breaking changes in this release.
 
 ### 1.6.1 Deprecation Notices
 
-The `acapy_agent.revocation_anoncreds` package has been deprecated and relocated to `acapy_agent.anoncreds.revocation` for improved consistency across the codebase. The change should only affect [ACA-Py Plugins] that implement AnonCreds, but other developers should also take note.
+The `acapy_agent.revocation_anoncreds` package has been deprecated and relocated to `acapy_agent.anoncreds.revocation` for improved consistency across the codebase. The change will affect [ACA-Py Plugins] that implement AnonCreds, and developers with their own controllers should also update their implementations.
 
 The `wallet-type` configuration value `askar` is now deprecated and all deployments still using that wallet type should migrate to either the `askar-anoncreds` or (ideally) `kanon-anoncreds` wallet types.
 
@@ -43,8 +43,9 @@ For REST consistency the `POST /multitenancy/wallet/{wallet_id}/remove` endpoint
   - fix(ci): update python version in LTS image tagging to match publish workflow [\#4142](https://github.com/openwallet-foundation/acapy/pull/4142) [esune](https://github.com/esune)
   - Make ACA-Py 1.6 an LTS release [\#4127](https://github.com/openwallet-foundation/acapy/pull/4127) [swcurran](https://github.com/swcurran)
 - **Dependabot PRs**
-  - [Link to list of Dependabot PRs in this release](https://github.com/openwallet-foundation/acapy/pulls?q=is%3Apr+is%3Amerged+merged%3A2026-04-01..2026-07-21+author%3Aapp%2Fdependabot+)
+  - [Link to list of Dependabot PRs in this release](https://github.com/openwallet-foundation/acapy/pulls?q=is%3Apr+is%3Amerged+merged%3A2026-04-01..2026-07-28+author%3Aapp%2Fdependabot+)
 - **Release management pull requests**:
+  - 1.6.1 [\#4180](https://github.com/openwallet-foundation/acapy/pull/4180) [swcurran](https://github.com/swcurran)
   - 1.6.1rc0 [\#4178](https://github.com/openwallet-foundation/acapy/pull/4178) [swcurran](https://github.com/swcurran)
 
 ## 1.6.0
