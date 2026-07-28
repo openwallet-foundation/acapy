@@ -2,7 +2,7 @@
 
 ## 1.6.1
 
-### July 27, 2026
+### July 28, 2026
 
 ACA-Py 1.6.1 includes fixes found from continued production use of the `askar-anoncreds` wallet migration and revocation processes, and a fix to bound the memory usage of record queries and maintenance/upgrade scans, improving stability for larger deployments. The multitenancy subwallet removal endpoint has been updated to use `DELETE` for REST consistency, with the previous `POST .../remove` endpoint now deprecated. Many `dependabot` PRs are included to keep dependencies current and secure.
 
@@ -43,7 +43,7 @@ For REST consistency the `POST /multitenancy/wallet/{wallet_id}/remove` endpoint
   - fix(ci): update python version in LTS image tagging to match publish workflow [\#4142](https://github.com/openwallet-foundation/acapy/pull/4142) [esune](https://github.com/esune)
   - Make ACA-Py 1.6 an LTS release [\#4127](https://github.com/openwallet-foundation/acapy/pull/4127) [swcurran](https://github.com/swcurran)
 - **Dependabot PRs**
-  - [Link to list of Dependabot PRs in this release](https://github.com/openwallet-foundation/acapy/pulls?q=is%3Apr+is%3Amerged+merged%3A2026-04-01..2026-07-27+author%3Aapp%2Fdependabot+)
+  - [Link to list of Dependabot PRs in this release](https://github.com/openwallet-foundation/acapy/pulls?q=is%3Apr+is%3Amerged+merged%3A2026-04-01..2026-07-28+author%3Aapp%2Fdependabot+)
 - **Release management pull requests**:
   - 1.6.1 [\#4180](https://github.com/openwallet-foundation/acapy/pull/4180) [swcurran](https://github.com/swcurran)
   - 1.6.1rc0 [\#4178](https://github.com/openwallet-foundation/acapy/pull/4178) [swcurran](https://github.com/swcurran)
