@@ -144,6 +144,7 @@ async def config_handler(request: web.BaseRequest):
             "wallet.rekey",
             "wallet.seed",
             "wallet.storage_creds",
+            "oauth.introspection_client_secret",
         ]
     }
     for index in range(len(config.get("admin.webhook_urls", []))):
