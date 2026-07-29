@@ -9,10 +9,10 @@
       
       
       
-        <link rel="prev" href="../KanonStorage/">
+        <link rel="prev" href="../AdminAPI/">
       
       
-        <link rel="next" href="../Multitenancy/">
+        <link rel="next" href="../KanonStorage/">
       
       
         
@@ -23,7 +23,7 @@
     
     
       
-        <title>ACA-Py Plugins - ACA-Py Docs</title>
+        <title>OAuth 2.0 Resource Server - ACA-Py Docs</title>
       
     
     
@@ -74,7 +74,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#deeper-dive-aca-py-plug-ins" class="md-skip">
+        <a href="#oauth2-resource-server-authentication" class="md-skip">
           Skip to content
         </a>
       
@@ -113,7 +113,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              ACA-Py Plugins
+              OAuth 2.0 Resource Server
             
           </span>
         </div>
@@ -746,10 +746,37 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../OAuthResourceServer/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    OAuth 2.0 Resource Server
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -765,6 +792,304 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#table-of-contents" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Table of Contents
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#overview" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Overview
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#request-flow" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Request Flow
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#scopes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Scopes
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Scopes">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#scope-to-decorator-mapping" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Scope-to-decorator mapping
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Configuration
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Configuration">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#startup-parameters" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Startup Parameters
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#environment-variables" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Environment Variables
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#token-validation-modes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Token Validation Modes
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#multitenancy-and-the-wallet_id-claim" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Multitenancy and the wallet_id Claim
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Multitenancy and the wallet_id Claim">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#provisioning-flow" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Provisioning flow
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#request-claim-storage-and-compatibility" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Request Claim Storage and Compatibility
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Request Claim Storage and Compatibility">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#why-both-metadata-and-settings" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Why both metadata and settings?
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#recommended-access-pattern-for-core-and-plugins" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Recommended access pattern for core and plugins
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#annotating-routes-with-scopes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Annotating Routes with Scopes
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#authorization-server-setup-guidance" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Authorization Server Setup Guidance
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Authorization Server Setup Guidance">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#keycloak-example" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Keycloak Example
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#keycloak-hostname-and-issuer" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Keycloak Hostname and Issuer
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#demo-docker-compose-with-keycloak" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Demo: Docker Compose with Keycloak
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Demo: Docker Compose with Keycloak">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#scripts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Scripts
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#migrating-from-api-key-aca-py-jwt" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Migrating from API Key / ACA-Py JWT
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#limitations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Limitations
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -802,37 +1127,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    ACA-Py Plugins
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../PlugIns/" class="md-nav__link">
         
   
   
@@ -848,209 +1146,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#whats-in-a-plug-in-and-how-does-they-work" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        What's in a Plug-In and How Does They Work?
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="What&#39;s in a Plug-In and How Does They Work?">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#setup-method" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        setup method
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#message_typespy" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        message_types.py
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#routespy" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        routes.py
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#definitionpy" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        definition.py
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#dynamic-plugin-installation" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Dynamic Plugin Installation
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Dynamic Plugin Installation">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#auto-install-configuration" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Auto-Install Configuration
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#installation-logging" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Installation Logging
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#checking-installed-plugin-versions" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Checking Installed Plugin Versions
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#loading-aca-py-plug-ins-at-runtime" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Loading ACA-Py Plug-Ins at Runtime
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#developing-a-new-plug-in" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Developing a New Plug-In
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Developing a New Plug-In">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#pip-vs-poetry-support" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        PIP vs Poetry Support
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#plug-in-demo" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Plug-In Demo
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#aca-py-plug-ins-repository" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        ACA-Py Plug-ins Repository
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#references" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        References
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -3345,55 +3440,55 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#whats-in-a-plug-in-and-how-does-they-work" class="md-nav__link">
+  <a href="#table-of-contents" class="md-nav__link">
     <span class="md-ellipsis">
       
-        What's in a Plug-In and How Does They Work?
+        Table of Contents
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="What&#39;s in a Plug-In and How Does They Work?">
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#overview" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Overview
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#request-flow" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Request Flow
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#scopes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Scopes
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Scopes">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#setup-method" class="md-nav__link">
+  <a href="#scope-to-decorator-mapping" class="md-nav__link">
     <span class="md-ellipsis">
       
-        setup method
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#message_typespy" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        message_types.py
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#routespy" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        routes.py
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#definitionpy" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        definition.py
+        Scope-to-decorator mapping
       
     </span>
   </a>
@@ -3406,22 +3501,22 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#dynamic-plugin-installation" class="md-nav__link">
+  <a href="#configuration" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Dynamic Plugin Installation
+        Configuration
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Dynamic Plugin Installation">
+    <nav class="md-nav" aria-label="Configuration">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#auto-install-configuration" class="md-nav__link">
+  <a href="#startup-parameters" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Auto-Install Configuration
+        Startup Parameters
       
     </span>
   </a>
@@ -3429,10 +3524,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#installation-logging" class="md-nav__link">
+  <a href="#environment-variables" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Installation Logging
+        Environment Variables
       
     </span>
   </a>
@@ -3440,10 +3535,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#checking-installed-plugin-versions" class="md-nav__link">
+  <a href="#token-validation-modes" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Checking Installed Plugin Versions
+        Token Validation Modes
       
     </span>
   </a>
@@ -3456,44 +3551,22 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#loading-aca-py-plug-ins-at-runtime" class="md-nav__link">
+  <a href="#multitenancy-and-the-wallet_id-claim" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Loading ACA-Py Plug-Ins at Runtime
+        Multitenancy and the wallet_id Claim
       
     </span>
   </a>
   
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#developing-a-new-plug-in" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Developing a New Plug-In
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Developing a New Plug-In">
+    <nav class="md-nav" aria-label="Multitenancy and the wallet_id Claim">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#pip-vs-poetry-support" class="md-nav__link">
+  <a href="#provisioning-flow" class="md-nav__link">
     <span class="md-ellipsis">
       
-        PIP vs Poetry Support
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#plug-in-demo" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Plug-In Demo
+        Provisioning flow
       
     </span>
   </a>
@@ -3506,10 +3579,49 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#aca-py-plug-ins-repository" class="md-nav__link">
+  <a href="#request-claim-storage-and-compatibility" class="md-nav__link">
     <span class="md-ellipsis">
       
-        ACA-Py Plug-ins Repository
+        Request Claim Storage and Compatibility
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Request Claim Storage and Compatibility">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#why-both-metadata-and-settings" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Why both metadata and settings?
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#recommended-access-pattern-for-core-and-plugins" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Recommended access pattern for core and plugins
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#annotating-routes-with-scopes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Annotating Routes with Scopes
       
     </span>
   </a>
@@ -3517,10 +3629,88 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#references" class="md-nav__link">
+  <a href="#authorization-server-setup-guidance" class="md-nav__link">
     <span class="md-ellipsis">
       
-        References
+        Authorization Server Setup Guidance
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Authorization Server Setup Guidance">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#keycloak-example" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Keycloak Example
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#keycloak-hostname-and-issuer" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Keycloak Hostname and Issuer
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#demo-docker-compose-with-keycloak" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Demo: Docker Compose with Keycloak
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Demo: Docker Compose with Keycloak">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#scripts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Scripts
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#migrating-from-api-key-aca-py-jwt" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Migrating from API Key / ACA-Py JWT
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#limitations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Limitations
       
     </span>
   </a>
@@ -3547,205 +3737,554 @@
   
 
 
-<h1 id="deeper-dive-aca-py-plug-ins">Deeper Dive: ACA-Py Plug-Ins<a class="headerlink" href="#deeper-dive-aca-py-plug-ins" title="Permanent link">&para;</a></h1>
-<p>ACA-Py plugins enable standardized extensibility without overloading the core ACA-Py code base. Plugins may be features that you create specific to your deployment, or that you deploy from the <a href="https://plugins.aca-py.org">ACA-Py Plugins "Store"</a>. Visit the Plugins Store to find all of the open source plugins that have been contributed.</p>
-<h2 id="whats-in-a-plug-in-and-how-does-they-work">What's in a Plug-In and How Does They Work?<a class="headerlink" href="#whats-in-a-plug-in-and-how-does-they-work" title="Permanent link">&para;</a></h2>
-<p>Plug-ins are loaded on ACA-Py startup based on the following parameters:</p>
+<h1 id="oauth2-resource-server-authentication">OAuth2 Resource Server Authentication <!-- omit in toc --><a class="headerlink" href="#oauth2-resource-server-authentication" title="Permanent link">&para;</a></h1>
+<p>ACA-Py can be configured to act as an <strong>OAuth2 Resource Server</strong>, delegating all authentication and authorisation to an external <strong>Authorization Server (AS)</strong> such as Keycloak, Auth0, or any other OIDC-compliant provider. This replaces the built-in API key and the ACA-Py-issued multitenant JWT with access tokens that the AS issues directly to callers.</p>
+<h2 id="table-of-contents">Table of Contents <!-- omit in toc --><a class="headerlink" href="#table-of-contents" title="Permanent link">&para;</a></h2>
 <ul>
-<li><code>--plugin</code> - identifies the plug-in library to load</li>
-<li><code>--block-plugin</code> - identifies plug-ins (including built-ins) that are <em>not</em> to be loaded</li>
-<li><code>--plugin-config</code> - identify a configuration parameter for a plug-in</li>
-<li><code>--plugin-config-value</code> - identify a <em>value</em> for a plug-in configuration</li>
+<li><a href="#overview">Overview</a></li>
+<li><a href="#request-flow">Request Flow</a></li>
+<li><a href="#scopes">Scopes</a></li>
+<li><a href="#configuration">Configuration</a></li>
+<li><a href="#startup-parameters">Startup Parameters</a></li>
+<li><a href="#environment-variables">Environment Variables</a></li>
+<li><a href="#token-validation-modes">Token Validation Modes</a></li>
+<li><a href="#multitenancy-and-the-wallet_id-claim">Multitenancy and the <code>wallet_id</code> Claim</a></li>
+<li><a href="#request-claim-storage-and-compatibility">Request Claim Storage and Compatibility</a></li>
+<li><a href="#annotating-routes-with-scopes">Annotating Routes with Scopes</a></li>
+<li><a href="#authorization-server-setup-guidance">Authorization Server Setup Guidance</a></li>
+<li><a href="#keycloak-example">Keycloak Example</a></li>
+<li><a href="#keycloak-hostname-and-issuer">Keycloak Hostname and Issuer</a></li>
+<li><a href="#demo-docker-compose-with-keycloak">Demo: Docker Compose with Keycloak</a></li>
+<li><a href="#scripts">Scripts</a></li>
+<li><a href="#migrating-from-api-key--aca-py-jwt">Migrating from API Key / ACA-Py JWT</a></li>
+<li><a href="#limitations">Limitations</a></li>
 </ul>
-<p>The <code>--plug-in</code> parameter specifies a package that is loaded by ACA-Py at runtime, and extends ACA-Py by adding support for additional protocols and message types, and/or extending the Admin API with additional endpoints.</p>
-<p>The original plug-in design (which we will call the "old" model) explicitly included <code>message_types.py</code> <code>routes.py</code> (to add Admin API's).  But functionality was added later (we'll call this the "new" model) to allow the plug-in to include a generic <code>setup</code> package that could perform arbitrary initialization.  The "new" model also includes support for a <code>definition.py</code> file that can specify plug-in version information  (major/minor plug-in version, as well as the minimum supported version (if another agent is running an older version of the plug-in)).</p>
-<p>You can discover which plug-ins are installed in an ACA-Py instance by calling (in the "server" section) the <code>GET /plugins</code> endpoint.  (Note that this will return all loaded protocols, including the built-ins.  You can call the <code>GET /status/config</code> to inspect the ACA-Py configuration, which will include the configuration for the <em>external</em> plug-ins.)</p>
-<h3 id="setup-method">setup method<a class="headerlink" href="#setup-method" title="Permanent link">&para;</a></h3>
-<p>If a setup method is provided, it will be called.  If not, the <code>message_types.py</code> and <code>routes.py</code> will be explicitly loaded.</p>
-<p>This would be in the <code>package/module __init__.py</code>:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">setup</span><span class="p">(</span><span class="n">context</span><span class="p">:</span> <span class="n">InjectionContext</span><span class="p">):</span>
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="k">pass</span>
-</code></pre></div>
-<p>TODO I couldn't find an implementation of a custom <code>setup</code> in any of the existing plug-ins, so I'm not completely sure what are the best practices for this option.</p>
-<h3 id="message_typespy">message_types.py<a class="headerlink" href="#message_typespy" title="Permanent link">&para;</a></h3>
-<p>When loading a plug-in, if there is a <code>message_types.py</code> available, ACA-Py will check the following attributes to initialize the protocol(s):</p>
+<hr />
+<h2 id="overview">Overview<a class="headerlink" href="#overview" title="Permanent link">&para;</a></h2>
+<p>In the traditional ACA-Py security model there are two mechanisms for protecting the Admin API:</p>
+<table>
+<thead>
+<tr>
+<th>Mode</th>
+<th>Parameter</th>
+<th>Token issuer</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>API key</td>
+<td><code>--admin-api-key</code></td>
+<td>n/a — static shared secret</td>
+</tr>
+<tr>
+<td>Multitenant JWT</td>
+<td><code>multitenant.jwt_secret</code></td>
+<td>ACA-Py itself</td>
+</tr>
+</tbody>
+</table>
+<p>Both modes are binary — a caller is either fully authorised or not. There is no concept of scopes or roles.</p>
+<p>The OAuth2 Resource Server mode introduces a third option:</p>
+<table>
+<thead>
+<tr>
+<th>Mode</th>
+<th>Parameter</th>
+<th>Token issuer</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>OAuth2 RS</td>
+<td><code>--oauth-jwks-uri</code> / <code>--oauth-introspection-endpoint</code></td>
+<td>External AS</td>
+</tr>
+</tbody>
+</table>
+<p>When OAuth2 RS mode is active:</p>
 <ul>
-<li><code>MESSAGE_TYPES</code> - identifies message types supported by the protocol</li>
-<li><code>CONTROLLERS</code> - identifies protocol controllers</li>
+<li>ACA-Py <strong>never issues tokens</strong> — the <code>create_auth_token</code> multitenant endpoint is not used.</li>
+<li>ACA-Py <strong>never stores or validates a shared secret</strong> for bearer tokens.</li>
+<li>The AS is the sole authority on who may call which endpoints.</li>
+<li>Individual routes declare the <strong>minimum scope</strong> required to access them.</li>
 </ul>
-<h3 id="routespy">routes.py<a class="headerlink" href="#routespy" title="Permanent link">&para;</a></h3>
-<p>If <code>routes.py</code> is available, then ACA-Py will call the following functions to initialize the Admin endpoints:</p>
-<ul>
-<li><code>register()</code> - registers routes for the new Admin endpoints</li>
-<li><code>register_events()</code> - registers an events this package will listen for/respond to</li>
-</ul>
-<h3 id="definitionpy">definition.py<a class="headerlink" href="#definitionpy" title="Permanent link">&para;</a></h3>
-<p>If <code>definition.py</code> is available, ACA-Py will read this package to determine protocol version information.  An example follows (this is an example that specifies two protocol versions):</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="err">versio</span><span class="kc">ns</span><span class="w"> </span><span class="err">=</span><span class="w"> </span><span class="p">[</span>
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">    </span><span class="p">{</span>
-<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">        </span><span class="nt">&quot;major_version&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
-<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="w">        </span><span class="nt">&quot;minimum_minor_version&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span>
-<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="w">        </span><span class="nt">&quot;current_minor_version&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span>
-<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="w">        </span><span class="nt">&quot;path&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;v1_0&quot;</span><span class="p">,</span>
-<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="w">    </span><span class="p">},</span>
-<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="w">    </span><span class="p">{</span>
-<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="w">        </span><span class="nt">&quot;major_version&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span>
-<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="w">        </span><span class="nt">&quot;minimum_minor_version&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span>
-<a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a><span class="w">        </span><span class="nt">&quot;current_minor_version&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span>
-<a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a><span class="w">        </span><span class="nt">&quot;path&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;v2_0&quot;</span><span class="p">,</span>
-<a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a><span class="w">    </span><span class="p">},</span>
-<a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a><span class="p">]</span>
-</code></pre></div>
-<p>The attributes are:</p>
-<ul>
-<li><code>major_version</code> - specifies the protocol major version</li>
-<li><code>current_minor_version</code> - specifies the protocol minor version</li>
-<li><code>minimum_minor_version</code> - specifies the minimum supported version (if a lower version is installed in another agent)</li>
-<li><code>path</code> - specifies the sub-path within the package for this version</li>
-</ul>
-<h2 id="dynamic-plugin-installation">Dynamic Plugin Installation<a class="headerlink" href="#dynamic-plugin-installation" title="Permanent link">&para;</a></h2>
-<p>ACA-Py supports automatic installation of plugins at runtime from the acapy-plugins repository, eliminating the need to pre-install plugins in Docker images. This feature uses the <code>PluginInstaller</code> utility to automatically install missing plugins before loading them.</p>
-<h3 id="auto-install-configuration">Auto-Install Configuration<a class="headerlink" href="#auto-install-configuration" title="Permanent link">&para;</a></h3>
-<p>Plugins are automatically installed from the acapy-plugins repository using the <code>--auto-install-plugins</code> flag:</p>
-<ul>
-<li>
-<p><strong>Enable with current ACA-Py version</strong> (flag without value):
-  <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>aca-py<span class="w"> </span>start<span class="w"> </span>--plugin<span class="w"> </span>webvh<span class="w"> </span>--auto-install-plugins
-</code></pre></div>
-  Installs from: <code>git+https://github.com/openwallet-foundation/acapy-plugins@{current-version}#subdirectory=webvh</code></p>
-</li>
-<li>
-<p><strong>Enable with specific version</strong> (flag with version):
-  <div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>aca-py<span class="w"> </span>start<span class="w"> </span>--plugin<span class="w"> </span>webvh<span class="w"> </span>--auto-install-plugins<span class="w"> </span><span class="m">1</span>.3.2
-</code></pre></div>
-  Installs from: <code>git+https://github.com/openwallet-foundation/acapy-plugins@1.3.2#subdirectory=webvh</code></p>
-</li>
-<li>
-<p><strong>Disabled by default</strong> (flag not present):
-  <div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>aca-py<span class="w"> </span>start<span class="w"> </span>--plugin<span class="w"> </span>webvh
-</code></pre></div>
-  Plugins must be pre-installed.</p>
-</li>
-</ul>
-<h3 id="installation-logging">Installation Logging<a class="headerlink" href="#installation-logging" title="Permanent link">&para;</a></h3>
-<p>When plugins are installed, ACA-Py logs detailed information including:
-- Plugin name and version being installed
-- Installation source
-- Success or failure status</p>
-<p>Example log output:
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>INFO: Auto-installing plugins from acapy-plugins repository: webvh, connection_update (current ACA-Py version (1.6.1))
-<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>INFO: Installing plugin: webvh (version: 1.6.1)
-<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>INFO: Successfully installed plugin: webvh (version: 1.6.1)
-</code></pre></div></p>
-<h3 id="checking-installed-plugin-versions">Checking Installed Plugin Versions<a class="headerlink" href="#checking-installed-plugin-versions" title="Permanent link">&para;</a></h3>
-<p>You can check the installed version of a plugin in several ways:</p>
-<p><strong>1. Via Admin API (after ACA-Py is running):</strong>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>curl<span class="w"> </span>http://localhost:8020/server/plugins
-</code></pre></div></p>
-<p>The response includes plugin versions:
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="p">{</span>
-<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="w">  </span><span class="nt">&quot;result&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;webvh&quot;</span><span class="p">],</span>
-<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="w">  </span><span class="nt">&quot;external&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
-<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="w">    </span><span class="p">{</span>
-<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a><span class="w">      </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;webvh&quot;</span><span class="p">,</span>
-<a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a><span class="w">      </span><span class="nt">&quot;package_version&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;0.1.0&quot;</span><span class="p">,</span>
-<a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a><span class="w">      </span><span class="nt">&quot;source_version&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;1.3.1&quot;</span>
-<a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a><span class="w">    </span><span class="p">}</span>
-<a id="__codelineno-7-9" name="__codelineno-7-9" href="#__codelineno-7-9"></a><span class="w">  </span><span class="p">]</span>
-<a id="__codelineno-7-10" name="__codelineno-7-10" href="#__codelineno-7-10"></a><span class="p">}</span>
-</code></pre></div></p>
-<p><strong>2. Using Python:</strong>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">acapy_agent.utils.plugin_installer</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_plugin_version</span>
-<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>
-<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="n">version_info</span> <span class="o">=</span> <span class="n">get_plugin_version</span><span class="p">(</span><span class="s2">&quot;webvh&quot;</span><span class="p">)</span>
-<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;webvh package version: </span><span class="si">{</span><span class="n">version_info</span><span class="p">[</span><span class="s1">&#39;package_version&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-<a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;webvh source version: </span><span class="si">{</span><span class="n">version_info</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;source_version&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-</code></pre></div></p>
-<h2 id="loading-aca-py-plug-ins-at-runtime">Loading ACA-Py Plug-Ins at Runtime<a class="headerlink" href="#loading-aca-py-plug-ins-at-runtime" title="Permanent link">&para;</a></h2>
-<p>The load sequence for a plug-in (the "Startup" class depends on how ACA-Py is running - <code>upgrade</code>, <code>provision</code> or <code>start</code>):</p>
+<hr />
+<h2 id="request-flow">Request Flow<a class="headerlink" href="#request-flow" title="Permanent link">&para;</a></h2>
 <pre class="mermaid"><code>sequenceDiagram
-  participant Startup
-  Note right of Startup: Configuration is loaded on startup&lt;br/&gt;from ACA-Py config params
-    Startup-&gt;&gt;+ArgParse: configure
-    ArgParse-&gt;&gt;settings:  ["external_plugins"]
-    ArgParse-&gt;&gt;settings:  ["blocked_plugins"]
+    participant C as Client
+    participant AS as Authorization Server
+    participant RS as ACA-Py (Resource Server)
 
-    Startup-&gt;&gt;+Conductor: setup()
-      Note right of Conductor: Each configured plug-in is validated and loaded
-      Conductor-&gt;&gt;DefaultContext:  build_context()
-      DefaultContext-&gt;&gt;DefaultContext:  load_plugins()
-      DefaultContext-&gt;&gt;+PluginRegistry:  register_package() (for built-in protocols)
-        PluginRegistry-&gt;&gt;PluginRegistry:  register_plugin() (for each sub-package)
-      DefaultContext-&gt;&gt;PluginRegistry:  register_plugin() (for non-protocol built-ins)
-      loop for each external plug-in
-      DefaultContext-&gt;&gt;PluginRegistry:  register_plugin()
-      alt if a setup method is provided
-        PluginRegistry-&gt;&gt;ExternalPlugIn:  has setup
-      else if routes and/or message_types are provided
-        PluginRegistry-&gt;&gt;ExternalPlugIn:  has routes
-        PluginRegistry-&gt;&gt;ExternalPlugIn:  has message_types
-      end
-      opt if definition is provided
-        PluginRegistry-&gt;&gt;ExternalPlugIn:  definition()
-      end
-      end
-      DefaultContext-&gt;&gt;PluginRegistry:  init_context()
-        loop for each external plug-in
-        alt if a setup method is provided
-          PluginRegistry-&gt;&gt;ExternalPlugIn:  setup()
-        else if a setup method is NOT provided
-          PluginRegistry-&gt;&gt;PluginRegistry:  load_protocols()
-          PluginRegistry-&gt;&gt;PluginRegistry:  load_protocol_version()
-          PluginRegistry-&gt;&gt;ProtocolRegistry:  register_message_types()
-          PluginRegistry-&gt;&gt;ProtocolRegistry:  register_controllers()
-        end
-        PluginRegistry-&gt;&gt;PluginRegistry:  register_protocol_events()
-      end
+    C-&gt;&gt;AS: (1) Authenticate&lt;br/&gt;(OIDC / PKCE / client credentials / etc.)
+    AS--&gt;&gt;C: (2) Access token
 
-      Conductor-&gt;&gt;Conductor:  load_transports()
+    C-&gt;&gt;RS: (3) API request&lt;br/&gt;Authorization: Bearer [token]
 
-      Note right of Conductor: If the admin server is enabled, plug-in routes are added
-      Conductor-&gt;&gt;AdminServer:  create admin server if enabled
+    RS-&gt;&gt;AS: (4) Fetch JWKS (cached)
+    AS--&gt;&gt;RS: JWKS signing keys
+    Note over RS: (5) Validate signature,&lt;br/&gt;expiry, iss, aud
 
-    Startup-&gt;&gt;Conductor: start()
-      Conductor-&gt;&gt;Conductor:  start_transports()
-      Conductor-&gt;&gt;AdminServer:  start()
+    opt Opaque token introspection fallback
+      RS-&gt;&gt;AS: (6) POST introspect token
+      AS--&gt;&gt;RS: { active, scope, sub, wallet_id, … }
+    end
 
-    Note right of Startup: the following represents an&lt;br/&gt;admin server api request
-    Startup-&gt;&gt;AdminServer:  setup_context() (called on each request)
-      AdminServer-&gt;&gt;PluginRegistry:  register_admin_routes()
-      loop for each external plug-in
-        PluginRegistry-&gt;&gt;ExternalPlugIn:  routes.register() (to register endpoints)
-      end</code></pre>
-<h2 id="developing-a-new-plug-in">Developing a New Plug-In<a class="headerlink" href="#developing-a-new-plug-in" title="Permanent link">&para;</a></h2>
-<p>When developing a new plug-in:</p>
+    Note over RS: (7) Check token scopes&lt;br/&gt;against route requirement
+
+    RS--&gt;&gt;C: (8) API response</code></pre>
+<p>JWT validation occurs on every request. Introspection is only used for opaque tokens or when JWT decoding falls back to introspection. JWKS keys are cached in memory by <code>PyJWKClient</code> so the round-trip to the AS only occurs when the key set changes.</p>
+<hr />
+<h2 id="scopes">Scopes<a class="headerlink" href="#scopes" title="Permanent link">&para;</a></h2>
+<p>ACA-Py uses the <code>scope</code> claim from the access token. Scopes are space-separated strings following the convention <code>acapy:&lt;resource&gt;[:&lt;action&gt;]</code>.</p>
+<table>
+<thead>
+<tr>
+<th>Scope</th>
+<th>Intended use</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>acapy:admin</code></td>
+<td>Full administrative access — wallet management, server config, ledger operations</td>
+</tr>
+<tr>
+<td><code>acapy:tenant</code></td>
+<td>Tenant-level access — credentials, connections, presentations for a specific sub-wallet</td>
+</tr>
+<tr>
+<td><code>acapy:tenant:read</code></td>
+<td>Read-only tenant access</td>
+</tr>
+<tr>
+<td><code>acapy:wallet:create</code></td>
+<td>Permission to create new sub-wallets only</td>
+</tr>
+</tbody>
+</table>
+<h3 id="scope-to-decorator-mapping">Scope-to-decorator mapping<a class="headerlink" href="#scope-to-decorator-mapping" title="Permanent link">&para;</a></h3>
+<p>Route handlers are annotated with one of two authentication decorators. In OAuth mode each decorator enforces a minimum scope:</p>
+<table>
+<thead>
+<tr>
+<th>Decorator</th>
+<th>OAuth scope required</th>
+<th>Legacy auth</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>@admin_authentication</code></td>
+<td><code>acapy:admin</code></td>
+<td><code>x-api-key</code> or insecure mode</td>
+</tr>
+<tr>
+<td><code>@tenant_authentication</code></td>
+<td><code>acapy:tenant</code> <strong>or</strong> <code>acapy:admin</code></td>
+<td>Bearer JWT or <code>x-api-key</code></td>
+</tr>
+</tbody>
+</table>
+<p>A request passes scope enforcement if it holds <strong>at least one</strong> of the required scopes. <code>acapy:admin</code> implies full access and satisfies both decorators. All <code>/multitenancy/*</code> routes use <code>@admin_authentication</code> and therefore require <code>acapy:admin</code>.</p>
+<hr />
+<h2 id="configuration">Configuration<a class="headerlink" href="#configuration" title="Permanent link">&para;</a></h2>
+<h3 id="startup-parameters">Startup Parameters<a class="headerlink" href="#startup-parameters" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>--oauth-enabled</code></td>
+<td>Enable OAuth2 RS mode explicitly. Implied by either of the two parameters below.</td>
+</tr>
+<tr>
+<td><code>--oauth-jwks-uri &lt;url&gt;</code></td>
+<td>JWKS endpoint of the AS. ACA-Py fetches and caches signing keys from here to validate JWT access tokens locally.</td>
+</tr>
+<tr>
+<td><code>--oauth-issuer &lt;issuer&gt;</code></td>
+<td>Expected value of the <code>iss</code> claim. Tokens with a different issuer are rejected.</td>
+</tr>
+<tr>
+<td><code>--oauth-audience &lt;audience&gt;</code></td>
+<td>Expected value of the <code>aud</code> claim. <strong>Required whenever <code>--oauth-jwks-uri</code> is set</strong> — ACA-Py refuses to start without it, so JWT access tokens are always bound to this resource server.</td>
+</tr>
+<tr>
+<td><code>--oauth-introspection-endpoint &lt;url&gt;</code></td>
+<td>RFC 7662 introspection endpoint. Used as a fallback for opaque tokens, or as the sole validation method when <code>--oauth-jwks-uri</code> is not set.</td>
+</tr>
+<tr>
+<td><code>--oauth-introspection-client-id &lt;id&gt;</code></td>
+<td>Client ID for HTTP Basic Auth on the introspection endpoint. Required when the introspection endpoint is configured.</td>
+</tr>
+<tr>
+<td><code>--oauth-introspection-client-secret &lt;secret&gt;</code></td>
+<td>Client secret for HTTP Basic Auth on the introspection endpoint.</td>
+</tr>
+<tr>
+<td><code>--oauth-http-timeout &lt;seconds&gt;</code></td>
+<td>Timeout for HTTP calls to the AS (JWKS key fetches and token introspection). Default 10.</td>
+</tr>
+</tbody>
+</table>
+<p>When any of <code>--oauth-jwks-uri</code> or <code>--oauth-introspection-endpoint</code> is provided, <strong>neither <code>--admin-api-key</code> nor <code>--admin-insecure-mode</code> is required</strong>.</p>
+<p>Configuration is validated at startup and ACA-Py refuses to start when:</p>
 <ul>
-<li>If you are providing a new protocol or defining message types, you <em>should</em> include a <code>definition.py</code> file.</li>
-<li>If you are providing a new protocol or defining message types, you <em>should</em> include a <code>message_types.py</code> file.</li>
-<li>If you are providing additional Admin endpoints, you <em>should</em> include a <code>routes.py</code> file.</li>
-<li>If you are providing any other functionality, you should provide a <code>setup.py</code> file to initialize the custom functionality.  No guidance is <em>currently</em> available for this option.</li>
+<li>OAuth mode is enabled (via any of the three flags) but neither <code>--oauth-jwks-uri</code> nor <code>--oauth-introspection-endpoint</code> is set — there would be no way to validate tokens.</li>
+<li><code>--oauth-introspection-endpoint</code> is set without <code>--oauth-introspection-client-id</code>.</li>
+<li><code>--oauth-jwks-uri</code> is set without <code>--oauth-audience</code> — without an expected audience, any signature-valid token from the JWKS would be accepted regardless of its intended recipient (token reuse / confused-deputy on a shared Authorization Server).</li>
 </ul>
-<h3 id="pip-vs-poetry-support">PIP vs Poetry Support<a class="headerlink" href="#pip-vs-poetry-support" title="Permanent link">&para;</a></h3>
-<p>Most ACA-Py plug-ins provide support for installing the plug-in using <a href="https://python-poetry.org/">poetry</a>.  It is <em>recommended</em> to include support in your package for installing using <em>either</em> pip or poetry, to provide maximum support for users of your plug-in.</p>
-<h3 id="plug-in-demo">Plug-In Demo<a class="headerlink" href="#plug-in-demo" title="Permanent link">&para;</a></h3>
-<p>TBD</p>
-<h2 id="aca-py-plug-ins-repository">ACA-Py Plug-ins Repository<a class="headerlink" href="#aca-py-plug-ins-repository" title="Permanent link">&para;</a></h2>
-<p>Checkout the "Plugins" tab in the <a href="https://plugins.aca-py.org">ACA-Py Plugins "Store"</a> to find a list of plugins that might be useful in your deployment. Instructions are included for how you can contribute your plugin to the list.</p>
-<h2 id="references">References<a class="headerlink" href="#references" title="Permanent link">&para;</a></h2>
-<p>The following links may be helpful or provide additional context for the current plug-in support.  (These are links to issues or pull requests that were raised during plug-in development.)</p>
-<p>Configuration params:</p>
+<p>Example startup using JWKS validation:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>aca-py<span class="w"> </span>start<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">  </span>--admin<span class="w"> </span><span class="m">0</span>.0.0.0<span class="w"> </span><span class="m">8031</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">  </span>--oauth-jwks-uri<span class="w"> </span>https://auth.example.com/realms/acapy/protocol/openid-connect/certs<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="w">  </span>--oauth-issuer<span class="w"> </span>https://auth.example.com/realms/acapy<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="w">  </span>--oauth-audience<span class="w"> </span>acapy-resource-server<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="w">  </span>--multitenant<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="w">  </span>--multitenant-admin<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="w">  </span>...
+</code></pre></div>
+<p>Example startup using introspection only (for opaque tokens):</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>aca-py<span class="w"> </span>start<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">  </span>--admin<span class="w"> </span><span class="m">0</span>.0.0.0<span class="w"> </span><span class="m">8031</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">  </span>--oauth-introspection-endpoint<span class="w"> </span>https://auth.example.com/oauth/introspect<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="w">  </span>--oauth-introspection-client-id<span class="w"> </span>acapy-rs<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="w">  </span>--oauth-introspection-client-secret<span class="w"> </span>&lt;secret&gt;<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="w">  </span>...
+</code></pre></div>
+<h3 id="environment-variables">Environment Variables<a class="headerlink" href="#environment-variables" title="Permanent link">&para;</a></h3>
+<p>Each parameter has a corresponding environment variable:</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Environment variable</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>--oauth-jwks-uri</code></td>
+<td><code>ACAPY_OAUTH_JWKS_URI</code></td>
+</tr>
+<tr>
+<td><code>--oauth-issuer</code></td>
+<td><code>ACAPY_OAUTH_ISSUER</code></td>
+</tr>
+<tr>
+<td><code>--oauth-audience</code></td>
+<td><code>ACAPY_OAUTH_AUDIENCE</code></td>
+</tr>
+<tr>
+<td><code>--oauth-introspection-endpoint</code></td>
+<td><code>ACAPY_OAUTH_INTROSPECTION_ENDPOINT</code></td>
+</tr>
+<tr>
+<td><code>--oauth-introspection-client-id</code></td>
+<td><code>ACAPY_OAUTH_INTROSPECTION_CLIENT_ID</code></td>
+</tr>
+<tr>
+<td><code>--oauth-introspection-client-secret</code></td>
+<td><code>ACAPY_OAUTH_INTROSPECTION_CLIENT_SECRET</code></td>
+</tr>
+<tr>
+<td><code>--oauth-http-timeout</code></td>
+<td><code>ACAPY_OAUTH_HTTP_TIMEOUT</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="token-validation-modes">Token Validation Modes<a class="headerlink" href="#token-validation-modes" title="Permanent link">&para;</a></h3>
+<p><strong>JWT via JWKS (recommended)</strong></p>
+<p>ACA-Py uses <code>PyJWKClient</code> (bundled with <code>pyjwt &gt;= 2.x</code>) to fetch signing keys from the JWKS endpoint and validate tokens locally. Signature, expiry, issuer, and audience are all checked. Supported algorithms: RS256/384/512, ES256/384/512, PS256/384/512.</p>
+<p>JWKS key fetches happen on a cache miss (first request, or key rotation) and are subject to <code>--oauth-http-timeout</code>. The fetch runs in a worker thread so a slow AS does not block other requests.</p>
+<p><strong>Introspection fallback</strong></p>
+<p>If JWKS validation fails with a decode error (e.g. the token is opaque, not a JWT) and <code>--oauth-introspection-endpoint</code> is configured, ACA-Py falls back to RFC 7662 introspection. The introspection response must include <code>"active": true</code>; the <code>scope</code> field is used for scope enforcement.</p>
+<p>Introspection calls use a shared HTTP session with a timeout of <code>--oauth-http-timeout</code> seconds (default 10). If the AS cannot be reached (network error or timeout), ACA-Py responds with <code>503 Service Unavailable</code> rather than <code>401</code>, since the failure says nothing about the token's validity.</p>
+<p><strong>Combined mode</strong></p>
+<p>Providing both <code>--oauth-jwks-uri</code> and <code>--oauth-introspection-endpoint</code> gives you JWT-first validation with opaque token fallback. This covers deployments where the AS issues different token types to different clients.</p>
+<hr />
+<h2 id="multitenancy-and-the-wallet_id-claim">Multitenancy and the <code>wallet_id</code> Claim<a class="headerlink" href="#multitenancy-and-the-wallet_id-claim" title="Permanent link">&para;</a></h2>
+<p>In multitenant deployments, ACA-Py needs to know which sub-wallet a request should be routed to. With the built-in JWT this was encoded as <code>wallet_id</code> in the token payload. With external OAuth tokens, the AS must include a <strong>custom claim</strong> named <code>wallet_id</code> containing the ACA-Py sub-wallet UUID.</p>
+<p>When ACA-Py receives a request:</p>
+<ol>
+<li>The access token is validated (JWKS or introspection).</li>
+<li>The <code>wallet_id</code> claim is read from the token.</li>
+<li>The corresponding <code>WalletRecord</code> is loaded from storage.</li>
+<li>The request is executed in that wallet's profile context.</li>
+</ol>
+<p>If <code>wallet_id</code> is absent from the token, the request is <strong>rejected with <code>401 Unauthorized</code> unless the token carries the <code>acapy:admin</code> scope</strong>. Admin-scoped tokens without a <code>wallet_id</code> run against the <strong>base wallet</strong>. This prevents a misconfigured AS (e.g. a tenant client missing its <code>wallet_id</code> mapper) from silently granting tenant tokens access to base-wallet data.</p>
+<h3 id="provisioning-flow">Provisioning flow<a class="headerlink" href="#provisioning-flow" title="Permanent link">&para;</a></h3>
+<ol>
+<li>An admin caller (holding <code>acapy:admin</code> scope) creates a sub-wallet via <code>POST /multitenancy/wallet</code>. A <code>wallet_key</code> must be provided even when <code>key_management_mode</code> is <code>managed</code> — ACA-Py stores and manages the key but Askar requires one at creation time.</li>
+<li>ACA-Py returns the new <code>wallet_id</code> in the response.</li>
+<li>The operator configures the AS to embed that <code>wallet_id</code> as a custom claim in tokens issued to the corresponding user or client.</li>
+</ol>
+<p>In Keycloak this is done with a <strong>Protocol Mapper</strong> of type <em>Hardcoded Claim</em>:
+- Token Claim Name: <code>wallet_id</code>
+- Claim Value: <code>&lt;the ACA-Py wallet UUID&gt;</code>
+- Add to access token: enabled</p>
+<hr />
+<h2 id="request-claim-storage-and-compatibility">Request Claim Storage and Compatibility<a class="headerlink" href="#request-claim-storage-and-compatibility" title="Permanent link">&para;</a></h2>
+<p>OAuth token-derived values (<code>scope</code>, <code>sub</code>, <code>wallet_id</code>) are attached to the
+request in <code>AdminRequestContext.metadata</code>.</p>
+<p>In addition, ACA-Py mirrors these values into <strong>request-scoped settings</strong> for
+compatibility with integrations that already read from <code>context.settings</code> /
+<code>context.profile.settings</code>.</p>
+<p>Request-scoped settings keys:</p>
+<table>
+<thead>
+<tr>
+<th>Claim</th>
+<th>Request-scoped setting key</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>scope</code></td>
+<td><code>auth.scopes</code></td>
+</tr>
+<tr>
+<td><code>sub</code></td>
+<td><code>auth.subject</code></td>
+</tr>
+<tr>
+<td><code>wallet_id</code></td>
+<td><code>auth.wallet_id</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="why-both-metadata-and-settings">Why both metadata and settings?<a class="headerlink" href="#why-both-metadata-and-settings" title="Permanent link">&para;</a></h3>
 <ul>
-<li><a href="https://github.com/openwallet-foundation/acapy/issues/1121">https://github.com/openwallet-foundation/acapy/issues/1121</a></li>
-<li><a href="https://hackmd.io/ROUzENdpQ12cz3UB9qk1nA">https://hackmd.io/ROUzENdpQ12cz3UB9qk1nA</a></li>
-<li><a href="https://github.com/openwallet-foundation/acapy/pull/1226">https://github.com/openwallet-foundation/acapy/pull/1226</a></li>
+<li><code>metadata</code> is the canonical location for per-request auth claims.</li>
+<li>Request-scoped settings provide a low-friction compatibility path for code
+  and plugins that already rely on settings access patterns.</li>
+<li>This avoids storing OAuth claims in global/shared settings while still
+  reducing break risk for existing extensions.</li>
 </ul>
-<p>Loading plug-ins:</p>
+<h3 id="recommended-access-pattern-for-core-and-plugins">Recommended access pattern for core and plugins<a class="headerlink" href="#recommended-access-pattern-for-core-and-plugins" title="Permanent link">&para;</a></h3>
+<p>Use helper functions from <code>acapy_agent.admin.auth_context</code> instead of reading
+<code>context.metadata</code> or settings directly. The helpers normalize values and
+handle both storage paths safely.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">acapy_agent.admin.auth_context</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>    <span class="n">get_auth_scopes</span><span class="p">,</span>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>    <span class="n">get_auth_subject</span><span class="p">,</span>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>    <span class="n">get_auth_wallet_id</span><span class="p">,</span>
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>    <span class="n">has_auth_wallet_id</span><span class="p">,</span>
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="p">)</span>
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>
+<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="n">context</span> <span class="o">=</span> <span class="n">request</span><span class="p">[</span><span class="s2">&quot;context&quot;</span><span class="p">]</span>
+<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="n">scopes</span> <span class="o">=</span> <span class="n">get_auth_scopes</span><span class="p">(</span><span class="n">context</span><span class="p">)</span>
+<a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a><span class="n">subject</span> <span class="o">=</span> <span class="n">get_auth_subject</span><span class="p">(</span><span class="n">context</span><span class="p">)</span>
+<a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a><span class="n">wallet_id</span> <span class="o">=</span> <span class="n">get_auth_wallet_id</span><span class="p">(</span><span class="n">context</span><span class="p">)</span>
+<a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a><span class="n">is_subwallet</span> <span class="o">=</span> <span class="n">has_auth_wallet_id</span><span class="p">(</span><span class="n">context</span><span class="p">)</span>
+</code></pre></div>
+<hr />
+<h2 id="annotating-routes-with-scopes">Annotating Routes with Scopes<a class="headerlink" href="#annotating-routes-with-scopes" title="Permanent link">&para;</a></h2>
+<p>Use the <code>require_scope</code> decorator from <code>acapy_agent.admin.decorators.auth</code>. It must be stacked <strong>inside</strong> <code>tenant_authentication</code> (or <code>admin_authentication</code>) so that authentication is checked before scope enforcement.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">acapy_agent.admin.decorators.auth</span><span class="w"> </span><span class="kn">import</span> <span class="n">require_scope</span><span class="p">,</span> <span class="n">tenant_authentication</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="nd">@docs</span><span class="p">(</span><span class="n">tags</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;credential&quot;</span><span class="p">],</span> <span class="n">summary</span><span class="o">=</span><span class="s2">&quot;Issue a credential&quot;</span><span class="p">)</span>
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="nd">@tenant_authentication</span>
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="nd">@require_scope</span><span class="p">(</span><span class="s2">&quot;acapy:tenant&quot;</span><span class="p">,</span> <span class="s2">&quot;acapy:admin&quot;</span><span class="p">)</span>
+<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">credential_issue</span><span class="p">(</span><span class="n">request</span><span class="p">:</span> <span class="n">web</span><span class="o">.</span><span class="n">Request</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">web</span><span class="o">.</span><span class="n">Response</span><span class="p">:</span>
+<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a>    <span class="o">...</span>
+</code></pre></div>
+<p>A request passes if its token contains <strong>any one</strong> of the listed scopes. To require a scope that only admins hold, list only <code>"acapy:admin"</code>.</p>
+<p>For route logic, prefer the auth-context helpers:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">acapy_agent.admin.auth_context</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>  <span class="n">get_auth_scopes</span><span class="p">,</span>
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>  <span class="n">get_auth_subject</span><span class="p">,</span>
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>  <span class="n">get_auth_wallet_id</span><span class="p">,</span>
+<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="p">)</span>
+<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a>
+<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="n">context</span> <span class="o">=</span> <span class="n">request</span><span class="p">[</span><span class="s2">&quot;context&quot;</span><span class="p">]</span>
+<a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a><span class="n">scopes</span> <span class="o">=</span> <span class="n">get_auth_scopes</span><span class="p">(</span><span class="n">context</span><span class="p">)</span>
+<a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a><span class="n">subject</span> <span class="o">=</span> <span class="n">get_auth_subject</span><span class="p">(</span><span class="n">context</span><span class="p">)</span>
+<a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a><span class="n">wallet_id</span> <span class="o">=</span> <span class="n">get_auth_wallet_id</span><span class="p">(</span><span class="n">context</span><span class="p">)</span>
+</code></pre></div>
+<hr />
+<h2 id="authorization-server-setup-guidance">Authorization Server Setup Guidance<a class="headerlink" href="#authorization-server-setup-guidance" title="Permanent link">&para;</a></h2>
+<h3 id="keycloak-example">Keycloak Example<a class="headerlink" href="#keycloak-example" title="Permanent link">&para;</a></h3>
+<ol>
+<li>
+<p><strong>Create a Realm</strong> (e.g. <code>acapy</code>).</p>
+</li>
+<li>
+<p><strong>Create a Client</strong> representing ACA-Py as the resource server:</p>
+</li>
+<li>Client ID: <code>acapy-resource-server</code></li>
+<li>Access Type: <code>bearer-only</code></li>
+<li>
+<p>This client does not issue tokens — it is used only as the audience target.</p>
+</li>
+<li>
+<p><strong>Create Client Scopes</strong> for each ACA-Py scope:</p>
+</li>
+<li><code>acapy:admin</code></li>
+<li><code>acapy:tenant</code></li>
+<li><code>acapy:tenant:read</code></li>
+<li><code>acapy:wallet:create</code></li>
+<li>
+<p>Set <em>Include in Token Scope</em> to enabled on each.</p>
+</li>
+<li>
+<p><strong>Create Clients for callers</strong>:</p>
+</li>
+<li>
+<p><strong>Admin / controller</strong> (server-to-server): confidential client, <code>client_credentials</code> grant, assign <code>acapy:admin</code> as default scope. Add an <em>Audience</em> protocol mapper pointing to <code>acapy-resource-server</code>.</p>
+</li>
+<li><strong>Tenant service account</strong> (server-to-server): confidential client, <code>client_credentials</code> grant, assign <code>acapy:tenant</code> as default scope. Add an <em>Audience</em> mapper and a <em>Hardcoded Claim</em> mapper for <code>wallet_id</code>.</li>
+<li>
+<p><strong>End-user client</strong> (browser): public client, authorization code + PKCE, assign <code>acapy:tenant</code> as default scope. Add <em>Audience</em> and <code>wallet_id</code> mappers as above.</p>
+</li>
+<li>
+<p><strong>Configure ACA-Py</strong>:
+   <div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>--oauth-jwks-uri  https://&lt;keycloak-host&gt;/realms/acapy/protocol/openid-connect/certs
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>--oauth-issuer    https://&lt;keycloak-host&gt;/realms/acapy
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>--oauth-audience  acapy-resource-server
+</code></pre></div></p>
+</li>
+</ol>
+<h3 id="keycloak-hostname-and-issuer">Keycloak Hostname and Issuer<a class="headerlink" href="#keycloak-hostname-and-issuer" title="Permanent link">&para;</a></h3>
+<p>The <code>iss</code> claim in a Keycloak-issued token reflects the URL from which the token was requested. In containerised deployments, clients outside the container network hit Keycloak on a host-accessible URL (e.g. <code>http://localhost:8080</code>) while ACA-Py reaches Keycloak on an internal Docker network URL (e.g. <code>http://keycloak:8080</code>). These produce different <code>iss</code> values, causing <code>--oauth-issuer</code> validation to fail.</p>
+<p>The recommended fix is to set <code>KC_HOSTNAME</code> in Keycloak so that the <code>iss</code> claim always uses a single canonical URL regardless of which network interface handled the request:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="c1"># docker-compose.yml — Keycloak service</span>
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="nt">environment</span><span class="p">:</span>
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="w">  </span><span class="nt">KC_HOSTNAME</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">localhost</span>
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="w">  </span><span class="nt">KC_HOSTNAME_PORT</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;8080&quot;</span>
+<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="w">  </span><span class="nt">KC_HOSTNAME_STRICT</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;false&quot;</span>
+</code></pre></div>
+<p>Then set <code>--oauth-issuer</code> to match that canonical URL:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>--oauth-issuer<span class="w"> </span>http://localhost:8080/realms/acapy
+</code></pre></div>
+<p>ACA-Py's <code>--oauth-jwks-uri</code> can still use the internal Docker network hostname for the JWKS fetch — issuer validation is a string comparison against the <code>iss</code> claim and requires no network call.</p>
+<hr />
+<h2 id="demo-docker-compose-with-keycloak">Demo: Docker Compose with Keycloak<a class="headerlink" href="#demo-docker-compose-with-keycloak" title="Permanent link">&para;</a></h2>
+<p>A self-contained demo is provided in <a href="../../demo/demo-authserver/"><code>demo/demo-authserver/</code></a>. It starts three services:</p>
+<table>
+<thead>
+<tr>
+<th>Service</th>
+<th>Image</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>keycloak</code></td>
+<td><code>quay.io/keycloak/keycloak:24</code></td>
+<td>Authorization Server, pre-loaded with the <code>acapy</code> realm</td>
+</tr>
+<tr>
+<td><code>wallet-db</code></td>
+<td><code>postgres:16</code></td>
+<td>ACA-Py wallet storage</td>
+</tr>
+<tr>
+<td><code>acapy</code></td>
+<td>Built from repo</td>
+<td>ACA-Py configured as an OAuth2 Resource Server</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Quick start:</strong></p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="nb">cd</span><span class="w"> </span>demo/demo-authserver
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>podman<span class="w"> </span>compose<span class="w"> </span>up<span class="w"> </span>--build<span class="w">      </span><span class="c1"># or docker compose up --build</span>
+<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>
+<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="c1"># In a second terminal, once all services are healthy:</span>
+<a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a>./scripts/setup-tenant.sh
+</code></pre></div>
+<h3 id="scripts">Scripts<a class="headerlink" href="#scripts" title="Permanent link">&para;</a></h3>
+<p>All scripts read common settings from a <code>.env</code> file if present and default sensibly otherwise.</p>
+<table>
+<thead>
+<tr>
+<th>Script</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>setup-tenant.sh</code></td>
+<td>Creates an ACA-Py sub-wallet using an admin token, then updates the Keycloak <code>wallet-id</code> claim on the <code>acapy-tenant-demo</code> client. Must be run before the tenant scripts.</td>
+</tr>
+<tr>
+<td><code>get-admin-token.sh</code></td>
+<td>Obtains an admin token via <code>client_credentials</code> grant for <code>acapy-controller</code> and prints the decoded claims and raw token.</td>
+</tr>
+<tr>
+<td><code>get-tenant-token.sh</code></td>
+<td>Obtains a tenant token via <code>client_credentials</code> grant for a confidential tenant client (defaults to <code>acapy-tenant-demo</code>). Prints decoded claims including <code>wallet_id</code>.</td>
+</tr>
+<tr>
+<td><code>get-user-token.sh</code></td>
+<td>Creates a demo user in Keycloak (if needed) and performs a full <strong>authorization code + PKCE</strong> flow. Prints a Keycloak login URL to open in the browser; a local callback server on port 9999 receives the code and exchanges it for a token.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Example usage after <code>setup-tenant.sh</code>:</strong></p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="c1"># Server-to-server admin token</span>
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>./scripts/get-admin-token.sh
+<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>
+<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a><span class="c1"># Server-to-server tenant token (confidential client)</span>
+<a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a>./scripts/get-tenant-token.sh
+<a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a>
+<a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a><span class="c1"># Browser-based user token (public client, PKCE)</span>
+<a id="__codelineno-9-8" name="__codelineno-9-8" href="#__codelineno-9-8"></a>./scripts/get-user-token.sh
+<a id="__codelineno-9-9" name="__codelineno-9-9" href="#__codelineno-9-9"></a>
+<a id="__codelineno-9-10" name="__codelineno-9-10" href="#__codelineno-9-10"></a><span class="c1"># Call ACA-Py with a token</span>
+<a id="__codelineno-9-11" name="__codelineno-9-11" href="#__codelineno-9-11"></a><span class="nv">TOKEN</span><span class="o">=</span><span class="k">$(</span>./scripts/get-admin-token.sh<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>-A1<span class="w"> </span><span class="s2">&quot;Access token:&quot;</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>tail<span class="w"> </span>-1<span class="k">)</span>
+<a id="__codelineno-9-12" name="__codelineno-9-12" href="#__codelineno-9-12"></a>curl<span class="w"> </span>-s<span class="w"> </span>-H<span class="w"> </span><span class="s2">&quot;Authorization: Bearer </span><span class="nv">$TOKEN</span><span class="s2">&quot;</span><span class="w"> </span>http://localhost:8031/multitenancy/wallets<span class="w"> </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span>.
+</code></pre></div>
+<hr />
+<h2 id="migrating-from-api-key-aca-py-jwt">Migrating from API Key / ACA-Py JWT<a class="headerlink" href="#migrating-from-api-key-aca-py-jwt" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Before</th>
+<th>After</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>--admin-api-key &lt;key&gt;</code></td>
+<td>Remove; add <code>--oauth-jwks-uri</code> (and/or introspection params)</td>
+</tr>
+<tr>
+<td><code>--admin-insecure-mode</code></td>
+<td>Remove; configure OAuth</td>
+</tr>
+<tr>
+<td><code>--multitenant-jwt-secret &lt;secret&gt;</code></td>
+<td>Still required by the multitenant subsystem but unused for token validation in OAuth mode</td>
+</tr>
+<tr>
+<td><code>POST /multitenancy/wallet/{id}/token</code></td>
+<td>Clients obtain tokens from the AS directly</td>
+</tr>
+<tr>
+<td><code>X-API-Key: &lt;key&gt;</code> request header</td>
+<td><code>Authorization: Bearer &lt;token&gt;</code> request header</td>
+</tr>
+<tr>
+<td><code>@admin_authentication</code> on admin routes</td>
+<td>Unchanged decorator; now enforces <code>acapy:admin</code> scope in OAuth mode</td>
+</tr>
+<tr>
+<td><code>@tenant_authentication</code> on tenant routes</td>
+<td>Unchanged decorator; now enforces <code>acapy:tenant</code> or <code>acapy:admin</code> scope in OAuth mode</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="limitations">Limitations<a class="headerlink" href="#limitations" title="Permanent link">&para;</a></h2>
 <ul>
-<li><a href="https://github.com/openwallet-foundation/acapy/pull/1086">https://github.com/openwallet-foundation/acapy/pull/1086</a></li>
-</ul>
-<p>Versioning for plug-ins:</p>
-<ul>
-<li><a href="https://github.com/openwallet-foundation/acapy/pull/443">https://github.com/openwallet-foundation/acapy/pull/443</a></li>
+<li><strong>Unmanaged wallets are not supported in OAuth mode.</strong> The ACA-Py-issued JWT could carry a <code>wallet_key</code> for wallets whose keys are not stored by ACA-Py. An OAuth access token from an external AS must not contain cryptographic wallet keys; use managed wallets (<code>key_management_mode: managed</code>) with OAuth.</li>
+<li><strong>WebSocket authentication</strong> uses the same bearer token presented in the initial HTTP upgrade request. In-message <code>x-api-key</code> re-authentication is not available in OAuth mode. The admin event stream (<code>GET /ws</code> on the admin port) is scope- and wallet-aware: an <code>acapy:admin</code> token receives events for all wallets, while an <code>acapy:tenant</code> / <code>acapy:tenant:read</code> token receives only events for the <code>wallet_id</code> in its token (and, in multitenant mode, a token without a <code>wallet_id</code> is not permitted to receive events). This mirrors the tenant isolation enforced on the HTTP routes. Note this is the admin notification websocket, distinct from any DIDComm WebSocket inbound transport.</li>
+<li><strong>JWKS key rotation</strong> is handled automatically by <code>PyJWKClient</code>'s built-in cache, which re-fetches the key set when a token references an unknown key ID (<code>kid</code>). No ACA-Py restart is required.</li>
 </ul>
 
 
@@ -3782,7 +4321,7 @@
       <nav class="md-footer__inner md-grid" aria-label="Footer" >
         
           
-          <a href="../KanonStorage/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Kanon Storage">
+          <a href="../AdminAPI/" class="md-footer__link md-footer__link--prev" aria-label="Previous: The Admin API">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
@@ -3792,20 +4331,20 @@
                 Previous
               </span>
               <div class="md-ellipsis">
-                Kanon Storage
+                The Admin API
               </div>
             </div>
           </a>
         
         
           
-          <a href="../Multitenancy/" class="md-footer__link md-footer__link--next" aria-label="Next: Multitenant ACA-Py">
+          <a href="../KanonStorage/" class="md-footer__link md-footer__link--next" aria-label="Next: Kanon Storage">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                Multitenant ACA-Py
+                Kanon Storage
               </div>
             </div>
             <div class="md-footer__button md-icon">
