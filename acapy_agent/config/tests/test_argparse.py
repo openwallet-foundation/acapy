@@ -53,6 +53,160 @@ class TestArgParse(TestCase):
         assert settings.get("transport.outbound_configs") == ["http"]
         assert result.max_outbound_retry == 5
 
+    def test_admin_settings_oauth_jwks(self):
+        """OAuth mode via JWKS: no API key required, oauth settings mapped."""
+        parser = argparse.create_argument_parser()
+        group = argparse.AdminGroup()
+        group.add_arguments(parser)
+
+        result = parser.parse_args(
+            [
+                "--admin",
+                "0.0.0.0",
+                "8000",
+                "--oauth-jwks-uri",
+                "https://as.example.com/certs",
+                "--oauth-issuer",
+                "https://as.example.com/realms/test",
+                "--oauth-audience",
+                "acapy-admin",
+            ]
+        )
+        settings = group.get_settings(result)
+
+        assert settings.get("admin.oauth_enabled") is True
+        assert settings.get("oauth.jwks_uri") == "https://as.example.com/certs"
+        assert settings.get("oauth.issuer") == "https://as.example.com/realms/test"
+        assert settings.get("oauth.audience") == "acapy-admin"
+        assert settings.get("oauth.http_timeout") == 10
+        assert not settings.get("admin.admin_api_key")
+        assert not settings.get("admin.admin_insecure_mode")
+
+    def test_admin_settings_oauth_http_timeout_override(self):
+        parser = argparse.create_argument_parser()
+        group = argparse.AdminGroup()
+        group.add_arguments(parser)
+
+        result = parser.parse_args(
+            [
+                "--admin",
+                "0.0.0.0",
+                "8000",
+                "--oauth-jwks-uri",
+                "https://as.example.com/certs",
+                "--oauth-audience",
+                "acapy-admin",
+                "--oauth-http-timeout",
+                "5",
+            ]
+        )
+        settings = group.get_settings(result)
+        assert settings.get("oauth.http_timeout") == 5
+
+    def test_admin_settings_oauth_jwks_requires_audience(self):
+        """JWKS validation without an audience must fail (aud binding)."""
+        parser = argparse.create_argument_parser()
+        group = argparse.AdminGroup()
+        group.add_arguments(parser)
+
+        result = parser.parse_args(
+            [
+                "--admin",
+                "0.0.0.0",
+                "8000",
+                "--oauth-jwks-uri",
+                "https://as.example.com/certs",
+            ]
+        )
+        with self.assertRaises(argparse.ArgsParseError):
+            group.get_settings(result)
+
+    def test_admin_settings_oauth_introspection(self):
+        """OAuth mode via introspection maps endpoint and client credentials."""
+        parser = argparse.create_argument_parser()
+        group = argparse.AdminGroup()
+        group.add_arguments(parser)
+
+        result = parser.parse_args(
+            [
+                "--admin",
+                "0.0.0.0",
+                "8000",
+                "--oauth-introspection-endpoint",
+                "https://as.example.com/introspect",
+                "--oauth-introspection-client-id",
+                "acapy-rs",
+                "--oauth-introspection-client-secret",
+                "s3cret",
+            ]
+        )
+        settings = group.get_settings(result)
+
+        assert settings.get("admin.oauth_enabled") is True
+        assert (
+            settings.get("oauth.introspection_endpoint")
+            == "https://as.example.com/introspect"
+        )
+        assert settings.get("oauth.introspection_client_id") == "acapy-rs"
+        assert settings.get("oauth.introspection_client_secret") == "s3cret"
+
+    def test_admin_settings_oauth_enabled_without_validation_method(self):
+        """--oauth-enabled alone must fail: no way to validate tokens."""
+        parser = argparse.create_argument_parser()
+        group = argparse.AdminGroup()
+        group.add_arguments(parser)
+
+        result = parser.parse_args(["--admin", "0.0.0.0", "8000", "--oauth-enabled"])
+        with self.assertRaises(argparse.ArgsParseError):
+            group.get_settings(result)
+
+    def test_admin_settings_oauth_introspection_requires_client_id(self):
+        parser = argparse.create_argument_parser()
+        group = argparse.AdminGroup()
+        group.add_arguments(parser)
+
+        result = parser.parse_args(
+            [
+                "--admin",
+                "0.0.0.0",
+                "8000",
+                "--oauth-introspection-endpoint",
+                "https://as.example.com/introspect",
+            ]
+        )
+        with self.assertRaises(argparse.ArgsParseError):
+            group.get_settings(result)
+
+    def test_admin_settings_api_key_xor_insecure_mode(self):
+        """Without OAuth, exactly one of api-key / insecure-mode is required."""
+        parser = argparse.create_argument_parser()
+        group = argparse.AdminGroup()
+        group.add_arguments(parser)
+
+        result = parser.parse_args(["--admin", "0.0.0.0", "8000"])
+        with self.assertRaises(argparse.ArgsParseError):
+            group.get_settings(result)
+
+        result = parser.parse_args(
+            [
+                "--admin",
+                "0.0.0.0",
+                "8000",
+                "--admin-api-key",
+                "key",
+                "--admin-insecure-mode",
+            ]
+        )
+        with self.assertRaises(argparse.ArgsParseError):
+            group.get_settings(result)
+
+        result = parser.parse_args(
+            ["--admin", "0.0.0.0", "8000", "--admin-api-key", "key"]
+        )
+        settings = group.get_settings(result)
+        assert settings.get("admin.admin_api_key") == "key"
+        assert not settings.get("admin.oauth_enabled")
+
     def test_get_genesis_transactions_list_with_ledger_selection(self):
         """Test multiple ledger support related argument parsing."""
 

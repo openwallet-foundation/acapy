@@ -282,15 +282,30 @@ async def connections_list(request: web.BaseRequest):
         if param_name in request.query and request.query[param_name] != "":
             tag_filter[param_name] = request.query[param_name]
 
+    # `state` and `their_role` are indexed tags: filter on them at the storage
+    # layer (via $or over their equivalent RFC 160/23 values) so that pagination
+    # does not require loading every connection record into memory.
+    tag_or_clauses = []
+    if request.query.get("state"):
+        state_values = list(
+            dict.fromkeys(ConnRecord.State.get(request.query["state"]).value)
+        )
+        tag_or_clauses.append({"$or": [{"state": v} for v in state_values]})
+    if request.query.get("their_role"):
+        role_values = list(
+            dict.fromkeys(ConnRecord.Role.get(request.query["their_role"]).value)
+        )
+        tag_or_clauses.append({"$or": [{"their_role": v} for v in role_values]})
+
+    if tag_or_clauses:
+        and_clauses = [{k: v} for k, v in tag_filter.items()] + tag_or_clauses
+        tag_filter = {"$and": and_clauses} if len(and_clauses) > 1 else and_clauses[0]
+
+    # `alias` and `connection_protocol` are not indexed tags, so they remain as
+    # post-filters (applied while paging through storage).
     post_filter = {}
     if request.query.get("alias"):
         post_filter["alias"] = request.query["alias"]
-    if request.query.get("state"):
-        post_filter["state"] = list(ConnRecord.State.get(request.query["state"]).value)
-    if request.query.get("their_role"):
-        post_filter["their_role"] = list(
-            ConnRecord.Role.get(request.query["their_role"]).value
-        )
     if request.query.get("connection_protocol"):
         post_filter["connection_protocol"] = request.query["connection_protocol"]
 

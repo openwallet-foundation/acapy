@@ -16,6 +16,10 @@ from ....connections.models.conn_record import ConnRecord
 from ....connections.routes import ConnectionsConnIdMatchInfoSchema
 from ....messaging.models.base import BaseModelError
 from ....messaging.models.openapi import OpenAPISchema
+from ....messaging.models.paginated_query import (
+    PaginatedQuerySchema,
+    get_paginated_query_params,
+)
 from ....messaging.valid import UUID4_EXAMPLE
 from ....storage.error import StorageError, StorageNotFoundError
 from ...routing.v1_0.models.route_record import RouteRecord, RouteRecordSchema
@@ -91,7 +95,7 @@ class MediationIdMatchInfoSchema(OpenAPISchema):
     mediation_id = MEDIATION_ID_SCHEMA
 
 
-class GetKeylistQuerySchema(OpenAPISchema):
+class GetKeylistQuerySchema(PaginatedQuerySchema):
     """Get keylist query string parameters."""
 
     conn_id = CONNECTION_ID_SCHEMA
@@ -341,9 +345,18 @@ async def get_keylist(request: web.BaseRequest):
     if role:
         tag_filter["role"] = role
 
+    limit, offset, order_by, descending = get_paginated_query_params(request)
+
     try:
         async with context.profile.session() as session:
-            keylists = await RouteRecord.query(session, tag_filter)
+            keylists = await RouteRecord.query(
+                session,
+                tag_filter,
+                limit=limit,
+                offset=offset,
+                order_by=order_by,
+                descending=descending,
+            )
         results = [record.serialize() for record in keylists]
     except (StorageError, BaseModelError) as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err

@@ -40,8 +40,14 @@ from ..wallet.anoncreds_upgrade import (
     UPGRADING_RECORD_IN_PROGRESS,
     check_upgrade_completion_loop,
 )
+from .auth_context import (
+    AUTH_WALLET_ID_SETTING,
+    has_auth_wallet_id,
+)
 from .base_server import BaseAdminServer
 from .error import AdminSetupError
+from .oauth_context import OAuthRequestAuthenticator
+from .oauth_validator import OAuthTokenValidator
 from .request_context import AdminRequestContext
 from .routes import (
     config_handler,
@@ -224,7 +230,7 @@ async def upgrade_middleware(request: web.BaseRequest, handler: Coroutine):
             # If we get here, than another instance started an upgrade
             # We need to check for completion (or fail) in another process
             in_progress_upgrades.set_wallet(context.profile.name)
-            is_subwallet = context.metadata and "wallet_id" in context.metadata
+            is_subwallet = has_auth_wallet_id(context)
 
             # Create background task and store reference to prevent garbage collection
             task = asyncio.create_task(
@@ -309,14 +315,34 @@ class AdminServer(BaseAdminServer):
         self.site = None
         self.multitenant_manager = context.inject_or(BaseMultitenantManager)
 
+        oauth_mode = bool(
+            context.settings.get("admin.oauth_enabled")
+            or context.settings.get("oauth.jwks_uri")
+            or context.settings.get("oauth.introspection_endpoint")
+        )
+        self.oauth_validator = (
+            OAuthTokenValidator(context.settings) if oauth_mode else None
+        )
+        self.oauth_authenticator = (
+            OAuthRequestAuthenticator(
+                self.oauth_validator,
+                self.multitenant_manager,
+                root_profile,
+                context,
+            )
+            if oauth_mode
+            else None
+        )
+
     async def make_application(self) -> web.Application:
         """Get the aiohttp application instance."""
         middlewares = [ready_middleware, debug_middleware]
 
-        # admin-token and admin-token are mutually exclusive and required.
-        # This should be enforced during parameter parsing but to be sure,
-        # we check here.
-        assert self.admin_insecure_mode ^ bool(self.admin_api_key)
+        # In OAuth mode neither api-key nor insecure-mode is required; the AS
+        # is the sole authentication authority.  Otherwise exactly one of the
+        # two legacy modes must be set (enforced in argparse too).
+        if not self.oauth_validator:
+            assert self.admin_insecure_mode ^ bool(self.admin_api_key)
 
         collector = self.context.inject_or(Collector)
 
@@ -325,8 +351,20 @@ class AdminServer(BaseAdminServer):
             authorization_header = request.headers.get("Authorization")
             profile = self.root_profile
             meta_data = {}
-            # Multitenancy context setup
-            if self.multitenant_manager and authorization_header:
+            request_settings = {}
+
+            if self.oauth_authenticator and authorization_header:
+                # OAuth2 Resource Server path — token issued by external AS.
+                (
+                    profile,
+                    meta_data,
+                    request_settings,
+                ) = await self.oauth_authenticator.authenticate_request(
+                    authorization_header
+                )
+
+            elif self.multitenant_manager and authorization_header:
+                # Legacy ACA-Py JWT path (multitenant without OAuth).
                 try:
                     bearer, _, token = authorization_header.partition(" ")
                     if bearer != "Bearer":
@@ -349,6 +387,7 @@ class AdminServer(BaseAdminServer):
                         "wallet_id": walletid,
                         "wallet_key": walletkey,
                     }
+                    request_settings[AUTH_WALLET_ID_SETTING] = walletid
                 except MultitenantManagerError as err:
                     raise web.HTTPUnauthorized(reason=err.roll_up)
                 except (jwt.InvalidTokenError, StorageNotFoundError):
@@ -361,17 +400,17 @@ class AdminServer(BaseAdminServer):
             )
             profile.context.injector.bind_instance(BaseResponder, responder)
 
-            # TODO may dynamically adjust the profile used here according to
-            # headers or other parameters
-            if self.multitenant_manager and authorization_header:
+            if meta_data:
                 admin_context = AdminRequestContext(
                     profile=profile,
                     root_profile=self.root_profile,
+                    settings=request_settings,
                     metadata=meta_data,
                 )
             else:
                 admin_context = AdminRequestContext(
                     profile=profile,
+                    settings=request_settings,
                 )
 
             request["context"] = admin_context
@@ -526,6 +565,9 @@ class AdminServer(BaseAdminServer):
 
     async def stop(self) -> None:
         """Stop the webserver."""
+        if self.oauth_validator:
+            await self.oauth_validator.close()
+
         # Stopped before admin server is created
         if not self.app:
             return
@@ -542,29 +584,41 @@ class AdminServer(BaseAdminServer):
         security_definitions = {}
         security = []
 
-        if self.admin_api_key:
-            security_definitions["ApiKeyHeader"] = {
-                "type": "apiKey",
-                "in": "header",
-                "name": "X-API-KEY",
-            }
-            security.append({"ApiKeyHeader": []})
-        if self.multitenant_manager:
-            security_definitions["AuthorizationHeader"] = {
+        if self.oauth_validator:
+            security_definitions["OAuth2Bearer"] = {
                 "type": "apiKey",
                 "in": "header",
                 "name": "Authorization",
-                "description": "Bearer token. Be sure to prepend token with 'Bearer '",
+                "description": (
+                    "OAuth2 Bearer token issued by the Authorization Server. "
+                    "Prepend with 'Bearer '."
+                ),
             }
-
-            # If multitenancy is enabled we need Authorization header
-            multitenant_security = {"AuthorizationHeader": []}
-            # If admin api key is also enabled, we need both for subwallet requests
+            security.append({"OAuth2Bearer": []})
+        else:
             if self.admin_api_key:
-                multitenant_security["ApiKeyHeader"] = []
-            security.append(multitenant_security)
+                security_definitions["ApiKeyHeader"] = {
+                    "type": "apiKey",
+                    "in": "header",
+                    "name": "X-API-KEY",
+                }
+                security.append({"ApiKeyHeader": []})
+            if self.multitenant_manager:
+                security_definitions["AuthorizationHeader"] = {
+                    "type": "apiKey",
+                    "in": "header",
+                    "name": "Authorization",
+                    "description": (
+                        "Bearer token. Be sure to prepend token with 'Bearer '"
+                    ),
+                }
 
-        if self.admin_api_key or self.multitenant_manager:
+                multitenant_security = {"AuthorizationHeader": []}
+                if self.admin_api_key:
+                    multitenant_security["ApiKeyHeader"] = []
+                security.append(multitenant_security)
+
+        if self.oauth_validator or self.admin_api_key or self.multitenant_manager:
             swagger = app["swagger_dict"]
             swagger["securityDefinitions"] = security_definitions
             swagger["security"] = security
@@ -581,9 +635,28 @@ class AdminServer(BaseAdminServer):
         await ws.prepare(request)
         socket_id = str(uuid4())
         queue = BasicMessageQueue()
+        # Which wallet's events this socket may receive. receive_all grants the
+        # full cross-wallet stream (base-wallet / admin identities); otherwise
+        # only events for wallet_id are delivered. See send_webhook.
+        queue.wallet_id = None
+        queue.receive_all = True
         loop = asyncio.get_event_loop()
 
-        if self.admin_insecure_mode:
+        if self.oauth_validator:
+            authorization_header = request.headers.get("Authorization")
+            if authorization_header:
+                bearer, _, token = authorization_header.partition(" ")
+                try:
+                    if bearer == "Bearer":
+                        claims = await self.oauth_validator.validate(token)
+                        self.oauth_authenticator.authorize_websocket(claims, queue)
+                    else:
+                        queue.authenticated = False
+                except Exception:
+                    queue.authenticated = False
+            else:
+                queue.authenticated = False
+        elif self.admin_insecure_mode:
             # open to send websocket messages without api key auth
             queue.authenticated = True
         else:
@@ -632,10 +705,15 @@ class AdminServer(BaseAdminServer):
                                 msg_api_key = msg_received.get("x-api-key")
                             except Exception:
                                 LOGGER.exception("Exception in websocket receiving task:")
-                            if self.admin_api_key and general_utils.const_compare(
-                                self.admin_api_key, msg_api_key
+                            if (
+                                not self.oauth_validator
+                                and self.admin_api_key
+                                and general_utils.const_compare(
+                                    self.admin_api_key, msg_api_key
+                                )
                             ):
                                 # authenticated via websocket message
+                                # (legacy api-key mode)
                                 queue.authenticated = True
 
                             receive = loop.create_task(ws.receive_json())
@@ -710,5 +788,12 @@ class AdminServer(BaseAdminServer):
             webhook_body["wallet_id"] = wallet_id
 
         for queue in self.websocket_queues.values():
-            if queue.authenticated or topic in ("ping", "settings"):
+            if topic in ("ping", "settings"):
+                await queue.enqueue(webhook_body)
+            elif queue.authenticated and (
+                getattr(queue, "receive_all", True)
+                or getattr(queue, "wallet_id", None) == wallet_id
+            ):
+                # Deliver only to sockets authorized for this event's wallet;
+                # receive_all covers base-wallet / admin identities.
                 await queue.enqueue(webhook_body)

@@ -42,15 +42,15 @@ Click [here](https://github.com/openwallet-foundation/acapy/pkgs/container/acapy
 
 The following is the ACA-Py container images tagging format:
 
-**Regular Releases** (e.g., `1.6.0`):
- - `py3.12-1.6.0` - Python version specific tag
- - `1.6.0` - Semantic version tag
+**Regular Releases** (e.g., `1.6.1`):
+ - `py3.12-1.6.1` - Python version specific tag
+ - `1.6.1` - Semantic version tag
  - `1.6` - Major.minor tag (moves to latest patch release)
  - `latest` - Only assigned if this is the highest semantic version
 
-**Release Candidates** (e.g., `1.6.0rc0`):
- - `py3.12-1.6.0rc0` - Python version specific RC tag
- - `1.6.0rc0` - Semantic version RC tag
+**Release Candidates** (e.g., `1.6.1rc0`):
+ - `py3.12-1.6.1rc0` - Python version specific RC tag
+ - `1.6.1rc0` - Semantic version RC tag
  - **Note**: RC releases do NOT receive major.minor (`1.6`) or `latest` tags
 
 **Nightly Builds**:
@@ -58,8 +58,8 @@ The following is the ACA-Py container images tagging format:
 - `pyV.vv-nightly` - Latest nightly build
 
 **LTS ([Long Term Support](../../LTS-Strategy.md)) Releases**:
-- `pyV.vv-X.Y-lts` - LTS tag (e.g., `py3.12-0.12-lts`)
-- This tag automatically moves to the latest patch release in the LTS line (e.g., from `0.12.4` to `0.12.5`)
+- `pyV.vv-X.Y-lts` - LTS tag (e.g., `py3.12-1.6-lts`)
+- This tag automatically moves to the latest patch release in the LTS line (e.g., from `1.6.0` to `1.6.1`)
 - LTS versions are managed via the `.github/lts-versions.txt` configuration file
 - See `.github/LTS-README.md` for details on configuring LTS versions
 

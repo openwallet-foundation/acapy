@@ -93,17 +93,24 @@ class TestConnectionRoutes(IsolatedAsyncioTestCase):
                 mock_conn_rec.query.assert_called_once_with(
                     ANY,
                     {
-                        "invitation_id": "dummy",
-                        "invitation_key": "some-invitation-key",
-                        "their_public_did": "a_public_did",
-                        "invitation_msg_id": "dummy_msg",
+                        "$and": [
+                            {"invitation_id": "dummy"},
+                            {"invitation_key": "some-invitation-key"},
+                            {"their_public_did": "a_public_did"},
+                            {"invitation_msg_id": "dummy_msg"},
+                            {
+                                "$or": [
+                                    {"their_role": role}
+                                    for role in ConnRecord.Role.REQUESTER.value
+                                ]
+                            },
+                        ]
                     },
                     limit=100,
                     offset=0,
                     order_by="id",
                     descending=False,
                     post_filter_positive={
-                        "their_role": list(ConnRecord.Role.REQUESTER.value),
                         "connection_protocol": "connections/1.0",
                     },
                     alt=True,
@@ -119,6 +126,25 @@ class TestConnectionRoutes(IsolatedAsyncioTestCase):
                         ]
                     }  # sorted
                 )
+
+    async def test_connections_list_pushes_state_to_indexed_tag_query(self):
+        self.request.query = {"state": ConnRecord.State.COMPLETED.rfc23}
+        with mock.patch.object(test_module, "ConnRecord", autospec=True) as mock_conn_rec:
+            mock_conn_rec.query = mock.CoroutineMock(return_value=[])
+            mock_conn_rec.State = ConnRecord.State
+            with mock.patch.object(test_module.web, "json_response"):
+                await test_module.connections_list(self.request)
+
+            call = mock_conn_rec.query.call_args
+            tag_filter = call.args[1]
+            # `state` must be pushed into the storage tag query (not post-filtered)
+            # so that pagination does not load every connection into memory.
+            assert tag_filter == {
+                "$or": [
+                    {"state": v} for v in dict.fromkeys(ConnRecord.State.COMPLETED.value)
+                ]
+            }
+            assert call.kwargs["post_filter_positive"] == {}
 
     async def test_connections_list_x(self):
         self.request.query = {

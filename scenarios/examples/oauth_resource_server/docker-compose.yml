@@ -1,0 +1,73 @@
+# Scenario: ACA-Py as an OAuth2 Resource Server backed by Keycloak.
+#
+# Keycloak issues JWT access tokens; ACA-Py validates them via JWKS and enforces
+# scope-based access control. example.py provisions a tenant wallet, wires the
+# wallet_id claim into Keycloak, then asserts the scope-enforcement matrix.
+services:
+  keycloak:
+    image: quay.io/keycloak/keycloak:24.0.5
+    command: start-dev --import-realm
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+      KC_HTTP_PORT: 8080
+      # Pin the issuer to the in-network hostname so the 'iss' claim matches
+      # --oauth-issuer regardless of which interface handled the request.
+      KC_HOSTNAME: keycloak
+      KC_HOSTNAME_PORT: "8080"
+      KC_HOSTNAME_STRICT: "false"
+      KC_HOSTNAME_STRICT_HTTPS: "false"
+      KC_HTTP_ENABLED: "true"
+      KC_HEALTH_ENABLED: "true"
+    volumes:
+      - ./keycloak/realm-export.json:/opt/keycloak/data/import/realm-export.json:ro,z
+    # No container healthcheck: the Keycloak image ships no curl. example.py
+    # polls Keycloak readiness (realm import) before running its assertions.
+
+  acapy:
+    image: acapy-test
+    command: >
+      start
+        --label OAuthRS
+        --inbound-transport http 0.0.0.0 3000
+        --outbound-transport http
+        --endpoint http://acapy:3000
+        --admin 0.0.0.0 3001
+        --no-ledger
+        --wallet-type askar
+        --wallet-name oauthrs
+        --wallet-key insecure
+        --auto-provision
+        --multitenant
+        --multitenant-admin
+        --jwt-secret insecure
+        --multitenancy-config wallet_type=single-wallet-askar key_derivation_method=RAW
+        --oauth-jwks-uri http://keycloak:8080/realms/acapy/protocol/openid-connect/certs
+        --oauth-issuer http://keycloak:8080/realms/acapy
+        --oauth-audience acapy-resource-server
+        --log-level info
+    healthcheck:
+      test: curl -s -o /dev/null -w '%{http_code}' "http://localhost:3001/status/live" | grep "200" > /dev/null
+      start_period: 20s
+      interval: 7s
+      timeout: 5s
+      retries: 15
+    depends_on:
+      keycloak:
+        condition: service_started
+
+  example:
+    container_name: controller
+    build:
+      context: ../..
+    environment:
+      - KEYCLOAK_URL=http://keycloak:8080
+      - ACAPY_ADMIN=http://acapy:3001
+    volumes:
+      - ./example.py:/usr/src/app/example.py:ro,z
+    command: python -m example
+    depends_on:
+      keycloak:
+        condition: service_started
+      acapy:
+        condition: service_healthy
