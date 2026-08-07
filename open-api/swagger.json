@@ -1,7 +1,7 @@
 {
   "swagger" : "2.0",
   "info" : {
-    "version" : "v1.3.4",
+    "version" : "v1.3.5",
     "title" : "Aries Cloud Agent"
   },
   "tags" : [ {
@@ -3636,6 +3636,7 @@
       "post" : {
         "tags" : [ "multitenancy" ],
         "summary" : "Get auth token for a subwallet",
+        "description" : "Issue a new auth token for a subwallet. Issuing a new token invalidates any token previously issued for the wallet: only the most recently issued token is valid. Do not call this endpoint if another client may still be using a previously issued token for the wallet.",
         "produces" : [ "application/json" ],
         "parameters" : [ {
           "in" : "body",

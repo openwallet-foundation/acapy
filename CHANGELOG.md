@@ -1,5 +1,30 @@
 # Aries Cloud Agent Python Changelog
 
+## 1.3.5
+
+### Aug 7, 2026
+
+This release addresses an issue with revocation stalling during setup when activating a posted revocation registry. It also adds a documentation warning that the subwallet token endpoint invalidates previous tokens.
+
+The release includes the following PRs from the `main` branch cherry-picked into this release:
+
+- fix: complete stalled setup when activating a posted revocation registry [\#4164](https://github.com/openwallet-foundation/acapy/pull/4164) [jamshale](https://github.com/jamshale)
+- docs: warn that the subwallet token endpoint invalidates previous tokens [\#4166](https://github.com/openwallet-foundation/acapy/pull/4166) [kukgini](https://github.com/kukgini)
+
+### 1.3.5 Breaking Changes
+
+There are no breaking changes in this release.
+
+### 1.3.5 Categorized List of Pull Requests
+
+- Fixes to Revocation
+  - 1.3.lts fix: complete stalled setup when activating a posted revocation registry [\#4182](https://github.com/openwallet-foundation/acapy/pull/4182) [kukgini](https://github.com/kukgini)
+- Documentation
+  - 1.3.lts docs: warn that the subwallet token endpoint invalidates previous tokens [\#4183](https://github.com/openwallet-foundation/acapy/pull/4183) [kukgini](https://github.com/kukgini)
+
+- Release management pull requests:
+  - 1.3.5 [\#4186](https://github.com/openwallet-foundation/acapy/pull/4186) [swcurran](https://github.com/swcurran)
+
 ## 1.3.4
 
 ### Apr 1, 2026
