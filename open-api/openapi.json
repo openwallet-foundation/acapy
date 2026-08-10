@@ -2,7 +2,7 @@
   "openapi" : "3.0.1",
   "info" : {
     "title" : "Aries Cloud Agent",
-    "version" : "v1.3.4"
+    "version" : "v1.3.5"
   },
   "servers" : [ {
     "url" : "/"
@@ -4417,6 +4417,7 @@
     },
     "/multitenancy/wallet/{wallet_id}/token" : {
       "post" : {
+        "description" : "Issue a new auth token for a subwallet. Issuing a new token invalidates any token previously issued for the wallet: only the most recently issued token is valid. Do not call this endpoint if another client may still be using a previously issued token for the wallet.",
         "parameters" : [ {
           "in" : "path",
           "name" : "wallet_id",
