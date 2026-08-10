@@ -1,0 +1,8 @@
+#!/bin/bash
+
+echo Generating images from plantuml source files
+
+for i in *.puml ; do
+    echo Generating image from: $i
+    cat $i | docker run --rm -i think/plantuml -tpng > `echo $i | sed "s/puml/png/"`
+done

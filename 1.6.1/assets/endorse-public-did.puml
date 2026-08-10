@@ -1,0 +1,53 @@
+@startuml
+' List of actors for our use case
+actor Admin
+participant WalletRoutes
+participant IndyWallet
+participant LedgerRoutes
+participant Ledger
+participant TransactionManager
+participant EventBus
+participant OutboundHandler
+participant EndorsedTxnHandler
+boundary OtherAgent
+
+' Sequence for writing a new DID on the ledger (assumes the author already has a DID)
+Admin --> WalletRoutes: POST /wallet/did/create
+Admin --> LedgerRoutes: POST /ledger/register-nym
+group Endorse transaction process
+LedgerRoutes --> Ledger: register_nym()
+LedgerRoutes --> TransactionManager: create_record()
+LedgerRoutes --> TransactionManager: create_request()
+LedgerRoutes --> OutboundHandler: send_outbound_msg()
+OutboundHandler --> OtherAgent: send_msg()
+OtherAgent --> OtherAgent: endorse_msg()
+EndorsedTxnHandler <-- OtherAgent: send_msg()
+TransactionManager <-- EndorsedTxnHandler: receive_endorse_response()
+TransactionManager <-- EndorsedTxnHandler: complete_transaction()
+Ledger <-- TransactionManager: txn_submit()
+TransactionManager --> TransactionManager: endorsed_txn_post_processing()
+TransactionManager --> EventBus: notify_endorse_did_event()
+end
+
+WalletRoutes <-- EventBus: on_register_nym_event()
+WalletRoutes --> WalletRoutes:promote_wallet_public_did()
+WalletRoutes --> IndyWallet:set_public_did()
+group Endorse transaction process
+WalletRoutes --> IndyWallet:set_did_endpoint()
+IndyWallet --> Ledger:update_endpoint_for_did()
+WalletRoutes --> TransactionManager: create_record()
+WalletRoutes --> TransactionManager: create_request()
+WalletRoutes --> OutboundHandler: send_outbound_msg()
+OutboundHandler --> OtherAgent: send_msg()
+OtherAgent --> OtherAgent: endorse_msg()
+EndorsedTxnHandler <-- OtherAgent: send_msg()
+TransactionManager <-- EndorsedTxnHandler: receive_endorse_response()
+TransactionManager <-- EndorsedTxnHandler: complete_transaction()
+Ledger <-- TransactionManager: txn_submit()
+TransactionManager --> TransactionManager: endorsed_txn_post_processing()
+
+' notification that no one is listening to yet
+TransactionManager --> EventBus: notify_endorse_did_attrib_event()
+end
+
+@enduml
