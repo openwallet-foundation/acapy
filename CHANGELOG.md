@@ -2,7 +2,7 @@
 
 ## 1.3.5
 
-### Aug 7, 2026
+### Aug 10, 2026
 
 This release addresses an issue with revocation stalling during setup when activating a posted revocation registry. It also adds a documentation warning that the subwallet token endpoint invalidates previous tokens.
 
