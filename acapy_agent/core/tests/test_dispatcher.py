@@ -128,6 +128,57 @@ class TestDispatcher(IsolatedAsyncioTestCase):
                 handler_mock.call_args[0][2], test_module.DispatcherResponder
             )
 
+    async def test_dispatch_oob_attach_connection_from_message_profile(self):
+        """Regression test: connection lookup must use the inbound message's profile.
+
+        For OOB attached messages the inbound message carries a connection_id.
+        In a multitenant agent the dispatcher is constructed with the root
+        profile, while messages are dispatched with the recipient subwallet's
+        profile: the ConnRecord only exists in the latter. Looking it up in the
+        dispatcher's own (root) profile raised StorageNotFoundError and the
+        attached message was never handled.
+        """
+        from ...connections.models.conn_record import ConnRecord
+
+        root_profile = self.profile
+        registry = root_profile.inject(ProtocolRegistry)
+        registry.register_message_types(
+            {
+                pfx.qualify(StubAgentMessage.Meta.message_type): StubAgentMessage
+                for pfx in DIDCommPrefix
+            }
+        )
+
+        # Separate profile (with its own storage) standing in for a subwallet
+        tenant_profile = await create_test_profile()
+
+        conn_rec = ConnRecord(
+            state=ConnRecord.State.COMPLETED.rfc23,
+            their_role=ConnRecord.Role.REQUESTER.rfc23,
+        )
+        async with tenant_profile.session() as session:
+            await conn_rec.save(session)
+
+        dispatcher = test_module.Dispatcher(root_profile)
+        await dispatcher.setup()
+        rcv = Receiver()
+        message = {
+            "@type": DIDCommPrefix.qualify_current(StubAgentMessage.Meta.message_type)
+        }
+        inbound = make_inbound(message)
+        inbound.connection_id = conn_rec.connection_id
+
+        with mock.patch.object(
+            StubAgentMessageHandler, "handle", autospec=True
+        ) as handler_mock:
+            await dispatcher.queue_message(tenant_profile, inbound, rcv.send)
+            await dispatcher.task_queue
+
+            handler_mock.assert_awaited_once()
+            context = handler_mock.call_args[0][1]
+            assert context.connection_record is not None
+            assert context.connection_record.connection_id == conn_rec.connection_id
+
     async def test_dispatch_versioned_message(self):
         profile = self.profile
         registry = profile.inject(ProtocolRegistry)

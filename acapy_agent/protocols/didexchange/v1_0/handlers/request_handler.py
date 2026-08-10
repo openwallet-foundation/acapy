@@ -44,14 +44,19 @@ class DIDXRequestHandler(BaseHandler):
             )
             # Auto respond
             if conn_rec.accept == ConnRecord.ACCEPT_AUTO:
+                # create_response() already transitions conn_rec to the response
+                # state and persists it. Do not set/save that state again after
+                # sending: in a self-connection, delivering the response can
+                # synchronously drive the rest of the handshake (accept_response
+                # -> complete -> accept_complete) to completion before
+                # send_reply() returns, and blindly overwriting the state here
+                # would regress an already-completed connection back to
+                # "response".
                 response = await mgr.create_response(
                     conn_rec,
                     mediation_id=mediation_id,
                 )
                 await responder.send_reply(response, connection_id=conn_rec.connection_id)
-                conn_rec.state = ConnRecord.State.RESPONSE.rfc23
-                async with context.session() as session:
-                    await conn_rec.save(session, reason="Sent connection response")
             else:
                 self._logger.debug("DID exchange request will await acceptance")
 
