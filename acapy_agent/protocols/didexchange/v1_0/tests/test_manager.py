@@ -2488,9 +2488,7 @@ def _bind_didx_manager_deps(profile):
     route_manager = mock.MagicMock(RouteManager, autospec=True)
     route_manager.routing_info = mock.CoroutineMock(return_value=([], None))
     route_manager.mediation_record_if_id = mock.CoroutineMock(return_value=None)
-    route_manager.mediation_records_for_connection = mock.CoroutineMock(
-        return_value=[]
-    )
+    route_manager.mediation_records_for_connection = mock.CoroutineMock(return_value=[])
     route_manager.route_invitation = mock.CoroutineMock(return_value=None)
     route_manager.route_verkey = mock.CoroutineMock(return_value=None)
     route_manager.route_connection_as_invitee = mock.CoroutineMock(return_value=None)

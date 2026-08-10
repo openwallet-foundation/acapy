@@ -939,8 +939,8 @@ class TestV20CredManager(IsolatedAsyncioTestCase):
         ):
             mock_retrieve.side_effect = (StorageNotFoundError(), stored_cx_rec)
             mock_handler.return_value.receive_request = mock.CoroutineMock()
-            mock_handler.return_value.can_receive_request_without_offer = (
-                mock.MagicMock(return_value=False)
+            mock_handler.return_value.can_receive_request_without_offer = mock.MagicMock(
+                return_value=False
             )
 
             with self.assertRaises(StorageNotFoundError):

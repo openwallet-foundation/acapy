@@ -436,8 +436,10 @@ class V20CredManager:
         # connection_id is None in the record if this is in response to
         # an request~attach from an OOB message. If so, we do not want to filter
         # the record by connection_id.
-        connection_id = None if oob_record else (
-            connection_record.connection_id if connection_record else None
+        connection_id = (
+            None
+            if oob_record
+            else (connection_record.connection_id if connection_record else None)
         )
 
         handlers = [

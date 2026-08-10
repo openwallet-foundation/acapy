@@ -1045,9 +1045,7 @@ async def test_self_issuance_connectionless_full_round_trip(wallet_type):
         reply_thread_id=cred_request_message._thread_id,
         payload=cred_request_message.serialize(as_string=True),
     )
-    target = await oob_processor.find_oob_target_for_outbound_message(
-        profile, outbound
-    )
+    target = await oob_processor.find_oob_target_for_outbound_message(profile, outbound)
     assert target is not None
 
     # Simulate that same request being delivered back inbound, as it is in the
