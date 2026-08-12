@@ -1,7 +1,7 @@
 """Test MultikeypManager."""
 
 import json
-from unittest import IsolatedAsyncioTestCase
+from unittest import IsolatedAsyncioTestCase, mock
 
 import base58
 from aries_askar import Key, KeyAlg
@@ -17,7 +17,6 @@ from acapy_agent.wallet.keys.manager import (
     multikey_to_verkey,
     verkey_to_multikey,
 )
-from acapy_agent.wallet.util import bytes_to_b64
 
 
 class TestKeyOperations(IsolatedAsyncioTestCase):
@@ -114,7 +113,10 @@ class TestKeyOperations(IsolatedAsyncioTestCase):
             )
             jwk = json.loads(askar_key.get_jwk_public())
             assert jwk_to_multikey(jwk) == expected_multikey
-            assert jwk_to_multikey(jwk) == created["multikey"]
+
+            # Private material must be ignored for public conversion.
+            jwk_with_d = {**jwk, "d": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"}
+            assert jwk_to_multikey(jwk_with_d) == expected_multikey
 
     async def test_jwk_to_multikey_unsupported(self):
         with self.assertRaises(MultikeyManagerError):
@@ -156,18 +158,8 @@ class TestKeyOperations(IsolatedAsyncioTestCase):
             assert multikey_from_verification_method(vm) == created["multikey"]
 
     async def test_multikey_from_json_web_key_missing_jwk(self):
-        vm = JsonWebKey2020.deserialize(
-            {
-                "id": "did:web:example.com#key-01-jwk",
-                "type": "JsonWebKey2020",
-                "controller": "did:web:example.com",
-                "publicKeyJwk": {
-                    "kty": "OKP",
-                    "crv": "Ed25519",
-                    "x": bytes_to_b64(b"\x00" * 32, True),
-                },
-            }
-        )
-        object.__setattr__(vm, "public_key_jwk", None)
+        vm = mock.MagicMock(spec=VerificationMethod)
+        vm.type = "JsonWebKey2020"
+        vm.public_key_jwk = None
         with self.assertRaises(MultikeyManagerError):
             multikey_from_verification_method(vm)

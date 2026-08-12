@@ -194,49 +194,54 @@ class TestJWT(IsolatedAsyncioTestCase):
 
     async def test_sign_and_verify_with_json_web_key_verification_method(self):
         """JWT verify must accept JsonWebKey2020 publicKeyJwk VMs (e.g. #key-01-jwk)."""
-        async with self.profile.session() as session:
-            created = await MultikeyManager(session=session).create(
-                seed=self.seed, alg="ed25519"
-            )
-            multikey = created["multikey"]
-            await MultikeyManager(session=session).update(
-                multikey, "did:web:example.com#key-01-jwk"
-            )
+        for alg, key_alg in [
+            ("ed25519", KeyAlg.ED25519),
+            ("p256", KeyAlg.P256),
+        ]:
+            with self.subTest(alg=alg):
+                vm_id = f"did:web:example.com#key-01-{alg}-jwk"
+                async with self.profile.session() as session:
+                    created = await MultikeyManager(session=session).create(
+                        seed=self.seed, alg=alg
+                    )
+                    multikey = created["multikey"]
+                    await MultikeyManager(session=session).update(multikey, vm_id)
 
-        askar_key = Key.from_public_bytes(
-            KeyAlg.ED25519, base58.b58decode(multikey_to_verkey(multikey))
-        )
-        jwk = json.loads(askar_key.get_jwk_public())
-        vm_id = "did:web:example.com#key-01-jwk"
-        did_doc = {
-            "@context": [
-                "https://www.w3.org/ns/did/v1",
-                "https://w3id.org/security/suites/jws-2020/v1",
-            ],
-            "id": "did:web:example.com",
-            "verificationMethod": [
-                {
-                    "id": vm_id,
-                    "type": "JsonWebKey2020",
-                    "controller": "did:web:example.com",
-                    "publicKeyJwk": jwk,
+                askar_key = Key.from_public_bytes(
+                    key_alg, base58.b58decode(multikey_to_verkey(multikey))
+                )
+                jwk = json.loads(askar_key.get_jwk_public())
+                did_doc = {
+                    "@context": [
+                        "https://www.w3.org/ns/did/v1",
+                        "https://w3id.org/security/suites/jws-2020/v1",
+                    ],
+                    "id": "did:web:example.com",
+                    "verificationMethod": [
+                        {
+                            "id": vm_id,
+                            "type": "JsonWebKey2020",
+                            "controller": "did:web:example.com",
+                            "publicKeyJwk": jwk,
+                        }
+                    ],
+                    "assertionMethod": [vm_id],
+                    "authentication": [vm_id],
                 }
-            ],
-            "assertionMethod": [vm_id],
-            "authentication": [vm_id],
-        }
-        resolver = DIDResolver()
-        resolver.register_resolver(
-            MockResolver(
-                ["web"],
-                resolved=did_doc,
-                native=True,
-            )
-        )
-        self.profile.context.injector.bind_instance(DIDResolver, resolver)
+                resolver = DIDResolver()
+                resolver.register_resolver(
+                    MockResolver(
+                        ["web"],
+                        resolved=did_doc,
+                        native=True,
+                    )
+                )
+                self.profile.context.injector.bind_instance(DIDResolver, resolver)
 
-        signed = await jwt_sign(self.profile, {}, {"hello": "world"}, None, vm_id)
-        result = await jwt_verify(self.profile, signed)
-        assert result.valid
-        assert result.kid == vm_id
-        assert result.payload == {"hello": "world"}
+                signed = await jwt_sign(
+                    self.profile, {}, {"hello": "world", "alg": alg}, None, vm_id
+                )
+                result = await jwt_verify(self.profile, signed)
+                assert result.valid
+                assert result.kid == vm_id
+                assert result.payload == {"hello": "world", "alg": alg}

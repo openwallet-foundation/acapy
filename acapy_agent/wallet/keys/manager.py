@@ -74,6 +74,9 @@ def jwk_to_multikey(jwk: Mapping) -> str:
 
     Supports OKP/Ed25519, OKP/X25519, and EC/P-256 — the curves used by
     ACA-Py JWT signing (EdDSA / ES256) and MultikeyManager.
+
+    Private key material (``d``) is ignored so this helper always treats the
+    input as a public key.
     """
     if not isinstance(jwk, Mapping):
         raise MultikeyManagerError("JWK must be a mapping.")
@@ -85,8 +88,11 @@ def jwk_to_multikey(jwk: Mapping) -> str:
             f"kty={jwk.get('kty')}, crv={jwk.get('crv')}."
         )
 
+    # Only pass public members to Askar.
+    public_jwk = {key: value for key, value in jwk.items() if key != "d"}
+
     try:
-        public_bytes = Key.from_jwk(dict(jwk)).get_public_bytes()
+        public_bytes = Key.from_jwk(public_jwk).get_public_bytes()
     except Exception as err:
         raise MultikeyManagerError(f"Unable to parse JWK: {err}") from err
 
