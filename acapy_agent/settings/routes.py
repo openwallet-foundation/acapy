@@ -6,6 +6,7 @@ from aiohttp import web
 from aiohttp_apispec import docs, request_schema, response_schema
 from marshmallow import fields
 
+from ..admin.decorators.auth import tenant_authentication
 from ..admin.request_context import AdminRequestContext
 from ..core.error import BaseError
 from ..core.profile import Profile
@@ -87,6 +88,7 @@ def _get_settings_dict(
 )
 @request_schema(UpdateProfileSettingsSchema())
 @response_schema(ProfileSettingsSchema(), 200, description="")
+@tenant_authentication
 async def update_profile_settings(request: web.BaseRequest):
     """Request handler for updating setting associated with profile.
 
@@ -129,6 +131,7 @@ async def update_profile_settings(request: web.BaseRequest):
     summary="Get the configurable settings associated with the profile.",
 )
 @response_schema(ProfileSettingsSchema(), 200, description="")
+@tenant_authentication
 async def get_profile_settings(request: web.BaseRequest):
     """Request handler for getting setting associated with profile.
 
