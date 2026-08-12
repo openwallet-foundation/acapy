@@ -71,6 +71,7 @@ async def test_get_profile_settings(mock_response, admin_profile, profile):
         "debug.auto_accept_requests": True,
     }
     # Multitenant
+    profile.settings.update({"multitenant.enabled": True})
     multi_tenant_manager = MultitenantManager(profile)
     profile.context.injector.bind_instance(
         BaseMultitenantManager,
@@ -90,6 +91,7 @@ async def test_get_profile_settings(mock_response, admin_profile, profile):
         query={},
         json=mock.CoroutineMock(return_value={}),
         __getitem__=lambda _, k: request_dict[k],
+        headers={"Authorization": "Bearer token"},
     )
     with mock.patch.object(
         multi_tenant_manager, "get_wallet_and_profile"
@@ -123,6 +125,7 @@ async def test_get_profile_settings(mock_response, admin_profile, profile):
 async def test_update_profile_settings(mock_response, profile):
     profile.settings.update(
         {
+            "admin.admin_api_key": "secret-key",
             "public_invites": True,
             "debug.invite_public": True,
             "debug.auto_accept_invites": True,
@@ -149,6 +152,7 @@ async def test_update_profile_settings(mock_response, profile):
             }
         ),
         __getitem__=lambda _, k: request_dict[k],
+        headers={"x-api-key": "secret-key"},
     )
     await test_module.update_profile_settings(request)
     assert mock_response.call_args[0][0] == {
@@ -160,6 +164,7 @@ async def test_update_profile_settings(mock_response, profile):
         "wallet.type": "askar",
     }
     # Multitenant
+    profile.settings.update({"multitenant.enabled": True})
     multi_tenant_manager = MultitenantManager(profile)
     profile.context.injector.bind_instance(
         BaseMultitenantManager,
@@ -190,6 +195,7 @@ async def test_update_profile_settings(mock_response, profile):
             }
         ),
         __getitem__=lambda _, k: request_dict[k],
+        headers={"Authorization": "Bearer token"},
     )
     with (
         mock.patch.object(multi_tenant_manager, "update_wallet") as update_wallet,
