@@ -1,7 +1,10 @@
+import json
 from typing import Tuple
 from unittest import IsolatedAsyncioTestCase
 
+import base58
 import pytest
+from aries_askar import Key, KeyAlg
 
 from acapy_agent.resolver.default.key import KeyDIDResolver
 
@@ -10,6 +13,7 @@ from ...resolver.tests.test_did_resolver import MockResolver
 from ...utils.testing import create_test_profile
 from ...wallet.did_method import KEY, DIDMethods
 from ...wallet.key_type import ED25519, P256, KeyType, KeyTypes
+from ...wallet.keys.manager import MultikeyManager, multikey_to_verkey
 from ..base import BaseWallet
 from ..default_verification_key_strategy import (
     BaseVerificationKeyStrategy,
@@ -187,3 +191,52 @@ class TestJWT(IsolatedAsyncioTestCase):
 
             with pytest.raises(Exception):
                 await jwt_verify(self.profile, signed)
+
+    async def test_sign_and_verify_with_json_web_key_verification_method(self):
+        """JWT verify must accept JsonWebKey2020 publicKeyJwk VMs (e.g. #key-01-jwk)."""
+        async with self.profile.session() as session:
+            created = await MultikeyManager(session=session).create(
+                seed=self.seed, alg="ed25519"
+            )
+            multikey = created["multikey"]
+            await MultikeyManager(session=session).update(
+                multikey, "did:web:example.com#key-01-jwk"
+            )
+
+        askar_key = Key.from_public_bytes(
+            KeyAlg.ED25519, base58.b58decode(multikey_to_verkey(multikey))
+        )
+        jwk = json.loads(askar_key.get_jwk_public())
+        vm_id = "did:web:example.com#key-01-jwk"
+        did_doc = {
+            "@context": [
+                "https://www.w3.org/ns/did/v1",
+                "https://w3id.org/security/suites/jws-2020/v1",
+            ],
+            "id": "did:web:example.com",
+            "verificationMethod": [
+                {
+                    "id": vm_id,
+                    "type": "JsonWebKey2020",
+                    "controller": "did:web:example.com",
+                    "publicKeyJwk": jwk,
+                }
+            ],
+            "assertionMethod": [vm_id],
+            "authentication": [vm_id],
+        }
+        resolver = DIDResolver()
+        resolver.register_resolver(
+            MockResolver(
+                ["web"],
+                resolved=did_doc,
+                native=True,
+            )
+        )
+        self.profile.context.injector.bind_instance(DIDResolver, resolver)
+
+        signed = await jwt_sign(self.profile, {}, {"hello": "world"}, None, vm_id)
+        result = await jwt_verify(self.profile, signed)
+        assert result.valid
+        assert result.kid == vm_id
+        assert result.payload == {"hello": "world"}

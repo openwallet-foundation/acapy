@@ -1,14 +1,23 @@
 """Test MultikeypManager."""
 
+import json
 from unittest import IsolatedAsyncioTestCase
+
+import base58
+from aries_askar import Key, KeyAlg
+from pydid.verification_method import JsonWebKey2020, VerificationMethod
 
 from acapy_agent.utils.testing import create_test_profile
 from acapy_agent.wallet.key_type import KeyTypes
 from acapy_agent.wallet.keys.manager import (
     MultikeyManager,
+    MultikeyManagerError,
+    jwk_to_multikey,
+    multikey_from_verification_method,
     multikey_to_verkey,
     verkey_to_multikey,
 )
+from acapy_agent.wallet.util import bytes_to_b64
 
 
 class TestKeyOperations(IsolatedAsyncioTestCase):
@@ -89,3 +98,76 @@ class TestKeyOperations(IsolatedAsyncioTestCase):
         ]:
             assert multikey_to_verkey(multikey) == verkey
             assert verkey_to_multikey(verkey, alg=alg) == multikey
+
+    async def test_jwk_to_multikey_ed25519_and_p256(self):
+        for alg, key_alg, expected_multikey in [
+            (self.ed25519_alg, KeyAlg.ED25519, self.ed25519_multikey),
+            (self.p256_alg, KeyAlg.P256, self.p256_multikey),
+        ]:
+            async with self.profile.session() as session:
+                created = await MultikeyManager(session=session).create(
+                    seed=self.seed, alg=alg
+                )
+
+            askar_key = Key.from_public_bytes(
+                key_alg, base58.b58decode(multikey_to_verkey(created["multikey"]))
+            )
+            jwk = json.loads(askar_key.get_jwk_public())
+            assert jwk_to_multikey(jwk) == expected_multikey
+            assert jwk_to_multikey(jwk) == created["multikey"]
+
+    async def test_jwk_to_multikey_unsupported(self):
+        with self.assertRaises(MultikeyManagerError):
+            jwk_to_multikey({"kty": "EC", "crv": "secp256k1", "x": "x", "y": "y"})
+        with self.assertRaises(MultikeyManagerError):
+            jwk_to_multikey("not-a-jwk")
+
+    async def test_multikey_from_json_web_key_verification_method(self):
+        async with self.profile.session() as session:
+            created = await MultikeyManager(session=session).create(
+                seed=self.seed, alg=self.ed25519_alg
+            )
+
+        askar_key = Key.from_public_bytes(
+            KeyAlg.ED25519,
+            base58.b58decode(multikey_to_verkey(created["multikey"])),
+        )
+        jwk = json.loads(askar_key.get_jwk_public())
+
+        for vm_type in ("JsonWebKey2020", "JsonWebKey"):
+            if vm_type == "JsonWebKey2020":
+                vm = JsonWebKey2020.deserialize(
+                    {
+                        "id": "did:web:example.com#key-01-jwk",
+                        "type": vm_type,
+                        "controller": "did:web:example.com",
+                        "publicKeyJwk": jwk,
+                    }
+                )
+            else:
+                vm = VerificationMethod.deserialize(
+                    {
+                        "id": "did:web:example.com#key-01-jwk",
+                        "type": vm_type,
+                        "controller": "did:web:example.com",
+                        "publicKeyJwk": jwk,
+                    }
+                )
+            assert multikey_from_verification_method(vm) == created["multikey"]
+
+    async def test_multikey_from_json_web_key_missing_jwk(self):
+        vm = JsonWebKey2020.deserialize(
+            {
+                "id": "did:web:example.com#key-01-jwk",
+                "type": "JsonWebKey2020",
+                "controller": "did:web:example.com",
+                "publicKeyJwk": {
+                    "kty": "OKP",
+                    "crv": "Ed25519",
+                    "x": bytes_to_b64(b"\x00" * 32, True),
+                },
+            }
+        )
+        object.__setattr__(vm, "public_key_jwk", None)
+        with self.assertRaises(MultikeyManagerError):
+            multikey_from_verification_method(vm)
