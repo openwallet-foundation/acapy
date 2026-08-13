@@ -15,7 +15,7 @@ from .......vc.ld_proofs import DocumentLoader
 from .......vc.vc_di.manager import VcDiManager
 from .......vc.vc_ld.manager import VcLdpManager
 from .......vc.vc_ld.validation_result import PresentationVerificationResult
-from .....dif.pres_exch import SchemaInputDescriptor
+from .....dif.pres_exch import PresentationDefinition, SchemaInputDescriptor
 from .....dif.pres_exch_handler import DIFPresExchError, DIFPresExchHandler
 from .....dif.tests.test_data import (
     EXPANDED_CRED_FHIR_TYPE_1,
@@ -1745,6 +1745,32 @@ class TestDIFFormatHandler(IsolatedAsyncioTestCase):
             error_msg="error",
         )
         await self.handler.receive_pres(message=dif_pres, pres_ex_record=record)
+
+    async def test_verify_received_pres_rejects_omitted_descriptor(self):
+        proof_request = deepcopy(DIF_PRES_REQUEST_SEQUENCE)
+        proof_request["presentation_definition"].pop("submission_requirements")
+        presentation_definition = PresentationDefinition.deserialize(
+            proof_request["presentation_definition"]
+        )
+        dif_handler = DIFPresExchHandler(self.profile)
+
+        with self.assertRaises(DIFPresExchError):
+            await dif_handler.verify_received_pres(
+                pd=presentation_definition,
+                pres=DIF_PRES,
+            )
+
+    async def test_verify_received_pres_rejects_unmet_submission_requirements(self):
+        presentation_definition = PresentationDefinition.deserialize(
+            DIF_PRES_REQUEST_SEQUENCE["presentation_definition"]
+        )
+        dif_handler = DIFPresExchHandler(self.profile)
+
+        with self.assertRaises(DIFPresExchError):
+            await dif_handler.verify_received_pres(
+                pd=presentation_definition,
+                pres=DIF_PRES,
+            )
 
     async def test_verify_received_limit_disclosure_a(self):
         dif_proof = deepcopy(DIF_PRES)
