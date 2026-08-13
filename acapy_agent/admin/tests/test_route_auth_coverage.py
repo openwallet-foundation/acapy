@@ -82,9 +82,7 @@ def _collect():
                 route = (
                     path_arg.value if isinstance(path_arg, ast.Constant) else "<dynamic>"
                 )
-                registrations.append(
-                    (handler.id, node.func.attr.upper(), route, path)
-                )
+                registrations.append((handler.id, node.func.attr.upper(), route, path))
 
     return registrations, defs_by_name
 
