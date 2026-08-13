@@ -1423,12 +1423,18 @@ class DIFPresExchHandler:
             descriptors=input_descriptors,
         )
         if isinstance(pres, Sequence):
+            submitted_descriptors = set()
             for pr in pres:
                 descriptor_map_list = pr["presentation_submission"].get("descriptor_map")
-                submitted_descriptors = await self.__verify_desc_map_list(
+                vp_descriptors = await self.__verify_desc_map_list(
                     descriptor_map_list, pr, input_descriptors
                 )
-                self.__verify_submission_requirements(requirement, submitted_descriptors)
+                if submitted_descriptors & vp_descriptors:
+                    raise DIFPresExchError(
+                        "Descriptor IDs must be unique across presentations"
+                    )
+                submitted_descriptors.update(vp_descriptors)
+            self.__verify_submission_requirements(requirement, submitted_descriptors)
         else:
             descriptor_map_list = pres["presentation_submission"].get("descriptor_map")
             submitted_descriptors = await self.__verify_desc_map_list(

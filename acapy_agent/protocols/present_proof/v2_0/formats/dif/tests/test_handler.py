@@ -1709,6 +1709,44 @@ class TestDIFFormatHandler(IsolatedAsyncioTestCase):
         await self.handler.receive_pres(message=dif_pres, pres_ex_record=record)
 
     async def test_verify_received_pres_sequence(self):
+        presentation_definition = PresentationDefinition.deserialize(
+            DIF_PRES_REQUEST_SEQUENCE["presentation_definition"]
+        )
+        dif_handler = DIFPresExchHandler(self.profile)
+        await dif_handler.verify_received_pres(
+            pd=presentation_definition,
+            pres=DIF_PRES_SEQUENCE,
+        )
+
+    async def test_verify_received_pres_rejects_partial_sequence(self):
+        presentation_definition = PresentationDefinition.deserialize(
+            DIF_PRES_REQUEST_SEQUENCE["presentation_definition"]
+        )
+        dif_handler = DIFPresExchHandler(self.profile)
+
+        with self.assertRaises(DIFPresExchError):
+            await dif_handler.verify_received_pres(
+                pd=presentation_definition,
+                pres=[DIF_PRES_SEQUENCE[0]],
+            )
+
+    async def test_verify_received_pres_rejects_duplicate_descriptor_ids(self):
+        presentation_definition = PresentationDefinition.deserialize(
+            DIF_PRES_REQUEST_SEQUENCE["presentation_definition"]
+        )
+        duplicate_sequence = deepcopy(DIF_PRES_SEQUENCE)
+        duplicate_sequence[1]["presentation_submission"]["descriptor_map"][0][
+            "id"
+        ] = "citizenship_input_1"
+        dif_handler = DIFPresExchHandler(self.profile)
+
+        with self.assertRaises(DIFPresExchError):
+            await dif_handler.verify_received_pres(
+                pd=presentation_definition,
+                pres=duplicate_sequence,
+            )
+
+    async def test_receive_pres_sequence(self):
         dif_pres = V20Pres(
             formats=[
                 V20PresFormat(
