@@ -210,7 +210,10 @@ class DIFPresExchHandler:
                 if not issuer_id:
                     for cred_subject_id in cred.subject_ids:
                         if not cred_subject_id.startswith("urn:"):
-                            did_info = await self._did_info_for_did(cred_subject_id)
+                            try:
+                                did_info = await self._did_info_for_did(cred_subject_id)
+                            except WalletError:
+                                continue
                             if did_info.key_type == reqd_key_type:
                                 issuer_id = cred_subject_id
                                 filtered_creds_list.append(cred.cred_value)
@@ -1284,39 +1287,36 @@ class DIFPresExchHandler:
             submission_property = PresentationSubmission(
                 id=str(uuid4()), definition_id=pd.id, descriptor_maps=descriptor_maps
             )
-            if self.is_holder or is_holder_override:
+            if self.pres_signing_did:
+                issuer_id = self.pres_signing_did
+                vp = await create_presentation(credentials=applicable_creds_list)
+            elif self.is_holder or is_holder_override:
                 (
                     issuer_id,
                     filtered_creds_list,
                 ) = await self.get_sign_key_credential_subject_id(
                     applicable_creds=applicable_creds
                 )
-                if not issuer_id and len(filtered_creds_list) == 0:
+                if not issuer_id:
+                    raise DIFPresExchError(
+                        "Unable to determine a local signing DID for the presentation"
+                    )
+                applicable_creds_list = filtered_creds_list
+                vp = await create_presentation(credentials=applicable_creds_list)
+            else:
+                (
+                    issuer_id,
+                    filtered_creds_list,
+                ) = await self.get_sign_key_credential_subject_id(
+                    applicable_creds=applicable_creds
+                )
+                if not issuer_id:
                     vp = await create_presentation(credentials=applicable_creds_list)
                     vp = self.__add_dif_fields_to_vp(vp, submission_property)
                     result_vp.append(vp)
                     continue
                 else:
                     applicable_creds_list = filtered_creds_list
-                    vp = await create_presentation(credentials=applicable_creds_list)
-            else:
-                if not self.pres_signing_did:
-                    (
-                        issuer_id,
-                        filtered_creds_list,
-                    ) = await self.get_sign_key_credential_subject_id(
-                        applicable_creds=applicable_creds
-                    )
-                    if not issuer_id:
-                        vp = await create_presentation(credentials=applicable_creds_list)
-                        vp = self.__add_dif_fields_to_vp(vp, submission_property)
-                        result_vp.append(vp)
-                        continue
-                    else:
-                        applicable_creds_list = filtered_creds_list
-                        vp = await create_presentation(credentials=applicable_creds_list)
-                else:
-                    issuer_id = self.pres_signing_did
                     vp = await create_presentation(credentials=applicable_creds_list)
             vp["presentation_submission"] = submission_property.serialize()
             if self.proof_type is BbsBlsSignature2020.signature_type:
