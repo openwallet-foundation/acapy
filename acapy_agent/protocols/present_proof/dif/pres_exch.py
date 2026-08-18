@@ -18,6 +18,13 @@ from ....vc.vc_ld.models.presentation import (
     VerifiablePresentation,
     VerifiablePresentationSchema,
 )
+from .jsonpath_guard import is_safe_jsonpath
+
+
+def _validate_path(path: str):
+    """Reject a field path outside the supported, known-safe JSONPath grammar."""
+    if not is_safe_jsonpath(path):
+        raise ValidationError(f"Unsupported or unsafe JSONPath expression: {path!r}")
 
 
 class ClaimFormat(BaseModel):
@@ -427,7 +434,11 @@ class DIFFieldSchema(BaseModelSchema):
 
     id = fields.Str(required=False, metadata={"description": "ID"})
     paths = fields.List(
-        fields.Str(required=False, metadata={"description": "Path"}),
+        fields.Str(
+            required=False,
+            validate=_validate_path,
+            metadata={"description": "Path"},
+        ),
         required=False,
         data_key="path",
     )

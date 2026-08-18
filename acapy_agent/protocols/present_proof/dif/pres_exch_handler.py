@@ -16,7 +16,7 @@ from typing import Dict, List, Optional, Sequence, Tuple, Union
 from dateutil import tz
 from dateutil.parser import ParserError
 from dateutil.parser import parse as dateutil_parser
-from jsonpath_ng import parse
+from jsonpath_ng.ext import parse
 from pyld import jsonld
 from pyld.jsonld import JsonLdProcessor
 from unflatten import unflatten
