@@ -320,9 +320,7 @@ async def oob_records_list(request: web.BaseRequest):
         if request.query.get(k, "") != ""
     }
     post_filter = {
-        k: request.query[k]
-        for k in ("state", "role")
-        if request.query.get(k, "") != ""
+        k: request.query[k] for k in ("state", "role") if request.query.get(k, "") != ""
     }
 
     limit, offset, order_by, descending = get_paginated_query_params(request)
