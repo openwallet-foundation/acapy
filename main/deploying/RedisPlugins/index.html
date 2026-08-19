@@ -3367,16 +3367,16 @@
 <h3 id="redis-queue-configuration-yaml">Redis Queue configuration <code>yaml</code><a class="headerlink" href="#redis-queue-configuration-yaml" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nt">redis_queue</span><span class="p">:</span>
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">  </span><span class="nt">connection</span><span class="p">:</span><span class="w"> </span>
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">    </span><span class="nt">connection_url</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;redis://default:test1234@172.28.0.103:6379&quot;</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">    </span><span class="nt">connection_url</span><span class="p">:</span><span class="w"> </span><span class="s">"redis://default:test1234@172.28.0.103:6379"</span>
 <a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>
 <a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="w">  </span><span class="c1">### For Inbound ###</span>
 <a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="w">  </span><span class="nt">inbound</span><span class="p">:</span>
-<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="w">    </span><span class="nt">acapy_inbound_topic</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;acapy_inbound&quot;</span>
-<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="w">    </span><span class="nt">acapy_direct_resp_topic</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;acapy_inbound_direct_resp&quot;</span>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="w">    </span><span class="nt">acapy_inbound_topic</span><span class="p">:</span><span class="w"> </span><span class="s">"acapy_inbound"</span>
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="w">    </span><span class="nt">acapy_direct_resp_topic</span><span class="p">:</span><span class="w"> </span><span class="s">"acapy_inbound_direct_resp"</span>
 <a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>
 <a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="w">  </span><span class="c1">### For Outbound ###</span>
 <a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="w">  </span><span class="nt">outbound</span><span class="p">:</span>
-<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="w">    </span><span class="nt">acapy_outbound_topic</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;acapy_outbound&quot;</span>
+<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="w">    </span><span class="nt">acapy_outbound_topic</span><span class="p">:</span><span class="w"> </span><span class="s">"acapy_outbound"</span>
 <a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a><span class="w">    </span><span class="nt">mediator_mode</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
 <a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>
 <a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a><span class="w">  </span><span class="c1">### For Event ###</span>
@@ -3430,8 +3430,8 @@ example <a href="https://github.com/openwallet-foundation/acapy-plugins/blob/mai
 </code></pre></div>
 <p>Startup ACA-Py with <code>redis_queue</code> plugin loaded</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>docker<span class="w"> </span>network<span class="w"> </span>create<span class="w"> </span>--subnet<span class="o">=</span><span class="m">172</span>.28.0.0/24<span class="w"> </span><span class="sb">`</span>network_name<span class="sb">`</span>
-<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="nb">export</span><span class="w"> </span><span class="nv">REDIS_PASSWORD</span><span class="o">=</span><span class="s2">&quot; ... As specified in redis_cluster.conf ... &quot;</span>
-<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="nb">export</span><span class="w"> </span><span class="nv">NETWORK_NAME</span><span class="o">=</span><span class="s2">&quot;`network_name`&quot;</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="nb">export</span><span class="w"> </span><span class="nv">REDIS_PASSWORD</span><span class="o">=</span><span class="s2">" ... As specified in redis_cluster.conf ... "</span>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="nb">export</span><span class="w"> </span><span class="nv">NETWORK_NAME</span><span class="o">=</span><span class="s2">"`network_name`"</span>
 <a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>aca-py<span class="w"> </span>start<span class="w"> </span><span class="se">\</span>
 <a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="w">    </span>--plugin<span class="w"> </span>redis_queue.v1_0.events<span class="w"> </span><span class="se">\</span>
 <a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="w">    </span>--plugin-config<span class="w"> </span>plugins-config.yaml<span class="w"> </span><span class="se">\</span>
@@ -3456,7 +3456,7 @@ example <a href="https://github.com/openwallet-foundation/acapy-plugins/blob/mai
 <a id="__codelineno-4-12" name="__codelineno-4-12" href="#__codelineno-4-12"></a><span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">STATUS_ENDPOINT_HOST=0.0.0.0</span>
 <a id="__codelineno-4-13" name="__codelineno-4-13" href="#__codelineno-4-13"></a><span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">STATUS_ENDPOINT_PORT=7001</span>
 <a id="__codelineno-4-14" name="__codelineno-4-14" href="#__codelineno-4-14"></a><span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">STATUS_ENDPOINT_API_KEY=test_api_key_1</span>
-<a id="__codelineno-4-15" name="__codelineno-4-15" href="#__codelineno-4-15"></a><span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">INBOUND_TRANSPORT_CONFIG=[[&quot;http&quot;, &quot;0.0.0.0&quot;, &quot;80&quot;]]</span>
+<a id="__codelineno-4-15" name="__codelineno-4-15" href="#__codelineno-4-15"></a><span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">INBOUND_TRANSPORT_CONFIG=[["http", "0.0.0.0", "80"]]</span>
 <a id="__codelineno-4-16" name="__codelineno-4-16" href="#__codelineno-4-16"></a><span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">TUNNEL_ENDPOINT=http://relay-tunnel:4040</span>
 <a id="__codelineno-4-17" name="__codelineno-4-17" href="#__codelineno-4-17"></a><span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">WAIT_BEFORE_HOSTS=15</span>
 <a id="__codelineno-4-18" name="__codelineno-4-18" href="#__codelineno-4-18"></a><span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">WAIT_HOSTS=redis-node-3:6379</span>
@@ -3515,7 +3515,7 @@ example <a href="https://github.com/openwallet-foundation/acapy-plugins/blob/mai
 <a id="__codelineno-5-19" name="__codelineno-5-19" href="#__codelineno-5-19"></a><span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">TUNNEL_ENDPOINT=http://mediator-tunnel:4040</span>
 <a id="__codelineno-5-20" name="__codelineno-5-20" href="#__codelineno-5-20"></a><span class="w">    </span><span class="nt">networks</span><span class="p">:</span>
 <a id="__codelineno-5-21" name="__codelineno-5-21" href="#__codelineno-5-21"></a><span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">acapy_default</span>
-<a id="__codelineno-5-22" name="__codelineno-5-22" href="#__codelineno-5-22"></a><span class="w">    </span><span class="nt">entrypoint</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/bin/sh -c &#39;/wait &amp;&amp; ./acapy-endpoint.sh poetry run aca-py &quot;$$@&quot;&#39; --</span>
+<a id="__codelineno-5-22" name="__codelineno-5-22" href="#__codelineno-5-22"></a><span class="w">    </span><span class="nt">entrypoint</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/bin/sh -c '/wait &amp;&amp; ./acapy-endpoint.sh poetry run aca-py "$$@"' --</span>
 <a id="__codelineno-5-23" name="__codelineno-5-23" href="#__codelineno-5-23"></a><span class="w">    </span><span class="nt">command</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">start --arg-file ./configs/mediator.yml</span>
 <a id="__codelineno-5-24" name="__codelineno-5-24" href="#__codelineno-5-24"></a>
 <a id="__codelineno-5-25" name="__codelineno-5-25" href="#__codelineno-5-25"></a><span class="nt">deliverer</span><span class="p">:</span>
@@ -3552,11 +3552,11 @@ caching needs.</p>
 <p>More details can be found <a href="https://github.com/Indicio-tech/aries-acapy-cache-redis/blob/main/README.md">here</a>.</p>
 <h3 id="redis-cache-plugin-configuration-yaml">Redis Cache Plugin configuration <code>yaml</code><a class="headerlink" href="#redis-cache-plugin-configuration-yaml" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="nt">redis_cache</span><span class="p">:</span>
-<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="w">  </span><span class="nt">connection</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;redis://default:test1234@172.28.0.103:6379&quot;</span>
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="w">  </span><span class="nt">connection</span><span class="p">:</span><span class="w"> </span><span class="s">"redis://default:test1234@172.28.0.103:6379"</span>
 <a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="w">  </span><span class="nt">max_connection</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">50</span>
 <a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="w">  </span><span class="nt">credentials</span><span class="p">:</span>
-<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="w">    </span><span class="nt">username</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;default&quot;</span>
-<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a><span class="w">    </span><span class="nt">password</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;test1234&quot;</span>
+<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="w">    </span><span class="nt">username</span><span class="p">:</span><span class="w"> </span><span class="s">"default"</span>
+<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a><span class="w">    </span><span class="nt">password</span><span class="p">:</span><span class="w"> </span><span class="s">"test1234"</span>
 <a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a><span class="w">  </span><span class="nt">ssl</span><span class="p">:</span>
 <a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a><span class="w">    </span><span class="nt">cacerts</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">./ca.crt</span>
 </code></pre></div>
@@ -3582,8 +3582,8 @@ it is as simple as:</p>
 <p>To launch ACA-Py with an accompanying redis cluster of 6 nodes (3 primaries and 3 replicas), please refer to example <a href="https://github.com/Indicio-tech/aries-acapy-cache-redis/blob/main/docker-compose.cluster.yml">docker-compose.cluster.yml</a> and run the following:</p>
 <p>Note: Cluster requires external docker network with specified subnet</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>docker<span class="w"> </span>network<span class="w"> </span>create<span class="w"> </span>--subnet<span class="o">=</span><span class="m">172</span>.28.0.0/24<span class="w"> </span><span class="sb">`</span>network_name<span class="sb">`</span>
-<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="nb">export</span><span class="w"> </span><span class="nv">REDIS_PASSWORD</span><span class="o">=</span><span class="s2">&quot; ... As specified in redis_cluster.conf ... &quot;</span>
-<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="nb">export</span><span class="w"> </span><span class="nv">NETWORK_NAME</span><span class="o">=</span><span class="s2">&quot;`network_name`&quot;</span>
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="nb">export</span><span class="w"> </span><span class="nv">REDIS_PASSWORD</span><span class="o">=</span><span class="s2">" ... As specified in redis_cluster.conf ... "</span>
+<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="nb">export</span><span class="w"> </span><span class="nv">NETWORK_NAME</span><span class="o">=</span><span class="s2">"`network_name`"</span>
 <a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a>docker-compose<span class="w"> </span>-f<span class="w"> </span>docker-compose.cluster.yml<span class="w"> </span>up<span class="w"> </span>--build<span class="w"> </span>-d
 </code></pre></div>
 </li>
@@ -3601,10 +3601,10 @@ it is as simple as:</p>
 <p>or</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>aca-py<span class="w"> </span>start<span class="w"> </span><span class="se">\</span>
 <a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a><span class="w">    </span>--plugin<span class="w"> </span>acapy_cache_redis.v0_1<span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a><span class="w">    </span>--plugin-config-value<span class="w"> </span><span class="s2">&quot;redis_cache.connection=redis://redis-host:6379/0&quot;</span><span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a><span class="w">    </span>--plugin-config-value<span class="w"> </span><span class="s2">&quot;redis_cache.max_connections=90&quot;</span><span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a><span class="w">    </span>--plugin-config-value<span class="w"> </span><span class="s2">&quot;redis_cache.credentials.username=username&quot;</span><span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-11-6" name="__codelineno-11-6" href="#__codelineno-11-6"></a><span class="w">    </span>--plugin-config-value<span class="w"> </span><span class="s2">&quot;redis_cache.credentials.password=password&quot;</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a><span class="w">    </span>--plugin-config-value<span class="w"> </span><span class="s2">"redis_cache.connection=redis://redis-host:6379/0"</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a><span class="w">    </span>--plugin-config-value<span class="w"> </span><span class="s2">"redis_cache.max_connections=90"</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a><span class="w">    </span>--plugin-config-value<span class="w"> </span><span class="s2">"redis_cache.credentials.username=username"</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-11-6" name="__codelineno-11-6" href="#__codelineno-11-6"></a><span class="w">    </span>--plugin-config-value<span class="w"> </span><span class="s2">"redis_cache.credentials.password=password"</span><span class="w"> </span><span class="se">\</span>
 <a id="__codelineno-11-7" name="__codelineno-11-7" href="#__codelineno-11-7"></a><span class="w">    </span><span class="c1"># ... the remainder of your startup arguments</span>
 </code></pre></div>
 <h2 id="redis-cluster">Redis Cluster<a class="headerlink" href="#redis-cluster" title="Permanent link">&para;</a></h2>

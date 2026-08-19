@@ -3567,35 +3567,35 @@ Looking at the <a href="https://github.com/openwallet-foundation/acapy/blob/main
 <div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="c1"># /protocols/issue_credential/v2_0/models/detail/w3c.py</span>
 <a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>
 <a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="k">class</span><span class="w"> </span><span class="nc">CredExRecordW3C</span><span class="p">(</span><span class="n">BaseRecord</span><span class="p">):</span>
-<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Credential exchange W3C detail record.&quot;&quot;&quot;</span>
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="w">    </span><span class="sd">"""Credential exchange W3C detail record."""</span>
 <a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>
 <a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a>    <span class="k">class</span><span class="w"> </span><span class="nc">Meta</span><span class="p">:</span>
-<a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;CredExRecordW3C metadata.&quot;&quot;&quot;</span>
+<a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a><span class="w">        </span><span class="sd">"""CredExRecordW3C metadata."""</span>
 <a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a>
-<a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a>        <span class="n">schema_class</span> <span class="o">=</span> <span class="s2">&quot;CredExRecordW3CSchema&quot;</span>
+<a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a>        <span class="n">schema_class</span> <span class="o">=</span> <span class="s2">"CredExRecordW3CSchema"</span>
 <a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a>
-<a id="__codelineno-6-11" name="__codelineno-6-11" href="#__codelineno-6-11"></a>    <span class="n">RECORD_ID_NAME</span> <span class="o">=</span> <span class="s2">&quot;cred_ex_w3c_id&quot;</span>
-<a id="__codelineno-6-12" name="__codelineno-6-12" href="#__codelineno-6-12"></a>    <span class="n">RECORD_TYPE</span> <span class="o">=</span> <span class="s2">&quot;w3c_cred_ex_v20&quot;</span>
-<a id="__codelineno-6-13" name="__codelineno-6-13" href="#__codelineno-6-13"></a>    <span class="n">TAG_NAMES</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;~cred_ex_id&quot;</span><span class="p">}</span> <span class="k">if</span> <span class="n">UNENCRYPTED_TAGS</span> <span class="k">else</span> <span class="p">{</span><span class="s2">&quot;cred_ex_id&quot;</span><span class="p">}</span>
-<a id="__codelineno-6-14" name="__codelineno-6-14" href="#__codelineno-6-14"></a>    <span class="n">RECORD_TOPIC</span> <span class="o">=</span> <span class="s2">&quot;issue_credential_v2_0_w3c&quot;</span>
+<a id="__codelineno-6-11" name="__codelineno-6-11" href="#__codelineno-6-11"></a>    <span class="n">RECORD_ID_NAME</span> <span class="o">=</span> <span class="s2">"cred_ex_w3c_id"</span>
+<a id="__codelineno-6-12" name="__codelineno-6-12" href="#__codelineno-6-12"></a>    <span class="n">RECORD_TYPE</span> <span class="o">=</span> <span class="s2">"w3c_cred_ex_v20"</span>
+<a id="__codelineno-6-13" name="__codelineno-6-13" href="#__codelineno-6-13"></a>    <span class="n">TAG_NAMES</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"~cred_ex_id"</span><span class="p">}</span> <span class="k">if</span> <span class="n">UNENCRYPTED_TAGS</span> <span class="k">else</span> <span class="p">{</span><span class="s2">"cred_ex_id"</span><span class="p">}</span>
+<a id="__codelineno-6-14" name="__codelineno-6-14" href="#__codelineno-6-14"></a>    <span class="n">RECORD_TOPIC</span> <span class="o">=</span> <span class="s2">"issue_credential_v2_0_w3c"</span>
 </code></pre></div>
 <p>Based on the credential attachment format with the new Data Integrity proof in <a href="https://github.com/decentralized-identity/aries-rfcs/blob/main/features/0809-w3c-data-integrity-credential-attachment/README.md#credential-request-attachment-format">aries-rfcs 809</a> -</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="p">{</span>
-<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="w">  </span><span class="nt">&quot;@id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;284d3996-ba85-45d9-964b-9fd5805517b6&quot;</span><span class="p">,</span>
-<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="w">  </span><span class="nt">&quot;@type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;https://didcomm.org/issue-credential/2.0/issue-credential&quot;</span><span class="p">,</span>
-<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="w">  </span><span class="nt">&quot;comment&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;&lt;some comment&gt;&quot;</span><span class="p">,</span>
-<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a><span class="w">  </span><span class="nt">&quot;formats&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="w">  </span><span class="nt">"@id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"284d3996-ba85-45d9-964b-9fd5805517b6"</span><span class="p">,</span>
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="w">  </span><span class="nt">"@type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"https://didcomm.org/issue-credential/2.0/issue-credential"</span><span class="p">,</span>
+<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="w">  </span><span class="nt">"comment"</span><span class="p">:</span><span class="w"> </span><span class="s2">"&lt;some comment&gt;"</span><span class="p">,</span>
+<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a><span class="w">  </span><span class="nt">"formats"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
 <a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a><span class="w">    </span><span class="p">{</span>
-<a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a><span class="w">      </span><span class="nt">&quot;attach_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;5b38af88-d36f-4f77-bb7a-2f04ab806eb8&quot;</span><span class="p">,</span>
-<a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a><span class="w">      </span><span class="nt">&quot;format&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;didcomm/w3c-di-vc@v0.1&quot;</span>
+<a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a><span class="w">      </span><span class="nt">"attach_id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"5b38af88-d36f-4f77-bb7a-2f04ab806eb8"</span><span class="p">,</span>
+<a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a><span class="w">      </span><span class="nt">"format"</span><span class="p">:</span><span class="w"> </span><span class="s2">"didcomm/w3c-di-vc@v0.1"</span>
 <a id="__codelineno-7-9" name="__codelineno-7-9" href="#__codelineno-7-9"></a><span class="w">    </span><span class="p">}</span>
 <a id="__codelineno-7-10" name="__codelineno-7-10" href="#__codelineno-7-10"></a><span class="w">  </span><span class="p">],</span>
-<a id="__codelineno-7-11" name="__codelineno-7-11" href="#__codelineno-7-11"></a><span class="w">  </span><span class="nt">&quot;credentials~attach&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<a id="__codelineno-7-11" name="__codelineno-7-11" href="#__codelineno-7-11"></a><span class="w">  </span><span class="nt">"credentials~attach"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
 <a id="__codelineno-7-12" name="__codelineno-7-12" href="#__codelineno-7-12"></a><span class="w">    </span><span class="p">{</span>
-<a id="__codelineno-7-13" name="__codelineno-7-13" href="#__codelineno-7-13"></a><span class="w">      </span><span class="nt">&quot;@id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;5b38af88-d36f-4f77-bb7a-2f04ab806eb8&quot;</span><span class="p">,</span>
-<a id="__codelineno-7-14" name="__codelineno-7-14" href="#__codelineno-7-14"></a><span class="w">      </span><span class="nt">&quot;mime-type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;application/ld+json&quot;</span><span class="p">,</span>
-<a id="__codelineno-7-15" name="__codelineno-7-15" href="#__codelineno-7-15"></a><span class="w">      </span><span class="nt">&quot;data&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-7-16" name="__codelineno-7-16" href="#__codelineno-7-16"></a><span class="w">        </span><span class="nt">&quot;base64&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ewogICAgICAgICAgIkBjb250ZXogWwogICAgICAg...(clipped)...RNVmR0SXFXZhWXgySkJBIgAgfQogICAgICAgIH0=&quot;</span>
+<a id="__codelineno-7-13" name="__codelineno-7-13" href="#__codelineno-7-13"></a><span class="w">      </span><span class="nt">"@id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"5b38af88-d36f-4f77-bb7a-2f04ab806eb8"</span><span class="p">,</span>
+<a id="__codelineno-7-14" name="__codelineno-7-14" href="#__codelineno-7-14"></a><span class="w">      </span><span class="nt">"mime-type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"application/ld+json"</span><span class="p">,</span>
+<a id="__codelineno-7-15" name="__codelineno-7-15" href="#__codelineno-7-15"></a><span class="w">      </span><span class="nt">"data"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-7-16" name="__codelineno-7-16" href="#__codelineno-7-16"></a><span class="w">        </span><span class="nt">"base64"</span><span class="p">:</span><span class="w"> </span><span class="s2">"ewogICAgICAgICAgIkBjb250ZXogWwogICAgICAg...(clipped)...RNVmR0SXFXZhWXgySkJBIgAgfQogICAgICAgIH0="</span>
 <a id="__codelineno-7-17" name="__codelineno-7-17" href="#__codelineno-7-17"></a><span class="w">      </span><span class="p">}</span>
 <a id="__codelineno-7-18" name="__codelineno-7-18" href="#__codelineno-7-18"></a><span class="w">    </span><span class="p">}</span>
 <a id="__codelineno-7-19" name="__codelineno-7-19" href="#__codelineno-7-19"></a><span class="w">  </span><span class="p">]</span>
@@ -3605,10 +3605,10 @@ Looking at the <a href="https://github.com/openwallet-foundation/acapy/blob/main
 <div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="c1"># /protocols/issue_credential/v2_0/formats/vc_di/models/cred_detail.py</span>
 <a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>
 <a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="k">class</span><span class="w"> </span><span class="nc">VCDIDetailSchema</span><span class="p">(</span><span class="n">BaseModelSchema</span><span class="p">):</span>
-<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;VC_DI verifiable credential detail schema.&quot;&quot;&quot;</span>
+<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="w">    </span><span class="sd">"""VC_DI verifiable credential detail schema."""</span>
 <a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a>
 <a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a>    <span class="k">class</span><span class="w"> </span><span class="nc">Meta</span><span class="p">:</span>
-<a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Accept parameter overload.&quot;&quot;&quot;</span>
+<a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a><span class="w">        </span><span class="sd">"""Accept parameter overload."""</span>
 <a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a>
 <a id="__codelineno-8-9" name="__codelineno-8-9" href="#__codelineno-8-9"></a>        <span class="n">unknown</span> <span class="o">=</span> <span class="n">INCLUDE</span>
 <a id="__codelineno-8-10" name="__codelineno-8-10" href="#__codelineno-8-10"></a>        <span class="n">model_class</span> <span class="o">=</span> <span class="n">VCDIDetail</span>
@@ -3617,23 +3617,23 @@ Looking at the <a href="https://github.com/openwallet-foundation/acapy/blob/main
 <a id="__codelineno-8-13" name="__codelineno-8-13" href="#__codelineno-8-13"></a>        <span class="n">CredentialSchema</span><span class="p">(),</span>
 <a id="__codelineno-8-14" name="__codelineno-8-14" href="#__codelineno-8-14"></a>        <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
 <a id="__codelineno-8-15" name="__codelineno-8-15" href="#__codelineno-8-15"></a>        <span class="n">metadata</span><span class="o">=</span><span class="p">{</span>
-<a id="__codelineno-8-16" name="__codelineno-8-16" href="#__codelineno-8-16"></a>            <span class="s2">&quot;description&quot;</span><span class="p">:</span> <span class="s2">&quot;Detail of the VC_DI Credential to be issued&quot;</span><span class="p">,</span>
-<a id="__codelineno-8-17" name="__codelineno-8-17" href="#__codelineno-8-17"></a>            <span class="s2">&quot;example&quot;</span><span class="p">:</span> <span class="p">{</span>
-<a id="__codelineno-8-18" name="__codelineno-8-18" href="#__codelineno-8-18"></a>                <span class="s2">&quot;@id&quot;</span><span class="p">:</span> <span class="s2">&quot;284d3996-ba85-45d9-964b-9fd5805517b6&quot;</span><span class="p">,</span>
-<a id="__codelineno-8-19" name="__codelineno-8-19" href="#__codelineno-8-19"></a>                <span class="s2">&quot;@type&quot;</span><span class="p">:</span> <span class="s2">&quot;https://didcomm.org/issue-credential/2.0/issue-credential&quot;</span><span class="p">,</span>
-<a id="__codelineno-8-20" name="__codelineno-8-20" href="#__codelineno-8-20"></a>                <span class="s2">&quot;comment&quot;</span><span class="p">:</span> <span class="s2">&quot;&lt;some comment&gt;&quot;</span><span class="p">,</span>
-<a id="__codelineno-8-21" name="__codelineno-8-21" href="#__codelineno-8-21"></a>                <span class="s2">&quot;formats&quot;</span><span class="p">:</span> <span class="p">[</span>
+<a id="__codelineno-8-16" name="__codelineno-8-16" href="#__codelineno-8-16"></a>            <span class="s2">"description"</span><span class="p">:</span> <span class="s2">"Detail of the VC_DI Credential to be issued"</span><span class="p">,</span>
+<a id="__codelineno-8-17" name="__codelineno-8-17" href="#__codelineno-8-17"></a>            <span class="s2">"example"</span><span class="p">:</span> <span class="p">{</span>
+<a id="__codelineno-8-18" name="__codelineno-8-18" href="#__codelineno-8-18"></a>                <span class="s2">"@id"</span><span class="p">:</span> <span class="s2">"284d3996-ba85-45d9-964b-9fd5805517b6"</span><span class="p">,</span>
+<a id="__codelineno-8-19" name="__codelineno-8-19" href="#__codelineno-8-19"></a>                <span class="s2">"@type"</span><span class="p">:</span> <span class="s2">"https://didcomm.org/issue-credential/2.0/issue-credential"</span><span class="p">,</span>
+<a id="__codelineno-8-20" name="__codelineno-8-20" href="#__codelineno-8-20"></a>                <span class="s2">"comment"</span><span class="p">:</span> <span class="s2">"&lt;some comment&gt;"</span><span class="p">,</span>
+<a id="__codelineno-8-21" name="__codelineno-8-21" href="#__codelineno-8-21"></a>                <span class="s2">"formats"</span><span class="p">:</span> <span class="p">[</span>
 <a id="__codelineno-8-22" name="__codelineno-8-22" href="#__codelineno-8-22"></a>                    <span class="p">{</span>
-<a id="__codelineno-8-23" name="__codelineno-8-23" href="#__codelineno-8-23"></a>                        <span class="s2">&quot;attach_id&quot;</span><span class="p">:</span> <span class="s2">&quot;5b38af88-d36f-4f77-bb7a-2f04ab806eb8&quot;</span><span class="p">,</span>
-<a id="__codelineno-8-24" name="__codelineno-8-24" href="#__codelineno-8-24"></a>                        <span class="s2">&quot;format&quot;</span><span class="p">:</span> <span class="s2">&quot;didcomm/w3c-di-vc@v0.1&quot;</span>
+<a id="__codelineno-8-23" name="__codelineno-8-23" href="#__codelineno-8-23"></a>                        <span class="s2">"attach_id"</span><span class="p">:</span> <span class="s2">"5b38af88-d36f-4f77-bb7a-2f04ab806eb8"</span><span class="p">,</span>
+<a id="__codelineno-8-24" name="__codelineno-8-24" href="#__codelineno-8-24"></a>                        <span class="s2">"format"</span><span class="p">:</span> <span class="s2">"didcomm/w3c-di-vc@v0.1"</span>
 <a id="__codelineno-8-25" name="__codelineno-8-25" href="#__codelineno-8-25"></a>                    <span class="p">}</span>
 <a id="__codelineno-8-26" name="__codelineno-8-26" href="#__codelineno-8-26"></a>                <span class="p">],</span>
-<a id="__codelineno-8-27" name="__codelineno-8-27" href="#__codelineno-8-27"></a>                <span class="s2">&quot;credentials~attach&quot;</span><span class="p">:</span> <span class="p">[</span>
+<a id="__codelineno-8-27" name="__codelineno-8-27" href="#__codelineno-8-27"></a>                <span class="s2">"credentials~attach"</span><span class="p">:</span> <span class="p">[</span>
 <a id="__codelineno-8-28" name="__codelineno-8-28" href="#__codelineno-8-28"></a>                    <span class="p">{</span>
-<a id="__codelineno-8-29" name="__codelineno-8-29" href="#__codelineno-8-29"></a>                        <span class="s2">&quot;@id&quot;</span><span class="p">:</span> <span class="s2">&quot;5b38af88-d36f-4f77-bb7a-2f04ab806eb8&quot;</span><span class="p">,</span>
-<a id="__codelineno-8-30" name="__codelineno-8-30" href="#__codelineno-8-30"></a>                        <span class="s2">&quot;mime-type&quot;</span><span class="p">:</span> <span class="s2">&quot;application/ld+json&quot;</span><span class="p">,</span>
-<a id="__codelineno-8-31" name="__codelineno-8-31" href="#__codelineno-8-31"></a>                        <span class="s2">&quot;data&quot;</span><span class="p">:</span> <span class="p">{</span>
-<a id="__codelineno-8-32" name="__codelineno-8-32" href="#__codelineno-8-32"></a>                            <span class="s2">&quot;base64&quot;</span><span class="p">:</span> <span class="s2">&quot;ewogICAgICAgICAgIkBjb250ZXogWwogICAgICAg...(clipped)...RNVmR0SXFXZhWXgySkJBIgAgfQogICAgICAgIH0=&quot;</span>
+<a id="__codelineno-8-29" name="__codelineno-8-29" href="#__codelineno-8-29"></a>                        <span class="s2">"@id"</span><span class="p">:</span> <span class="s2">"5b38af88-d36f-4f77-bb7a-2f04ab806eb8"</span><span class="p">,</span>
+<a id="__codelineno-8-30" name="__codelineno-8-30" href="#__codelineno-8-30"></a>                        <span class="s2">"mime-type"</span><span class="p">:</span> <span class="s2">"application/ld+json"</span><span class="p">,</span>
+<a id="__codelineno-8-31" name="__codelineno-8-31" href="#__codelineno-8-31"></a>                        <span class="s2">"data"</span><span class="p">:</span> <span class="p">{</span>
+<a id="__codelineno-8-32" name="__codelineno-8-32" href="#__codelineno-8-32"></a>                            <span class="s2">"base64"</span><span class="p">:</span> <span class="s2">"ewogICAgICAgICAgIkBjb250ZXogWwogICAgICAg...(clipped)...RNVmR0SXFXZhWXgySkJBIgAgfQogICAgICAgIH0="</span>
 <a id="__codelineno-8-33" name="__codelineno-8-33" href="#__codelineno-8-33"></a>                        <span class="p">}</span>
 <a id="__codelineno-8-34" name="__codelineno-8-34" href="#__codelineno-8-34"></a>                    <span class="p">}</span>
 <a id="__codelineno-8-35" name="__codelineno-8-35" href="#__codelineno-8-35"></a>                <span class="p">]</span>
@@ -3657,24 +3657,24 @@ Looking at the <a href="https://github.com/openwallet-foundation/acapy/blob/main
 <div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="c1"># Format specifications</span>
 <a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="n">ATTACHMENT_FORMAT</span> <span class="o">=</span> <span class="p">{</span>
 <a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a>    <span class="n">CRED_20_PROPOSAL</span><span class="p">:</span> <span class="p">{</span>
-<a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a>        <span class="n">V20CredFormat</span><span class="o">.</span><span class="n">Format</span><span class="o">.</span><span class="n">INDY</span><span class="o">.</span><span class="n">api</span><span class="p">:</span> <span class="s2">&quot;hlindy/cred-filter@v2.0&quot;</span><span class="p">,</span>
-<a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a>        <span class="n">V20CredFormat</span><span class="o">.</span><span class="n">Format</span><span class="o">.</span><span class="n">LD_PROOF</span><span class="o">.</span><span class="n">api</span><span class="p">:</span> <span class="s2">&quot;aries/ld-proof-vc-detail@v1.0&quot;</span><span class="p">,</span>
-<a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a>        <span class="n">V20CredFormat</span><span class="o">.</span><span class="n">Format</span><span class="o">.</span><span class="n">VC_DI</span><span class="o">.</span><span class="n">api</span><span class="p">:</span> <span class="s2">&quot;aries/vc-di-detail@v2.0&quot;</span><span class="p">,</span>
+<a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a>        <span class="n">V20CredFormat</span><span class="o">.</span><span class="n">Format</span><span class="o">.</span><span class="n">INDY</span><span class="o">.</span><span class="n">api</span><span class="p">:</span> <span class="s2">"hlindy/cred-filter@v2.0"</span><span class="p">,</span>
+<a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a>        <span class="n">V20CredFormat</span><span class="o">.</span><span class="n">Format</span><span class="o">.</span><span class="n">LD_PROOF</span><span class="o">.</span><span class="n">api</span><span class="p">:</span> <span class="s2">"aries/ld-proof-vc-detail@v1.0"</span><span class="p">,</span>
+<a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a>        <span class="n">V20CredFormat</span><span class="o">.</span><span class="n">Format</span><span class="o">.</span><span class="n">VC_DI</span><span class="o">.</span><span class="n">api</span><span class="p">:</span> <span class="s2">"aries/vc-di-detail@v2.0"</span><span class="p">,</span>
 <a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a>    <span class="p">},</span>
 <a id="__codelineno-10-8" name="__codelineno-10-8" href="#__codelineno-10-8"></a>    <span class="n">CRED_20_OFFER</span><span class="p">:</span> <span class="p">{</span>
-<a id="__codelineno-10-9" name="__codelineno-10-9" href="#__codelineno-10-9"></a>        <span class="n">V20CredFormat</span><span class="o">.</span><span class="n">Format</span><span class="o">.</span><span class="n">INDY</span><span class="o">.</span><span class="n">api</span><span class="p">:</span> <span class="s2">&quot;hlindy/cred-abstract@v2.0&quot;</span><span class="p">,</span>
-<a id="__codelineno-10-10" name="__codelineno-10-10" href="#__codelineno-10-10"></a>        <span class="n">V20CredFormat</span><span class="o">.</span><span class="n">Format</span><span class="o">.</span><span class="n">LD_PROOF</span><span class="o">.</span><span class="n">api</span><span class="p">:</span> <span class="s2">&quot;aries/ld-proof-vc-detail@v1.0&quot;</span><span class="p">,</span>
-<a id="__codelineno-10-11" name="__codelineno-10-11" href="#__codelineno-10-11"></a>        <span class="n">V20CredFormat</span><span class="o">.</span><span class="n">Format</span><span class="o">.</span><span class="n">VC_DI</span><span class="o">.</span><span class="n">api</span><span class="p">:</span> <span class="s2">&quot;aries/vc-di-detail@v2.0&quot;</span><span class="p">,</span>
+<a id="__codelineno-10-9" name="__codelineno-10-9" href="#__codelineno-10-9"></a>        <span class="n">V20CredFormat</span><span class="o">.</span><span class="n">Format</span><span class="o">.</span><span class="n">INDY</span><span class="o">.</span><span class="n">api</span><span class="p">:</span> <span class="s2">"hlindy/cred-abstract@v2.0"</span><span class="p">,</span>
+<a id="__codelineno-10-10" name="__codelineno-10-10" href="#__codelineno-10-10"></a>        <span class="n">V20CredFormat</span><span class="o">.</span><span class="n">Format</span><span class="o">.</span><span class="n">LD_PROOF</span><span class="o">.</span><span class="n">api</span><span class="p">:</span> <span class="s2">"aries/ld-proof-vc-detail@v1.0"</span><span class="p">,</span>
+<a id="__codelineno-10-11" name="__codelineno-10-11" href="#__codelineno-10-11"></a>        <span class="n">V20CredFormat</span><span class="o">.</span><span class="n">Format</span><span class="o">.</span><span class="n">VC_DI</span><span class="o">.</span><span class="n">api</span><span class="p">:</span> <span class="s2">"aries/vc-di-detail@v2.0"</span><span class="p">,</span>
 <a id="__codelineno-10-12" name="__codelineno-10-12" href="#__codelineno-10-12"></a>    <span class="p">},</span>
 <a id="__codelineno-10-13" name="__codelineno-10-13" href="#__codelineno-10-13"></a>    <span class="n">CRED_20_REQUEST</span><span class="p">:</span> <span class="p">{</span>
-<a id="__codelineno-10-14" name="__codelineno-10-14" href="#__codelineno-10-14"></a>        <span class="n">V20CredFormat</span><span class="o">.</span><span class="n">Format</span><span class="o">.</span><span class="n">INDY</span><span class="o">.</span><span class="n">api</span><span class="p">:</span> <span class="s2">&quot;hlindy/cred-req@v2.0&quot;</span><span class="p">,</span>
-<a id="__codelineno-10-15" name="__codelineno-10-15" href="#__codelineno-10-15"></a>        <span class="n">V20CredFormat</span><span class="o">.</span><span class="n">Format</span><span class="o">.</span><span class="n">LD_PROOF</span><span class="o">.</span><span class="n">api</span><span class="p">:</span> <span class="s2">&quot;aries/ld-proof-vc-detail@v1.0&quot;</span><span class="p">,</span>
-<a id="__codelineno-10-16" name="__codelineno-10-16" href="#__codelineno-10-16"></a>        <span class="n">V20CredFormat</span><span class="o">.</span><span class="n">Format</span><span class="o">.</span><span class="n">VC_DI</span><span class="o">.</span><span class="n">api</span><span class="p">:</span> <span class="s2">&quot;aries/vc-di-detail@v2.0&quot;</span><span class="p">,</span>
+<a id="__codelineno-10-14" name="__codelineno-10-14" href="#__codelineno-10-14"></a>        <span class="n">V20CredFormat</span><span class="o">.</span><span class="n">Format</span><span class="o">.</span><span class="n">INDY</span><span class="o">.</span><span class="n">api</span><span class="p">:</span> <span class="s2">"hlindy/cred-req@v2.0"</span><span class="p">,</span>
+<a id="__codelineno-10-15" name="__codelineno-10-15" href="#__codelineno-10-15"></a>        <span class="n">V20CredFormat</span><span class="o">.</span><span class="n">Format</span><span class="o">.</span><span class="n">LD_PROOF</span><span class="o">.</span><span class="n">api</span><span class="p">:</span> <span class="s2">"aries/ld-proof-vc-detail@v1.0"</span><span class="p">,</span>
+<a id="__codelineno-10-16" name="__codelineno-10-16" href="#__codelineno-10-16"></a>        <span class="n">V20CredFormat</span><span class="o">.</span><span class="n">Format</span><span class="o">.</span><span class="n">VC_DI</span><span class="o">.</span><span class="n">api</span><span class="p">:</span> <span class="s2">"aries/vc-di-detail@v2.0"</span><span class="p">,</span>
 <a id="__codelineno-10-17" name="__codelineno-10-17" href="#__codelineno-10-17"></a>    <span class="p">},</span>
 <a id="__codelineno-10-18" name="__codelineno-10-18" href="#__codelineno-10-18"></a>    <span class="n">CRED_20_ISSUE</span><span class="p">:</span> <span class="p">{</span>
-<a id="__codelineno-10-19" name="__codelineno-10-19" href="#__codelineno-10-19"></a>        <span class="n">V20CredFormat</span><span class="o">.</span><span class="n">Format</span><span class="o">.</span><span class="n">INDY</span><span class="o">.</span><span class="n">api</span><span class="p">:</span> <span class="s2">&quot;hlindy/cred@v2.0&quot;</span><span class="p">,</span>
-<a id="__codelineno-10-20" name="__codelineno-10-20" href="#__codelineno-10-20"></a>        <span class="n">V20CredFormat</span><span class="o">.</span><span class="n">Format</span><span class="o">.</span><span class="n">LD_PROOF</span><span class="o">.</span><span class="n">api</span><span class="p">:</span> <span class="s2">&quot;aries/ld-proof-vc@v1.0&quot;</span><span class="p">,</span>
-<a id="__codelineno-10-21" name="__codelineno-10-21" href="#__codelineno-10-21"></a>        <span class="n">V20CredFormat</span><span class="o">.</span><span class="n">Format</span><span class="o">.</span><span class="n">VC_DI</span><span class="o">.</span><span class="n">api</span><span class="p">:</span> <span class="s2">&quot;aries/vc-di@v2.0&quot;</span><span class="p">,</span>
+<a id="__codelineno-10-19" name="__codelineno-10-19" href="#__codelineno-10-19"></a>        <span class="n">V20CredFormat</span><span class="o">.</span><span class="n">Format</span><span class="o">.</span><span class="n">INDY</span><span class="o">.</span><span class="n">api</span><span class="p">:</span> <span class="s2">"hlindy/cred@v2.0"</span><span class="p">,</span>
+<a id="__codelineno-10-20" name="__codelineno-10-20" href="#__codelineno-10-20"></a>        <span class="n">V20CredFormat</span><span class="o">.</span><span class="n">Format</span><span class="o">.</span><span class="n">LD_PROOF</span><span class="o">.</span><span class="n">api</span><span class="p">:</span> <span class="s2">"aries/ld-proof-vc@v1.0"</span><span class="p">,</span>
+<a id="__codelineno-10-21" name="__codelineno-10-21" href="#__codelineno-10-21"></a>        <span class="n">V20CredFormat</span><span class="o">.</span><span class="n">Format</span><span class="o">.</span><span class="n">VC_DI</span><span class="o">.</span><span class="n">api</span><span class="p">:</span> <span class="s2">"aries/vc-di@v2.0"</span><span class="p">,</span>
 <a id="__codelineno-10-22" name="__codelineno-10-22" href="#__codelineno-10-22"></a>    <span class="p">},</span>
 <a id="__codelineno-10-23" name="__codelineno-10-23" href="#__codelineno-10-23"></a><span class="p">}</span>
 </code></pre></div>
@@ -3697,14 +3697,14 @@ Looking at the <a href="https://github.com/openwallet-foundation/acapy/blob/main
 </ul>
 <p>This route indirectly calls <code>_formats_filters</code> function to create credential proposal, which is in turn used to create a credential offer in the filter format. The request body for this route might look like this:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="p">{</span>
-<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>    <span class="s2">&quot;filter&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;vc_di&quot;</span><span class="p">],</span>
-<a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a>    <span class="s2">&quot;comment: &lt;some_comment&gt;,</span>
-<a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a>    <span class="s2">&quot;auto-issue&quot;</span><span class="p">:</span> <span class="n">true</span><span class="p">,</span>
-<a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a>    <span class="s2">&quot;auto-remove&quot;</span><span class="p">:</span> <span class="n">true</span><span class="p">,</span>
-<a id="__codelineno-11-6" name="__codelineno-11-6" href="#__codelineno-11-6"></a>    <span class="s2">&quot;replacement_id&quot;</span><span class="p">:</span> <span class="o">&lt;</span><span class="n">replacement_id</span><span class="o">&gt;</span><span class="p">,</span>
-<a id="__codelineno-11-7" name="__codelineno-11-7" href="#__codelineno-11-7"></a>    <span class="s2">&quot;credential_preview&quot;</span><span class="p">:</span> <span class="p">{</span>
-<a id="__codelineno-11-8" name="__codelineno-11-8" href="#__codelineno-11-8"></a>        <span class="s2">&quot;@type&quot;</span><span class="p">:</span> <span class="s2">&quot;issue-credential/2.0/credential-preview&quot;</span><span class="p">,</span>
-<a id="__codelineno-11-9" name="__codelineno-11-9" href="#__codelineno-11-9"></a>        <span class="s2">&quot;attributes&quot;</span><span class="p">:</span> <span class="p">{</span>
+<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>    <span class="s2">"filter"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"vc_di"</span><span class="p">],</span>
+<a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a>    <span class="s2">"comment: &lt;some_comment&gt;,</span>
+<a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a>    <span class="s2">"auto-issue"</span><span class="p">:</span> <span class="n">true</span><span class="p">,</span>
+<a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a>    <span class="s2">"auto-remove"</span><span class="p">:</span> <span class="n">true</span><span class="p">,</span>
+<a id="__codelineno-11-6" name="__codelineno-11-6" href="#__codelineno-11-6"></a>    <span class="s2">"replacement_id"</span><span class="p">:</span> <span class="o">&lt;</span><span class="n">replacement_id</span><span class="o">&gt;</span><span class="p">,</span>
+<a id="__codelineno-11-7" name="__codelineno-11-7" href="#__codelineno-11-7"></a>    <span class="s2">"credential_preview"</span><span class="p">:</span> <span class="p">{</span>
+<a id="__codelineno-11-8" name="__codelineno-11-8" href="#__codelineno-11-8"></a>        <span class="s2">"@type"</span><span class="p">:</span> <span class="s2">"issue-credential/2.0/credential-preview"</span><span class="p">,</span>
+<a id="__codelineno-11-9" name="__codelineno-11-9" href="#__codelineno-11-9"></a>        <span class="s2">"attributes"</span><span class="p">:</span> <span class="p">{</span>
 <a id="__codelineno-11-10" name="__codelineno-11-10" href="#__codelineno-11-10"></a>            <span class="o">...</span>
 <a id="__codelineno-11-11" name="__codelineno-11-11" href="#__codelineno-11-11"></a>            <span class="o">...</span>
 <a id="__codelineno-11-12" name="__codelineno-11-12" href="#__codelineno-11-12"></a>        <span class="p">}</span>
@@ -3716,12 +3716,12 @@ Looking at the <a href="https://github.com/openwallet-foundation/acapy/blob/main
 </ul>
 <p>This route indirectly calls <code>_format_result_with_details</code> function to generate a cred_ex_record in the specified format, which is then returned. The request body for this route might look like this:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="p">{</span>
-<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a>    <span class="s2">&quot;filter&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;vc_di&quot;</span><span class="p">],</span>
-<a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a>    <span class="s2">&quot;comment: &lt;some_comment&gt;,</span>
-<a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a>    <span class="s2">&quot;auto-remove&quot;</span><span class="p">:</span> <span class="n">true</span><span class="p">,</span>
-<a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a>    <span class="s2">&quot;credential_preview&quot;</span><span class="p">:</span> <span class="p">{</span>
-<a id="__codelineno-12-6" name="__codelineno-12-6" href="#__codelineno-12-6"></a>        <span class="s2">&quot;@type&quot;</span><span class="p">:</span> <span class="s2">&quot;issue-credential/2.0/credential-preview&quot;</span><span class="p">,</span>
-<a id="__codelineno-12-7" name="__codelineno-12-7" href="#__codelineno-12-7"></a>        <span class="s2">&quot;attributes&quot;</span><span class="p">:</span> <span class="p">{</span>
+<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a>    <span class="s2">"filter"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"vc_di"</span><span class="p">],</span>
+<a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a>    <span class="s2">"comment: &lt;some_comment&gt;,</span>
+<a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a>    <span class="s2">"auto-remove"</span><span class="p">:</span> <span class="n">true</span><span class="p">,</span>
+<a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a>    <span class="s2">"credential_preview"</span><span class="p">:</span> <span class="p">{</span>
+<a id="__codelineno-12-6" name="__codelineno-12-6" href="#__codelineno-12-6"></a>        <span class="s2">"@type"</span><span class="p">:</span> <span class="s2">"issue-credential/2.0/credential-preview"</span><span class="p">,</span>
+<a id="__codelineno-12-7" name="__codelineno-12-7" href="#__codelineno-12-7"></a>        <span class="s2">"attributes"</span><span class="p">:</span> <span class="p">{</span>
 <a id="__codelineno-12-8" name="__codelineno-12-8" href="#__codelineno-12-8"></a>           <span class="o">...</span>
 <a id="__codelineno-12-9" name="__codelineno-12-9" href="#__codelineno-12-9"></a>           <span class="o">...</span>
 <a id="__codelineno-12-10" name="__codelineno-12-10" href="#__codelineno-12-10"></a>        <span class="p">}</span>
@@ -3733,14 +3733,14 @@ Looking at the <a href="https://github.com/openwallet-foundation/acapy/blob/main
 </ul>
 <p>The request body for this route might look like this:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="p">{</span>
-<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a>    <span class="s2">&quot;connection_id&quot;</span><span class="p">:</span> <span class="o">&lt;</span><span class="n">connection_id</span><span class="o">&gt;</span><span class="p">,</span>
-<a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a>    <span class="s2">&quot;filter&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;vc_di&quot;</span><span class="p">],</span>
-<a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a>    <span class="s2">&quot;comment: &lt;some_comment&gt;,</span>
-<a id="__codelineno-13-5" name="__codelineno-13-5" href="#__codelineno-13-5"></a>    <span class="s2">&quot;auto-remove&quot;</span><span class="p">:</span> <span class="n">true</span><span class="p">,</span>
-<a id="__codelineno-13-6" name="__codelineno-13-6" href="#__codelineno-13-6"></a>    <span class="s2">&quot;replacement_id&quot;</span><span class="p">:</span> <span class="o">&lt;</span><span class="n">replacement_id</span><span class="o">&gt;</span><span class="p">,</span>
-<a id="__codelineno-13-7" name="__codelineno-13-7" href="#__codelineno-13-7"></a>    <span class="s2">&quot;credential_preview&quot;</span><span class="p">:</span> <span class="p">{</span>
-<a id="__codelineno-13-8" name="__codelineno-13-8" href="#__codelineno-13-8"></a>        <span class="s2">&quot;@type&quot;</span><span class="p">:</span> <span class="s2">&quot;issue-credential/2.0/credential-preview&quot;</span><span class="p">,</span>
-<a id="__codelineno-13-9" name="__codelineno-13-9" href="#__codelineno-13-9"></a>        <span class="s2">&quot;attributes&quot;</span><span class="p">:</span> <span class="p">{</span>
+<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a>    <span class="s2">"connection_id"</span><span class="p">:</span> <span class="o">&lt;</span><span class="n">connection_id</span><span class="o">&gt;</span><span class="p">,</span>
+<a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a>    <span class="s2">"filter"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"vc_di"</span><span class="p">],</span>
+<a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a>    <span class="s2">"comment: &lt;some_comment&gt;,</span>
+<a id="__codelineno-13-5" name="__codelineno-13-5" href="#__codelineno-13-5"></a>    <span class="s2">"auto-remove"</span><span class="p">:</span> <span class="n">true</span><span class="p">,</span>
+<a id="__codelineno-13-6" name="__codelineno-13-6" href="#__codelineno-13-6"></a>    <span class="s2">"replacement_id"</span><span class="p">:</span> <span class="o">&lt;</span><span class="n">replacement_id</span><span class="o">&gt;</span><span class="p">,</span>
+<a id="__codelineno-13-7" name="__codelineno-13-7" href="#__codelineno-13-7"></a>    <span class="s2">"credential_preview"</span><span class="p">:</span> <span class="p">{</span>
+<a id="__codelineno-13-8" name="__codelineno-13-8" href="#__codelineno-13-8"></a>        <span class="s2">"@type"</span><span class="p">:</span> <span class="s2">"issue-credential/2.0/credential-preview"</span><span class="p">,</span>
+<a id="__codelineno-13-9" name="__codelineno-13-9" href="#__codelineno-13-9"></a>        <span class="s2">"attributes"</span><span class="p">:</span> <span class="p">{</span>
 <a id="__codelineno-13-10" name="__codelineno-13-10" href="#__codelineno-13-10"></a>           <span class="o">...</span>
 <a id="__codelineno-13-11" name="__codelineno-13-11" href="#__codelineno-13-11"></a>           <span class="o">...</span>
 <a id="__codelineno-13-12" name="__codelineno-13-12" href="#__codelineno-13-12"></a>        <span class="p">}</span>
@@ -3752,16 +3752,16 @@ Looking at the <a href="https://github.com/openwallet-foundation/acapy/blob/main
 </ul>
 <p>The request body for this route might look like this:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="p">{</span>
-<a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a>    <span class="s2">&quot;connection_id&quot;</span><span class="p">:</span> <span class="o">&lt;</span><span class="n">connection_id</span><span class="o">&gt;</span><span class="p">,</span>
-<a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a>    <span class="s2">&quot;filter&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;vc_di&quot;</span><span class="p">],</span>
-<a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a>    <span class="s2">&quot;comment: &lt;some_comment&gt;,</span>
-<a id="__codelineno-14-5" name="__codelineno-14-5" href="#__codelineno-14-5"></a>    <span class="s2">&quot;auto-issue&quot;</span><span class="p">:</span> <span class="n">true</span><span class="p">,</span>
-<a id="__codelineno-14-6" name="__codelineno-14-6" href="#__codelineno-14-6"></a>    <span class="s2">&quot;auto-remove&quot;</span><span class="p">:</span> <span class="n">true</span><span class="p">,</span>
-<a id="__codelineno-14-7" name="__codelineno-14-7" href="#__codelineno-14-7"></a>    <span class="s2">&quot;replacement_id&quot;</span><span class="p">:</span> <span class="o">&lt;</span><span class="n">replacement_id</span><span class="o">&gt;</span><span class="p">,</span>
-<a id="__codelineno-14-8" name="__codelineno-14-8" href="#__codelineno-14-8"></a>    <span class="s2">&quot;holder_did&quot;</span><span class="p">:</span> <span class="o">&lt;</span><span class="n">holder_did</span><span class="o">&gt;</span><span class="p">,</span>
-<a id="__codelineno-14-9" name="__codelineno-14-9" href="#__codelineno-14-9"></a>    <span class="s2">&quot;credential_preview&quot;</span><span class="p">:</span> <span class="p">{</span>
-<a id="__codelineno-14-10" name="__codelineno-14-10" href="#__codelineno-14-10"></a>        <span class="s2">&quot;@type&quot;</span><span class="p">:</span> <span class="s2">&quot;issue-credential/2.0/credential-preview&quot;</span><span class="p">,</span>
-<a id="__codelineno-14-11" name="__codelineno-14-11" href="#__codelineno-14-11"></a>        <span class="s2">&quot;attributes&quot;</span><span class="p">:</span> <span class="p">{</span>
+<a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a>    <span class="s2">"connection_id"</span><span class="p">:</span> <span class="o">&lt;</span><span class="n">connection_id</span><span class="o">&gt;</span><span class="p">,</span>
+<a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a>    <span class="s2">"filter"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"vc_di"</span><span class="p">],</span>
+<a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a>    <span class="s2">"comment: &lt;some_comment&gt;,</span>
+<a id="__codelineno-14-5" name="__codelineno-14-5" href="#__codelineno-14-5"></a>    <span class="s2">"auto-issue"</span><span class="p">:</span> <span class="n">true</span><span class="p">,</span>
+<a id="__codelineno-14-6" name="__codelineno-14-6" href="#__codelineno-14-6"></a>    <span class="s2">"auto-remove"</span><span class="p">:</span> <span class="n">true</span><span class="p">,</span>
+<a id="__codelineno-14-7" name="__codelineno-14-7" href="#__codelineno-14-7"></a>    <span class="s2">"replacement_id"</span><span class="p">:</span> <span class="o">&lt;</span><span class="n">replacement_id</span><span class="o">&gt;</span><span class="p">,</span>
+<a id="__codelineno-14-8" name="__codelineno-14-8" href="#__codelineno-14-8"></a>    <span class="s2">"holder_did"</span><span class="p">:</span> <span class="o">&lt;</span><span class="n">holder_did</span><span class="o">&gt;</span><span class="p">,</span>
+<a id="__codelineno-14-9" name="__codelineno-14-9" href="#__codelineno-14-9"></a>    <span class="s2">"credential_preview"</span><span class="p">:</span> <span class="p">{</span>
+<a id="__codelineno-14-10" name="__codelineno-14-10" href="#__codelineno-14-10"></a>        <span class="s2">"@type"</span><span class="p">:</span> <span class="s2">"issue-credential/2.0/credential-preview"</span><span class="p">,</span>
+<a id="__codelineno-14-11" name="__codelineno-14-11" href="#__codelineno-14-11"></a>        <span class="s2">"attributes"</span><span class="p">:</span> <span class="p">{</span>
 <a id="__codelineno-14-12" name="__codelineno-14-12" href="#__codelineno-14-12"></a>           <span class="o">...</span>
 <a id="__codelineno-14-13" name="__codelineno-14-13" href="#__codelineno-14-13"></a>           <span class="o">...</span>
 <a id="__codelineno-14-14" name="__codelineno-14-14" href="#__codelineno-14-14"></a>        <span class="p">}</span>
@@ -3773,15 +3773,15 @@ Looking at the <a href="https://github.com/openwallet-foundation/acapy/blob/main
 </ul>
 <p>The request body for this route might look like this:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a><span class="p">{</span>
-<a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a>    <span class="s2">&quot;connection_id&quot;</span><span class="p">:</span> <span class="o">&lt;</span><span class="n">connection_id</span><span class="o">&gt;</span><span class="p">,</span>
-<a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a>    <span class="s2">&quot;filter&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;vc_di&quot;</span><span class="p">],</span>
-<a id="__codelineno-15-4" name="__codelineno-15-4" href="#__codelineno-15-4"></a>    <span class="s2">&quot;comment: &lt;some_comment&gt;,</span>
-<a id="__codelineno-15-5" name="__codelineno-15-5" href="#__codelineno-15-5"></a>    <span class="s2">&quot;auto-remove&quot;</span><span class="p">:</span> <span class="n">true</span><span class="p">,</span>
-<a id="__codelineno-15-6" name="__codelineno-15-6" href="#__codelineno-15-6"></a>    <span class="s2">&quot;replacement_id&quot;</span><span class="p">:</span> <span class="o">&lt;</span><span class="n">replacement_id</span><span class="o">&gt;</span><span class="p">,</span>
-<a id="__codelineno-15-7" name="__codelineno-15-7" href="#__codelineno-15-7"></a>    <span class="s2">&quot;holder_did&quot;</span><span class="p">:</span> <span class="o">&lt;</span><span class="n">holder_did</span><span class="o">&gt;</span><span class="p">,</span>
-<a id="__codelineno-15-8" name="__codelineno-15-8" href="#__codelineno-15-8"></a>    <span class="s2">&quot;credential_preview&quot;</span><span class="p">:</span> <span class="p">{</span>
-<a id="__codelineno-15-9" name="__codelineno-15-9" href="#__codelineno-15-9"></a>        <span class="s2">&quot;@type&quot;</span><span class="p">:</span> <span class="s2">&quot;issue-credential/2.0/credential-preview&quot;</span><span class="p">,</span>
-<a id="__codelineno-15-10" name="__codelineno-15-10" href="#__codelineno-15-10"></a>        <span class="s2">&quot;attributes&quot;</span><span class="p">:</span> <span class="p">{</span>
+<a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a>    <span class="s2">"connection_id"</span><span class="p">:</span> <span class="o">&lt;</span><span class="n">connection_id</span><span class="o">&gt;</span><span class="p">,</span>
+<a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a>    <span class="s2">"filter"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"vc_di"</span><span class="p">],</span>
+<a id="__codelineno-15-4" name="__codelineno-15-4" href="#__codelineno-15-4"></a>    <span class="s2">"comment: &lt;some_comment&gt;,</span>
+<a id="__codelineno-15-5" name="__codelineno-15-5" href="#__codelineno-15-5"></a>    <span class="s2">"auto-remove"</span><span class="p">:</span> <span class="n">true</span><span class="p">,</span>
+<a id="__codelineno-15-6" name="__codelineno-15-6" href="#__codelineno-15-6"></a>    <span class="s2">"replacement_id"</span><span class="p">:</span> <span class="o">&lt;</span><span class="n">replacement_id</span><span class="o">&gt;</span><span class="p">,</span>
+<a id="__codelineno-15-7" name="__codelineno-15-7" href="#__codelineno-15-7"></a>    <span class="s2">"holder_did"</span><span class="p">:</span> <span class="o">&lt;</span><span class="n">holder_did</span><span class="o">&gt;</span><span class="p">,</span>
+<a id="__codelineno-15-8" name="__codelineno-15-8" href="#__codelineno-15-8"></a>    <span class="s2">"credential_preview"</span><span class="p">:</span> <span class="p">{</span>
+<a id="__codelineno-15-9" name="__codelineno-15-9" href="#__codelineno-15-9"></a>        <span class="s2">"@type"</span><span class="p">:</span> <span class="s2">"issue-credential/2.0/credential-preview"</span><span class="p">,</span>
+<a id="__codelineno-15-10" name="__codelineno-15-10" href="#__codelineno-15-10"></a>        <span class="s2">"attributes"</span><span class="p">:</span> <span class="p">{</span>
 <a id="__codelineno-15-11" name="__codelineno-15-11" href="#__codelineno-15-11"></a>           <span class="o">...</span>
 <a id="__codelineno-15-12" name="__codelineno-15-12" href="#__codelineno-15-12"></a>           <span class="o">...</span>
 <a id="__codelineno-15-13" name="__codelineno-15-13" href="#__codelineno-15-13"></a>        <span class="p">}</span>
@@ -3796,12 +3796,12 @@ Looking at the <a href="https://github.com/openwallet-foundation/acapy/blob/main
 <div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a><span class="p">{</span>
 <a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a>    <span class="o">...</span>
 <a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a>    <span class="o">...</span>
-<a id="__codelineno-16-4" name="__codelineno-16-4" href="#__codelineno-16-4"></a>    <span class="s2">&quot;connection_id&quot;</span><span class="p">:</span> <span class="o">&lt;</span><span class="n">connection_id</span><span class="o">&gt;</span><span class="p">,</span>
-<a id="__codelineno-16-5" name="__codelineno-16-5" href="#__codelineno-16-5"></a>    <span class="s2">&quot;presentation_proposal&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;vc_di&quot;</span><span class="p">],</span>
-<a id="__codelineno-16-6" name="__codelineno-16-6" href="#__codelineno-16-6"></a>    <span class="s2">&quot;comment: &lt;some_comment&gt;,</span>
-<a id="__codelineno-16-7" name="__codelineno-16-7" href="#__codelineno-16-7"></a>    <span class="s2">&quot;auto-present&quot;</span><span class="p">:</span> <span class="n">true</span><span class="p">,</span>
-<a id="__codelineno-16-8" name="__codelineno-16-8" href="#__codelineno-16-8"></a>    <span class="s2">&quot;auto-remove&quot;</span><span class="p">:</span> <span class="n">true</span><span class="p">,</span>
-<a id="__codelineno-16-9" name="__codelineno-16-9" href="#__codelineno-16-9"></a>    <span class="s2">&quot;trace&quot;</span><span class="p">:</span> <span class="n">false</span>
+<a id="__codelineno-16-4" name="__codelineno-16-4" href="#__codelineno-16-4"></a>    <span class="s2">"connection_id"</span><span class="p">:</span> <span class="o">&lt;</span><span class="n">connection_id</span><span class="o">&gt;</span><span class="p">,</span>
+<a id="__codelineno-16-5" name="__codelineno-16-5" href="#__codelineno-16-5"></a>    <span class="s2">"presentation_proposal"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"vc_di"</span><span class="p">],</span>
+<a id="__codelineno-16-6" name="__codelineno-16-6" href="#__codelineno-16-6"></a>    <span class="s2">"comment: &lt;some_comment&gt;,</span>
+<a id="__codelineno-16-7" name="__codelineno-16-7" href="#__codelineno-16-7"></a>    <span class="s2">"auto-present"</span><span class="p">:</span> <span class="n">true</span><span class="p">,</span>
+<a id="__codelineno-16-8" name="__codelineno-16-8" href="#__codelineno-16-8"></a>    <span class="s2">"auto-remove"</span><span class="p">:</span> <span class="n">true</span><span class="p">,</span>
+<a id="__codelineno-16-9" name="__codelineno-16-9" href="#__codelineno-16-9"></a>    <span class="s2">"trace"</span><span class="p">:</span> <span class="n">false</span>
 <a id="__codelineno-16-10" name="__codelineno-16-10" href="#__codelineno-16-10"></a><span class="p">}</span>
 </code></pre></div>
 <ul>
@@ -3811,12 +3811,12 @@ Looking at the <a href="https://github.com/openwallet-foundation/acapy/blob/main
 <div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a><span class="p">{</span>
 <a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a>    <span class="o">...</span>
 <a id="__codelineno-17-3" name="__codelineno-17-3" href="#__codelineno-17-3"></a>    <span class="o">...</span>
-<a id="__codelineno-17-4" name="__codelineno-17-4" href="#__codelineno-17-4"></a>    <span class="s2">&quot;connection_id&quot;</span><span class="p">:</span> <span class="o">&lt;</span><span class="n">connection_id</span><span class="o">&gt;</span><span class="p">,</span>
-<a id="__codelineno-17-5" name="__codelineno-17-5" href="#__codelineno-17-5"></a>    <span class="s2">&quot;presentation_proposal&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;vc_di&quot;</span><span class="p">],</span>
-<a id="__codelineno-17-6" name="__codelineno-17-6" href="#__codelineno-17-6"></a>    <span class="s2">&quot;comment: &lt;some_comment&gt;,</span>
-<a id="__codelineno-17-7" name="__codelineno-17-7" href="#__codelineno-17-7"></a>    <span class="s2">&quot;auto-verify&quot;</span><span class="p">:</span> <span class="n">true</span><span class="p">,</span>
-<a id="__codelineno-17-8" name="__codelineno-17-8" href="#__codelineno-17-8"></a>    <span class="s2">&quot;auto-remove&quot;</span><span class="p">:</span> <span class="n">true</span><span class="p">,</span>
-<a id="__codelineno-17-9" name="__codelineno-17-9" href="#__codelineno-17-9"></a>    <span class="s2">&quot;trace&quot;</span><span class="p">:</span> <span class="n">false</span>
+<a id="__codelineno-17-4" name="__codelineno-17-4" href="#__codelineno-17-4"></a>    <span class="s2">"connection_id"</span><span class="p">:</span> <span class="o">&lt;</span><span class="n">connection_id</span><span class="o">&gt;</span><span class="p">,</span>
+<a id="__codelineno-17-5" name="__codelineno-17-5" href="#__codelineno-17-5"></a>    <span class="s2">"presentation_proposal"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"vc_di"</span><span class="p">],</span>
+<a id="__codelineno-17-6" name="__codelineno-17-6" href="#__codelineno-17-6"></a>    <span class="s2">"comment: &lt;some_comment&gt;,</span>
+<a id="__codelineno-17-7" name="__codelineno-17-7" href="#__codelineno-17-7"></a>    <span class="s2">"auto-verify"</span><span class="p">:</span> <span class="n">true</span><span class="p">,</span>
+<a id="__codelineno-17-8" name="__codelineno-17-8" href="#__codelineno-17-8"></a>    <span class="s2">"auto-remove"</span><span class="p">:</span> <span class="n">true</span><span class="p">,</span>
+<a id="__codelineno-17-9" name="__codelineno-17-9" href="#__codelineno-17-9"></a>    <span class="s2">"trace"</span><span class="p">:</span> <span class="n">false</span>
 <a id="__codelineno-17-10" name="__codelineno-17-10" href="#__codelineno-17-10"></a><span class="p">}</span>
 </code></pre></div>
 <ul>
@@ -3826,12 +3826,12 @@ Looking at the <a href="https://github.com/openwallet-foundation/acapy/blob/main
 <div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a><span class="p">{</span>
 <a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a>    <span class="o">...</span>
 <a id="__codelineno-18-3" name="__codelineno-18-3" href="#__codelineno-18-3"></a>    <span class="o">...</span>
-<a id="__codelineno-18-4" name="__codelineno-18-4" href="#__codelineno-18-4"></a>    <span class="s2">&quot;connection_id&quot;</span><span class="p">:</span> <span class="o">&lt;</span><span class="n">connection_id</span><span class="o">&gt;</span><span class="p">,</span>
-<a id="__codelineno-18-5" name="__codelineno-18-5" href="#__codelineno-18-5"></a>    <span class="s2">&quot;presentation_proposal&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;vc_di&quot;</span><span class="p">],</span>
-<a id="__codelineno-18-6" name="__codelineno-18-6" href="#__codelineno-18-6"></a>    <span class="s2">&quot;comment: &lt;some_comment&gt;,</span>
-<a id="__codelineno-18-7" name="__codelineno-18-7" href="#__codelineno-18-7"></a>    <span class="s2">&quot;auto-verify&quot;</span><span class="p">:</span> <span class="n">true</span><span class="p">,</span>
-<a id="__codelineno-18-8" name="__codelineno-18-8" href="#__codelineno-18-8"></a>    <span class="s2">&quot;auto-remove&quot;</span><span class="p">:</span> <span class="n">true</span><span class="p">,</span>
-<a id="__codelineno-18-9" name="__codelineno-18-9" href="#__codelineno-18-9"></a>    <span class="s2">&quot;trace&quot;</span><span class="p">:</span> <span class="n">false</span>
+<a id="__codelineno-18-4" name="__codelineno-18-4" href="#__codelineno-18-4"></a>    <span class="s2">"connection_id"</span><span class="p">:</span> <span class="o">&lt;</span><span class="n">connection_id</span><span class="o">&gt;</span><span class="p">,</span>
+<a id="__codelineno-18-5" name="__codelineno-18-5" href="#__codelineno-18-5"></a>    <span class="s2">"presentation_proposal"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"vc_di"</span><span class="p">],</span>
+<a id="__codelineno-18-6" name="__codelineno-18-6" href="#__codelineno-18-6"></a>    <span class="s2">"comment: &lt;some_comment&gt;,</span>
+<a id="__codelineno-18-7" name="__codelineno-18-7" href="#__codelineno-18-7"></a>    <span class="s2">"auto-verify"</span><span class="p">:</span> <span class="n">true</span><span class="p">,</span>
+<a id="__codelineno-18-8" name="__codelineno-18-8" href="#__codelineno-18-8"></a>    <span class="s2">"auto-remove"</span><span class="p">:</span> <span class="n">true</span><span class="p">,</span>
+<a id="__codelineno-18-9" name="__codelineno-18-9" href="#__codelineno-18-9"></a>    <span class="s2">"trace"</span><span class="p">:</span> <span class="n">false</span>
 <a id="__codelineno-18-10" name="__codelineno-18-10" href="#__codelineno-18-10"></a><span class="p">}</span>
 </code></pre></div>
 <ul>
@@ -3839,16 +3839,16 @@ Looking at the <a href="https://github.com/openwallet-foundation/acapy/blob/main
 </ul>
 <p>The request body for this route might look like this:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a><span class="p">{</span>
-<a id="__codelineno-19-2" name="__codelineno-19-2" href="#__codelineno-19-2"></a>    <span class="s2">&quot;presentation_definition&quot;</span><span class="p">:</span> <span class="o">&lt;</span><span class="n">presentation_definition_schema</span><span class="o">&gt;</span><span class="p">,</span>
-<a id="__codelineno-19-3" name="__codelineno-19-3" href="#__codelineno-19-3"></a>    <span class="s2">&quot;auto_remove&quot;</span><span class="p">:</span> <span class="n">true</span><span class="p">,</span>
-<a id="__codelineno-19-4" name="__codelineno-19-4" href="#__codelineno-19-4"></a>    <span class="s2">&quot;dif&quot;</span><span class="p">:</span> <span class="p">{</span>
-<a id="__codelineno-19-5" name="__codelineno-19-5" href="#__codelineno-19-5"></a>        <span class="n">issuer_id</span><span class="p">:</span> <span class="s2">&quot;&lt;issuer_id&gt;&quot;</span><span class="p">,</span>
+<a id="__codelineno-19-2" name="__codelineno-19-2" href="#__codelineno-19-2"></a>    <span class="s2">"presentation_definition"</span><span class="p">:</span> <span class="o">&lt;</span><span class="n">presentation_definition_schema</span><span class="o">&gt;</span><span class="p">,</span>
+<a id="__codelineno-19-3" name="__codelineno-19-3" href="#__codelineno-19-3"></a>    <span class="s2">"auto_remove"</span><span class="p">:</span> <span class="n">true</span><span class="p">,</span>
+<a id="__codelineno-19-4" name="__codelineno-19-4" href="#__codelineno-19-4"></a>    <span class="s2">"dif"</span><span class="p">:</span> <span class="p">{</span>
+<a id="__codelineno-19-5" name="__codelineno-19-5" href="#__codelineno-19-5"></a>        <span class="n">issuer_id</span><span class="p">:</span> <span class="s2">"&lt;issuer_id&gt;"</span><span class="p">,</span>
 <a id="__codelineno-19-6" name="__codelineno-19-6" href="#__codelineno-19-6"></a>        <span class="n">record_ids</span><span class="p">:</span> <span class="p">{</span>
-<a id="__codelineno-19-7" name="__codelineno-19-7" href="#__codelineno-19-7"></a>            <span class="s2">&quot;&lt;input descriptor id_1&gt;&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;&lt;record id_1&gt;&quot;</span><span class="p">,</span> <span class="s2">&quot;&lt;record id_2&gt;&quot;</span><span class="p">],</span>
-<a id="__codelineno-19-8" name="__codelineno-19-8" href="#__codelineno-19-8"></a>            <span class="s2">&quot;&lt;input descriptor id_2&gt;&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;&lt;record id&gt;&quot;</span><span class="p">],</span>
+<a id="__codelineno-19-7" name="__codelineno-19-7" href="#__codelineno-19-7"></a>            <span class="s2">"&lt;input descriptor id_1&gt;"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"&lt;record id_1&gt;"</span><span class="p">,</span> <span class="s2">"&lt;record id_2&gt;"</span><span class="p">],</span>
+<a id="__codelineno-19-8" name="__codelineno-19-8" href="#__codelineno-19-8"></a>            <span class="s2">"&lt;input descriptor id_2&gt;"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"&lt;record id&gt;"</span><span class="p">],</span>
 <a id="__codelineno-19-9" name="__codelineno-19-9" href="#__codelineno-19-9"></a>        <span class="p">}</span>
 <a id="__codelineno-19-10" name="__codelineno-19-10" href="#__codelineno-19-10"></a>    <span class="p">},</span>
-<a id="__codelineno-19-11" name="__codelineno-19-11" href="#__codelineno-19-11"></a>    <span class="s2">&quot;reveal_doc&quot;</span><span class="p">:</span> <span class="p">{</span>
+<a id="__codelineno-19-11" name="__codelineno-19-11" href="#__codelineno-19-11"></a>    <span class="s2">"reveal_doc"</span><span class="p">:</span> <span class="p">{</span>
 <a id="__codelineno-19-12" name="__codelineno-19-12" href="#__codelineno-19-12"></a>        <span class="o">//</span> <span class="n">vc_di</span> <span class="nb">dict</span>
 <a id="__codelineno-19-13" name="__codelineno-19-13" href="#__codelineno-19-13"></a>    <span class="p">}</span>
 <a id="__codelineno-19-14" name="__codelineno-19-14" href="#__codelineno-19-14"></a>

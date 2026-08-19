@@ -3734,7 +3734,7 @@ and isolated development environments.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="nb">source</span><span class="w"> </span><span class="k">$(</span>poetry<span class="w"> </span>env<span class="w"> </span>info<span class="w"> </span>--path<span class="k">)</span>/bin/activate
 </code></pre></div>
 <p>for powershell users this would be</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="p">(&amp;</span> <span class="p">((</span><span class="n">poetry</span> <span class="n">env</span> <span class="n">info</span> <span class="p">-</span><span class="n">-path</span><span class="p">)</span> <span class="p">+</span> <span class="s2">&quot;\Scripts\activate.ps1&quot;</span><span class="p">)</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="p">(&amp;</span> <span class="p">((</span><span class="n">poetry</span> <span class="n">env</span> <span class="n">info</span> <span class="p">-</span><span class="n">-path</span><span class="p">)</span> <span class="p">+</span> <span class="s2">"\Scripts\activate.ps1"</span><span class="p">)</span>
 </code></pre></div>
 <h3 id="deactivating-the-virtual-environment">Deactivating the Virtual Environment<a class="headerlink" href="#deactivating-the-virtual-environment" title="Permanent link">&para;</a></h3>
 <p>When using <code>poetry shell</code></p>
@@ -3782,7 +3782,7 @@ requirements.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>poetry<span class="w"> </span>install<span class="w"> </span>-E<span class="w"> </span>extras-name
 </code></pre></div>
 <p>for example</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>poetry<span class="w"> </span>install<span class="w"> </span>-E<span class="w"> </span><span class="s2">&quot;askar bbs indy&quot;</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>poetry<span class="w"> </span>install<span class="w"> </span>-E<span class="w"> </span><span class="s2">"askar bbs indy"</span>
 </code></pre></div>
 <h2 id="managing-development-dependencies">Managing Development Dependencies<a class="headerlink" href="#managing-development-dependencies" title="Permanent link">&para;</a></h2>
 <p>Development dependencies are useful for tasks like testing, linting,

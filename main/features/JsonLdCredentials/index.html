@@ -3514,9 +3514,9 @@
 </blockquote>
 <p>For credentials the <code>https://www.w3.org/2018/credentials/v1</code> context MUST always be the first context. In addition, when issuing BBS+ credentials the <code>https://w3id.org/security/bbs/v1</code> URL MUST be present in the context. For convenience this URL will be automatically added to the <code>@context</code> of the credential if not present.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="p">{</span>
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">  </span><span class="nt">&quot;@context&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">    </span><span class="s2">&quot;https://www.w3.org/2018/credentials/v1&quot;</span><span class="p">,</span>
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="w">    </span><span class="s2">&quot;https://other-contexts.com&quot;</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">  </span><span class="nt">"@context"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">    </span><span class="s2">"https://www.w3.org/2018/credentials/v1"</span><span class="p">,</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="w">    </span><span class="s2">"https://other-contexts.com"</span>
 <a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="w">  </span><span class="p">]</span>
 <a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="p">}</span>
 </code></pre></div>
@@ -3546,9 +3546,9 @@
 <p>A <code>did:key</code> did is not anchored to a ledger, but embeds the key directly in the identifier part of the did. See the <a href="https://w3c-ccg.github.io/did-key-spec/">did:key Method Specification</a> for more information.</p>
 <p>You can create a <code>did:key</code> using the <code>/wallet/did/create</code> endpoint with the following body. Use <code>ed25519</code> for <code>Ed25519Signature2018</code>, <code>bls12381g2</code> for <code>BbsBlsSignature2020</code>.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>{
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>  &quot;method&quot;: &quot;key&quot;,
-<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>  &quot;options&quot;: {
-<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>    &quot;key_type&quot;: &quot;bls12381g2&quot; // or ed25519
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>  "method": "key",
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>  "options": {
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>    "key_type": "bls12381g2" // or ed25519
 <a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>  }
 <a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>}
 </code></pre></div>
@@ -3565,27 +3565,27 @@
 <summary>See the example body</summary>
 
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>{
-<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>  &quot;connection_id&quot;: &quot;ddc23de9-359f-465c-b66e-f7c5a0cc9a57&quot;,
-<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>  &quot;filter&quot;: {
-<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>    &quot;ld_proof&quot;: {
-<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>      &quot;credential&quot;: {
-<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>        &quot;@context&quot;: [
-<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>          &quot;https://www.w3.org/2018/credentials/v1&quot;,
-<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>          &quot;https://www.w3.org/2018/credentials/examples/v1&quot;
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>  "connection_id": "ddc23de9-359f-465c-b66e-f7c5a0cc9a57",
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>  "filter": {
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>    "ld_proof": {
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>      "credential": {
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>        "@context": [
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>          "https://www.w3.org/2018/credentials/v1",
+<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>          "https://www.w3.org/2018/credentials/examples/v1"
 <a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a>        ],
-<a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a>        &quot;type&quot;: [&quot;VerifiableCredential&quot;, &quot;UniversityDegreeCredential&quot;],
-<a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a>        &quot;issuer&quot;: &quot;did:key:zUC7FsmhhifDTuYXdwYES2UpCpWwYieJRapC6oEWqyt5KfJ3ztfLzYnbWjuXQ5drYaKaho3FjxrfDB81gtAJKjbM4yAmBuNoj3YKDXqW151KkkYarpEoEVWMMcN5zPfjCrQ8Saj&quot;,
-<a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a>        &quot;issuanceDate&quot;: &quot;2020-01-01T12:00:00Z&quot;,
-<a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a>        &quot;credentialSubject&quot;: {
-<a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a>          &quot;degree&quot;: {
-<a id="__codelineno-2-15" name="__codelineno-2-15" href="#__codelineno-2-15"></a>            &quot;type&quot;: &quot;BachelorDegree&quot;,
-<a id="__codelineno-2-16" name="__codelineno-2-16" href="#__codelineno-2-16"></a>            &quot;name&quot;: &quot;Bachelor of Science and Arts&quot;
+<a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a>        "type": ["VerifiableCredential", "UniversityDegreeCredential"],
+<a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a>        "issuer": "did:key:zUC7FsmhhifDTuYXdwYES2UpCpWwYieJRapC6oEWqyt5KfJ3ztfLzYnbWjuXQ5drYaKaho3FjxrfDB81gtAJKjbM4yAmBuNoj3YKDXqW151KkkYarpEoEVWMMcN5zPfjCrQ8Saj",
+<a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a>        "issuanceDate": "2020-01-01T12:00:00Z",
+<a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a>        "credentialSubject": {
+<a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a>          "degree": {
+<a id="__codelineno-2-15" name="__codelineno-2-15" href="#__codelineno-2-15"></a>            "type": "BachelorDegree",
+<a id="__codelineno-2-16" name="__codelineno-2-16" href="#__codelineno-2-16"></a>            "name": "Bachelor of Science and Arts"
 <a id="__codelineno-2-17" name="__codelineno-2-17" href="#__codelineno-2-17"></a>          },
-<a id="__codelineno-2-18" name="__codelineno-2-18" href="#__codelineno-2-18"></a>          &quot;college&quot;: &quot;Faber College&quot;
+<a id="__codelineno-2-18" name="__codelineno-2-18" href="#__codelineno-2-18"></a>          "college": "Faber College"
 <a id="__codelineno-2-19" name="__codelineno-2-19" href="#__codelineno-2-19"></a>        }
 <a id="__codelineno-2-20" name="__codelineno-2-20" href="#__codelineno-2-20"></a>      },
-<a id="__codelineno-2-21" name="__codelineno-2-21" href="#__codelineno-2-21"></a>      &quot;options&quot;: {
-<a id="__codelineno-2-22" name="__codelineno-2-22" href="#__codelineno-2-22"></a>        &quot;proofType&quot;: &quot;BbsBlsSignature2020&quot;
+<a id="__codelineno-2-21" name="__codelineno-2-21" href="#__codelineno-2-21"></a>      "options": {
+<a id="__codelineno-2-22" name="__codelineno-2-22" href="#__codelineno-2-22"></a>        "proofType": "BbsBlsSignature2020"
 <a id="__codelineno-2-23" name="__codelineno-2-23" href="#__codelineno-2-23"></a>      }
 <a id="__codelineno-2-24" name="__codelineno-2-24" href="#__codelineno-2-24"></a>    }
 <a id="__codelineno-2-25" name="__codelineno-2-25" href="#__codelineno-2-25"></a>  }
@@ -3602,44 +3602,44 @@
 <summary>See the example response</summary>
 
 <div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="p">{</span>
-<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="w">  </span><span class="nt">&quot;results&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="w">  </span><span class="nt">"results"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
 <a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="w">    </span><span class="p">{</span>
-<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="w">      </span><span class="nt">&quot;contexts&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
-<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="w">        </span><span class="s2">&quot;https://www.w3.org/2018/credentials/examples/v1&quot;</span><span class="p">,</span>
-<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="w">        </span><span class="s2">&quot;https://www.w3.org/2018/credentials/v1&quot;</span><span class="p">,</span>
-<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="w">        </span><span class="s2">&quot;https://w3id.org/security/bbs/v1&quot;</span>
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="w">      </span><span class="nt">"contexts"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="w">        </span><span class="s2">"https://www.w3.org/2018/credentials/examples/v1"</span><span class="p">,</span>
+<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="w">        </span><span class="s2">"https://www.w3.org/2018/credentials/v1"</span><span class="p">,</span>
+<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="w">        </span><span class="s2">"https://w3id.org/security/bbs/v1"</span>
 <a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a><span class="w">      </span><span class="p">],</span>
-<a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a><span class="w">      </span><span class="nt">&quot;types&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;UniversityDegreeCredential&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;VerifiableCredential&quot;</span><span class="p">],</span>
-<a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a><span class="w">      </span><span class="nt">&quot;schema_ids&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[],</span>
-<a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a><span class="w">      </span><span class="nt">&quot;issuer_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;did:key:zUC7FsmhhifDTuYXdwYES2UpCpWwYieJRapC6oEWqyt5KfJ3ztfLzYnbWjuXQ5drYaKaho3FjxrfDB81gtAJKjbM4yAmBuNoj3YKDXqW151KkkYarpEoEVWMMcN5zPfjCrQ8Saj&quot;</span><span class="p">,</span>
-<a id="__codelineno-3-12" name="__codelineno-3-12" href="#__codelineno-3-12"></a><span class="w">      </span><span class="nt">&quot;subject_ids&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[],</span>
-<a id="__codelineno-3-13" name="__codelineno-3-13" href="#__codelineno-3-13"></a><span class="w">      </span><span class="nt">&quot;proof_types&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;BbsBlsSignature2020&quot;</span><span class="p">],</span>
-<a id="__codelineno-3-14" name="__codelineno-3-14" href="#__codelineno-3-14"></a><span class="w">      </span><span class="nt">&quot;cred_value&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-3-15" name="__codelineno-3-15" href="#__codelineno-3-15"></a><span class="w">        </span><span class="nt">&quot;@context&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
-<a id="__codelineno-3-16" name="__codelineno-3-16" href="#__codelineno-3-16"></a><span class="w">          </span><span class="s2">&quot;https://www.w3.org/2018/credentials/v1&quot;</span><span class="p">,</span>
-<a id="__codelineno-3-17" name="__codelineno-3-17" href="#__codelineno-3-17"></a><span class="w">          </span><span class="s2">&quot;https://www.w3.org/2018/credentials/examples/v1&quot;</span><span class="p">,</span>
-<a id="__codelineno-3-18" name="__codelineno-3-18" href="#__codelineno-3-18"></a><span class="w">          </span><span class="s2">&quot;https://w3id.org/security/bbs/v1&quot;</span>
+<a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a><span class="w">      </span><span class="nt">"types"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">"UniversityDegreeCredential"</span><span class="p">,</span><span class="w"> </span><span class="s2">"VerifiableCredential"</span><span class="p">],</span>
+<a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a><span class="w">      </span><span class="nt">"schema_ids"</span><span class="p">:</span><span class="w"> </span><span class="p">[],</span>
+<a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a><span class="w">      </span><span class="nt">"issuer_id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"did:key:zUC7FsmhhifDTuYXdwYES2UpCpWwYieJRapC6oEWqyt5KfJ3ztfLzYnbWjuXQ5drYaKaho3FjxrfDB81gtAJKjbM4yAmBuNoj3YKDXqW151KkkYarpEoEVWMMcN5zPfjCrQ8Saj"</span><span class="p">,</span>
+<a id="__codelineno-3-12" name="__codelineno-3-12" href="#__codelineno-3-12"></a><span class="w">      </span><span class="nt">"subject_ids"</span><span class="p">:</span><span class="w"> </span><span class="p">[],</span>
+<a id="__codelineno-3-13" name="__codelineno-3-13" href="#__codelineno-3-13"></a><span class="w">      </span><span class="nt">"proof_types"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">"BbsBlsSignature2020"</span><span class="p">],</span>
+<a id="__codelineno-3-14" name="__codelineno-3-14" href="#__codelineno-3-14"></a><span class="w">      </span><span class="nt">"cred_value"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-3-15" name="__codelineno-3-15" href="#__codelineno-3-15"></a><span class="w">        </span><span class="nt">"@context"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<a id="__codelineno-3-16" name="__codelineno-3-16" href="#__codelineno-3-16"></a><span class="w">          </span><span class="s2">"https://www.w3.org/2018/credentials/v1"</span><span class="p">,</span>
+<a id="__codelineno-3-17" name="__codelineno-3-17" href="#__codelineno-3-17"></a><span class="w">          </span><span class="s2">"https://www.w3.org/2018/credentials/examples/v1"</span><span class="p">,</span>
+<a id="__codelineno-3-18" name="__codelineno-3-18" href="#__codelineno-3-18"></a><span class="w">          </span><span class="s2">"https://w3id.org/security/bbs/v1"</span>
 <a id="__codelineno-3-19" name="__codelineno-3-19" href="#__codelineno-3-19"></a><span class="w">        </span><span class="p">],</span>
-<a id="__codelineno-3-20" name="__codelineno-3-20" href="#__codelineno-3-20"></a><span class="w">        </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;VerifiableCredential&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;UniversityDegreeCredential&quot;</span><span class="p">],</span>
-<a id="__codelineno-3-21" name="__codelineno-3-21" href="#__codelineno-3-21"></a><span class="w">        </span><span class="nt">&quot;issuer&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;did:key:zUC7FsmhhifDTuYXdwYES2UpCpWwYieJRapC6oEWqyt5KfJ3ztfLzYnbWjuXQ5drYaKaho3FjxrfDB81gtAJKjbM4yAmBuNoj3YKDXqW151KkkYarpEoEVWMMcN5zPfjCrQ8Saj&quot;</span><span class="p">,</span>
-<a id="__codelineno-3-22" name="__codelineno-3-22" href="#__codelineno-3-22"></a><span class="w">        </span><span class="nt">&quot;issuanceDate&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2020-01-01T12:00:00Z&quot;</span><span class="p">,</span>
-<a id="__codelineno-3-23" name="__codelineno-3-23" href="#__codelineno-3-23"></a><span class="w">        </span><span class="nt">&quot;credentialSubject&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-3-24" name="__codelineno-3-24" href="#__codelineno-3-24"></a><span class="w">          </span><span class="nt">&quot;degree&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-3-25" name="__codelineno-3-25" href="#__codelineno-3-25"></a><span class="w">            </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;BachelorDegree&quot;</span><span class="p">,</span>
-<a id="__codelineno-3-26" name="__codelineno-3-26" href="#__codelineno-3-26"></a><span class="w">            </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Bachelor of Science and Arts&quot;</span>
+<a id="__codelineno-3-20" name="__codelineno-3-20" href="#__codelineno-3-20"></a><span class="w">        </span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">"VerifiableCredential"</span><span class="p">,</span><span class="w"> </span><span class="s2">"UniversityDegreeCredential"</span><span class="p">],</span>
+<a id="__codelineno-3-21" name="__codelineno-3-21" href="#__codelineno-3-21"></a><span class="w">        </span><span class="nt">"issuer"</span><span class="p">:</span><span class="w"> </span><span class="s2">"did:key:zUC7FsmhhifDTuYXdwYES2UpCpWwYieJRapC6oEWqyt5KfJ3ztfLzYnbWjuXQ5drYaKaho3FjxrfDB81gtAJKjbM4yAmBuNoj3YKDXqW151KkkYarpEoEVWMMcN5zPfjCrQ8Saj"</span><span class="p">,</span>
+<a id="__codelineno-3-22" name="__codelineno-3-22" href="#__codelineno-3-22"></a><span class="w">        </span><span class="nt">"issuanceDate"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2020-01-01T12:00:00Z"</span><span class="p">,</span>
+<a id="__codelineno-3-23" name="__codelineno-3-23" href="#__codelineno-3-23"></a><span class="w">        </span><span class="nt">"credentialSubject"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-3-24" name="__codelineno-3-24" href="#__codelineno-3-24"></a><span class="w">          </span><span class="nt">"degree"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-3-25" name="__codelineno-3-25" href="#__codelineno-3-25"></a><span class="w">            </span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"BachelorDegree"</span><span class="p">,</span>
+<a id="__codelineno-3-26" name="__codelineno-3-26" href="#__codelineno-3-26"></a><span class="w">            </span><span class="nt">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Bachelor of Science and Arts"</span>
 <a id="__codelineno-3-27" name="__codelineno-3-27" href="#__codelineno-3-27"></a><span class="w">          </span><span class="p">},</span>
-<a id="__codelineno-3-28" name="__codelineno-3-28" href="#__codelineno-3-28"></a><span class="w">          </span><span class="nt">&quot;college&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Faber College&quot;</span>
+<a id="__codelineno-3-28" name="__codelineno-3-28" href="#__codelineno-3-28"></a><span class="w">          </span><span class="nt">"college"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Faber College"</span>
 <a id="__codelineno-3-29" name="__codelineno-3-29" href="#__codelineno-3-29"></a><span class="w">        </span><span class="p">},</span>
-<a id="__codelineno-3-30" name="__codelineno-3-30" href="#__codelineno-3-30"></a><span class="w">        </span><span class="nt">&quot;proof&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-3-31" name="__codelineno-3-31" href="#__codelineno-3-31"></a><span class="w">          </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;BbsBlsSignature2020&quot;</span><span class="p">,</span>
-<a id="__codelineno-3-32" name="__codelineno-3-32" href="#__codelineno-3-32"></a><span class="w">          </span><span class="nt">&quot;proofPurpose&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;assertionMethod&quot;</span><span class="p">,</span>
-<a id="__codelineno-3-33" name="__codelineno-3-33" href="#__codelineno-3-33"></a><span class="w">          </span><span class="nt">&quot;verificationMethod&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;did:key:zUC7FsmhhifDTuYXdwYES2UpCpWwYieJRapC6oEWqyt5KfJ3ztfLzYnbWjuXQ5drYaKaho3FjxrfDB81gtAJKjbM4yAmBuNoj3YKDXqW151KkkYarpEoEVWMMcN5zPfjCrQ8Saj#zUC7FsmhhifDTuYXdwYES2UpCpWwYieJRapC6oEWqyt5KfJ3ztfLzYnbWjuXQ5drYaKaho3FjxrfDB81gtAJKjbM4yAmBuNoj3YKDXqW151KkkYarpEoEVWMMcN5zPfjCrQ8Saj&quot;</span><span class="p">,</span>
-<a id="__codelineno-3-34" name="__codelineno-3-34" href="#__codelineno-3-34"></a><span class="w">          </span><span class="nt">&quot;created&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2021-05-03T12:31:28.561945&quot;</span><span class="p">,</span>
-<a id="__codelineno-3-35" name="__codelineno-3-35" href="#__codelineno-3-35"></a><span class="w">          </span><span class="nt">&quot;proofValue&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;iUFtRGdLLCWxKx8VD3oiFBoRMUFKhSitTzMsfImXm6OF0d8il+Z40aLz8S7m8EcXPQhRjcWWL9jkfcf1SDifD4CvxVg69NvB7hZyIIz9hwAyi3LmTm0ez4NDRCKyieBuzqKbfM2eACWn/ilhOJBm6w==&quot;</span>
+<a id="__codelineno-3-30" name="__codelineno-3-30" href="#__codelineno-3-30"></a><span class="w">        </span><span class="nt">"proof"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-3-31" name="__codelineno-3-31" href="#__codelineno-3-31"></a><span class="w">          </span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"BbsBlsSignature2020"</span><span class="p">,</span>
+<a id="__codelineno-3-32" name="__codelineno-3-32" href="#__codelineno-3-32"></a><span class="w">          </span><span class="nt">"proofPurpose"</span><span class="p">:</span><span class="w"> </span><span class="s2">"assertionMethod"</span><span class="p">,</span>
+<a id="__codelineno-3-33" name="__codelineno-3-33" href="#__codelineno-3-33"></a><span class="w">          </span><span class="nt">"verificationMethod"</span><span class="p">:</span><span class="w"> </span><span class="s2">"did:key:zUC7FsmhhifDTuYXdwYES2UpCpWwYieJRapC6oEWqyt5KfJ3ztfLzYnbWjuXQ5drYaKaho3FjxrfDB81gtAJKjbM4yAmBuNoj3YKDXqW151KkkYarpEoEVWMMcN5zPfjCrQ8Saj#zUC7FsmhhifDTuYXdwYES2UpCpWwYieJRapC6oEWqyt5KfJ3ztfLzYnbWjuXQ5drYaKaho3FjxrfDB81gtAJKjbM4yAmBuNoj3YKDXqW151KkkYarpEoEVWMMcN5zPfjCrQ8Saj"</span><span class="p">,</span>
+<a id="__codelineno-3-34" name="__codelineno-3-34" href="#__codelineno-3-34"></a><span class="w">          </span><span class="nt">"created"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2021-05-03T12:31:28.561945"</span><span class="p">,</span>
+<a id="__codelineno-3-35" name="__codelineno-3-35" href="#__codelineno-3-35"></a><span class="w">          </span><span class="nt">"proofValue"</span><span class="p">:</span><span class="w"> </span><span class="s2">"iUFtRGdLLCWxKx8VD3oiFBoRMUFKhSitTzMsfImXm6OF0d8il+Z40aLz8S7m8EcXPQhRjcWWL9jkfcf1SDifD4CvxVg69NvB7hZyIIz9hwAyi3LmTm0ez4NDRCKyieBuzqKbfM2eACWn/ilhOJBm6w=="</span>
 <a id="__codelineno-3-36" name="__codelineno-3-36" href="#__codelineno-3-36"></a><span class="w">        </span><span class="p">}</span>
 <a id="__codelineno-3-37" name="__codelineno-3-37" href="#__codelineno-3-37"></a><span class="w">      </span><span class="p">},</span>
-<a id="__codelineno-3-38" name="__codelineno-3-38" href="#__codelineno-3-38"></a><span class="w">      </span><span class="nt">&quot;cred_tags&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{},</span>
-<a id="__codelineno-3-39" name="__codelineno-3-39" href="#__codelineno-3-39"></a><span class="w">      </span><span class="nt">&quot;record_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;541ddbce5760497d98e68917be8c05bd&quot;</span>
+<a id="__codelineno-3-38" name="__codelineno-3-38" href="#__codelineno-3-38"></a><span class="w">      </span><span class="nt">"cred_tags"</span><span class="p">:</span><span class="w"> </span><span class="p">{},</span>
+<a id="__codelineno-3-39" name="__codelineno-3-39" href="#__codelineno-3-39"></a><span class="w">      </span><span class="nt">"record_id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"541ddbce5760497d98e68917be8c05bd"</span>
 <a id="__codelineno-3-40" name="__codelineno-3-40" href="#__codelineno-3-40"></a><span class="w">    </span><span class="p">}</span>
 <a id="__codelineno-3-41" name="__codelineno-3-41" href="#__codelineno-3-41"></a><span class="w">  </span><span class="p">]</span>
 <a id="__codelineno-3-42" name="__codelineno-3-42" href="#__codelineno-3-42"></a><span class="p">}</span>

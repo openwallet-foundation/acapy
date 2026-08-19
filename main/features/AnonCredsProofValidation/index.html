@@ -3251,31 +3251,31 @@
 <p>ACA-Py performs pre-validation when verifying AnonCreds presentations (proofs). Some scenarios are rejected (such as those indicative of tampering), while some attributes are removed before running the AnonCreds validation (e.g., removing superfluous non-revocation timestamps). Any ACA-Py validations or presentation modifications are indicated by the "verify_msgs" attribute in the final presentation exchange object.</p>
 <p>The list of possible verification messages can be found <a href="https://github.com/openwallet-foundation/acapy/blob/main/acapy_agent/indy/verifier.py#L24">here</a>, and consists of:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">PresVerifyMsg</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">Enum</span><span class="p">):</span>
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Credential verification codes.&quot;&quot;&quot;</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">    </span><span class="sd">"""Credential verification codes."""</span>
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>    <span class="n">RMV_REFERENT_NON_REVOC_INTERVAL</span> <span class="o">=</span> <span class="s2">&quot;RMV_RFNT_NRI&quot;</span>
-<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>    <span class="n">RMV_GLOBAL_NON_REVOC_INTERVAL</span> <span class="o">=</span> <span class="s2">&quot;RMV_GLB_NRI&quot;</span>
-<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>    <span class="n">TSTMP_OUT_NON_REVOC_INTRVAL</span> <span class="o">=</span> <span class="s2">&quot;TS_OUT_NRI&quot;</span>
-<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>    <span class="n">CT_UNREVEALED_ATTRIBUTES</span> <span class="o">=</span> <span class="s2">&quot;UNRVL_ATTR&quot;</span>
-<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>    <span class="n">PRES_VALUE_ERROR</span> <span class="o">=</span> <span class="s2">&quot;VALUE_ERROR&quot;</span>
-<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>    <span class="n">PRES_VERIFY_ERROR</span> <span class="o">=</span> <span class="s2">&quot;VERIFY_ERROR&quot;</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>    <span class="n">RMV_REFERENT_NON_REVOC_INTERVAL</span> <span class="o">=</span> <span class="s2">"RMV_RFNT_NRI"</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>    <span class="n">RMV_GLOBAL_NON_REVOC_INTERVAL</span> <span class="o">=</span> <span class="s2">"RMV_GLB_NRI"</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>    <span class="n">TSTMP_OUT_NON_REVOC_INTRVAL</span> <span class="o">=</span> <span class="s2">"TS_OUT_NRI"</span>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>    <span class="n">CT_UNREVEALED_ATTRIBUTES</span> <span class="o">=</span> <span class="s2">"UNRVL_ATTR"</span>
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>    <span class="n">PRES_VALUE_ERROR</span> <span class="o">=</span> <span class="s2">"VALUE_ERROR"</span>
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>    <span class="n">PRES_VERIFY_ERROR</span> <span class="o">=</span> <span class="s2">"VERIFY_ERROR"</span>
 </code></pre></div>
 <p>If there is additional information, it will be included like this: <code>TS_OUT_NRI::19_uuid</code> (which means the attribute identified by <code>19_uuid</code> contained a timestamp outside of the non-revocation interval (this is just a warning)).</p>
 <p>A presentation verification may include multiple messages, for example:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>    <span class="o">...</span>
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>    <span class="s2">&quot;verified&quot;</span><span class="p">:</span> <span class="s2">&quot;true&quot;</span><span class="p">,</span>
-<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>    <span class="s2">&quot;verified_msgs&quot;</span><span class="p">:</span> <span class="p">[</span>
-<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>        <span class="s2">&quot;TS_OUT_NRI::18_uuid&quot;</span><span class="p">,</span>
-<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>        <span class="s2">&quot;TS_OUT_NRI::18_id_GE_uuid&quot;</span><span class="p">,</span>
-<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>        <span class="s2">&quot;TS_OUT_NRI::18_busid_GE_uuid&quot;</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>    <span class="s2">"verified"</span><span class="p">:</span> <span class="s2">"true"</span><span class="p">,</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>    <span class="s2">"verified_msgs"</span><span class="p">:</span> <span class="p">[</span>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>        <span class="s2">"TS_OUT_NRI::18_uuid"</span><span class="p">,</span>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>        <span class="s2">"TS_OUT_NRI::18_id_GE_uuid"</span><span class="p">,</span>
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>        <span class="s2">"TS_OUT_NRI::18_busid_GE_uuid"</span>
 <a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>    <span class="p">],</span>
 <a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>    <span class="o">...</span>
 </code></pre></div>
 <p>... or it may include a single message, for example:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>    <span class="o">...</span>
-<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>    <span class="s2">&quot;verified&quot;</span><span class="p">:</span> <span class="s2">&quot;false&quot;</span><span class="p">,</span>
-<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>    <span class="s2">&quot;verified_msgs&quot;</span><span class="p">:</span> <span class="p">[</span>
-<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>        <span class="s2">&quot;VALUE_ERROR::Encoded representation mismatch for &#39;Preferred Name&#39;&quot;</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>    <span class="s2">"verified"</span><span class="p">:</span> <span class="s2">"false"</span><span class="p">,</span>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>    <span class="s2">"verified_msgs"</span><span class="p">:</span> <span class="p">[</span>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>        <span class="s2">"VALUE_ERROR::Encoded representation mismatch for 'Preferred Name'"</span>
 <a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>    <span class="p">],</span>
 <a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>    <span class="o">...</span>
 </code></pre></div>

@@ -3691,7 +3691,7 @@
 <p>With askar wallets it's possible to have all tenant wallets in a single wallet or each have an individual wallet. The default is to have each tenant in a separate wallet. This is done to keep the wallets separate and to allow for more flexibility in the future. If you want to have all tenants in a single wallet you can set the <code>multitenancy-config</code> with the value <code>{"wallet_type": "single-wallet-askar"}</code>. If you want to explicitly set the wallet type for each tenant you can do so by setting the <code>multitenancy-config</code> with the value <code>{"wallet_type": "basic"}</code>. See .vscode-sample/multitenant-admin.yml for an example.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="c1">## Multi-tenant Admin API</span>
 <a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>
-<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="l l-Scalar l-Scalar-Plain">The multi-tenant admin API allows you to manage wallets in ACA-Py. Only the base wallet can manage wallets, so you can&#39;t for example create a wallet in the context of sub wallet (using the `Authorization` header as specified in [Authentication](#authentication)).</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="l l-Scalar l-Scalar-Plain">The multi-tenant admin API allows you to manage wallets in ACA-Py. Only the base wallet can manage wallets, so you can't for example create a wallet in the context of sub wallet (using the `Authorization` header as specified in [Authentication](#authentication)).</span>
 <a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>
 <a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="l l-Scalar l-Scalar-Plain">Multi-tenancy related actions are grouped under the `/multitenancy` path or the `multitenancy` topic in the SwaggerUI. As mentioned above, the multi-tenant admin API is disabled by default, event when multi-tenancy is enabled. This is to allow for more flexible agent configuration (e.g. horizontal scaling where only a single instance exposes the admin API). To enable the multi-tenant admin API, the `--multitenant-admin` startup parameter can be used.</span>
 <a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>
@@ -3707,9 +3707,9 @@
 <a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a>
 <a id="__codelineno-1-17" name="__codelineno-1-17" href="#__codelineno-1-17"></a><span class="l l-Scalar l-Scalar-Plain">### Unmanaged Mode</span>
 <a id="__codelineno-1-18" name="__codelineno-1-18" href="#__codelineno-1-18"></a>
-<a id="__codelineno-1-19" name="__codelineno-1-19" href="#__codelineno-1-19"></a><span class="l l-Scalar l-Scalar-Plain">In **`unmanaged`** mode, ACA-Py won&#39;t manage the key for the wallet. The key is not stored in the base wallet, which means the key to unlock the wallet needs to be provided whenever the wallet is used. When a message from another agent is received, ACA-Py cannot immediately unlock the wallet and process the message. See [Authentication](#authentication) for more info.</span>
+<a id="__codelineno-1-19" name="__codelineno-1-19" href="#__codelineno-1-19"></a><span class="l l-Scalar l-Scalar-Plain">In **`unmanaged`** mode, ACA-Py won't manage the key for the wallet. The key is not stored in the base wallet, which means the key to unlock the wallet needs to be provided whenever the wallet is used. When a message from another agent is received, ACA-Py cannot immediately unlock the wallet and process the message. See [Authentication](#authentication) for more info.</span>
 <a id="__codelineno-1-20" name="__codelineno-1-20" href="#__codelineno-1-20"></a>
-<a id="__codelineno-1-21" name="__codelineno-1-21" href="#__codelineno-1-21"></a><span class="l l-Scalar l-Scalar-Plain">It is important to note unmanaged mode doesn&#39;t provide a lot of security over managed mode. The key is still processed by the agent, and therefore trust is required. It could however provide some benefit in the case a multi-tenant agent is compromised, as the agent doesn&#39;t store the key to unlock the wallet.</span>
+<a id="__codelineno-1-21" name="__codelineno-1-21" href="#__codelineno-1-21"></a><span class="l l-Scalar l-Scalar-Plain">It is important to note unmanaged mode doesn't provide a lot of security over managed mode. The key is still processed by the agent, and therefore trust is required. It could however provide some benefit in the case a multi-tenant agent is compromised, as the agent doesn't store the key to unlock the wallet.</span>
 <a id="__codelineno-1-22" name="__codelineno-1-22" href="#__codelineno-1-22"></a>
 <a id="__codelineno-1-23" name="__codelineno-1-23" href="#__codelineno-1-23"></a><span class="l l-Scalar l-Scalar-Plain">&gt; :warning</span><span class="p p-Indicator">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Although support for unmanaged mode is mostly in place, the receiving of messages from other agents in unmanaged mode is not supported yet. This means unmanaged mode can not be used yet.</span>
 <a id="__codelineno-1-24" name="__codelineno-1-24" href="#__codelineno-1-24"></a>
@@ -3721,7 +3721,7 @@
 <a id="__codelineno-1-30" name="__codelineno-1-30" href="#__codelineno-1-30"></a><span class="l l-Scalar l-Scalar-Plain">// POST /multitenancy/wallet</span>
 <a id="__codelineno-1-31" name="__codelineno-1-31" href="#__codelineno-1-31"></a><span class="p p-Indicator">{</span>
 <a id="__codelineno-1-32" name="__codelineno-1-32" href="#__codelineno-1-32"></a><span class="w">  </span><span class="nv">// ... other params ...</span>
-<a id="__codelineno-1-33" name="__codelineno-1-33" href="#__codelineno-1-33"></a><span class="w">  </span><span class="nv">&quot;key_management_mode&quot;</span><span class="p p-Indicator">:</span><span class="w"> </span><span class="s">&quot;managed&quot;</span><span class="w"> </span><span class="nv">// or &quot;unmanaged&quot;</span>
+<a id="__codelineno-1-33" name="__codelineno-1-33" href="#__codelineno-1-33"></a><span class="w">  </span><span class="nv">"key_management_mode"</span><span class="p p-Indicator">:</span><span class="w"> </span><span class="s">"managed"</span><span class="w"> </span><span class="nv">// or "unmanaged"</span>
 <a id="__codelineno-1-34" name="__codelineno-1-34" href="#__codelineno-1-34"></a><span class="p p-Indicator">}</span>
 </code></pre></div>
 <h2 id="message-routing">Message Routing<a class="headerlink" href="#message-routing" title="Permanent link">&para;</a></h2>
@@ -3764,10 +3764,10 @@
 <div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>// POST /multitenancy/wallet
 <a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>{
 <a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>  // ... other params ...
-<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>  &quot;wallet_dispatch_type&quot;: &quot;default&quot;,
-<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>  &quot;wallet_webhook_urls&quot;: [
-<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>    &quot;https://webhook-url.com/path&quot;,
-<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a>    &quot;https://another-url.com/site&quot;
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>  "wallet_dispatch_type": "default",
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>  "wallet_webhook_urls": [
+<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>    "https://webhook-url.com/path",
+<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a>    "https://another-url.com/site"
 <a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a>  ]
 <a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a>}
 </code></pre></div>
@@ -3782,9 +3782,9 @@
 </code></pre></div>
 <p>WebSocket example:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>{
-<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>  &quot;topic&quot;: &quot;{topic}&quot;,
-<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>  &quot;wallet_id&quot;: &quot;{wallet_id}&quot;,
-<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>  &quot;payload&quot;: {
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>  "topic": "{topic}",
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>  "wallet_id": "{wallet_id}",
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>  "payload": {
 <a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>    // event payload
 <a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a>  }
 <a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a>}
@@ -3793,7 +3793,7 @@
 <p>When multi-tenancy is not enabled you can authenticate with the agent using the <code>x-api-key</code> header. As there is only a single wallet, this provides sufficient authentication and authorization.</p>
 <p>For sub wallets, an additional authentication method is introduced using JSON Web Tokens (JWTs). A <code>token</code> parameter is returned after creating a wallet or calling the get token endpoint. This token must be provided for every admin API call you want to perform for the wallet using the Bearer authorization scheme.</p>
 <p>Example</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>GET /connections [headers=&quot;Authorization: Bearer {token}]
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>GET /connections [headers="Authorization: Bearer {token}]
 </code></pre></div>
 <p>The <code>Authorization</code> header is in addition to the Admin API key. So if the <code>admin-api-key</code> is enabled (which should be enabled in production) both the <code>Authorization</code> and the <code>x-api-key</code> headers should be provided when making calls to a sub wallet. For calls to a base wallet, only the <code>x-api-key</code> should be provided.</p>
 <h3 id="getting-a-token">Getting a token<a class="headerlink" href="#getting-a-token" title="Permanent link">&para;</a></h3>
@@ -3801,62 +3801,62 @@
 <h4 id="method-1-register-new-tenant">Method 1: Register new tenant<a class="headerlink" href="#method-1-register-new-tenant" title="Permanent link">&para;</a></h4>
 <p>This is the method you use to obtain a token when you haven't already registered a tenant.  In this process you will first register a tenant then an object containing your tenant <code>token</code> as well as other useful information like your <code>wallet id</code> will be returned to you.</p>
 <p>Example</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>new_tenant=&#39;{
-<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>  &quot;image_url&quot;: &quot;https://aries.ca/images/sample.png&quot;,
-<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>  &quot;key_management_mode&quot;: &quot;managed&quot;,
-<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a>  &quot;label&quot;: &quot;example-label-02&quot;,
-<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a>  &quot;wallet_dispatch_type&quot;: &quot;default&quot;,
-<a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a>  &quot;wallet_key&quot;: &quot;example-encryption-key-02&quot;,
-<a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a>  &quot;wallet_name&quot;: &quot;example-name-02&quot;,
-<a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a>  &quot;wallet_type&quot;: &quot;askar&quot;,
-<a id="__codelineno-7-9" name="__codelineno-7-9" href="#__codelineno-7-9"></a>  &quot;wallet_webhook_urls&quot;: [
-<a id="__codelineno-7-10" name="__codelineno-7-10" href="#__codelineno-7-10"></a>    &quot;https://example.com/webhook&quot;
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>new_tenant='{
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>  "image_url": "https://aries.ca/images/sample.png",
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>  "key_management_mode": "managed",
+<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a>  "label": "example-label-02",
+<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a>  "wallet_dispatch_type": "default",
+<a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a>  "wallet_key": "example-encryption-key-02",
+<a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a>  "wallet_name": "example-name-02",
+<a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a>  "wallet_type": "askar",
+<a id="__codelineno-7-9" name="__codelineno-7-9" href="#__codelineno-7-9"></a>  "wallet_webhook_urls": [
+<a id="__codelineno-7-10" name="__codelineno-7-10" href="#__codelineno-7-10"></a>    "https://example.com/webhook"
 <a id="__codelineno-7-11" name="__codelineno-7-11" href="#__codelineno-7-11"></a>  ]
-<a id="__codelineno-7-12" name="__codelineno-7-12" href="#__codelineno-7-12"></a>}&#39;
+<a id="__codelineno-7-12" name="__codelineno-7-12" href="#__codelineno-7-12"></a>}'
 </code></pre></div>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="nb">echo</span><span class="w"> </span><span class="nv">$new_tenant</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span><span class="s2">&quot;</span><span class="si">${</span><span class="nv">ACAPY_ADMIN_URL</span><span class="si">}</span><span class="s2">/multitenancy/wallet&quot;</span><span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="w">   </span>-H<span class="w"> </span><span class="s2">&quot;Content-Type: application/json&quot;</span><span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="w">   </span>-H<span class="w"> </span><span class="s2">&quot;X-Api-Key: </span><span class="nv">$ACAPY_ADMIN_URL_API_KEY</span><span class="s2">&quot;</span><span class="w"> </span><span class="se">\</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="nb">echo</span><span class="w"> </span><span class="nv">$new_tenant</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span><span class="s2">"</span><span class="si">${</span><span class="nv">ACAPY_ADMIN_URL</span><span class="si">}</span><span class="s2">/multitenancy/wallet"</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="w">   </span>-H<span class="w"> </span><span class="s2">"Content-Type: application/json"</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="w">   </span>-H<span class="w"> </span><span class="s2">"X-Api-Key: </span><span class="nv">$ACAPY_ADMIN_URL_API_KEY</span><span class="s2">"</span><span class="w"> </span><span class="se">\</span>
 <a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="w">   </span>-d<span class="w"> </span>@-
 </code></pre></div>
 <p><strong><code>Response</code></strong></p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>{
-<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>  &quot;settings&quot;: {
-<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>    &quot;wallet.type&quot;: &quot;askar&quot;,
-<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a>    &quot;wallet.name&quot;: &quot;example-name-02&quot;,
-<a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a>    &quot;wallet.webhook_urls&quot;: [
-<a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a>      &quot;https://example.com/webhook&quot;
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>  "settings": {
+<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>    "wallet.type": "askar",
+<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a>    "wallet.name": "example-name-02",
+<a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a>    "wallet.webhook_urls": [
+<a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a>      "https://example.com/webhook"
 <a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a>    ],
-<a id="__codelineno-9-8" name="__codelineno-9-8" href="#__codelineno-9-8"></a>    &quot;wallet.dispatch_type&quot;: &quot;default&quot;,
-<a id="__codelineno-9-9" name="__codelineno-9-9" href="#__codelineno-9-9"></a>    &quot;default_label&quot;: &quot;example-label-02&quot;,
-<a id="__codelineno-9-10" name="__codelineno-9-10" href="#__codelineno-9-10"></a>    &quot;image_url&quot;: &quot;https://aries.ca/images/sample.png&quot;,
-<a id="__codelineno-9-11" name="__codelineno-9-11" href="#__codelineno-9-11"></a>    &quot;wallet.id&quot;: &quot;3b64ad0d-f556-4c04-92bc-cd95bfde58cd&quot;
+<a id="__codelineno-9-8" name="__codelineno-9-8" href="#__codelineno-9-8"></a>    "wallet.dispatch_type": "default",
+<a id="__codelineno-9-9" name="__codelineno-9-9" href="#__codelineno-9-9"></a>    "default_label": "example-label-02",
+<a id="__codelineno-9-10" name="__codelineno-9-10" href="#__codelineno-9-10"></a>    "image_url": "https://aries.ca/images/sample.png",
+<a id="__codelineno-9-11" name="__codelineno-9-11" href="#__codelineno-9-11"></a>    "wallet.id": "3b64ad0d-f556-4c04-92bc-cd95bfde58cd"
 <a id="__codelineno-9-12" name="__codelineno-9-12" href="#__codelineno-9-12"></a>  },
-<a id="__codelineno-9-13" name="__codelineno-9-13" href="#__codelineno-9-13"></a>  &quot;key_management_mode&quot;: &quot;managed&quot;,
-<a id="__codelineno-9-14" name="__codelineno-9-14" href="#__codelineno-9-14"></a>  &quot;updated_at&quot;: &quot;2022-04-01T15:12:35.474975Z&quot;,
-<a id="__codelineno-9-15" name="__codelineno-9-15" href="#__codelineno-9-15"></a>  &quot;wallet_id&quot;: &quot;3b64ad0d-f556-4c04-92bc-cd95bfde58cd&quot;,
-<a id="__codelineno-9-16" name="__codelineno-9-16" href="#__codelineno-9-16"></a>  &quot;created_at&quot;: &quot;2022-04-01T15:12:35.474975Z&quot;,
-<a id="__codelineno-9-17" name="__codelineno-9-17" href="#__codelineno-9-17"></a>  &quot;token&quot;: &quot;eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ3YWxsZXRfaWQiOiIzYjY0YWQwZC1mNTU2LTRjMDQtOTJiYy1jZDk1YmZkZTU4Y2QifQ.A4eWbSR2M1Z6mbjcSLOlciBuUejehLyytCVyeUlxI0E&quot;
+<a id="__codelineno-9-13" name="__codelineno-9-13" href="#__codelineno-9-13"></a>  "key_management_mode": "managed",
+<a id="__codelineno-9-14" name="__codelineno-9-14" href="#__codelineno-9-14"></a>  "updated_at": "2022-04-01T15:12:35.474975Z",
+<a id="__codelineno-9-15" name="__codelineno-9-15" href="#__codelineno-9-15"></a>  "wallet_id": "3b64ad0d-f556-4c04-92bc-cd95bfde58cd",
+<a id="__codelineno-9-16" name="__codelineno-9-16" href="#__codelineno-9-16"></a>  "created_at": "2022-04-01T15:12:35.474975Z",
+<a id="__codelineno-9-17" name="__codelineno-9-17" href="#__codelineno-9-17"></a>  "token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ3YWxsZXRfaWQiOiIzYjY0YWQwZC1mNTU2LTRjMDQtOTJiYy1jZDk1YmZkZTU4Y2QifQ.A4eWbSR2M1Z6mbjcSLOlciBuUejehLyytCVyeUlxI0E"
 <a id="__codelineno-9-18" name="__codelineno-9-18" href="#__codelineno-9-18"></a>}
 </code></pre></div>
 <h4 id="method-2-get-tenant-token">Method 2: Get tenant token<a class="headerlink" href="#method-2-get-tenant-token" title="Permanent link">&para;</a></h4>
 <p>This method allows you to retrieve a tenant <code>token</code> for an already registered tenant.  To retrieve a token you will need an Admin API key (if your admin is protected with one), <code>wallet_key</code> and the <code>wallet_id</code> of the tenant. Note that calling the get tenant token endpoint will <strong>invalidate</strong> the old token. This is useful if the old token needs to be revoked, but does mean that you can't have multiple authentication tokens for the same wallet. Only the last generated token will always be valid.</p>
 <p>Example</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span><span class="s2">&quot;</span><span class="si">${</span><span class="nv">ACAPY_ADMIN_URL</span><span class="si">}</span><span class="s2">/multitenancy/wallet/{wallet_id}/token&quot;</span><span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="w">   </span>-H<span class="w"> </span><span class="s2">&quot;Content-Type: application/json&quot;</span><span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a><span class="w">   </span>-H<span class="w"> </span><span class="s2">&quot;X-Api-Key: </span><span class="nv">$ACAPY_ADMIN_URL_API_KEY</span><span class="s2">&quot;</span><span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a><span class="w">   </span>-d<span class="w"> </span><span class="o">{</span><span class="w"> </span><span class="s2">&quot;wallet_key&quot;</span>:<span class="w"> </span><span class="s2">&quot;example-encryption-key-02&quot;</span><span class="w"> </span><span class="o">}</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span><span class="s2">"</span><span class="si">${</span><span class="nv">ACAPY_ADMIN_URL</span><span class="si">}</span><span class="s2">/multitenancy/wallet/{wallet_id}/token"</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="w">   </span>-H<span class="w"> </span><span class="s2">"Content-Type: application/json"</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a><span class="w">   </span>-H<span class="w"> </span><span class="s2">"X-Api-Key: </span><span class="nv">$ACAPY_ADMIN_URL_API_KEY</span><span class="s2">"</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a><span class="w">   </span>-d<span class="w"> </span><span class="o">{</span><span class="w"> </span><span class="s2">"wallet_key"</span>:<span class="w"> </span><span class="s2">"example-encryption-key-02"</span><span class="w"> </span><span class="o">}</span>
 </code></pre></div>
 <p><strong><code>Response</code></strong></p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>{
-<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>  &quot;token&quot;: &quot;eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ3YWxsZXRfaWQiOiIzYjY0YWQwZC1mNTU2LTRjMDQtOTJiYy1jZDk1YmZkZTU4Y2QifQ.A4eWbSR2M1Z6mbjcSLOlciBuUejehLyytCVyeUlxI0E&quot;
+<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>  "token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ3YWxsZXRfaWQiOiIzYjY0YWQwZC1mNTU2LTRjMDQtOTJiYy1jZDk1YmZkZTU4Y2QifQ.A4eWbSR2M1Z6mbjcSLOlciBuUejehLyytCVyeUlxI0E"
 <a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a>}
 </code></pre></div>
 <p>In unmanaged mode, the get token endpoint also requires the <code>wallet_key</code> parameter to be included in the request body. The wallet key will be included in the JWT so the wallet can be unlocked when making requests to the admin API.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>{
-<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a>  &quot;wallet_id&quot;: &quot;wallet_id&quot;,
-<a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a>  // &quot;wallet_key&quot; in only present in unmanaged mode
-<a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a>  &quot;wallet_key&quot;: &quot;wallet_key&quot;
+<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a>  "wallet_id": "wallet_id",
+<a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a>  // "wallet_key" in only present in unmanaged mode
+<a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a>  "wallet_key": "wallet_key"
 <a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a>}
 </code></pre></div>
 <blockquote>
@@ -3872,36 +3872,36 @@
 <h3 id="update-a-tenant">Update a tenant<a class="headerlink" href="#update-a-tenant" title="Permanent link">&para;</a></h3>
 <p>The following properties can be updated: <code>image_url</code>, <code>label</code>, <code>wallet_dispatch_type</code>, and <code>wallet_webhook_urls</code> for tenants of a multitenancy wallet.  To update these properties you will <code>PUT</code> a request json containing the properties you wish to update along with the updated values to the <code>/multitenancy/wallet/${TENANT_WALLET_ID}</code> admin endpoint.  If the Admin API endpoint is protected, you will also include the Admin API Key in the request header.</p>
 <p>Example</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>update_tenant=&#39;{
-<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a>  &quot;image_url&quot;: &quot;https://aries.ca/images/sample-updated.png&quot;,
-<a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a>  &quot;label&quot;: &quot;example-label-02-updated&quot;,
-<a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a>  &quot;wallet_webhook_urls&quot;: [
-<a id="__codelineno-13-5" name="__codelineno-13-5" href="#__codelineno-13-5"></a>    &quot;https://example.com/webhook/updated&quot;
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>update_tenant='{
+<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a>  "image_url": "https://aries.ca/images/sample-updated.png",
+<a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a>  "label": "example-label-02-updated",
+<a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a>  "wallet_webhook_urls": [
+<a id="__codelineno-13-5" name="__codelineno-13-5" href="#__codelineno-13-5"></a>    "https://example.com/webhook/updated"
 <a id="__codelineno-13-6" name="__codelineno-13-6" href="#__codelineno-13-6"></a>  ]
-<a id="__codelineno-13-7" name="__codelineno-13-7" href="#__codelineno-13-7"></a>}&#39;
+<a id="__codelineno-13-7" name="__codelineno-13-7" href="#__codelineno-13-7"></a>}'
 </code></pre></div>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="nb">echo</span><span class="w"> </span><span class="nv">$update_tenant</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>curl<span class="w">  </span>-X<span class="w"> </span>PUT<span class="w"> </span><span class="s2">&quot;</span><span class="si">${</span><span class="nv">ACAPY_ADMIN_URL</span><span class="si">}</span><span class="s2">/multitenancy/wallet/</span><span class="si">${</span><span class="nv">TENANT_WALLET_ID</span><span class="si">}</span><span class="s2">&quot;</span><span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a><span class="w">   </span>-H<span class="w"> </span><span class="s2">&quot;Content-Type: application/json&quot;</span><span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a><span class="w">   </span>-H<span class="w"> </span><span class="s2">&quot;x-api-key: </span><span class="nv">$ACAPY_ADMIN_URL_API_KEY</span><span class="s2">&quot;</span><span class="w"> </span><span class="se">\</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="nb">echo</span><span class="w"> </span><span class="nv">$update_tenant</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>curl<span class="w">  </span>-X<span class="w"> </span>PUT<span class="w"> </span><span class="s2">"</span><span class="si">${</span><span class="nv">ACAPY_ADMIN_URL</span><span class="si">}</span><span class="s2">/multitenancy/wallet/</span><span class="si">${</span><span class="nv">TENANT_WALLET_ID</span><span class="si">}</span><span class="s2">"</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a><span class="w">   </span>-H<span class="w"> </span><span class="s2">"Content-Type: application/json"</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a><span class="w">   </span>-H<span class="w"> </span><span class="s2">"x-api-key: </span><span class="nv">$ACAPY_ADMIN_URL_API_KEY</span><span class="s2">"</span><span class="w"> </span><span class="se">\</span>
 <a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a><span class="w">   </span>-d<span class="w"> </span>@-
 </code></pre></div>
 <p><strong><code>Response</code></strong></p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>{
-<a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a>  &quot;settings&quot;: {
-<a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a>    &quot;wallet.type&quot;: &quot;askar&quot;,
-<a id="__codelineno-15-4" name="__codelineno-15-4" href="#__codelineno-15-4"></a>    &quot;wallet.name&quot;: &quot;example-name-02&quot;,
-<a id="__codelineno-15-5" name="__codelineno-15-5" href="#__codelineno-15-5"></a>    &quot;wallet.webhook_urls&quot;: [
-<a id="__codelineno-15-6" name="__codelineno-15-6" href="#__codelineno-15-6"></a>      &quot;https://example.com/webhook/updated&quot;
+<a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a>  "settings": {
+<a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a>    "wallet.type": "askar",
+<a id="__codelineno-15-4" name="__codelineno-15-4" href="#__codelineno-15-4"></a>    "wallet.name": "example-name-02",
+<a id="__codelineno-15-5" name="__codelineno-15-5" href="#__codelineno-15-5"></a>    "wallet.webhook_urls": [
+<a id="__codelineno-15-6" name="__codelineno-15-6" href="#__codelineno-15-6"></a>      "https://example.com/webhook/updated"
 <a id="__codelineno-15-7" name="__codelineno-15-7" href="#__codelineno-15-7"></a>    ],
-<a id="__codelineno-15-8" name="__codelineno-15-8" href="#__codelineno-15-8"></a>    &quot;wallet.dispatch_type&quot;: &quot;default&quot;,
-<a id="__codelineno-15-9" name="__codelineno-15-9" href="#__codelineno-15-9"></a>    &quot;default_label&quot;: &quot;example-label-02-updated&quot;,
-<a id="__codelineno-15-10" name="__codelineno-15-10" href="#__codelineno-15-10"></a>    &quot;image_url&quot;: &quot;https://aries.ca/images/sample-updated.png&quot;,
-<a id="__codelineno-15-11" name="__codelineno-15-11" href="#__codelineno-15-11"></a>    &quot;wallet.id&quot;: &quot;3b64ad0d-f556-4c04-92bc-cd95bfde58cd&quot;
+<a id="__codelineno-15-8" name="__codelineno-15-8" href="#__codelineno-15-8"></a>    "wallet.dispatch_type": "default",
+<a id="__codelineno-15-9" name="__codelineno-15-9" href="#__codelineno-15-9"></a>    "default_label": "example-label-02-updated",
+<a id="__codelineno-15-10" name="__codelineno-15-10" href="#__codelineno-15-10"></a>    "image_url": "https://aries.ca/images/sample-updated.png",
+<a id="__codelineno-15-11" name="__codelineno-15-11" href="#__codelineno-15-11"></a>    "wallet.id": "3b64ad0d-f556-4c04-92bc-cd95bfde58cd"
 <a id="__codelineno-15-12" name="__codelineno-15-12" href="#__codelineno-15-12"></a>  },
-<a id="__codelineno-15-13" name="__codelineno-15-13" href="#__codelineno-15-13"></a>  &quot;key_management_mode&quot;: &quot;managed&quot;,
-<a id="__codelineno-15-14" name="__codelineno-15-14" href="#__codelineno-15-14"></a>  &quot;updated_at&quot;: &quot;2022-04-01T16:23:58.642004Z&quot;,
-<a id="__codelineno-15-15" name="__codelineno-15-15" href="#__codelineno-15-15"></a>  &quot;wallet_id&quot;: &quot;3b64ad0d-f556-4c04-92bc-cd95bfde58cd&quot;,
-<a id="__codelineno-15-16" name="__codelineno-15-16" href="#__codelineno-15-16"></a>  &quot;created_at&quot;: &quot;2022-04-01T15:12:35.474975Z&quot;
+<a id="__codelineno-15-13" name="__codelineno-15-13" href="#__codelineno-15-13"></a>  "key_management_mode": "managed",
+<a id="__codelineno-15-14" name="__codelineno-15-14" href="#__codelineno-15-14"></a>  "updated_at": "2022-04-01T16:23:58.642004Z",
+<a id="__codelineno-15-15" name="__codelineno-15-15" href="#__codelineno-15-15"></a>  "wallet_id": "3b64ad0d-f556-4c04-92bc-cd95bfde58cd",
+<a id="__codelineno-15-16" name="__codelineno-15-16" href="#__codelineno-15-16"></a>  "created_at": "2022-04-01T15:12:35.474975Z"
 <a id="__codelineno-15-17" name="__codelineno-15-17" href="#__codelineno-15-17"></a>}
 </code></pre></div>
 <blockquote>
@@ -3915,10 +3915,10 @@
 <li>{Admin_Api_Key} if admin is protected</li>
 </ul>
 <p>Example</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>curl<span class="w"> </span>-X<span class="w"> </span>DELETE<span class="w"> </span><span class="s2">&quot;</span><span class="si">${</span><span class="nv">ACAPY_ADMIN_URL</span><span class="si">}</span><span class="s2">/multitenancy/wallet/{wallet_id}&quot;</span><span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a><span class="w">   </span>-H<span class="w"> </span><span class="s2">&quot;Content-Type: application/json&quot;</span><span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a><span class="w">   </span>-H<span class="w"> </span><span class="s2">&quot;x-api-key: </span><span class="nv">$ACAPY_ADMIN_URL_API_KEY</span><span class="s2">&quot;</span><span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-16-4" name="__codelineno-16-4" href="#__codelineno-16-4"></a><span class="w">   </span>-d<span class="w"> </span><span class="s1">&#39;{ &quot;wallet_key&quot;: &quot;example-encryption-key-02&quot; }&#39;</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>curl<span class="w"> </span>-X<span class="w"> </span>DELETE<span class="w"> </span><span class="s2">"</span><span class="si">${</span><span class="nv">ACAPY_ADMIN_URL</span><span class="si">}</span><span class="s2">/multitenancy/wallet/{wallet_id}"</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a><span class="w">   </span>-H<span class="w"> </span><span class="s2">"Content-Type: application/json"</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a><span class="w">   </span>-H<span class="w"> </span><span class="s2">"x-api-key: </span><span class="nv">$ACAPY_ADMIN_URL_API_KEY</span><span class="s2">"</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-16-4" name="__codelineno-16-4" href="#__codelineno-16-4"></a><span class="w">   </span>-d<span class="w"> </span><span class="s1">'{ "wallet_key": "example-encryption-key-02" }'</span>
 </code></pre></div>
 <p><strong><code>Response</code></strong></p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a>{}
@@ -4027,23 +4027,23 @@ instead.</p>
 <p>Added <code>extra_settings</code> dict field to request schema. <code>extra_settings</code> can be configured in the request body as below:</p>
 <p><strong><code>Example Request</code></strong></p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a><span class="p">{</span>
-<a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a><span class="w">    </span><span class="nt">&quot;wallet_name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot; ... &quot;</span><span class="p">,</span>
-<a id="__codelineno-18-3" name="__codelineno-18-3" href="#__codelineno-18-3"></a><span class="w">    </span><span class="nt">&quot;default_label&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot; ... &quot;</span><span class="p">,</span>
-<a id="__codelineno-18-4" name="__codelineno-18-4" href="#__codelineno-18-4"></a><span class="w">    </span><span class="nt">&quot;wallet_type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot; ... &quot;</span><span class="p">,</span>
-<a id="__codelineno-18-5" name="__codelineno-18-5" href="#__codelineno-18-5"></a><span class="w">    </span><span class="nt">&quot;wallet_key&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot; ... &quot;</span><span class="p">,</span>
-<a id="__codelineno-18-6" name="__codelineno-18-6" href="#__codelineno-18-6"></a><span class="w">    </span><span class="nt">&quot;key_management_mode&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;managed&quot;</span><span class="p">,</span>
-<a id="__codelineno-18-7" name="__codelineno-18-7" href="#__codelineno-18-7"></a><span class="w">    </span><span class="nt">&quot;wallet_webhook_urls&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[],</span>
-<a id="__codelineno-18-8" name="__codelineno-18-8" href="#__codelineno-18-8"></a><span class="w">    </span><span class="nt">&quot;wallet_dispatch_type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;base&quot;</span><span class="p">,</span>
-<a id="__codelineno-18-9" name="__codelineno-18-9" href="#__codelineno-18-9"></a><span class="w">    </span><span class="nt">&quot;extra_settings&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-18-10" name="__codelineno-18-10" href="#__codelineno-18-10"></a><span class="w">        </span><span class="nt">&quot;ACAPY_LOG_LEVEL&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;INFO&quot;</span><span class="p">,</span>
-<a id="__codelineno-18-11" name="__codelineno-18-11" href="#__codelineno-18-11"></a><span class="w">        </span><span class="nt">&quot;ACAPY_INVITE_PUBLIC&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
-<a id="__codelineno-18-12" name="__codelineno-18-12" href="#__codelineno-18-12"></a><span class="w">        </span><span class="nt">&quot;public-invites&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span>
+<a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a><span class="w">    </span><span class="nt">"wallet_name"</span><span class="p">:</span><span class="w"> </span><span class="s2">" ... "</span><span class="p">,</span>
+<a id="__codelineno-18-3" name="__codelineno-18-3" href="#__codelineno-18-3"></a><span class="w">    </span><span class="nt">"default_label"</span><span class="p">:</span><span class="w"> </span><span class="s2">" ... "</span><span class="p">,</span>
+<a id="__codelineno-18-4" name="__codelineno-18-4" href="#__codelineno-18-4"></a><span class="w">    </span><span class="nt">"wallet_type"</span><span class="p">:</span><span class="w"> </span><span class="s2">" ... "</span><span class="p">,</span>
+<a id="__codelineno-18-5" name="__codelineno-18-5" href="#__codelineno-18-5"></a><span class="w">    </span><span class="nt">"wallet_key"</span><span class="p">:</span><span class="w"> </span><span class="s2">" ... "</span><span class="p">,</span>
+<a id="__codelineno-18-6" name="__codelineno-18-6" href="#__codelineno-18-6"></a><span class="w">    </span><span class="nt">"key_management_mode"</span><span class="p">:</span><span class="w"> </span><span class="s2">"managed"</span><span class="p">,</span>
+<a id="__codelineno-18-7" name="__codelineno-18-7" href="#__codelineno-18-7"></a><span class="w">    </span><span class="nt">"wallet_webhook_urls"</span><span class="p">:</span><span class="w"> </span><span class="p">[],</span>
+<a id="__codelineno-18-8" name="__codelineno-18-8" href="#__codelineno-18-8"></a><span class="w">    </span><span class="nt">"wallet_dispatch_type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"base"</span><span class="p">,</span>
+<a id="__codelineno-18-9" name="__codelineno-18-9" href="#__codelineno-18-9"></a><span class="w">    </span><span class="nt">"extra_settings"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-18-10" name="__codelineno-18-10" href="#__codelineno-18-10"></a><span class="w">        </span><span class="nt">"ACAPY_LOG_LEVEL"</span><span class="p">:</span><span class="w"> </span><span class="s2">"INFO"</span><span class="p">,</span>
+<a id="__codelineno-18-11" name="__codelineno-18-11" href="#__codelineno-18-11"></a><span class="w">        </span><span class="nt">"ACAPY_INVITE_PUBLIC"</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<a id="__codelineno-18-12" name="__codelineno-18-12" href="#__codelineno-18-12"></a><span class="w">        </span><span class="nt">"public-invites"</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span>
 <a id="__codelineno-18-13" name="__codelineno-18-13" href="#__codelineno-18-13"></a><span class="w">    </span><span class="p">},</span>
 <a id="__codelineno-18-14" name="__codelineno-18-14" href="#__codelineno-18-14"></a><span class="p">}</span>
 </code></pre></div>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a><span class="nb">echo</span><span class="w"> </span><span class="nv">$new_tenant</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span><span class="s2">&quot;</span><span class="si">${</span><span class="nv">ACAPY_ADMIN_URL</span><span class="si">}</span><span class="s2">/multitenancy/wallet&quot;</span><span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-19-2" name="__codelineno-19-2" href="#__codelineno-19-2"></a><span class="w">  </span>-H<span class="w"> </span><span class="s2">&quot;Content-Type: application/json&quot;</span><span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-19-3" name="__codelineno-19-3" href="#__codelineno-19-3"></a><span class="w">  </span>-H<span class="w"> </span><span class="s2">&quot;X-Api-Key: </span><span class="nv">$ACAPY_ADMIN_URL_API_KEY</span><span class="s2">&quot;</span><span class="w"> </span><span class="se">\</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a><span class="nb">echo</span><span class="w"> </span><span class="nv">$new_tenant</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>curl<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span><span class="s2">"</span><span class="si">${</span><span class="nv">ACAPY_ADMIN_URL</span><span class="si">}</span><span class="s2">/multitenancy/wallet"</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-19-2" name="__codelineno-19-2" href="#__codelineno-19-2"></a><span class="w">  </span>-H<span class="w"> </span><span class="s2">"Content-Type: application/json"</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-19-3" name="__codelineno-19-3" href="#__codelineno-19-3"></a><span class="w">  </span>-H<span class="w"> </span><span class="s2">"X-Api-Key: </span><span class="nv">$ACAPY_ADMIN_URL_API_KEY</span><span class="s2">"</span><span class="w"> </span><span class="se">\</span>
 <a id="__codelineno-19-4" name="__codelineno-19-4" href="#__codelineno-19-4"></a><span class="w">  </span>-d<span class="w"> </span>@-
 </code></pre></div>
 <ul>
@@ -4052,20 +4052,20 @@ instead.</p>
 <p>Added <code>extra_settings</code> dict field to request schema.</p>
 <p><strong><code>Example Request</code></strong></p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a><span class="w">  </span><span class="p">{</span>
-<a id="__codelineno-20-2" name="__codelineno-20-2" href="#__codelineno-20-2"></a><span class="w">    </span><span class="nt">&quot;wallet_webhook_urls&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w"> </span><span class="err">...</span><span class="w"> </span><span class="p">],</span>
-<a id="__codelineno-20-3" name="__codelineno-20-3" href="#__codelineno-20-3"></a><span class="w">    </span><span class="nt">&quot;wallet_dispatch_type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;default&quot;</span><span class="p">,</span>
-<a id="__codelineno-20-4" name="__codelineno-20-4" href="#__codelineno-20-4"></a><span class="w">    </span><span class="nt">&quot;label&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot; ... &quot;</span><span class="p">,</span>
-<a id="__codelineno-20-5" name="__codelineno-20-5" href="#__codelineno-20-5"></a><span class="w">    </span><span class="nt">&quot;image_url&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot; ... &quot;</span><span class="p">,</span>
-<a id="__codelineno-20-6" name="__codelineno-20-6" href="#__codelineno-20-6"></a><span class="w">    </span><span class="nt">&quot;extra_settings&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
-<a id="__codelineno-20-7" name="__codelineno-20-7" href="#__codelineno-20-7"></a><span class="w">        </span><span class="nt">&quot;ACAPY_LOG_LEVEL&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;INFO&quot;</span><span class="p">,</span>
-<a id="__codelineno-20-8" name="__codelineno-20-8" href="#__codelineno-20-8"></a><span class="w">        </span><span class="nt">&quot;ACAPY_INVITE_PUBLIC&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
-<a id="__codelineno-20-9" name="__codelineno-20-9" href="#__codelineno-20-9"></a><span class="w">        </span><span class="nt">&quot;ACAPY_PUBLIC_INVITES&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span>
+<a id="__codelineno-20-2" name="__codelineno-20-2" href="#__codelineno-20-2"></a><span class="w">    </span><span class="nt">"wallet_webhook_urls"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w"> </span><span class="err">...</span><span class="w"> </span><span class="p">],</span>
+<a id="__codelineno-20-3" name="__codelineno-20-3" href="#__codelineno-20-3"></a><span class="w">    </span><span class="nt">"wallet_dispatch_type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"default"</span><span class="p">,</span>
+<a id="__codelineno-20-4" name="__codelineno-20-4" href="#__codelineno-20-4"></a><span class="w">    </span><span class="nt">"label"</span><span class="p">:</span><span class="w"> </span><span class="s2">" ... "</span><span class="p">,</span>
+<a id="__codelineno-20-5" name="__codelineno-20-5" href="#__codelineno-20-5"></a><span class="w">    </span><span class="nt">"image_url"</span><span class="p">:</span><span class="w"> </span><span class="s2">" ... "</span><span class="p">,</span>
+<a id="__codelineno-20-6" name="__codelineno-20-6" href="#__codelineno-20-6"></a><span class="w">    </span><span class="nt">"extra_settings"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-20-7" name="__codelineno-20-7" href="#__codelineno-20-7"></a><span class="w">        </span><span class="nt">"ACAPY_LOG_LEVEL"</span><span class="p">:</span><span class="w"> </span><span class="s2">"INFO"</span><span class="p">,</span>
+<a id="__codelineno-20-8" name="__codelineno-20-8" href="#__codelineno-20-8"></a><span class="w">        </span><span class="nt">"ACAPY_INVITE_PUBLIC"</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<a id="__codelineno-20-9" name="__codelineno-20-9" href="#__codelineno-20-9"></a><span class="w">        </span><span class="nt">"ACAPY_PUBLIC_INVITES"</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span>
 <a id="__codelineno-20-10" name="__codelineno-20-10" href="#__codelineno-20-10"></a><span class="w">    </span><span class="p">},</span>
 <a id="__codelineno-20-11" name="__codelineno-20-11" href="#__codelineno-20-11"></a><span class="w">  </span><span class="p">}</span>
 </code></pre></div>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a><span class="w">  </span><span class="nb">echo</span><span class="w"> </span><span class="nv">$update_tenant</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>curl<span class="w">  </span>-X<span class="w"> </span>PUT<span class="w"> </span><span class="s2">&quot;</span><span class="si">${</span><span class="nv">ACAPY_ADMIN_URL</span><span class="si">}</span><span class="s2">/multitenancy/wallet/</span><span class="si">${</span><span class="nv">WALLET_ID</span><span class="si">}</span><span class="s2">&quot;</span><span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-21-2" name="__codelineno-21-2" href="#__codelineno-21-2"></a><span class="w">   </span>-H<span class="w"> </span><span class="s2">&quot;Content-Type: application/json&quot;</span><span class="w"> </span><span class="se">\</span>
-<a id="__codelineno-21-3" name="__codelineno-21-3" href="#__codelineno-21-3"></a><span class="w">   </span>-H<span class="w"> </span><span class="s2">&quot;x-api-key: </span><span class="nv">$ACAPY_ADMIN_URL_API_KEY</span><span class="s2">&quot;</span><span class="w"> </span><span class="se">\</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a><span class="w">  </span><span class="nb">echo</span><span class="w"> </span><span class="nv">$update_tenant</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>curl<span class="w">  </span>-X<span class="w"> </span>PUT<span class="w"> </span><span class="s2">"</span><span class="si">${</span><span class="nv">ACAPY_ADMIN_URL</span><span class="si">}</span><span class="s2">/multitenancy/wallet/</span><span class="si">${</span><span class="nv">WALLET_ID</span><span class="si">}</span><span class="s2">"</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-21-2" name="__codelineno-21-2" href="#__codelineno-21-2"></a><span class="w">   </span>-H<span class="w"> </span><span class="s2">"Content-Type: application/json"</span><span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-21-3" name="__codelineno-21-3" href="#__codelineno-21-3"></a><span class="w">   </span>-H<span class="w"> </span><span class="s2">"x-api-key: </span><span class="nv">$ACAPY_ADMIN_URL_API_KEY</span><span class="s2">"</span><span class="w"> </span><span class="se">\</span>
 <a id="__codelineno-21-4" name="__codelineno-21-4" href="#__codelineno-21-4"></a><span class="w">   </span>-d<span class="w"> </span>@-
 </code></pre></div>
 

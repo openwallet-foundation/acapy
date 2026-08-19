@@ -3409,7 +3409,7 @@ that the relevant AATH tests are now run as part of the tests run when submittin
 <a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>./manage<span class="w"> </span>build
 <a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>./manage<span class="w"> </span>start
 <a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="nb">cd</span><span class="w"> </span>../..
-<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>git<span class="w"> </span>clone<span class="w"> </span><span class="s2">&quot;https://github.com/openwallet-foundation/acapy&quot;</span>
+<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>git<span class="w"> </span>clone<span class="w"> </span><span class="s2">"https://github.com/openwallet-foundation/acapy"</span>
 <a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="nb">cd</span><span class="w"> </span>acapy/demo
 <a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>./run_bdd<span class="w"> </span>-t<span class="w"> </span>~@taa_required
 </code></pre></div>
@@ -3424,7 +3424,7 @@ using postgres run the following:</p>
 <a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="nv">ACAPY_ARG_FILE</span><span class="o">=</span>postgres-indy-args.yml<span class="w"> </span>./run_bdd
 </code></pre></div>
 <p>To run the tests against the back-end <code>askar</code> libraries (as opposed to indy-sdk) run the following:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="nv">BDD_EXTRA_AGENT_ARGS</span><span class="o">=</span><span class="s2">&quot;{\&quot;wallet-type\&quot;:\&quot;askar\&quot;}&quot;</span><span class="w"> </span>./run_bdd<span class="w"> </span>-t<span class="w"> </span>~@taa_required
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="nv">BDD_EXTRA_AGENT_ARGS</span><span class="o">=</span><span class="s2">"{\"wallet-type\":\"askar\"}"</span><span class="w"> </span>./run_bdd<span class="w"> </span>-t<span class="w"> </span>~@taa_required
 </code></pre></div>
 <p>(Note that <code>wallet-type</code> is currently the only extra argument supported.)</p>
 <p>You can run individual tests by specifying the tag(s):</p>
@@ -3441,7 +3441,7 @@ using postgres run the following:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>./run_bdd<span class="w"> </span>-t<span class="w"> </span>@taa_required
 </code></pre></div>
 <p>or:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="nv">BDD_EXTRA_AGENT_ARGS</span><span class="o">=</span><span class="s2">&quot;{\&quot;wallet-type\&quot;:\&quot;askar\&quot;}&quot;</span><span class="w"> </span>./run_bdd<span class="w"> </span>-t<span class="w"> </span>@taa_required
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="nv">BDD_EXTRA_AGENT_ARGS</span><span class="o">=</span><span class="s2">"{\"wallet-type\":\"askar\"}"</span><span class="w"> </span>./run_bdd<span class="w"> </span>-t<span class="w"> </span>@taa_required
 </code></pre></div>
 <p>The agents run on a pre-defined set of ports, however occasionally your local system may already be using one of these ports.  (For example MacOS recently decided to use 8021 for the ftp proxy service.)</p>
 <p>To override the default port settings:</p>
@@ -3479,13 +3479,13 @@ using postgres run the following:</p>
 <p>ACA-Py integration tests use the same configuration approach as AATH, documented <a href="https://github.com/openwallet-foundation/owl-agent-test-harness/blob/main/CONFIGURE-CRED-TYPES.md">here</a>.</p>
 <p>In addition to support for external schemas, credential data etc, the ACA-Py integration tests support configuration of the ACA-Py agents that are used to run the test.  For example:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>Scenario Outline: Present Proof where the prover does not propose a presentation of the proof and is acknowledged
-<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>  Given &quot;3&quot; agents
+<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>  Given "3" agents
 <a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a>     | name  | role     | capabilities        |
 <a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a>     | Acme  | issuer   | &lt;Acme_capabilities&gt; |
 <a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a>     | Faber | verifier | &lt;Acme_capabilities&gt; |
 <a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a>     | Bob   | prover   | &lt;Bob_capabilities&gt;  |
-<a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a>  And &quot;&lt;issuer&gt;&quot; and &quot;Bob&quot; have an existing connection
-<a id="__codelineno-10-8" name="__codelineno-10-8" href="#__codelineno-10-8"></a>  And &quot;Bob&quot; has an issued &lt;Schema_name&gt; credential &lt;Credential_data&gt; from &lt;issuer&gt;
+<a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a>  And "&lt;issuer&gt;" and "Bob" have an existing connection
+<a id="__codelineno-10-8" name="__codelineno-10-8" href="#__codelineno-10-8"></a>  And "Bob" has an issued &lt;Schema_name&gt; credential &lt;Credential_data&gt; from &lt;issuer&gt;
 <a id="__codelineno-10-9" name="__codelineno-10-9" href="#__codelineno-10-9"></a>  ...
 <a id="__codelineno-10-10" name="__codelineno-10-10" href="#__codelineno-10-10"></a>
 <a id="__codelineno-10-11" name="__codelineno-10-11" href="#__codelineno-10-11"></a>  Examples:

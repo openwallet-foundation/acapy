@@ -3267,8 +3267,8 @@
 </code></pre></div>
 <p>The Indy handler checks to see if the wallet type is <code>askar-anoncreds</code> and if so delegates the calls to the anoncreds handler, for example:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>        <span class="c1"># Temporary shim while the new anoncreds library integration is in progress</span>
-<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>        <span class="n">wallet_type</span> <span class="o">=</span> <span class="n">profile</span><span class="o">.</span><span class="n">settings</span><span class="o">.</span><span class="n">get_value</span><span class="p">(</span><span class="s2">&quot;wallet.type&quot;</span><span class="p">)</span>
-<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>        <span class="k">if</span> <span class="n">wallet_type</span> <span class="o">==</span> <span class="s2">&quot;askar-anoncreds&quot;</span><span class="p">:</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>        <span class="n">wallet_type</span> <span class="o">=</span> <span class="n">profile</span><span class="o">.</span><span class="n">settings</span><span class="o">.</span><span class="n">get_value</span><span class="p">(</span><span class="s2">"wallet.type"</span><span class="p">)</span>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>        <span class="k">if</span> <span class="n">wallet_type</span> <span class="o">==</span> <span class="s2">"askar-anoncreds"</span><span class="p">:</span>
 <a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>            <span class="bp">self</span><span class="o">.</span><span class="n">anoncreds_handler</span> <span class="o">=</span> <span class="n">AnonCredsPresExchangeHandler</span><span class="p">(</span><span class="n">profile</span><span class="p">)</span>
 </code></pre></div>
 <p>... and then:</p>
@@ -3310,10 +3310,10 @@
 <p>The new code is already in place (in comments).  For example for the Credential handler:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>        <span class="n">To</span> <span class="n">make</span> <span class="n">the</span> <span class="n">switch</span> <span class="kn">from</span><span class="w"> </span><span class="nn">indy</span> <span class="n">to</span> <span class="n">anoncreds</span> <span class="n">replace</span> <span class="n">the</span> <span class="n">above</span> <span class="k">with</span> <span class="n">the</span> <span class="n">following</span>
 <a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>        <span class="n">INDY</span> <span class="o">=</span> <span class="n">FormatSpec</span><span class="p">(</span>
-<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>            <span class="s2">&quot;hlindy/&quot;</span><span class="p">,</span>
+<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>            <span class="s2">"hlindy/"</span><span class="p">,</span>
 <a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a>            <span class="n">DeferLoad</span><span class="p">(</span>
-<a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a>                <span class="s2">&quot;acapy_agent.protocols.present_proof.v2_0&quot;</span>
-<a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a>                <span class="s2">&quot;.formats.anoncreds.handler.AnonCredsPresExchangeHandler&quot;</span>
+<a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a>                <span class="s2">"acapy_agent.protocols.present_proof.v2_0"</span>
+<a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a>                <span class="s2">".formats.anoncreds.handler.AnonCredsPresExchangeHandler"</span>
 <a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a>            <span class="p">),</span>
 <a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a>        <span class="p">)</span>
 </code></pre></div>
