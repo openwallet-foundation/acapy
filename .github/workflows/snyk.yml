@@ -56,6 +56,6 @@ jobs:
         sed -i 's/"security-severity": "null"/"security-severity": "0"/g' snyk.sarif
     
     - name: Upload result to GitHub Code Scanning
-      uses: github/codeql-action/upload-sarif@5595ccaf912efad79be6eef63a5619ff05969be3 # v3.29.5
+      uses: github/codeql-action/upload-sarif@ff2f1c621b7f889edc0d3c761ac2e6a3f8cdb0dd # v3.29.5
       with:
         sarif_file: snyk.sarif
