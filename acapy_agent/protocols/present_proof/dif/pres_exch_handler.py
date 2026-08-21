@@ -1504,9 +1504,7 @@ class DIFPresExchHandler:
     def __is_requirement_satisfied(
         self, requirement: Requirement, submitted_descriptors: set
     ) -> bool:
-        count = self.__count_satisfied_requirements(
-            requirement, submitted_descriptors
-        )
+        count = self.__count_satisfied_requirements(requirement, submitted_descriptors)
         return self.is_len_applicable(requirement, count)
 
     async def restrict_field_paths_one_of_filter(
