@@ -1735,9 +1735,9 @@ class TestDIFFormatHandler(IsolatedAsyncioTestCase):
             DIF_PRES_REQUEST_SEQUENCE["presentation_definition"]
         )
         duplicate_sequence = deepcopy(DIF_PRES_SEQUENCE)
-        duplicate_sequence[1]["presentation_submission"]["descriptor_map"][0][
-            "id"
-        ] = "citizenship_input_1"
+        duplicate_sequence[1]["presentation_submission"]["descriptor_map"][0]["id"] = (
+            "citizenship_input_1"
+        )
         dif_handler = DIFPresExchHandler(self.profile)
 
         with self.assertRaises(DIFPresExchError):
