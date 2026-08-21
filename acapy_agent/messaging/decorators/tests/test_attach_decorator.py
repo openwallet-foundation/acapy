@@ -594,9 +594,7 @@ class TestAttachDecoratorSignature:
             ident=IDENT,
             description=DESCRIPTION,
         )
-        did_infos = [
-            await wallet.create_local_did(SOV, ED25519, seed[i]) for i in [0, 1]
-        ]
+        did_infos = [await wallet.create_local_did(SOV, ED25519, seed[i]) for i in [0, 1]]
         await deco.data.sign(did_infos[0].verkey, wallet)
         # Sign with key 0; require key 1 -> should fail
         assert not await deco.data.verify(wallet, signer_verkey=did_infos[1].verkey)

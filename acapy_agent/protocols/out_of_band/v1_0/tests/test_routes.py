@@ -248,9 +248,7 @@ class TestOutOfBandRoutes(IsolatedAsyncioTestCase):
             ) as mock_json_response,
         ):
             await test_module.oob_records_list(self.request)
-            mock_json_response.assert_called_once_with(
-                {"results": [{"oob_id": "test"}]}
-            )
+            mock_json_response.assert_called_once_with({"results": [{"oob_id": "test"}]})
 
     async def test_oob_records_list_with_filters(self):
         self.request.query = {
