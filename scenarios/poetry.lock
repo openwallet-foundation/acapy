@@ -1015,6 +1015,22 @@ docs = ["sphinx (>=5.3)", "sphinx-rtd-theme (>=1)"]
 testing = ["coverage (>=6.2)", "hypothesis (>=5.7.1)"]
 
 [[package]]
+name = "pytest-rerunfailures"
+version = "16.6"
+description = "pytest plugin to re-run tests to eliminate flaky failures"
+optional = false
+python-versions = ">=3.10"
+groups = ["main"]
+files = [
+    {file = "pytest_rerunfailures-16.6-py3-none-any.whl", hash = "sha256:6af2d1ebd6e5cb79666ac408942cd6a0672a49fefd8523664770718560795e13"},
+    {file = "pytest_rerunfailures-16.6.tar.gz", hash = "sha256:29dbfee46f542073c888e0ed4e81c51e15b9096f49a299eb1a759629c601684a"},
+]
+
+[package.dependencies]
+packaging = ">=17.1"
+pytest = ">=8.2,<8.2.2 || >8.2.2"
+
+[[package]]
 name = "pywin32"
 version = "308"
 description = "Python for Window Extensions"
@@ -1266,4 +1282,4 @@ propcache = ">=0.2.0"
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.10"
-content-hash = "4a9b989b9e5928e55e2271472e3759661bcbb7ccb68b3200ec1e20ecc2ad7bb7"
+content-hash = "cb4aeb1f1342096cbd54e0d9661157fdd64592bdb7648ade51ce35fcba9595bc"
