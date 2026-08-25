@@ -18,8 +18,8 @@ RUN apt-get update && \
 WORKDIR /src
 
 COPY ./pyproject.toml ./poetry.lock ./
-# need to install pysqlcipher3 first to ensure build dependencies are available
-RUN pip install --no-cache-dir sqlcipher3-wheels==0.5.5 && \
+# need to install sqlcipher3-wheels first (binary-only) before poetry install
+RUN pip install --no-cache-dir --only-binary=:all: sqlcipher3-wheels==0.5.5 && \
     poetry install --no-root
 
 COPY ./acapy_agent ./acapy_agent
