@@ -39,13 +39,14 @@ def get_write_ledger_config_for_profile(settings: BaseSettings) -> dict:
         elif write_ledger in non_prod_write_ledger_pool:
             write_ledger_config = non_prod_write_ledger_pool.get(write_ledger)
         else:
-            error_message = (
-                "ledger.write_ledger in profile settings does not correspond to a "
-                "write configurable ledger provided with --genesis-transactions-list"
+            LOGGER.warning(
+                "ledger.write_ledger %s in profile settings does not correspond to "
+                "a write configurable ledger provided with "
+                "--genesis-transactions-list; falling back to the default "
+                "write ledger",
+                write_ledger,
             )
-            LOGGER.error(error_message)
-            raise ProfileError(error_message)
-    else:
+    if write_ledger_config is None:
         if len(prod_write_ledger_pool) >= 1:
             LOGGER.debug("Using first production write ledger")
             write_ledger_config = (list(prod_write_ledger_pool.values()))[0]

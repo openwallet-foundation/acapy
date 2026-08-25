@@ -160,11 +160,11 @@ async def main():
         pause_for_input()
 
         with section("Present example ED25519 credential"):
-            alice_pres_ex, bob_pres_ex = await jsonld_present_proof_v2(
-                alice,
+            bob_pres_ex, alice_pres_ex = await jsonld_present_proof_v2(
                 bob,
-                alice_conn.connection_id,
+                alice,
                 bob_conn.connection_id,
+                alice_conn.connection_id,
                 presentation_definition={
                     "input_descriptors": [
                         {
@@ -242,11 +242,11 @@ async def main():
         pause_for_input()
 
         with section("Present example P256 credential"):
-            alice_pres_ex, bob_pres_ex = await jsonld_present_proof_v2(
-                alice,
+            bob_pres_ex, alice_pres_ex = await jsonld_present_proof_v2(
                 bob,
-                alice_conn.connection_id,
+                alice,
                 bob_conn.connection_id,
+                alice_conn.connection_id,
                 presentation_definition={
                     "input_descriptors": [
                         {
@@ -328,11 +328,11 @@ async def main():
         pause_for_input()
 
         with section("Present ED25519 quick context credential"):
-            alice_pres_ex, bob_pres_ex = await jsonld_present_proof_v2(
-                alice,
+            bob_pres_ex, alice_pres_ex = await jsonld_present_proof_v2(
                 bob,
-                alice_conn.connection_id,
+                alice,
                 bob_conn.connection_id,
+                alice_conn.connection_id,
                 presentation_definition={
                     "input_descriptors": [
                         {
@@ -410,11 +410,11 @@ async def main():
         pause_for_input()
 
         with section("Present BBS+ Credential with SD"):
-            alice_pres_ex, bob_pres_ex = await jsonld_present_proof_v2(
-                alice,
+            bob_pres_ex, alice_pres_ex = await jsonld_present_proof_v2(
                 bob,
-                alice_conn.connection_id,
+                alice,
                 bob_conn.connection_id,
+                alice_conn.connection_id,
                 presentation_definition={
                     "input_descriptors": [
                         {
