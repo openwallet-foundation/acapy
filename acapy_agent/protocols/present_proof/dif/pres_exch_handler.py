@@ -1418,22 +1418,35 @@ class DIFPresExchHandler:
 
         """
         input_descriptors = pd.input_descriptors
+        requirement = await self.make_requirement(
+            srs=pd.submission_requirements,
+            descriptors=input_descriptors,
+        )
         if isinstance(pres, Sequence):
+            submitted_descriptors = set()
             for pr in pres:
                 descriptor_map_list = pr["presentation_submission"].get("descriptor_map")
-                await self.__verify_desc_map_list(
+                vp_descriptors = await self.__verify_desc_map_list(
                     descriptor_map_list, pr, input_descriptors
                 )
+                if submitted_descriptors & vp_descriptors:
+                    raise DIFPresExchError(
+                        "Descriptor IDs must be unique across presentations"
+                    )
+                submitted_descriptors.update(vp_descriptors)
+            self.__verify_submission_requirements(requirement, submitted_descriptors)
         else:
             descriptor_map_list = pres["presentation_submission"].get("descriptor_map")
-            await self.__verify_desc_map_list(
+            submitted_descriptors = await self.__verify_desc_map_list(
                 descriptor_map_list, pres, input_descriptors
             )
+            self.__verify_submission_requirements(requirement, submitted_descriptors)
 
     async def __verify_desc_map_list(self, descriptor_map_list, pres, input_descriptors):
         inp_desc_id_constraint_map = {}
         inp_desc_id_schema_one_of_filter = set()
         inp_desc_id_schemas_map = {}
+        submitted_descriptors = set()
         for input_descriptor in input_descriptors:
             inp_desc_id_constraint_map[input_descriptor.id] = input_descriptor.constraint
             inp_desc_id_schemas_map[input_descriptor.id] = input_descriptor.schemas
@@ -1441,6 +1454,11 @@ class DIFPresExchHandler:
                 inp_desc_id_schema_one_of_filter.add(input_descriptor.id)
         for desc_map_item in descriptor_map_list:
             desc_map_item_id = desc_map_item.get("id")
+            if desc_map_item_id not in inp_desc_id_constraint_map:
+                raise DIFPresExchError(
+                    f"Descriptor {desc_map_item_id} in descriptor_map is not "
+                    "defined by the presentation definition"
+                )
             constraint = inp_desc_id_constraint_map.get(desc_map_item_id)
             schema_filter = inp_desc_id_schemas_map.get(desc_map_item_id)
             desc_map_item_path = desc_map_item.get("path")
@@ -1476,6 +1494,37 @@ class DIFPresExchHandler:
                         f"Schema filtering specified in {desc_map_item_id} does not "
                         f"match with the enclosed credential in {desc_map_item_path}"
                     )
+            submitted_descriptors.add(desc_map_item_id)
+        return submitted_descriptors
+
+    def __verify_submission_requirements(
+        self, requirement: Requirement, submitted_descriptors: set
+    ) -> None:
+        """Verify that validated descriptor mappings satisfy the requirements."""
+        if not self.__is_requirement_satisfied(requirement, submitted_descriptors):
+            raise DIFPresExchError(
+                "Presentation does not satisfy the submission requirements"
+            )
+
+    def __count_satisfied_requirements(
+        self, requirement: Requirement, submitted_descriptors: set
+    ) -> int:
+        """Count descriptors or nested requirements satisfied by a presentation."""
+        if requirement.input_descriptors:
+            descriptor_ids = {
+                descriptor.id for descriptor in requirement.input_descriptors
+            }
+            return len(descriptor_ids & submitted_descriptors)
+        return sum(
+            self.__is_requirement_satisfied(nested_requirement, submitted_descriptors)
+            for nested_requirement in requirement.nested_req or []
+        )
+
+    def __is_requirement_satisfied(
+        self, requirement: Requirement, submitted_descriptors: set
+    ) -> bool:
+        count = self.__count_satisfied_requirements(requirement, submitted_descriptors)
+        return self.is_len_applicable(requirement, count)
 
     async def restrict_field_paths_one_of_filter(
         self, field_paths: Sequence[str], cred_dict: dict
