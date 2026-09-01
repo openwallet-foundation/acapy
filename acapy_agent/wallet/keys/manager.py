@@ -1,7 +1,9 @@
 """Multikey class."""
 
 import logging
+from typing import Mapping
 
+from aries_askar import Key
 from pydid import VerificationMethod
 
 from ...core.profile import ProfileSession
@@ -42,6 +44,13 @@ ALG_MAPPINGS = {
     },
 }
 
+# JWK kty/crv pairs supported for Multikey conversion (aligned with JWT algs).
+JWK_TO_ALG = {
+    ("OKP", "Ed25519"): "ed25519",
+    ("OKP", "X25519"): "x25519",
+    ("EC", "P-256"): "p256",
+}
+
 
 def multikey_to_verkey(multikey: str):
     """Transform multikey to verkey."""
@@ -58,6 +67,36 @@ def verkey_to_multikey(verkey: str, alg: str):
     prefixed_key_hex = f"{prefix_hex}{b58_to_bytes(verkey).hex()}"
 
     return multibase.encode(bytes.fromhex(prefixed_key_hex), "base58btc")
+
+
+def jwk_to_multikey(jwk: Mapping) -> str:
+    """Transform a public JWK to multikey.
+
+    Supports OKP/Ed25519, OKP/X25519, and EC/P-256 — the curves used by
+    ACA-Py JWT signing (EdDSA / ES256) and MultikeyManager.
+
+    Private key material (``d``) is ignored so this helper always treats the
+    input as a public key.
+    """
+    if not isinstance(jwk, Mapping):
+        raise MultikeyManagerError("JWK must be a mapping.")
+
+    alg = JWK_TO_ALG.get((jwk.get("kty"), jwk.get("crv")))
+    if not alg:
+        raise MultikeyManagerError(
+            "Unsupported JWK for multikey conversion: "
+            f"kty={jwk.get('kty')}, crv={jwk.get('crv')}."
+        )
+
+    # Only pass public members to Askar.
+    public_jwk = {key: value for key, value in jwk.items() if key != "d"}
+
+    try:
+        public_bytes = Key.from_jwk(public_jwk).get_public_bytes()
+    except Exception as err:
+        raise MultikeyManagerError(f"Unable to parse JWK: {err}") from err
+
+    return verkey_to_multikey(bytes_to_b58(public_bytes), alg=alg)
 
 
 def key_type_from_multikey(multikey: str) -> KeyType:
@@ -90,7 +129,14 @@ def multikey_from_verification_method(verification_method: VerificationMethod) -
         multikey = verkey_to_multikey(
             verification_method.public_key_base58, alg="bls12381g2"
         )
-    # TODO address JsonWebKey based verification methods
+
+    elif verification_method.type in ("JsonWebKey2020", "JsonWebKey"):
+        jwk = verification_method.public_key_jwk
+        if not jwk:
+            raise MultikeyManagerError(
+                f"{verification_method.type} verification method missing publicKeyJwk."
+            )
+        multikey = jwk_to_multikey(jwk)
 
     else:
         raise MultikeyManagerError("Unknown verification method type.")
