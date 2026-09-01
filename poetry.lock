@@ -911,14 +911,14 @@ files = [
 
 [[package]]
 name = "deepmerge"
-version = "2.1.0"
+version = "3.0"
 description = "A toolset for deeply merging Python dictionaries."
 optional = false
 python-versions = ">=3.8"
 groups = ["main"]
 files = [
-    {file = "deepmerge-2.1.0-py3-none-any.whl", hash = "sha256:8f148339a91d680a75ecb74ade235d9e759a93df373a0b04e9d31c8666cfeb75"},
-    {file = "deepmerge-2.1.0.tar.gz", hash = "sha256:07ca7a7b8935df596c512fa8161877c0487ac61f691c07766e7d71d2b23bdd2f"},
+    {file = "deepmerge-3.0-py3-none-any.whl", hash = "sha256:c8541c3e186dc88d19a5513ad3a0b2d0b22beaa780969fc0c13b995a64265365"},
+    {file = "deepmerge-3.0.tar.gz", hash = "sha256:14ed69f063de64b7743985c732ccff5d6c34ff4560946e7fbfd99086b853b9ce"},
 ]
 
 [package.extras]
@@ -3483,4 +3483,4 @@ sqlcipher = ["sqlcipher3-binary"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.13"
-content-hash = "46610221223fd78a36880f6b0ad31739c48f5d268969de3838f2bc558806266c"
+content-hash = "a34838207718510667a2e8b973baca0bc87a889a60be86233cfb3bb56f8b33be"
