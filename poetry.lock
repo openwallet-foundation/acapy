@@ -911,14 +911,14 @@ files = [
 
 [[package]]
 name = "deepmerge"
-version = "2.1.0"
+version = "3.0"
 description = "A toolset for deeply merging Python dictionaries."
 optional = false
 python-versions = ">=3.8"
 groups = ["main"]
 files = [
-    {file = "deepmerge-2.1.0-py3-none-any.whl", hash = "sha256:8f148339a91d680a75ecb74ade235d9e759a93df373a0b04e9d31c8666cfeb75"},
-    {file = "deepmerge-2.1.0.tar.gz", hash = "sha256:07ca7a7b8935df596c512fa8161877c0487ac61f691c07766e7d71d2b23bdd2f"},
+    {file = "deepmerge-3.0-py3-none-any.whl", hash = "sha256:c8541c3e186dc88d19a5513ad3a0b2d0b22beaa780969fc0c13b995a64265365"},
+    {file = "deepmerge-3.0.tar.gz", hash = "sha256:14ed69f063de64b7743985c732ccff5d6c34ff4560946e7fbfd99086b853b9ce"},
 ]
 
 [package.extras]
@@ -2966,24 +2966,21 @@ use-chardet-on-py3 = ["chardet (>=3.0.2,<8)"]
 
 [[package]]
 name = "rlp"
-version = "4.1.0"
+version = "5.0.0"
 description = "rlp: A package for Recursive Length Prefix encoding and decoding"
 optional = false
-python-versions = "<4,>=3.8"
+python-versions = "<4,>=3.10"
 groups = ["main"]
 files = [
-    {file = "rlp-4.1.0-py3-none-any.whl", hash = "sha256:8eca394c579bad34ee0b937aecb96a57052ff3716e19c7a578883e767bc5da6f"},
-    {file = "rlp-4.1.0.tar.gz", hash = "sha256:be07564270a96f3e225e2c107db263de96b5bc1f27722d2855bd3459a08e95a9"},
+    {file = "rlp-5.0.0-py3-none-any.whl", hash = "sha256:9525fb895d3a6540b7401eadd11c1b64740a5eccb82e543ac7e9735d319b0977"},
+    {file = "rlp-5.0.0.tar.gz", hash = "sha256:ae8ac791160c160e270f9c7df76e68f4d42bb86a13726d807b9357c312d0bac4"},
 ]
 
 [package.dependencies]
 eth-utils = ">=2"
 
 [package.extras]
-dev = ["build (>=0.9.0)", "bump_my_version (>=0.19.0)", "hypothesis (>=6.22.0,<6.108.7)", "ipython", "pre-commit (>=3.4.0)", "pytest (>=7.0.0)", "pytest-xdist (>=2.4.0)", "sphinx (>=6.0.0)", "sphinx-autobuild (>=2021.3.14)", "sphinx_rtd_theme (>=1.0.0)", "towncrier (>=24,<25)", "tox (>=4.0.0)", "twine", "wheel"]
-docs = ["sphinx (>=6.0.0)", "sphinx-autobuild (>=2021.3.14)", "sphinx_rtd_theme (>=1.0.0)", "towncrier (>=24,<25)"]
 rust-backend = ["rusty-rlp (>=0.2.1)"]
-test = ["hypothesis (>=6.22.0,<6.108.7)", "pytest (>=7.0.0)", "pytest-xdist (>=2.4.0)"]
 
 [[package]]
 name = "ruff"
@@ -3483,4 +3480,4 @@ sqlcipher = ["sqlcipher3-binary"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.13"
-content-hash = "46610221223fd78a36880f6b0ad31739c48f5d268969de3838f2bc558806266c"
+content-hash = "a9f1e594a8af35dd2b3929a1a3d20ddfbb6f1f8e53e73ead93113ae893046572"
