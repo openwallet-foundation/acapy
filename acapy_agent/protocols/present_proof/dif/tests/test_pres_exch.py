@@ -7,6 +7,7 @@ from .....messaging.models.base import BaseModelError
 from ..pres_exch import (
     ClaimFormat,
     Constraints,
+    DIFField,
     DIFHolder,
     Filter,
     SchemasInputDescriptorFilter,
@@ -433,3 +434,42 @@ class TestPresExchSchemas(TestCase):
         assert deser_schema_filter.uri_groups[0][0].uri == test_schema_list[0].get("uri")
         assert deser_schema_filter.uri_groups[0][1].uri == test_schema_list[1].get("uri")
         assert isinstance(deser_schema_filter, SchemasInputDescriptorFilter)
+
+    def test_dif_field_accepts_supported_jsonpath(self):
+        field_json = """
+            {
+                "path": ["$.credentialSubject.store.book[?(@.price<30 & @.category=='fiction')].author"]
+            }
+        """
+        deser_field = DIFField.deserialize(field_json)
+        assert isinstance(deser_field, DIFField)
+        assert deser_field.paths == [
+            "$.credentialSubject.store.book[?(@.price<30 & @.category=='fiction')].author"
+        ]
+
+    def test_dif_field_rejects_function_extension_jsonpath(self):
+        field_json = """
+            {
+                "path": ["$.credentialSubject.store.book[?(sub(@.author,'.*','x')=='x')].title"]
+            }
+        """
+        with self.assertRaises(BaseModelError):
+            DIFField.deserialize(field_json)
+
+    def test_dif_field_rejects_double_ampersand_jsonpath(self):
+        field_json = """
+            {
+                "path": ["$.credentialSubject.store.book[?(@.price<30 && @.category==\\"fiction\\")].author"]
+            }
+        """
+        with self.assertRaises(BaseModelError):
+            DIFField.deserialize(field_json)
+
+    def test_dif_field_rejects_regex_extension_jsonpath(self):
+        field_json = """
+            {
+                "path": ["$.credentialSubject..*[?(@.ssn =~ '^[0-9]{3}-[0-9]{2}-[0-9]{4}$')]"]
+            }
+        """
+        with self.assertRaises(BaseModelError):
+            DIFField.deserialize(field_json)
