@@ -1,5 +1,48 @@
 # ACA-Py Changelog
 
+## 1.7.0rc0
+
+### September 3, 2026
+
+ACA-Py Release 1.7.0 adds OAuth 2.0 support for protecting the Admin API, offering a scope-based authorization pathway (via JWT/JWKS validation or [RFC7662] token introspection) alongside the existing `x-api-key` authentication. The feature is opt-in, configured via new `--oauth-*` CLI/configuration arguments, and existing deployments using API-key or insecure-mode authentication are unaffected unless OAuth is explicitly configured.
+
+[RFC7662]: https://datatracker.ietf.org/doc/html/rfc7662
+
+Also included are fixes for self-issuance/self-connection Out-of-Band and DID Exchange failures, JWT verification support for JsonWebKey verification methods, a fallback to the default write ledger when a persisted `write_ledger` configuration is no longer valid, and full JSONPath support (via `jsonpath_ng.ext`, with a safety guard) for expression-based record queries. Routine build, CI, and test maintenance is also included, such as pinning binary wheels for `sqlcipher3-wheels` in the Dockerfile and fixing a failing JSON-LD scenario test.
+
+Ongoing dependabot and security updates are also included in the Release.
+
+### 1.7.0 Breaking Changes
+
+There are no breaking changes in this release. The new OAuth support for the Admin API (#4140) is opt-in: it requires explicit configuration of an OAuth JWKS URI or introspection endpoint, and existing ``x-api-key`/`insecure-mode` deployments are unaffected unless OAuth is deliberately configured.
+
+### 1.7.0 Deprecation Notices
+
+The `acapy_agent.revocation_anoncreds` package has been deprecated and relocated to `acapy_agent.anoncreds.revocation` for improved consistency across the codebase. The change will affect [ACA-Py Plugins] that implement AnonCreds, and developers with their own controllers should also update their implementations.
+
+The wallet-type configuration value `askar` is now deprecated and all deployments still using that wallet type should migrate to either the `askar-anoncreds` or (ideally) `kanon-anoncreds` wallet types.
+
+For REST consistency the `POST /multitenancy/wallet/{wallet_id}/remove` endpoint is deprecated, replaced with the `DELETE /multitenancy/wallet/{wallet_id}` endpoint. Implementers should update plugins and their own code to use the new endpoint. The old endpoint will be removed in a future release.
+
+### 1.7.0 Categorized PR List
+
+- **Admin API Security**
+  - Feature: Oauth support protecting the Admin API [\#4140](https://github.com/openwallet-foundation/acapy/pull/4140) [timbl-ont](https://github.com/timbl-ont)
+- **DID Exchange and JWT/JWS Interop**
+  - fix: self-issuance/self-connection OOB and DID exchange failures [\#4174](https://github.com/openwallet-foundation/acapy/pull/4174) [nb-vivek-bodar](https://github.com/nb-vivek-bodar)
+  - fix: support JsonWebKey VMs in JWT verify via jwk_to_multikey [\#4192](https://github.com/openwallet-foundation/acapy/pull/4192) [PatStLouis](https://github.com/PatStLouis)
+- **Core Platform**
+  - fix: fall back to default write ledger when persisted write_ledger is gone [\#4194](https://github.com/openwallet-foundation/acapy/pull/4194) [loneil](https://github.com/loneil)
+  - feat: full JSONPath support via jsonpath_ng.ext with a safety guard [\#4212](https://github.com/openwallet-foundation/acapy/pull/4212) [nb-pratik-bhimani](https://github.com/nb-pratik-bhimani)
+- **Build, CI and Test Fixes**
+  - fix: require binary wheels for sqlcipher3-wheels in Dockerfile [\#4191](https://github.com/openwallet-foundation/acapy/pull/4191) [PatStLouis](https://github.com/PatStLouis)
+  - fix: ruff format test_route_auth_coverage.py [\#4198](https://github.com/openwallet-foundation/acapy/pull/4198) [esune](https://github.com/esune)
+  - Fix the failing json-ld scenario test [\#4206](https://github.com/openwallet-foundation/acapy/pull/4206) [swcurran](https://github.com/swcurran)
+- **Dependabot PRs**
+  - [Link to list of Dependabot PRs in this release](https://github.com/openwallet-foundation/acapy/pulls?q=is%3Apr+is%3Amerged+merged%3A2026-07-28..2026-09-03+author%3Aapp%2Fdependabot+)
+- **Release management pull requests**:
+  - 1.7.0rc0 [\#4213](https://github.com/openwallet-foundation/acapy/pull/4213) [swcurran](https://github.com/swcurran)
+
 ## 1.6.1
 
 ### July 28, 2026
