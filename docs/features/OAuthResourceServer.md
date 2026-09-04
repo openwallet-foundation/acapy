@@ -7,12 +7,16 @@ ACA-Py can be configured to act as an **OAuth2 Resource Server**, delegating all
 - [Overview](#overview)
 - [Request Flow](#request-flow)
 - [Scopes](#scopes)
+  - [Scope-to-decorator mapping](#scope-to-decorator-mapping)
 - [Configuration](#configuration)
   - [Startup Parameters](#startup-parameters)
   - [Environment Variables](#environment-variables)
   - [Token Validation Modes](#token-validation-modes)
 - [Multitenancy and the `wallet_id` Claim](#multitenancy-and-the-wallet_id-claim)
+  - [Provisioning flow](#provisioning-flow)
 - [Request Claim Storage and Compatibility](#request-claim-storage-and-compatibility)
+  - [Why both metadata and settings?](#why-both-metadata-and-settings)
+  - [Recommended access pattern for core and plugins](#recommended-access-pattern-for-core-and-plugins)
 - [Annotating Routes with Scopes](#annotating-routes-with-scopes)
 - [Authorization Server Setup Guidance](#authorization-server-setup-guidance)
   - [Keycloak Example](#keycloak-example)
@@ -350,7 +354,7 @@ ACA-Py's `--oauth-jwks-uri` can still use the internal Docker network hostname f
 
 ## Demo: Docker Compose with Keycloak
 
-A self-contained demo is provided in [`demo/demo-authserver/`](../../demo/demo-authserver/). It starts three services:
+A self-contained demo is provided in [`demo/demo-authserver/`](https://github.com/openwallet-foundation/acapy/tree/main/demo/demo-authserver). It starts three services:
 
 | Service | Image | Purpose |
 |---|---|---|

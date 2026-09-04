@@ -9,6 +9,14 @@ acapy\_agent.admin package
 Submodules
 ----------
 
+acapy\_agent.admin.auth\_context module
+---------------------------------------
+
+.. automodule:: acapy_agent.admin.auth_context
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 acapy\_agent.admin.base\_server module
 --------------------------------------
 
@@ -25,6 +33,22 @@ acapy\_agent.admin.error module
    :undoc-members:
    :show-inheritance:
 
+acapy\_agent.admin.oauth\_context module
+----------------------------------------
+
+.. automodule:: acapy_agent.admin.oauth_context
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+acapy\_agent.admin.oauth\_validator module
+------------------------------------------
+
+.. automodule:: acapy_agent.admin.oauth_validator
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 acapy\_agent.admin.request\_context module
 ------------------------------------------
 
@@ -37,6 +61,14 @@ acapy\_agent.admin.routes module
 --------------------------------
 
 .. automodule:: acapy_agent.admin.routes
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+acapy\_agent.admin.scopes module
+--------------------------------
+
+.. automodule:: acapy_agent.admin.scopes
    :members:
    :undoc-members:
    :show-inheritance:
