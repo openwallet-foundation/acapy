@@ -2365,6 +2365,182 @@ class TestPresExchangeHandler(IsolatedAsyncioTestCase):
                 assert SECURITY_CONTEXT_BBS_URL in vp_single["@context"]
 
     @pytest.mark.ursa_bbs_signatures
+    async def test_create_vp_explicit_signing_did_in_holder_mode(self):
+        signing_did = "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL"
+        dif_pres_exch_handler = DIFPresExchHandler(
+            self.profile,
+            pres_signing_did=signing_did,
+            proof_type=BbsBlsSignature2020.signature_type,
+        )
+        cred_list, pd_list = await self.setup_tuple(self.profile)
+        requirement = mock.MagicMock(nested_req=None)
+        with (
+            mock.patch.object(
+                DIFPresExchHandler,
+                "make_requirement",
+                mock.CoroutineMock(return_value=requirement),
+            ),
+            mock.patch.object(
+                DIFPresExchHandler,
+                "apply_requirements",
+                mock.CoroutineMock(),
+            ) as mock_apply_req,
+            mock.patch.object(
+                DIFPresExchHandler,
+                "merge",
+                mock.CoroutineMock(),
+            ) as mock_merge,
+            mock.patch.object(
+                DIFPresExchHandler,
+                "get_sign_key_credential_subject_id",
+                mock.CoroutineMock(),
+            ) as mock_sign_key_cred_subject,
+            mock.patch.object(
+                DIFPresExchHandler,
+                "_get_issue_suite",
+                mock.CoroutineMock(),
+            ),
+            mock.patch.object(
+                test_module,
+                "create_presentation",
+                mock.CoroutineMock(),
+            ) as mock_create_vp,
+            mock.patch.object(
+                test_module,
+                "sign_presentation",
+                mock.CoroutineMock(),
+            ) as mock_sign_vp,
+        ):
+            mock_apply_req.return_value = mock.MagicMock()
+            mock_merge.return_value = (cred_list, {})
+            mock_create_vp.return_value = {
+                "test": "1",
+                "@context": ["test"],
+                "type": ["VerifiablePresentation"],
+            }
+            mock_sign_vp.return_value = {"test": "1"}
+            dif_pres_exch_handler.is_holder = True
+
+            vp = await dif_pres_exch_handler.create_vp(
+                cred_list,
+                pd=pd_list[0][0],
+                challenge="3fa85f64-5717-4562-b3fc-2c963f66afa7",
+                is_holder_override=True,
+            )
+
+            mock_sign_key_cred_subject.assert_not_awaited()
+            mock_sign_vp.assert_awaited_once()
+            assert vp["test"] == "1"
+
+    async def test_create_vp_auto_detects_local_ed25519_did(self):
+        signing_did = "did:key:z6Mkgg342Ycpuk263R9d8Aq6MUaxPn1DDeHyGo38EefXmgDL"
+        dif_pres_exch_handler = DIFPresExchHandler(self.profile)
+        cred_list, pd_list = await self.setup_tuple(self.profile)
+        credential = deepcopy(cred_list[0])
+        credential.subject_ids = {"did:key:z6Mknot-local", signing_did}
+        did_info = DIDInfo(
+            did=signing_did,
+            verkey="verkey",
+            metadata={},
+            method=KEY,
+            key_type=ED25519,
+        )
+
+        async def did_info_for_did(did):
+            if did == "did:key:z6Mknot-local":
+                raise WalletNotFoundError()
+            return did_info
+
+        requirement = mock.MagicMock(nested_req=None)
+        with (
+            mock.patch.object(
+                DIFPresExchHandler,
+                "_did_info_for_did",
+                mock.CoroutineMock(side_effect=did_info_for_did),
+            ),
+            mock.patch.object(
+                DIFPresExchHandler,
+                "make_requirement",
+                mock.CoroutineMock(return_value=requirement),
+            ),
+            mock.patch.object(
+                DIFPresExchHandler,
+                "apply_requirements",
+                mock.CoroutineMock(return_value=mock.MagicMock()),
+            ),
+            mock.patch.object(
+                DIFPresExchHandler,
+                "merge",
+                mock.CoroutineMock(return_value=([credential], {})),
+            ),
+            mock.patch.object(
+                DIFPresExchHandler,
+                "_get_issue_suite",
+                mock.CoroutineMock(),
+            ),
+            mock.patch.object(
+                test_module,
+                "create_presentation",
+                mock.CoroutineMock(
+                    return_value={
+                        "@context": ["test"],
+                        "type": ["VerifiablePresentation"],
+                    }
+                ),
+            ),
+            mock.patch.object(
+                test_module,
+                "sign_presentation",
+                mock.CoroutineMock(return_value={"proof": {"type": "test"}}),
+            ) as mock_sign_vp,
+        ):
+            dif_pres_exch_handler.is_holder = True
+            vp = await dif_pres_exch_handler.create_vp(
+                [credential],
+                pd=pd_list[0][0],
+                challenge="3fa85f64-5717-4562-b3fc-2c963f66afa7",
+                is_holder_override=True,
+            )
+
+            mock_sign_vp.assert_awaited_once()
+            assert vp["proof"]["type"] == "test"
+
+    async def test_create_vp_holder_without_signing_did_fails(self):
+        dif_pres_exch_handler = DIFPresExchHandler(self.profile)
+        cred_list, pd_list = await self.setup_tuple(self.profile)
+        requirement = mock.MagicMock(nested_req=None)
+        with (
+            mock.patch.object(
+                DIFPresExchHandler,
+                "make_requirement",
+                mock.CoroutineMock(return_value=requirement),
+            ),
+            mock.patch.object(
+                DIFPresExchHandler,
+                "apply_requirements",
+                mock.CoroutineMock(return_value=mock.MagicMock()),
+            ),
+            mock.patch.object(
+                DIFPresExchHandler,
+                "merge",
+                mock.CoroutineMock(return_value=(cred_list, {})),
+            ),
+            mock.patch.object(
+                DIFPresExchHandler,
+                "get_sign_key_credential_subject_id",
+                mock.CoroutineMock(return_value=(None, [])),
+            ),
+        ):
+            dif_pres_exch_handler.is_holder = True
+            with pytest.raises(DIFPresExchError, match="local signing DID"):
+                await dif_pres_exch_handler.create_vp(
+                    cred_list,
+                    pd=pd_list[0][0],
+                    challenge="3fa85f64-5717-4562-b3fc-2c963f66afa7",
+                    is_holder_override=True,
+                )
+
+    @pytest.mark.ursa_bbs_signatures
     async def test_create_vp_no_issuer_with_bbs_suite(self):
         dif_pres_exch_handler = DIFPresExchHandler(
             self.profile, proof_type=BbsBlsSignature2020.signature_type
@@ -3224,18 +3400,17 @@ class TestPresExchangeHandler(IsolatedAsyncioTestCase):
         assert tmp_vp.get("proof")
 
     @pytest.mark.ursa_bbs_signatures
-    async def test_is_holder_signature_suite_mismatch(self):
+    async def test_is_holder_signature_suite_mismatch_fails(self):
         dif_pres_exch_handler = DIFPresExchHandler(
             self.profile, proof_type=BbsBlsSignature2020.signature_type
         )
         cred_list, _ = await self.setup_tuple(self.profile)
-        tmp_vp = await dif_pres_exch_handler.create_vp(
-            credentials=cred_list,
-            pd=is_holder_pd,
-            challenge="1f44d55f-f161-4938-a659-f8026467f126",
-        )
-        assert len(tmp_vp.get("verifiableCredential")) == 6
-        assert not tmp_vp.get("proof")
+        with pytest.raises(DIFPresExchError, match="local signing DID"):
+            await dif_pres_exch_handler.create_vp(
+                credentials=cred_list,
+                pd=is_holder_pd,
+                challenge="1f44d55f-f161-4938-a659-f8026467f126",
+            )
 
     @pytest.mark.ursa_bbs_signatures
     async def test_is_holder_subject_mismatch(self):

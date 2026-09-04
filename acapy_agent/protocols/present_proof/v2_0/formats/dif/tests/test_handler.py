@@ -575,17 +575,27 @@ class TestDIFFormatHandler(IsolatedAsyncioTestCase):
             error_msg="error",
         )
 
-        with mock.patch.object(
-            DIFPresExchHandler,
-            "create_vp",
-            mock.CoroutineMock(),
-        ) as mock_create_vp:
+        with (
+            mock.patch.object(
+                DIFPresExchHandler,
+                "__init__",
+                return_value=None,
+            ) as mock_handler_init,
+            mock.patch.object(
+                DIFPresExchHandler,
+                "create_vp",
+                mock.CoroutineMock(),
+            ) as mock_create_vp,
+        ):
             mock_create_vp.return_value = DIF_PRES
-            output = await self.handler.create_pres(record, {})
+            output = await self.handler.create_pres(
+                record, {"dif": {"issuer_id": TEST_DID_KEY}}
+            )
             assert isinstance(output[0], V20PresFormat) and isinstance(
                 output[1], AttachDecorator
             )
             assert output[1].data.json_ == DIF_PRES
+            assert mock_handler_init.call_args.kwargs["pres_signing_did"] == TEST_DID_KEY
 
     async def test_create_pres_pd_schema_uri(self):
         dif_pres_req = deepcopy(DIF_PRES_REQUEST_B)
