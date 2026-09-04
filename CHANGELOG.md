@@ -2,7 +2,7 @@
 
 ## 1.7.0rc0
 
-### September 3, 2026
+### September 4, 2026
 
 ACA-Py Release 1.7.0 adds OAuth 2.0 support for protecting the Admin API, offering a scope-based authorization pathway (via JWT/JWKS validation or [RFC7662] token introspection) alongside the existing `x-api-key` authentication. The feature is opt-in, configured via new `--oauth-*` CLI/configuration arguments, and existing deployments using API-key or insecure-mode authentication are unaffected unless OAuth is explicitly configured.
 
@@ -39,7 +39,7 @@ For REST consistency the `POST /multitenancy/wallet/{wallet_id}/remove` endpoint
   - fix: ruff format test_route_auth_coverage.py [\#4198](https://github.com/openwallet-foundation/acapy/pull/4198) [esune](https://github.com/esune)
   - Fix the failing json-ld scenario test [\#4206](https://github.com/openwallet-foundation/acapy/pull/4206) [swcurran](https://github.com/swcurran)
 - **Dependabot PRs**
-  - [Link to list of Dependabot PRs in this release](https://github.com/openwallet-foundation/acapy/pulls?q=is%3Apr+is%3Amerged+merged%3A2026-07-28..2026-09-03+author%3Aapp%2Fdependabot+)
+  - [Link to list of Dependabot PRs in this release](https://github.com/openwallet-foundation/acapy/pulls?q=is%3Apr+is%3Amerged+merged%3A2026-07-28..2026-09-04+author%3Aapp%2Fdependabot+)
 - **Release management pull requests**:
   - 1.7.0rc0 [\#4213](https://github.com/openwallet-foundation/acapy/pull/4213) [swcurran](https://github.com/swcurran)
 
