@@ -9,6 +9,14 @@ acapy\_agent.protocols.present\_proof.dif package
 Submodules
 ----------
 
+acapy\_agent.protocols.present\_proof.dif.jsonpath\_guard module
+----------------------------------------------------------------
+
+.. automodule:: acapy_agent.protocols.present_proof.dif.jsonpath_guard
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 acapy\_agent.protocols.present\_proof.dif.pres\_exch module
 -----------------------------------------------------------
 
