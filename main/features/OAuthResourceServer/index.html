@@ -3744,12 +3744,16 @@
 <li><a href="#overview">Overview</a></li>
 <li><a href="#request-flow">Request Flow</a></li>
 <li><a href="#scopes">Scopes</a></li>
+<li><a href="#scope-to-decorator-mapping">Scope-to-decorator mapping</a></li>
 <li><a href="#configuration">Configuration</a></li>
 <li><a href="#startup-parameters">Startup Parameters</a></li>
 <li><a href="#environment-variables">Environment Variables</a></li>
 <li><a href="#token-validation-modes">Token Validation Modes</a></li>
 <li><a href="#multitenancy-and-the-wallet_id-claim">Multitenancy and the <code>wallet_id</code> Claim</a></li>
+<li><a href="#provisioning-flow">Provisioning flow</a></li>
 <li><a href="#request-claim-storage-and-compatibility">Request Claim Storage and Compatibility</a></li>
+<li><a href="#why-both-metadata-and-settings">Why both metadata and settings?</a></li>
+<li><a href="#recommended-access-pattern-for-core-and-plugins">Recommended access pattern for core and plugins</a></li>
 <li><a href="#annotating-routes-with-scopes">Annotating Routes with Scopes</a></li>
 <li><a href="#authorization-server-setup-guidance">Authorization Server Setup Guidance</a></li>
 <li><a href="#keycloak-example">Keycloak Example</a></li>
@@ -4163,7 +4167,7 @@ handle both storage paths safely.</p>
 <p>ACA-Py's <code>--oauth-jwks-uri</code> can still use the internal Docker network hostname for the JWKS fetch — issuer validation is a string comparison against the <code>iss</code> claim and requires no network call.</p>
 <hr />
 <h2 id="demo-docker-compose-with-keycloak">Demo: Docker Compose with Keycloak<a class="headerlink" href="#demo-docker-compose-with-keycloak" title="Permanent link">&para;</a></h2>
-<p>A self-contained demo is provided in <a href="../../demo/demo-authserver/"><code>demo/demo-authserver/</code></a>. It starts three services:</p>
+<p>A self-contained demo is provided in <a href="https://github.com/openwallet-foundation/acapy/tree/main/demo/demo-authserver"><code>demo/demo-authserver/</code></a>. It starts three services:</p>
 <table>
 <thead>
 <tr>
