@@ -1,14 +1,14 @@
 # ACA-Py Changelog
 
-## 1.7.0rc0
+## 1.7.0
 
-### September 4, 2026
+### September 10, 2026
 
 ACA-Py Release 1.7.0 adds OAuth 2.0 support for protecting the Admin API, offering a scope-based authorization pathway (via JWT/JWKS validation or [RFC7662] token introspection) alongside the existing `x-api-key` authentication. The feature is opt-in, configured via new `--oauth-*` CLI/configuration arguments, and existing deployments using API-key or insecure-mode authentication are unaffected unless OAuth is explicitly configured.
 
 [RFC7662]: https://datatracker.ietf.org/doc/html/rfc7662
 
-Also included are fixes for self-issuance/self-connection Out-of-Band and DID Exchange failures, JWT verification support for JsonWebKey verification methods, a fallback to the default write ledger when a persisted `write_ledger` configuration is no longer valid, and full JSONPath support (via `jsonpath_ng.ext`, with a safety guard) for expression-based record queries. Routine build, CI, and test maintenance is also included, such as pinning binary wheels for `sqlcipher3-wheels` in the Dockerfile and fixing a failing JSON-LD scenario test.
+Also included are fixes for self-issuance/self-connection Out-of-Band and DID Exchange failures, DIF Presentation Exchange holder support, JWT verification support for JsonWebKey verification methods, a fallback to the default write ledger when a persisted `write_ledger` configuration is no longer valid, and full JSONPath support (via `jsonpath_ng.ext`, with a safety guard) for expression-based record queries. Routine build, CI, and test maintenance is also included, such as pinning binary wheels for `sqlcipher3-wheels` in the Dockerfile and fixing a failing JSON-LD scenario test.
 
 Ongoing dependabot and security updates are also included in the Release.
 
@@ -28,7 +28,8 @@ For REST consistency the `POST /multitenancy/wallet/{wallet_id}/remove` endpoint
 
 - **Admin API Security**
   - Feature: Oauth support protecting the Admin API [\#4140](https://github.com/openwallet-foundation/acapy/pull/4140) [timbl-ont](https://github.com/timbl-ont)
-- **DID Exchange and JWT/JWS Interop**
+- **DID Exchange, DIF Presentation Exchange, and JWT/JWS Interop**
+  - Fix DIF holder presentation signing for did:key [\#4196](https://github.com/openwallet-foundation/acapy/pull/4196) [jacksonriding](https://github.com/jacksonriding)
   - fix: self-issuance/self-connection OOB and DID exchange failures [\#4174](https://github.com/openwallet-foundation/acapy/pull/4174) [nb-vivek-bodar](https://github.com/nb-vivek-bodar)
   - fix: support JsonWebKey VMs in JWT verify via jwk_to_multikey [\#4192](https://github.com/openwallet-foundation/acapy/pull/4192) [PatStLouis](https://github.com/PatStLouis)
 - **Core Platform**
@@ -39,8 +40,9 @@ For REST consistency the `POST /multitenancy/wallet/{wallet_id}/remove` endpoint
   - fix: ruff format test_route_auth_coverage.py [\#4198](https://github.com/openwallet-foundation/acapy/pull/4198) [esune](https://github.com/esune)
   - Fix the failing json-ld scenario test [\#4206](https://github.com/openwallet-foundation/acapy/pull/4206) [swcurran](https://github.com/swcurran)
 - **Dependabot PRs**
-  - [Link to list of Dependabot PRs in this release](https://github.com/openwallet-foundation/acapy/pulls?q=is%3Apr+is%3Amerged+merged%3A2026-07-28..2026-09-04+author%3Aapp%2Fdependabot+)
+  - [Link to list of Dependabot PRs in this release](https://github.com/openwallet-foundation/acapy/pulls?q=is%3Apr+is%3Amerged+merged%3A2026-07-28..2026-09-10+author%3Aapp%2Fdependabot+)
 - **Release management pull requests**:
+  - 1.7.0 [\#4218](https://github.com/openwallet-foundation/acapy/pull/4218) [swcurran](https://github.com/swcurran)
   - 1.7.0rc0 [\#4213](https://github.com/openwallet-foundation/acapy/pull/4213) [swcurran](https://github.com/swcurran)
 
 ## 1.6.1
