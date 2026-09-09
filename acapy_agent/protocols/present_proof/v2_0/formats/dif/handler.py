@@ -144,6 +144,7 @@ class DIFPresFormatHandler(V20PresFormatHandler):
             DIFPresFormatHandler.format
         )
 
+        issuer_id = None
         pres_definition = None
         limit_record_ids = None
         reveal_doc_frame = None
@@ -161,7 +162,6 @@ class DIFPresFormatHandler(V20PresFormatHandler):
             pres_definition = PresentationDefinition.deserialize(
                 proof_request.get("presentation_definition")
             )
-            issuer_id = None
         if "options" in proof_request:
             challenge = proof_request["options"].get("challenge")
             domain = proof_request["options"].get("domain")
