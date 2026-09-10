@@ -1,0 +1,76 @@
+skinparam defaultTextAlignment center
+
+skinparam titleBorderRoundCorner 15
+skinparam titleBorderThickness 2
+skinparam titleBorderColor red
+skinparam titleBackgroundColor White
+
+skinparam monochrome true
+
+skinparam componentStyle uml2
+
+/'
+cloud "The Internet" {
+    package "DID Method Network" as SN {
+        component "Distributed\nLedger" as DL
+    }
+    component "Other Agents" as others
+}
+'/
+package "Aries Cloud Agent" as ica {
+/'
+    package Core as core {
+        component "Transport Plugins" as tp
+        package  "Conductor" as cond {
+            component "Msg Receiver\nGet Thread State" as mr
+            component "Msg Sender\nPut Thread State" as ms
+        }
+        component "Dispatcher" as disp
+        component "Handler API" as hapi
+    }
+'/
+    package "Protocols" as prot {
+        component "Protocol 1\nProtocol 2\n.\n.\nProtocol n" as protos
+    }
+    component "Controller\nREST API" as rest
+/'
+    package "Handler Plugins" as inthand {
+        component "Storage Manager\nWallet Manager\nNode Pool Manager\n.\n.\n." as intmgrs
+    }
+    package "DID Method SDK" as is {
+        database "Secure Storage" as wallet
+    }
+    intmgrs --> wallet
+'/
+}
+
+
+package "Controller" as per {
+    component "HTTP Handler" as http
+    database "Agent\nController\nConfiguration" as config
+    component "Initiator" as init
+    component "Responder" as resp
+    '' database "Configuration\nFiles" as configdb
+    component "Business\nLogic" as si
+    '' config --> configdb
+    si --> init
+    resp --> si
+    config --> si
+}
+
+'' others -down-> tp
+'' tp --> mr
+'' ms --> tp
+'' mr --> disp
+'' hapi -> intmgrs
+'' ms --> hapi
+'' mr --> hapi
+'' mf --> hapi
+rest -right-> protos
+protos --> http: Web Hooks
+'' disp <--> protos
+'' disp --> ms
+'' intmgrs -up-> DL
+http --> resp
+resp --> rest
+init --> rest
