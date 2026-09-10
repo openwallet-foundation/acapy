@@ -1,5 +1,33 @@
 # ACA-Py Changelog
 
+## 1.6.2rc0
+
+### September 10, 2026
+
+ACA-Py 1.6.2 is the first 1.6 LTS release that is not from the HEAD of the main branch. It consists of a couple of cherry picked PRs from the main branch ([\#4196 - DIF Presentation Exchange Holder](https://github.com/openwallet-foundation/acapy/pull/4196), [\#4206 Failing JSON-LD Scenario Test fix](https://github.com/openwallet-foundation/acapy/pull/4206)), and the activation of integration CI/CD tests for merges on this LTS branch.
+
+### 1.6.2 Breaking Changes
+
+There are no breaking changes in this release.
+
+### 1.6.2 Deprecation Notices
+
+The `acapy_agent.revocation_anoncreds` package has been deprecated and relocated to `acapy_agent.anoncreds.revocation` for improved consistency across the codebase. The change will affect [ACA-Py Plugins] that implement AnonCreds, and developers with their own controllers should also update their implementations.
+
+The `wallet-type` configuration value `askar` is now deprecated and all deployments still using that wallet type should migrate to either the `askar-anoncreds` or (ideally) `kanon-anoncreds` wallet types.
+
+For REST consistency the `POST /multitenancy/wallet/{wallet_id}/remove` endpoint is deprecated, replaced with the `DELETE /multitenancy/wallet/{wallet_id}` endpoint. Implementers should update plugins and their own code to use the new endpoint. The old endpoint will be removed in a future release.
+
+### 1.6.2 Categorized PR List
+
+- **PRs Cherry Picked from Main**
+  - fix: backport DIF holder presentation signing to 1.6 LTS [\#4217](https://github.com/openwallet-foundation/acapy/pull/4217) [jacksonriding](https://github.com/jacksonriding)
+  - 1.6.lts - cherry pick 4206 and activate Integration tests on branch [\#4208](https://github.com/openwallet-foundation/acapy/pull/4208) [swcurran](https://github.com/swcurran)
+- **Dependency Updates and Ruff Formatting**
+  - 1.6.lts fix: Add ruff check to GHA for this branch, updates to files failing ruff format check [\#4201](https://github.com/openwallet-foundation/acapy/pull/4201) [swcurran](https://github.com/swcurran)
+- **Release management pull requests**:
+  - 1.6.2rc0 [\#4219](https://github.com/openwallet-foundation/acapy/pull/4219) [swcurran](https://github.com/swcurran)
+
 ## 1.6.1
 
 ### July 28, 2026
