@@ -202,7 +202,15 @@ For the build test, the RTD Sphinx theme needs to be added to the docker image, 
 [Managing the ACA-Py Documentation Site]: Managing-ACA-Py-Doc-Site.md
 [https://aca-py.org]: https://aca-py.org
 
-14. Update the [ACA-Py Read The Docs site] by logging into Read The Docs
+14. Perform local testing of an RC release using [ACA-Py
+    Plugins](https://github.com/openwallet-foundation/acapy-plugins). Once a
+    Release Candidate (RC) has been published, a script in the [ACA-Py
+    Plugins](https://github.com/openwallet-foundation/acapy-plugins) repo
+    `test_acapy_version.py` can be run locally to test the release artifacts with all
+    of the plugins. See the documentation about this in the [ACA-Py Plugins
+    README](https://github.com/openwallet-foundation/acapy-plugins/blob/main/README.md#testing-an-aca-py-release-candidate)
+
+15. Update the [ACA-Py Read The Docs site] by logging into Read The Docs
     administration site, building a new "latest" (main branch) and activating
     and building the new release by version ID. Appropriate permissions are
     required to publish the new documentation version.

@@ -45,7 +45,7 @@
 | **What is your project?** | ACA-Py (Adaptive Cloud Agent – Python) is a production-ready, open-source framework for building non-mobile decentralized trust services — verifiable credential issuers, holders, and verifiers — using any language capable of sending and receiving HTTP requests. It is maintained at the OpenWallet Foundation. See the [README](https://github.com/openwallet-foundation/acapy/blob/main/README.md) for a full description. |
 | **GitHub location** | [https://github.com/openwallet-foundation/acapy](https://github.com/openwallet-foundation/acapy) |
 | **Documentation Site** | [https://aca-py.org](https://aca-py.org) |
-| **Current version** | 1.6.1 (latest release). Active LTS branches: `1.6` and `1.3`. See [GitHub Releases](https://github.com/openwallet-foundation/acapy/releases) for release notes. |
+| **Current version** | 1.7.0 (latest release). Active LTS branches: `1.6` and `1.3`. See [GitHub Releases](https://github.com/openwallet-foundation/acapy/releases) for release notes. |
 | **Where did the project originate?** | ACA-Py began as *Aries Cloud Agent – Python*, initiated by the Government of British Columbia's Digital Trust Team, circa 2017. An initial version was developed and iterated on for approximately 18 months, after which the codebase was restarted from scratch to produce the clean, plugin-friendly architecture that forms the current core. The project was originally hosted under the Hyperledger organization (as `hyperledger/aries-cloudagent-python`). In 2024 it moved to the [OpenWallet Foundation] (OWF) as `openwallet-foundation/acapy`, with release 1.1.0 being the first release from OWF. The move is documented in the [CHANGELOG](https://github.com/openwallet-foundation/acapy/blob/main/CHANGELOG.md). |
 | **How old is the project?** | The project has been in active development since approximately 2019. It joined the OpenWallet Foundation in 2024. |
 
@@ -231,8 +231,8 @@ ACA-Py uses [Semantic Versioning](https://semver.org/) (`MAJOR.MINOR.PATCH`):
 | Version change | Meaning |
 | :--- | :--- |
 | MAJOR (e.g. 1.x → 2.0) | Breaking changes requiring migration steps. Migration guidance is included in the CHANGELOG. |
-| MINOR (e.g. 1.5 → 1.6) | New features or significant changes, backwards compatible unless noted in the Breaking Changes section of the CHANGELOG. |
-| PATCH (e.g. 1.6.0 → 1.6.1) | Bug fixes and security patches. LTS patch releases are guaranteed to deploy without an upgrade process from the prior patch release. |
+| MINOR (e.g. 1.6 → 1.7) | New features or significant changes, backwards compatible unless noted in the Breaking Changes section of the CHANGELOG. |
+| PATCH (e.g. 1.7.0 → 1.7.1) | Bug fixes and security patches. LTS patch releases are guaranteed to deploy without an upgrade process from the prior patch release. |
 
 ## OPM24: Release Management and Support
 
