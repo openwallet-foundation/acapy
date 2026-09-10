@@ -554,22 +554,22 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#170rc0" class="md-nav__link">
+  <a href="#170" class="md-nav__link">
     <span class="md-ellipsis">
       
-        1.7.0rc0
+        1.7.0
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="1.7.0rc0">
+    <nav class="md-nav" aria-label="1.7.0">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#september-4-2026" class="md-nav__link">
+  <a href="#september-10-2026" class="md-nav__link">
     <span class="md-ellipsis">
       
-        September 4, 2026
+        September 10, 2026
       
     </span>
   </a>
@@ -4812,22 +4812,22 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#170rc0" class="md-nav__link">
+  <a href="#170" class="md-nav__link">
     <span class="md-ellipsis">
       
-        1.7.0rc0
+        1.7.0
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="1.7.0rc0">
+    <nav class="md-nav" aria-label="1.7.0">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#september-4-2026" class="md-nav__link">
+  <a href="#september-10-2026" class="md-nav__link">
     <span class="md-ellipsis">
       
-        September 4, 2026
+        September 10, 2026
       
     </span>
   </a>
@@ -6482,10 +6482,10 @@
 
 
 <h1 id="aca-py-changelog">ACA-Py Changelog<a class="headerlink" href="#aca-py-changelog" title="Permanent link">&para;</a></h1>
-<h2 id="170rc0">1.7.0rc0<a class="headerlink" href="#170rc0" title="Permanent link">&para;</a></h2>
-<h3 id="september-4-2026">September 4, 2026<a class="headerlink" href="#september-4-2026" title="Permanent link">&para;</a></h3>
+<h2 id="170">1.7.0<a class="headerlink" href="#170" title="Permanent link">&para;</a></h2>
+<h3 id="september-10-2026">September 10, 2026<a class="headerlink" href="#september-10-2026" title="Permanent link">&para;</a></h3>
 <p>ACA-Py Release 1.7.0 adds OAuth 2.0 support for protecting the Admin API, offering a scope-based authorization pathway (via JWT/JWKS validation or <a href="https://datatracker.ietf.org/doc/html/rfc7662">RFC7662</a> token introspection) alongside the existing <code>x-api-key</code> authentication. The feature is opt-in, configured via new <code>--oauth-*</code> CLI/configuration arguments, and existing deployments using API-key or insecure-mode authentication are unaffected unless OAuth is explicitly configured.</p>
-<p>Also included are fixes for self-issuance/self-connection Out-of-Band and DID Exchange failures, JWT verification support for JsonWebKey verification methods, a fallback to the default write ledger when a persisted <code>write_ledger</code> configuration is no longer valid, and full JSONPath support (via <code>jsonpath_ng.ext</code>, with a safety guard) for expression-based record queries. Routine build, CI, and test maintenance is also included, such as pinning binary wheels for <code>sqlcipher3-wheels</code> in the Dockerfile and fixing a failing JSON-LD scenario test.</p>
+<p>Also included are fixes for self-issuance/self-connection Out-of-Band and DID Exchange failures, DIF Presentation Exchange holder support, JWT verification support for JsonWebKey verification methods, a fallback to the default write ledger when a persisted <code>write_ledger</code> configuration is no longer valid, and full JSONPath support (via <code>jsonpath_ng.ext</code>, with a safety guard) for expression-based record queries. Routine build, CI, and test maintenance is also included, such as pinning binary wheels for <code>sqlcipher3-wheels</code> in the Dockerfile and fixing a failing JSON-LD scenario test.</p>
 <p>Ongoing dependabot and security updates are also included in the Release.</p>
 <h3 id="170-breaking-changes">1.7.0 Breaking Changes<a class="headerlink" href="#170-breaking-changes" title="Permanent link">&para;</a></h3>
 <p>There are no breaking changes in this release. The new OAuth support for the Admin API (<a class="magiclink magiclink-github magiclink-issue" href="https://github.com/squidfunk/mkdocs-material/issues/4140" title="GitHub Issue: squidfunk/mkdocs-material #4140">#4140</a>) is opt-in: it requires explicit configuration of an OAuth JWKS URI or introspection endpoint, and existing <code>`x-api-key</code>/<code>insecure-mode</code> deployments are unaffected unless OAuth is deliberately configured.</p>
@@ -6499,7 +6499,8 @@
 <li>Feature: Oauth support protecting the Admin API <a href="https://github.com/openwallet-foundation/acapy/pull/4140">#4140</a> <a href="https://github.com/timbl-ont">timbl-ont</a></li>
 </ul>
 </li>
-<li><strong>DID Exchange and JWT/JWS Interop</strong><ul>
+<li><strong>DID Exchange, DIF Presentation Exchange, and JWT/JWS Interop</strong><ul>
+<li>Fix DIF holder presentation signing for did:key <a href="https://github.com/openwallet-foundation/acapy/pull/4196">#4196</a> <a href="https://github.com/jacksonriding">jacksonriding</a></li>
 <li>fix: self-issuance/self-connection OOB and DID exchange failures <a href="https://github.com/openwallet-foundation/acapy/pull/4174">#4174</a> <a href="https://github.com/nb-vivek-bodar">nb-vivek-bodar</a></li>
 <li>fix: support JsonWebKey VMs in JWT verify via jwk_to_multikey <a href="https://github.com/openwallet-foundation/acapy/pull/4192">#4192</a> <a href="https://github.com/PatStLouis">PatStLouis</a></li>
 </ul>
@@ -6516,10 +6517,11 @@
 </ul>
 </li>
 <li><strong>Dependabot PRs</strong><ul>
-<li><a href="https://github.com/openwallet-foundation/acapy/pulls?q=is%3Apr+is%3Amerged+merged%3A2026-07-28..2026-09-04+author%3Aapp%2Fdependabot+">Link to list of Dependabot PRs in this release</a></li>
+<li><a href="https://github.com/openwallet-foundation/acapy/pulls?q=is%3Apr+is%3Amerged+merged%3A2026-07-28..2026-09-10+author%3Aapp%2Fdependabot+">Link to list of Dependabot PRs in this release</a></li>
 </ul>
 </li>
 <li><strong>Release management pull requests</strong>:<ul>
+<li>1.7.0 <a href="https://github.com/openwallet-foundation/acapy/pull/4218">#4218</a> <a href="https://github.com/swcurran">swcurran</a></li>
 <li>1.7.0rc0 <a href="https://github.com/openwallet-foundation/acapy/pull/4213">#4213</a> <a href="https://github.com/swcurran">swcurran</a></li>
 </ul>
 </li>
