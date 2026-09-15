@@ -1,0 +1,75 @@
+@startuml
+' List of actors for our use case
+actor Admin
+participant CredDefRoutes
+participant RevocationRoutes
+participant IndyRevocation
+participant Ledger
+participant TransactionManager
+participant EventBus
+participant OutboundHandler
+participant EndorsedTxnHandler
+boundary OtherAgent
+
+' Sequence for writing a new credential definition
+Admin --> CredDefRoutes: POST /credential-definitions
+group Endorse transaction process
+CredDefRoutes --> Ledger: create_and_send_credential_definition()
+CredDefRoutes --> TransactionManager: create_record()
+CredDefRoutes --> TransactionManager: create_request()
+CredDefRoutes --> OutboundHandler: send_outbound_msg()
+OutboundHandler --> OtherAgent: send_msg()
+OtherAgent --> OtherAgent: endorse_msg()
+EndorsedTxnHandler <-- OtherAgent: send_msg()
+TransactionManager <-- EndorsedTxnHandler: receive_endorse_response()
+TransactionManager <-- EndorsedTxnHandler: complete_transaction()
+Ledger <-- TransactionManager: txn_submit()
+TransactionManager --> TransactionManager: endorsed_txn_post_processing()
+TransactionManager --> EventBus: notify_cred_def_event()
+end
+
+' Create the revocation registry once the credential definition is written
+CredDefRoutes <-- EventBus: on_cred_def_event()
+CredDefRoutes --> IndyRevocation: init_issuer_registry()
+IndyRevocation --> EventBus: notify_revocation_reg_init_event()
+RevocationRoutes <-- EventBus: on_revocation_registry_init_event()
+RevocationRoutes --> RevocationRoutes: generate_tails()
+group Endorse transaction process
+RevocationRoutes --> Ledger:send_revoc_reg_def()
+RevocationRoutes --> TransactionManager: create_record()
+RevocationRoutes --> TransactionManager: create_request()
+RevocationRoutes --> OutboundHandler: send_outbound_msg()
+OutboundHandler --> OtherAgent: send_msg()
+OtherAgent --> OtherAgent: endorse_msg()
+EndorsedTxnHandler <-- OtherAgent: send_msg()
+TransactionManager <-- EndorsedTxnHandler: receive_endorse_response()
+TransactionManager <-- EndorsedTxnHandler: complete_transaction()
+Ledger <-- TransactionManager: txn_submit()
+TransactionManager --> TransactionManager: endorsed_txn_post_processing()
+TransactionManager --> EventBus: notify_revocation_reg_endorsed_event()
+end
+
+' Now create the revocation entry (accumulator)
+RevocationRoutes <-- EventBus: on_revocation_registry_endorsed_event()
+RevocationRoutes --> RevocationRoutes: upload_tails()
+RevocationRoutes --> EventBus: notify_revocation_entry_event()
+RevocationRoutes <-- EventBus: on_revocation_entry_event()
+group Endorse transaction process
+RevocationRoutes --> IndyRevocation: send_entry()
+IndyRevocation --> Ledger: send_entry()
+RevocationRoutes --> TransactionManager: create_record()
+RevocationRoutes --> TransactionManager: create_request()
+RevocationRoutes --> OutboundHandler: send_outbound_msg()
+OutboundHandler --> OtherAgent: send_msg()
+OtherAgent --> OtherAgent: endorse_msg()
+EndorsedTxnHandler <-- OtherAgent: send_msg()
+TransactionManager <-- EndorsedTxnHandler: receive_endorse_response()
+TransactionManager <-- EndorsedTxnHandler: complete_transaction()
+Ledger <-- TransactionManager: txn_submit()
+TransactionManager --> TransactionManager: endorsed_txn_post_processing()
+
+' Notify that the revocation entry is completed (no one listens to this notification yet)
+TransactionManager --> EventBus: notify_revocation_entry_endorsed_event()
+end
+
+@enduml

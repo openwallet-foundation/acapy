@@ -1,0 +1,78 @@
+skinparam defaultTextAlignment center
+
+skinparam titleBorderRoundCorner 15
+skinparam titleBorderThickness 2
+skinparam titleBorderColor red
+skinparam titleBackgroundColor White
+
+skinparam monochrome true
+
+skinparam componentStyle uml2
+
+cloud "The Internet\n" {
+
+    component "Distributed\nLedger" as DL
+    component "Other\nAgents" as others
+}
+
+package "Aries Cloud Agent - Python" as vx {
+    package Core as core {
+        component "Transport Plugins" as tp
+        package  "Conductor" as cond {
+            component "Msg Receiver\nGet Thread State" as mr
+            component "Msg Sender\nPut Thread State" as ms
+        }
+        component "Dispatcher" as disp
+        component "Handler API" as hapi
+    }
+    package "Protocols" as prot {
+        component "Protocol 1\nProtocol 2\n.\n.\nProtocol n" as protos
+    }
+    component "Controller\nREST API" as rest
+    package "Handler Plugins" as inthand {
+        component "VDR Manager\nStorage Manager\n.\n.\n." as intmgrs
+    }
+    package "Storage Implementation" as is {
+        database "Secure Storage" as storage
+    }
+    intmgrs --> storage
+
+}
+
+/'
+package "Enterprise Services" {
+    package "Agent Controller" as per {
+        component "HTTP Handler" as http
+        component "Agent\nController\nConfiguration" as config {
+            database "Conf" as confdb
+        }
+        component "Initiator" as init
+        component "Responder" as resp
+        '' database "Configuration\nFiles" as configdb
+        component "Service\nIntegration" as si
+        '' config --> configdb
+        si --> init
+        resp --> si
+        config --> si
+    }
+    component "Service\nBusiness\nLogic" as back
+    back <--> si
+}
+'/
+
+others -down-> tp
+tp --> mr
+ms --> tp
+mr --> disp
+hapi -> intmgrs
+ms --> hapi
+mr --> hapi
+protos --> hapi
+rest -right-> protos
+'' protos --> http
+disp <--> protos
+disp --> ms
+intmgrs -up-> DL
+'' http --> resp
+'' resp --> rest
+'' init --> rest
