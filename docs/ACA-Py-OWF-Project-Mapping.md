@@ -232,7 +232,7 @@ ACA-Py uses [Semantic Versioning](https://semver.org/) (`MAJOR.MINOR.PATCH`):
 | :--- | :--- |
 | MAJOR (e.g. 1.x → 2.0) | Breaking changes requiring migration steps. Migration guidance is included in the CHANGELOG. |
 | MINOR (e.g. 1.5 → 1.6) | New features or significant changes, backwards compatible unless noted in the Breaking Changes section of the CHANGELOG. |
-| PATCH (e.g. 1.6.0 → 1.6.1) | Bug fixes and security patches. LTS patch releases are guaranteed to deploy without an upgrade process from the prior patch release. |
+| PATCH (e.g. 1.6.1 → 1.6.2) | Bug fixes and security patches. LTS patch releases are guaranteed to deploy without an upgrade process from the prior patch release. |
 
 ## OPM24: Release Management and Support
 

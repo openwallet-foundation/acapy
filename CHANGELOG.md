@@ -1,8 +1,8 @@
 # ACA-Py Changelog
 
-## 1.6.2rc0
+## 1.6.2
 
-### September 10, 2026
+### September 15, 2026
 
 ACA-Py 1.6.2 is the first 1.6 LTS release that is not from the HEAD of the main branch. It consists of a couple of cherry picked PRs from the main branch ([\#4196 - DIF Presentation Exchange Holder](https://github.com/openwallet-foundation/acapy/pull/4196), [\#4206 Failing JSON-LD Scenario Test fix](https://github.com/openwallet-foundation/acapy/pull/4206)), and the activation of integration CI/CD tests for merges on this LTS branch.
 
@@ -26,6 +26,7 @@ For REST consistency the `POST /multitenancy/wallet/{wallet_id}/remove` endpoint
 - **Dependency Updates and Ruff Formatting**
   - 1.6.lts fix: Add ruff check to GHA for this branch, updates to files failing ruff format check [\#4201](https://github.com/openwallet-foundation/acapy/pull/4201) [swcurran](https://github.com/swcurran)
 - **Release management pull requests**:
+  - 1.6.2 [\#4225](https://github.com/openwallet-foundation/acapy/pull/4225) [swcurran](https://github.com/swcurran)
   - 1.6.2rc0 [\#4219](https://github.com/openwallet-foundation/acapy/pull/4219) [swcurran](https://github.com/swcurran)
 
 ## 1.6.1
