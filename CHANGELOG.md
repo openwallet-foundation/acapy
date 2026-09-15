@@ -1,8 +1,8 @@
 # Aries Cloud Agent Python Changelog
 
-## 1.3.6rc0
+## 1.3.6
 
-### September 10, 2026
+### September 15, 2026
 
 ACA-Py Release 1.3.6 consists of a cherry picked PR from the main branch ([\#4196 - DIF Presentation Exchange Holder](https://github.com/openwallet-foundation/acapy/pull/4196), and the activation of CI/CD tests (with test fixes) for merges on this LTS branch.
 
@@ -20,6 +20,7 @@ There are no breaking changes in this release.
   - 1.3.lts fix: Add ruff check to GHA for this branch, updates to files failing ruff format check [\#4200](https://github.com/openwallet-foundation/acapy/pull/4200) [swcurran](https://github.com/swcurran)
 
 - Release management pull requests:
+  - 1.3.6 [\#4224](https://github.com/openwallet-foundation/acapy/pull/4224) [swcurran](https://github.com/swcurran)
   - 1.3.6rc0 [\#4220](https://github.com/openwallet-foundation/acapy/pull/4220) [swcurran](https://github.com/swcurran)
 
 ## 1.3.5
