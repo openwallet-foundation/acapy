@@ -1,12 +1,16 @@
 # How to Publish a New Version
 
-The code to be published should be in the `main` branch. Make sure that all the PRs to go in the release are
-merged, and decide on the release tag. Should it be a release candidate or the final tag, and should it be
-a major, minor or patch release, per [semver](https://semver.org/) rules.
+The code to be published should be at the HEAD of the `main` branch or of an LTS
+branch. Make sure that all the PRs to go in the release are merged, and decide
+on the release tag. Should it be a release candidate or the final tag, and
+should it be a major, minor or patch release, per [semver](https://semver.org/)
+rules?
 
-Once ready to do a release, create a local branch that includes the following updates:
+Once ready to do a release, follow these steps:
 
-1. Create a local PR branch from an updated `main` branch, e.g. "1.7.0".
+1. Create a local PR branch from an updated `main` or LTS branch, e.g. `git checkout -b 1.7.0`.
+   - For a main branch release update your local `main` branch with the latest changes from the upstream `main` branch before creating the new release branch - e.g. `git fetch upstream;git merge upstream/main main`
+   - For an LTS release, you have to check out the latest LTS branch locally. For example, run `git fetch upstream; git checkout 1.3.lts; git merge upstream/1.3.lts --ff-only` for the appropriate LTS branch.
 
 2. See if there are any Document Site `mkdocs` changes needed. Run the script
    `./scripts/prepmkdocs.sh; mkdocs`. Watch the log, noting particularly if
@@ -17,71 +21,42 @@ Once ready to do a release, create a local branch that includes the following up
    sure to do the last `clean` step -- **DO NOT MERGE THE TEMPORARY DOC
    CHANGES.** For more details see the [Managing the ACA-Py Documentation Site] document.
 
-3. Update the CHANGELOG.md to add the new release.  Only create a new section
+2. Update the CHANGELOG.md to add the new release.  Only create a new section
    when working on the first release candidate for a new release. When
    transitioning from one release candidate to the next, or to an official
    release, just update the title and date of the change log section.
 
-4. Collect the details of the merged PRs included in this release -- a list of
+3. Collect the details of the merged PRs included in this release -- a list of
    PR title, number, link to PR, author's github ID, and a link to the author's
    github account. Do not include `dependabot` PRs. For those, we put a live
    link for the date range of the release (guidance below).
 
-   To generate the list, run the `./scripts/genChangeLog.sh` scripts (requires you
-   have [gh] and [jq] installed), with the date of the day before the last
-   release. The day before is picked to make sure you get all of the changes.
-   The script generates the list of all PRs, minus the dependabot ones, merged since
-   the last release in the required markdown format for the ChangeLog. At the end
-   of the list is some markdown for putting a link into the ChangeLog to see the
-   dependabot PRs merged in the release.
+   To generate the list, run `./scripts/genChangeLog.sh YYYY-MM-DD [<branch>]`
+   (requires you have [gh] and [jq] installed), with the date the day before the
+   last release. The day before is picked to make sure you pick up all of the
+   changes. The script generates the list of all PRs merged since the date
+   (minus, for a `main` branch runs, dependabot PRs) in the required markdown
+   format for the ChangeLog entry. At the end of the list is some markdown for
+   putting a link into a `main` branch release for the ChangeLog to see the
+   dependabot PRs merged in the release. Assuming you are creating a Release PR,
+   the last line of the output is the number of the PR you will be creating
+   (unless someone gets another one in before you do).
 
    **Note**: The output of the script is _roughly_ what you need for the
    ChangeLog, but use your discretion in getting the list right, and making
-   sure the dates for the dependabot PRs is correct. For example, when doing a
+   sure the dates for the dependabot PRs link is correct. For example, when doing a
    follow up to an RC release, the date range in the dependabot link should
    be the day before the last non-RC release, which won't be generated correctly
-   in this release.
+   for the non-RC release.
 
    [gh]: https://github.com/cli/cli
    [jq]: https://jqlang.github.io/jq/download/
 
-From the root of the repository folder, run:
+   Once you have the list of PRs follow the format of past ChangeLog entries to create a complete entry for the release. After an RC entry has been created, updated it for the next RC or final release -- don't add new entries for the same release. An AI can be used to help generate the ChangeLog entry, but it is important to review the output and make sure it is correct and complete.
 
-```bash
-./scripts/genChangeLog.sh <date> [<branch>]
-```
+4. Check to see if there are any other PRs that should be included in the release.
 
-Leave off the arguments to get usage information. Date format is `YYYY-MM-DD`, and the branch defaults to `main` if not specified. The date should be the day before the last release, so that you get all of the PRs merged since the last release.
-
-The output should look like this -- which matches what is needed in [CHANGELOG.md](CHANGELOG.md):
-
-```text
-
-  - Only change interop testing fork on pull requests [\#3218](https://github.com/openwallet-foundation/acapy/pull/3218) [jamshale](https://github.com/jamshale)
-  - Remove the RC from the versions table [\#3213](https://github.com/openwallet-foundation/acapy/pull/3213) [swcurran](https://github.com/swcurran)
-  - Feature multikey management [\#3246](https://github.com/openwallet-foundation/acapy/pull/3246) [PatStLouis](https://github.com/PatStLouis)
-
-```
-
-Once you have the list of PRs:
-
-- ChatGPT or equivalent can be used to process the list of PRs and:
-   - Organize the list into suitable categories in the [CHANGELOG.md](CHANGELOG.md) file, update (if necessary) the PR title and add notes to clarify the changes. See previous release entries to understand the style -- a format that should help developers.
-   - Add a narrative about the release above the PR that highlights what has gone into the release.
-- To cover the `dependabot` PRs without listing them all, add to the end of the
-  categorized list of PRs the two `dependabot` lines of the script output (after the list of PRs). The text will look like this:
-
-```text
-- Dependabot PRs
-  - [List of Dependabot PRs in this release](https://github.com/openwallet-foundation/acapy/pulls?q=is%3Apr+is%3Amerged+merged%3A2024-08-16..2024-09-16+author%3Aapp%2Fdependabot+)
-```
-
-- Check the dates in the `dependabot` URL to make sure the full period between the previous non-RC release to the date of the non-RC release you are preparing.
-- Include a PR in the list for this soon-to-be PR, initially with the "next to be issued" number for PRs/Issues. At the end output of the script is the highest numbered PR and issue. Your PR will be one higher than the highest of those two numbers. Note that you still might have to correct the number after you create the PR if someone sneaks an issue or PR in before you submit your PR.
-
-5. Check to see if there are any other PRs that should be included in the release.
-
-6. Update the ReadTheDocs in the `/docs` folder by following the instructions in
+5. Update the ReadTheDocs in the `/docs` folder by following the instructions in
    the `docs/UpdateRTD.md` file. That will likely add a number of new and modified
    files to the PR. Eliminate all of the errors in the generation process,
    either by mocking external dependencies or by fixing ACA-Py code. If
@@ -94,15 +69,15 @@ cd docs; rm -rf generated; sphinx-apidoc -f -M -o  ./generated ../acapy_agent/ $
 cd docs; sphinx-build -b html -a -E -c ./ ./ ./_build; cd ..
 ```
 
-Sphinx can be run with docker -- at least the first step.  Here is the command to use:
+   Sphinx can be run with docker -- at least the first step.  Here is the command to use:
 
 ```sh
 cd docs; cp -r ../docker_agent .; rm -rf generated; docker run -it --rm -v .:/docs sphinxdoc/sphinx sphinx-apidoc -f -M -o  ./generated ./acapy_agent/ $(find ./acapy_agent/ -name '*tests*'); rm -rf docker_agent; cd ..
 ```
 
-For the build test, the RTD Sphinx theme needs to be added to the docker image, and I've not figured out that yet.
+   For the build test, the RTD Sphinx theme needs to be added to the docker image, and I've not figured out that yet.
 
-7. Search across the repository for the previous version number and update it
+6. Search across the repository for the previous version number and update it
    everywhere that makes sense. The CHANGELOG.md entry for the previous release
    is a likely exception, and the `pyproject.toml` in the root **MUST** be
    updated. You can skip (although it won't hurt) to update the files in the
@@ -115,7 +90,7 @@ For the build test, the RTD Sphinx theme needs to be added to the docker image, 
    have dropped the previously used `-` in the release candidate version string
    to better follow the semver rules.
 
-8. Regenerate openapi.json and swagger.json by running
+7. Regenerate openapi.json and swagger.json by running
    `scripts/generate-open-api-spec` from within the `acapy_agent` folder.
 
    Command: `cd acapy_agent;../scripts/generate-open-api-spec;cd ..`
@@ -124,21 +99,21 @@ For the build test, the RTD Sphinx theme needs to be added to the docker image, 
    likely with `sudo` -- `rm -rf open-api/.build`. The folder is `.gitignore`d,
    so there is not a danger they will be pushed, even if they are not deleted.
 
-9. Double check all of these steps above, and then submit a PR from the branch.
+8. Double check all of these steps above, and then submit a PR from the branch.
    Add this new PR to CHANGELOG.md so that all the PRs are included.
    If there are still further changes to be merged, mark the PR as "Draft",
    repeat **ALL** of the steps again, and then mark this PR as ready and then
    wait until it is merged. It's embarrassing when you have to do a whole new
    release just because you missed something silly...I know!
 
-10. Immediately after the PR is merged and if the release is a final release AND
+9. Immediately after the PR is merged and if the release is a final release AND
     the latest release AND an LTS release, update the LTS branch to point to
     `main`. Do this ONLY when the current release version is both the latest
     release AND its version has been declared an LTS release. Once a new version
     has been created that has NOT been declared an LTS, the LTS branch will
     extend independent of main.
 
-11. Immediately after the PR is merged, create a new GitHub tag representing the
+10. Immediately after the PR is merged, create a new GitHub tag representing the
    version. The tag name and title of the release should be the same as the
    version in
    [pyproject.toml](https://github.com/openwallet-foundation/acapy/tree/main/pyproject.toml).
@@ -146,7 +121,7 @@ For the build test, the RTD Sphinx theme needs to be added to the docker image, 
    the PRs in the release, to complement the manually curated Changelog. Verify
    on PyPi that the version is published.
 
-12. New images for the release are automatically published by the GitHubAction
+11. New images for the release are automatically published by the GitHubAction
    Workflow: [publish.yml]. The action is triggered when a release is tagged, so
    no manual action is needed. Images are published in the [OpenWallet
    Foundation Package Repository under
@@ -188,7 +163,7 @@ For the build test, the RTD Sphinx theme needs to be added to the docker image, 
 
 [publish.yml]: https://github.com/openwallet-foundation/acapy/blob/main/.github/workflows/publish.yml
 
-13. When a new release is tagged, create a new branch at the same commit with
+12. When a new release is tagged, create a new branch at the same commit with
     the branch name in the format `docs-v<version>`, for example, `docs-v1.7.0`.
     The creation of the branch triggers the execution of the [publish-docs]
     GitHub Action which generates the documentation for the new release,
@@ -202,7 +177,7 @@ For the build test, the RTD Sphinx theme needs to be added to the docker image, 
 [Managing the ACA-Py Documentation Site]: Managing-ACA-Py-Doc-Site.md
 [https://aca-py.org]: https://aca-py.org
 
-14. Perform local testing of an RC release using [ACA-Py
+13. Perform local testing of an RC release using [ACA-Py
     Plugins](https://github.com/openwallet-foundation/acapy-plugins). Once a
     Release Candidate (RC) has been published, a script in the [ACA-Py
     Plugins](https://github.com/openwallet-foundation/acapy-plugins) repo
@@ -210,7 +185,7 @@ For the build test, the RTD Sphinx theme needs to be added to the docker image, 
     of the plugins. See the documentation about this in the [ACA-Py Plugins
     README](https://github.com/openwallet-foundation/acapy-plugins/blob/main/README.md#testing-an-aca-py-release-candidate)
 
-15. Update the [ACA-Py Read The Docs site] by logging into Read The Docs
+14. Update the [ACA-Py Read The Docs site] by logging into Read The Docs
     administration site, building a new "latest" (main branch) and activating
     and building the new release by version ID. Appropriate permissions are
     required to publish the new documentation version.

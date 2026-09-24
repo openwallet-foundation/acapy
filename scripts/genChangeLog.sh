@@ -25,20 +25,35 @@ else
     BRANCH=$2
 fi
 
+SED_ARGS=(
+   -e "s/\\\t/ /g"
+   -e "s/\"//g"
+   -e "s/WwW /\[\\\#/"
+   -e "s# XxX #\\](https://github.com/openwallet-foundation/acapy/pull/#"
+   -e "s/ YyY /) \\[/"
+   -e "s# ZzZ #\\](https://github.com/#"
+   -e "s/$/)/"
+)
+if [ "${BRANCH}" == "main" ]; then
+   SED_ARGS+=(-e "/app.dependabot/d")
+fi
+
 gh pr list -S "merged:>${1}"  -L 1000 -B ${BRANCH} --state merged --json number,title,author | \
    jq ' .[] | ["  -",.title,"WwW",.number,"XxX",.number,"YyY",.author.login,"ZzZ",.author.login] | @tsv' | \
-   sed -e "s/\\\t/ /g" \
-      -e "s/\"//g" \
-      -e "s/WwW /\[\\\#/" \
-      -e "s# XxX #\\](https://github.com/openwallet-foundation/acapy/pull/#" \
-      -e "s/ YyY /) \\[/" \
-      -e "s# ZzZ #\\](https://github.com/#" \
-      -e "s/$/)/" \
-      -e "/app.dependabot/d"
-now=$(date +%Y-%m-%d)
+   sed "${SED_ARGS[@]}"
+
+if [ "${BRANCH}" == "main" ]; then
+   now=$(date +%Y-%m-%d)
+   echo ""
+   echo "- Dependabot PRs"
+   echo "  - [Link to list of Dependabot PRs in this release](https://github.com/openwallet-foundation/acapy/pulls?q=is%3Apr+is%3Amerged+merged%3A${1}..${now}+author%3Aapp%2Fdependabot+)"
+   echo ""
+fi
+echo "Here are the latest issue and pull request numbers:"
+LATEST_ISSUE=$(gh issue list -s all -L 1 --json number --jq '.[0].number')
+LATEST_PR=$(gh pr list -s all -L 1 --json number --jq '.[0].number')
+echo "  - Latest issue: #${LATEST_ISSUE}"
+echo "  - Latest PR: #${LATEST_PR}"
+NEXT_PR=$(( (LATEST_ISSUE > LATEST_PR ? LATEST_ISSUE : LATEST_PR) + 1 ))
 echo ""
-echo "- Dependabot PRs"
-echo "  - [Link to list of Dependabot PRs in this release](https://github.com/openwallet-foundation/acapy/pulls?q=is%3Apr+is%3Amerged+merged%3A${1}..${now}+author%3Aapp%2Fdependabot+)"
-echo ""
-echo Here are the latest issues and pull requests. The release PR you are preparing should be one higher than the highest of the numbers listed:
-gh issue list -s all -L 1; gh pr ls -s all -L 1
+echo "Use #${NEXT_PR} as the number for the release PR you are preparing."
