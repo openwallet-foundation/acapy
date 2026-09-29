@@ -149,6 +149,7 @@ class ConnRecord(BaseRecord):
         "invitation_msg_id",
         "state",
         "their_role",
+        "alias",
     }
 
     RECORD_TYPE = "connection"
@@ -420,8 +421,8 @@ class ConnRecord(BaseRecord):
             alias: The alias of the connection
 
         """
-        post_filter = {"alias": alias}
-        return await cls.query(session, post_filter_positive=post_filter)
+        tag_filter = {"alias": alias}
+        return await cls.query(session, tag_filter=tag_filter)
 
     async def attach_invitation(
         self,
