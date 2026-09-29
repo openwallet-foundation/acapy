@@ -1568,6 +1568,78 @@ class TestV20CredManager(IsolatedAsyncioTestCase):
             with self.assertRaises(test_module.StorageNotFoundError):
                 await self.manager.receive_problem_report(problem, connection_id)
 
+    async def test_receive_problem_report_oob_fallback(self):
+        connection_id = "connection-id"
+        stored_exchange = V20CredExRecord(
+            cred_ex_id="dummy-cxid",
+            connection_id=None,
+            initiator=V20CredExRecord.INITIATOR_SELF,
+            role=V20CredExRecord.ROLE_ISSUER,
+        )
+        problem = V20CredProblemReport(
+            description={
+                "code": test_module.ProblemReportReason.ISSUANCE_ABANDONED.value,
+                "en": "declined",
+            }
+        )
+
+        with (
+            mock.patch.object(V20CredExRecord, "save", autospec=True) as save_ex,
+            mock.patch.object(
+                V20CredExRecord,
+                "retrieve_by_conn_and_thread",
+                mock.CoroutineMock(),
+            ) as retrieve_ex,
+        ):
+            retrieve_ex.side_effect = [
+                test_module.StorageNotFoundError("No such record"),
+                stored_exchange,
+            ]
+
+            ret_exchange = await self.manager.receive_problem_report(
+                problem, connection_id
+            )
+
+            assert retrieve_ex.call_count == 2
+            retrieve_ex.assert_any_call(mock.ANY, connection_id, problem._thread_id)
+            retrieve_ex.assert_any_call(mock.ANY, None, problem._thread_id)
+            save_ex.assert_called_once()
+            assert ret_exchange.state == V20CredExRecord.STATE_ABANDONED
+
+    async def test_receive_problem_report_oob_fallback_other_connection(self):
+        connection_id = "connection-id"
+        stored_exchange = V20CredExRecord(
+            cred_ex_id="dummy-cxid",
+            connection_id="different-connection-id",
+            initiator=V20CredExRecord.INITIATOR_SELF,
+            role=V20CredExRecord.ROLE_ISSUER,
+        )
+        problem = V20CredProblemReport(
+            description={
+                "code": test_module.ProblemReportReason.ISSUANCE_ABANDONED.value,
+                "en": "declined",
+            }
+        )
+
+        with (
+            mock.patch.object(V20CredExRecord, "save", autospec=True) as save_ex,
+            mock.patch.object(
+                V20CredExRecord,
+                "retrieve_by_conn_and_thread",
+                mock.CoroutineMock(),
+            ) as retrieve_ex,
+        ):
+            retrieve_ex.side_effect = [
+                test_module.StorageNotFoundError("No such record"),
+                stored_exchange,
+            ]
+
+            with self.assertRaises(test_module.StorageNotFoundError):
+                await self.manager.receive_problem_report(problem, connection_id)
+
+            save_ex.assert_not_called()
+            assert stored_exchange.state != V20CredExRecord.STATE_ABANDONED
+
     async def test_receive_problem_report_removal(self):
         connection_id = "connection-id"
         stored_exchange = V20CredExRecord(
