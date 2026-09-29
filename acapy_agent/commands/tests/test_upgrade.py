@@ -1,4 +1,5 @@
 import asyncio
+import json
 from unittest import IsolatedAsyncioTestCase
 
 from ...connections.models.conn_record import ConnRecord
@@ -71,6 +72,58 @@ class TestUpgrade(IsolatedAsyncioTestCase):
                     "upgrade.from_version": "v0.7.2",
                 }
             )
+
+    async def test_upgrade_backfills_alias_tag_for_legacy_conn_records(self):
+        # Simulate a ConnRecord saved before "alias" was a tagged field:
+        # the storage record's JSON value has an alias, but the record was
+        # never tagged with it (as would be the case for a wallet that
+        # predates this migration).
+        async with self.profile.session() as session:
+            storage = session.inject(BaseStorage)
+            legacy_record = StorageRecord(
+                ConnRecord.RECORD_TYPE,
+                json.dumps(
+                    {
+                        "state": ConnRecord.State.COMPLETED.rfc23,
+                        "alias": "legacy-alias",
+                    }
+                ),
+                tags={"state": ConnRecord.State.COMPLETED.rfc23},
+            )
+            await storage.add_record(legacy_record)
+
+        with mock.patch.object(
+            test_module,
+            "wallet_config",
+            mock.CoroutineMock(
+                return_value=(
+                    self.profile,
+                    mock.CoroutineMock(did="public DID", verkey="verkey"),
+                )
+            ),
+        ):
+            await test_module.upgrade(
+                settings={
+                    "upgrade.config_path": "./acapy_agent/commands/default_version_upgrade_config.yml",
+                    "upgrade.from_version": "v0.7.2",
+                }
+            )
+
+        async with self.profile.session() as session:
+            # The alias tag should now be backfilled by the resave, so the
+            # indexed tag_filter lookup (the fast path) finds the record
+            # directly, without needing the post_filter_positive fallback.
+            storage = session.inject(BaseStorage)
+            tagged = await storage.find_all_records(
+                ConnRecord.RECORD_TYPE, {"alias": "legacy-alias"}
+            )
+            assert len(tagged) == 1
+
+            results = await ConnRecord.retrieve_by_alias(
+                session=session, alias="legacy-alias"
+            )
+            assert len(results) == 1
+            assert results[0].alias == "legacy-alias"
 
     async def test_upgrade_storage_missing_from_version(self):
         with (
