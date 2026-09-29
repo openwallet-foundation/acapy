@@ -421,8 +421,14 @@ class ConnRecord(BaseRecord):
             alias: The alias of the connection
 
         """
-        tag_filter = {"alias": alias}
-        return await cls.query(session, tag_filter=tag_filter)
+        results = await cls.query(session, tag_filter={"alias": alias})
+        if results:
+            return results
+
+        # Fall back to a full scan for records saved before "alias" was a
+        # tagged field (e.g. wallets that have not yet run the aca-py
+        # upgrade resave step to backfill the tag).
+        return await cls.query(session, post_filter_positive={"alias": alias})
 
     async def attach_invitation(
         self,

@@ -329,15 +329,37 @@ class TestConnRecord(IsolatedAsyncioTestCase):
             )
             assert result == [record]
 
-    async def test_retrieve_by_alias_uses_tag_filter_not_post_filter(self):
+    async def test_retrieve_by_alias_uses_tag_filter_when_tagged(self):
         async with self.profile.session() as session:
+            record = ConnRecord(alias="test-alias")
             with mock.patch.object(
-                ConnRecord, "query", mock.CoroutineMock(return_value=[])
+                ConnRecord, "query", mock.CoroutineMock(return_value=[record])
             ) as mock_query:
-                await ConnRecord.retrieve_by_alias(session=session, alias="test-alias")
+                result = await ConnRecord.retrieve_by_alias(
+                    session=session, alias="test-alias"
+                )
                 mock_query.assert_called_once_with(
                     session, tag_filter={"alias": "test-alias"}
                 )
+                assert result == [record]
+
+    async def test_retrieve_by_alias_falls_back_to_post_filter_when_untagged(self):
+        async with self.profile.session() as session:
+            record = ConnRecord(alias="test-alias")
+            with mock.patch.object(
+                ConnRecord,
+                "query",
+                mock.CoroutineMock(side_effect=[[], [record]]),
+            ) as mock_query:
+                result = await ConnRecord.retrieve_by_alias(
+                    session=session, alias="test-alias"
+                )
+                assert [c.kwargs for c in mock_query.call_args_list] == [
+                    {"tag_filter": {"alias": "test-alias"}},
+                    {"post_filter_positive": {"alias": "test-alias"}},
+                ]
+                assert all(c.args == (session,) for c in mock_query.call_args_list)
+                assert result == [record]
 
     async def test_completed_is_ready(self):
         async with self.profile.session() as session:
