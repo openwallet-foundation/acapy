@@ -134,6 +134,7 @@ If multiple ledgers are configured then `IndyLedgerRequestsExecutor` service ext
 - `lookup_did_in_configured_ledgers` function
   - If the calling function (above) is in items 1-4, then check the `DID` in `cache` for a corresponding applicable `ledger_id`. If found, return the ledger info, else continue.
   - Otherwise, launch parallel `_get_ledger_by_did` tasks for each of the configured ledgers.
+  - The overall lookup is bounded by the configurable `ledger.did_resolution_timeout` setting (seconds, default 30). Individual ledger requests continue to use their own shorter timeout.
   - As these tasks get finished, construct `applicable_prod_ledgers` and `applicable_non_prod_ledgers` dictionaries, each with `self_certified` and `non_self_certified` inner dict which are sorted by the original order or index.
   - Order/preference for selection: `self_certified` > `production` > `non_production`
     - Checks `production` ledger where the `DID` is `self_certified`

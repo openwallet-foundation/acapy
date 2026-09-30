@@ -9,9 +9,8 @@ from os.path import join
 from pathlib import Path
 from typing import Optional
 
+import aiohttp
 import base58
-from requests import Session
-from requests.exceptions import RequestException
 
 from ...indy.util import indy_client_dir
 from ..error import RevocationError
@@ -172,18 +171,19 @@ class RevocationRegistry:
         buffer_size = 65536  # should be multiple of 32 bytes for sha256
         file_hasher = hashlib.sha256()
         with open(tails_file_path, "wb", buffer_size) as tails_file:
-            with Session() as req_session:
+            async with aiohttp.ClientSession() as session:
                 try:
-                    resp = req_session.get(self._tails_public_uri, stream=True)
-                    # Should this directly raise an Error?
-                    if resp.status_code != http.HTTPStatus.OK:
-                        LOGGER.warning(
-                            f"Unexpected status code for tails file: {resp.status_code}"
-                        )
-                    for buf in resp.iter_content(chunk_size=buffer_size):
-                        tails_file.write(buf)
-                        file_hasher.update(buf)
-                except RequestException as rx:
+                    async with session.get(self._tails_public_uri) as response:
+                        # Should this directly raise an Error?
+                        if response.status != http.HTTPStatus.OK:
+                            LOGGER.warning(
+                                "Unexpected status code for tails file: %s",
+                                response.status,
+                            )
+                        async for buf in response.content.iter_chunked(buffer_size):
+                            tails_file.write(buf)
+                            file_hasher.update(buf)
+                except aiohttp.ClientError as rx:
                     raise RevocationError(f"Error retrieving tails file: {rx}")
 
         download_tails_hash = base58.b58encode(file_hasher.digest()).decode("utf-8")

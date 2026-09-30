@@ -367,14 +367,14 @@ class OutboundTransportManager:
 
                 if deliver:
                     queued.state = QueuedOutboundMessage.STATE_DELIVER
-                    p_time = trace_event(
+                    p_time = await trace_event(
                         self.root_profile.settings,
                         queued.message if queued.message else queued.payload,
                         outcome="OutboundTransportManager.DELIVER.START."
                         + queued.endpoint,
                     )
                     self.deliver_queued_message(queued)
-                    trace_event(
+                    await trace_event(
                         self.root_profile.settings,
                         queued.message if queued.message else queued.payload,
                         outcome="OutboundTransportManager.DELIVER.END." + queued.endpoint,
@@ -395,13 +395,13 @@ class OutboundTransportManager:
                         new_pending += 1
                     else:
                         queued.state = QueuedOutboundMessage.STATE_ENCODE
-                        p_time = trace_event(
+                        p_time = await trace_event(
                             self.root_profile.settings,
                             queued.message if queued.message else queued.payload,
                             outcome="OutboundTransportManager.ENCODE.START",
                         )
                         self.encode_queued_message(queued)
-                        trace_event(
+                        await trace_event(
                             self.root_profile.settings,
                             queued.message if queued.message else queued.payload,
                             outcome="OutboundTransportManager.ENCODE.END",

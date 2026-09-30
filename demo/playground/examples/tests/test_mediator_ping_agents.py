@@ -9,6 +9,7 @@ import time
 import uuid
 
 import pytest
+import pytest_asyncio
 
 from . import ALICE, FABER, MULTI, Agent, logger
 
@@ -16,30 +17,35 @@ from . import ALICE, FABER, MULTI, Agent, logger
 logger.info("start testing mediated connections...")
 
 
-@pytest.fixture(scope="session")
-def faber():
+@pytest_asyncio.fixture(scope="session", loop_scope="session")
+async def faber():
     """faber agent fixture."""
     logger.info(f"faber = {FABER}")
-    yield Agent(FABER)
+    agent = Agent(FABER)
+    yield agent
+    await agent.close()
 
 
-@pytest.fixture(scope="session")
-def alice():
+@pytest_asyncio.fixture(scope="session", loop_scope="session")
+async def alice():
     """resolver agent fixture."""
     logger.info(f"alice = {ALICE}")
-    yield Agent(ALICE)
+    agent = Agent(ALICE)
+    yield agent
+    await agent.close()
 
 
-@pytest.fixture(scope="session")
-def multi_one():
+@pytest_asyncio.fixture(scope="session", loop_scope="session")
+async def multi_one():
     """resolver agent fixture."""
     agent = Agent(MULTI)
     wallet_name = f"multi_one_{str(uuid.uuid4())[0:8]}"
-    resp = agent.create_tenant(wallet_name, "changeme")
+    resp = await agent.create_tenant(wallet_name, "changeme")
     wallet_id = resp["wallet_id"]
     token = resp["token"]
     agent.headers = {"Authorization": f"Bearer {token}"}
     yield agent
+    await agent.close()
 
 
 @pytest.fixture(scope="session")
@@ -54,13 +60,13 @@ def mediation_invite():
     yield data
 
 
-def initialize_mediation(agent: Agent, invitation):
+async def initialize_mediation(agent: Agent, invitation):
     connection_id = None
     mediator_connection_state = None
     mediation_id = None
     mediation_granted = False
 
-    invitation_json = agent.receive_invite(
+    invitation_json = await agent.receive_invite(
         invitation, auto_accept="true", alias="mediator"
     )
     connection_id = invitation_json["connection_id"]
@@ -70,20 +76,20 @@ def initialize_mediation(agent: Agent, invitation):
     attempts = 0
     while mediator_connection_state != "active" and attempts < 5:
         time.sleep(1)
-        connection_json = agent.get_connection(connection_id)
+        connection_json = await agent.get_connection(connection_id)
         mediator_connection_state = connection_json["state"]
         logger.info(f"mediator_connection_state: {mediator_connection_state}")
         attempts = attempts + 1
 
     if mediator_connection_state == "active":
-        mediation_request_json = agent.request_for_mediation(connection_id)
+        mediation_request_json = await agent.request_for_mediation(connection_id)
         mediation_id = mediation_request_json["mediation_id"]
         logger.info(f"mediation_id: {mediation_id}")
         mediation_granted = False
         attempts = 0
         while not mediation_granted and attempts < 5:
             time.sleep(1)
-            granted_json = agent.get_mediation_request(mediation_id)
+            granted_json = await agent.get_mediation_request(mediation_id)
             mediation_granted = granted_json["state"] == "granted"
             logger.info(f"mediation_granted: {mediation_granted}")
             attempts = attempts + 1
@@ -97,26 +103,26 @@ def initialize_mediation(agent: Agent, invitation):
     return result
 
 
-@pytest.fixture(scope="session")
-def faber_mediator(faber, mediation_invite):
+@pytest_asyncio.fixture(scope="session", loop_scope="session")
+async def faber_mediator(faber, mediation_invite):
     logger.info("faber_mediator...")
-    result = initialize_mediation(faber, mediation_invite)
+    result = await initialize_mediation(faber, mediation_invite)
     logger.info(f"...faber_mediator = {result}")
     yield result
 
 
-@pytest.fixture(scope="session")
-def alice_mediator(alice, mediation_invite):
+@pytest_asyncio.fixture(scope="session", loop_scope="session")
+async def alice_mediator(alice, mediation_invite):
     logger.info("alice_mediator...")
-    result = initialize_mediation(alice, mediation_invite)
+    result = await initialize_mediation(alice, mediation_invite)
     logger.info(f"...alice_mediator = {result}")
     yield result
 
 
-@pytest.fixture(scope="session")
-def multi_one_mediator(multi_one, mediation_invite):
+@pytest_asyncio.fixture(scope="session", loop_scope="session")
+async def multi_one_mediator(multi_one, mediation_invite):
     logger.info("multi_one_mediator...")
-    result = initialize_mediation(multi_one, mediation_invite)
+    result = await initialize_mediation(multi_one, mediation_invite)
     logger.info(f"...multi_one_mediator = {result}")
     yield result
 
@@ -125,13 +131,14 @@ def multi_one_mediator(multi_one, mediation_invite):
     os.getenv("MEDIATOR_INVITATION_URL") in [None, "", " "],
     reason="MEDIATOR_INVITATION_URL not set. Running tests that do not require mediator.",
 )
-def test_mediated_single_tenants(
+@pytest.mark.asyncio
+async def test_mediated_single_tenants(
     faber, alice, faber_mediator, alice_mediator, mediation_invite
 ):
     assert faber_mediator["mediation_granted"] is True
     assert alice_mediator["mediation_granted"] is True
 
-    resp = faber.create_invitation(
+    resp = await faber.create_invitation(
         alias="alice",
         auto_accept="true",
         json={"my_label": "faber", "mediation_id": faber_mediator["mediation_id"]},
@@ -148,7 +155,7 @@ def test_mediated_single_tenants(
     logger.info(f"mediator service endpoint = {mediation_invite_json['serviceEndpoint']}")
     assert invite["serviceEndpoint"] == mediation_invite_json["serviceEndpoint"]
 
-    resp = alice.receive_invite(invite, alias="faber", auto_accept="true")
+    resp = await alice.receive_invite(invite, alias="faber", auto_accept="true")
     alice_faber_connection_id = resp["connection_id"]
     logger.info(f"alice_faber_connection_id = {alice_faber_connection_id}")
     assert alice_faber_connection_id
@@ -157,7 +164,7 @@ def test_mediated_single_tenants(
     attempts = 0
     while not faber_alice_connection_active and attempts < 5:
         time.sleep(1)
-        connection_resp = faber.get_connection(faber_alice_connection_id)
+        connection_resp = await faber.get_connection(faber_alice_connection_id)
         faber_alice_connection_active = connection_resp["state"] == "active"
         logger.info(f"faber/alice active?  {faber_alice_connection_active}")
         attempts = attempts + 1
@@ -166,7 +173,7 @@ def test_mediated_single_tenants(
     attempts = 0
     while not alice_faber_connection_active and attempts < 5:
         time.sleep(1)
-        connection_resp = alice.get_connection(alice_faber_connection_id)
+        connection_resp = await alice.get_connection(alice_faber_connection_id)
         alice_faber_connection_active = connection_resp["state"] == "active"
         logger.info(f"alice/faber active?  {alice_faber_connection_active}")
         attempts = attempts + 1
@@ -177,10 +184,10 @@ def test_mediated_single_tenants(
     logger.info("faber alice pinging...")
     pings = 0
     while pings < 10:
-        resp = faber.ping_connection(faber_alice_connection_id, "faber")
+        resp = await faber.ping_connection(faber_alice_connection_id, "faber")
         logger.info(f"faber ping alice =  {resp}")
         time.sleep(1)
-        alice.ping_connection(alice_faber_connection_id, "alice")
+        await alice.ping_connection(alice_faber_connection_id, "alice")
         logger.info(f"alice ping faber =  {resp}")
         time.sleep(1)
         pings = pings + 1
@@ -190,13 +197,14 @@ def test_mediated_single_tenants(
     os.getenv("MEDIATOR_INVITATION_URL") in [None, "", " "],
     reason="MEDIATOR_INVITATION_URL not set. Running tests that do not require mediator.",
 )
-def test_mediated_multi_tenants(
+@pytest.mark.asyncio
+async def test_mediated_multi_tenants(
     multi_one, alice, multi_one_mediator, alice_mediator, mediation_invite
 ):
     assert multi_one_mediator["mediation_granted"] is True
     assert alice_mediator["mediation_granted"] is True
 
-    resp = multi_one.create_invitation(
+    resp = await multi_one.create_invitation(
         alias="alice",
         auto_accept="true",
         json={
@@ -216,7 +224,7 @@ def test_mediated_multi_tenants(
     logger.info(f"mediator service endpoint = {mediation_invite_json['serviceEndpoint']}")
     assert invite["serviceEndpoint"] == mediation_invite_json["serviceEndpoint"]
 
-    resp = alice.receive_invite(invite, alias="multi_one", auto_accept="true")
+    resp = await alice.receive_invite(invite, alias="multi_one", auto_accept="true")
     alice_multi_one_connection_id = resp["connection_id"]
     logger.info(f"alice_multi_one_connection_id = {alice_multi_one_connection_id}")
     assert alice_multi_one_connection_id
@@ -225,7 +233,7 @@ def test_mediated_multi_tenants(
     attempts = 0
     while not multi_one_alice_connection_active and attempts < 5:
         time.sleep(1)
-        connection_resp = multi_one.get_connection(multi_one_alice_connection_id)
+        connection_resp = await multi_one.get_connection(multi_one_alice_connection_id)
         multi_one_alice_connection_active = connection_resp["state"] == "active"
         logger.info(f"multi_one/alice active?  {multi_one_alice_connection_active}")
         attempts = attempts + 1
@@ -234,7 +242,7 @@ def test_mediated_multi_tenants(
     attempts = 0
     while not alice_multi_one_connection_active and attempts < 5:
         time.sleep(1)
-        connection_resp = alice.get_connection(alice_multi_one_connection_id)
+        connection_resp = await alice.get_connection(alice_multi_one_connection_id)
         alice_multi_one_connection_active = connection_resp["state"] == "active"
         logger.info(f"alice/multi_one active?  {alice_multi_one_connection_active}")
         attempts = attempts + 1
@@ -245,10 +253,12 @@ def test_mediated_multi_tenants(
     logger.info("multi_one alice pinging...")
     pings = 0
     while pings < 10:
-        resp = multi_one.ping_connection(multi_one_alice_connection_id, "multi_one")
+        resp = await multi_one.ping_connection(
+            multi_one_alice_connection_id, "multi_one"
+        )
         logger.info(f"multi_one ping alice =  {resp}")
         time.sleep(1)
-        alice.ping_connection(alice_multi_one_connection_id, "alice")
+        await alice.ping_connection(alice_multi_one_connection_id, "alice")
         logger.info(f"alice ping multi_one =  {resp}")
         time.sleep(1)
         pings = pings + 1

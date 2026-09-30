@@ -41,10 +41,12 @@ from ..request_context import AdminRequestContext
 from ..server import AdminServer, AdminSetupError
 
 
-# Ignore Marshmallow warning, as well as 'NotAppKeyWarning' coming from apispec packages
+# Ignore Marshmallow deprecation warning.
+# Also ignore aiohttp's NotAppKeyWarning, which is raised when apispec/aiohttp-apispec
+# middleware accesses request storage with plain string keys instead of web.RequestKey.
 @pytest.mark.filterwarnings(
     "ignore:The 'missing' attribute of fields is deprecated. Use 'load_default' instead.",
-    "ignore:It is recommended to use web.AppKey instances for keys.",
+    "ignore::aiohttp.web_exceptions.NotAppKeyWarning",
 )
 class TestAdminServer(IsolatedAsyncioTestCase):
     async def asyncSetUp(self):
