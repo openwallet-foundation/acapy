@@ -1,10 +1,9 @@
 """JSON-LD document loader methods."""
 
 import asyncio
-import concurrent.futures
+import threading
 from typing import Callable
 
-import nest_asyncio
 from pydid.did_url import DIDUrl
 from pyld.documentloader import requests
 
@@ -13,8 +12,6 @@ from ...core.profile import Profile
 from ...resolver.did_resolver import DIDResolver
 from .document_downloader import StaticCacheJsonLdDownloader
 from .error import LinkedDataProofException
-
-nest_asyncio.apply()
 
 
 class DocumentLoader:
@@ -33,7 +30,6 @@ class DocumentLoader:
         self.cache = profile.inject_or(BaseCache)
         self.online_request_loader = requests.requests_document_loader()
         self.requests_loader = StaticCacheJsonLdDownloader().load
-        self.executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
         self.cache_ttl = cache_ttl
         self._event_loop = asyncio.get_event_loop()
 
@@ -99,12 +95,31 @@ class DocumentLoader:
         return document
 
     def __call__(self, url: str, options: dict):
-        """Load JSON-LD Document."""
+        """Load JSON-LD Document.
+
+        This loader is invoked synchronously by PyLD.  Because it needs async
+        ACA-Py services, it schedules ``load_document`` on the event loop that
+        was active when the loader was created.  Callers must run PyLD in a
+        thread executor so that this callback is executing on a worker thread
+        and can safely wait for the main loop to finish the async work.
+        """
         loop = self._event_loop
         coroutine = self.load_document(url, options)
-        document = loop.run_until_complete(coroutine)
 
-        return document
+        if not loop.is_running():
+            return loop.run_until_complete(coroutine)
+
+        # If we are on the loop's own thread while it is running, blocking
+        # would deadlock.  After the refactor all PyLD calls should be made
+        # from a worker thread via ``run_sync``.
+        if threading.current_thread().ident == getattr(loop, "_thread_id", None):
+            raise RuntimeError(
+                "DocumentLoader.__call__ was invoked from the event loop thread "
+                "while the loop is running. Run the PyLD operation through "
+                "acapy_agent.vc.ld_proofs.pyld_util.run_sync instead."
+            )
+
+        return asyncio.run_coroutine_threadsafe(coroutine, loop).result()
 
 
 DocumentLoaderMethod = Callable[[str, dict], dict]

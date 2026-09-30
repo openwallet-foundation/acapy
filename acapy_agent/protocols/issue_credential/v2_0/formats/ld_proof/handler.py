@@ -18,6 +18,7 @@ from ......storage.vc_holder.vc_record import VCRecord
 from ......vc.ld_proofs import DocumentLoader
 from ......vc.ld_proofs.check import get_properties_without_context
 from ......vc.ld_proofs.error import LinkedDataProofException
+from ......vc.ld_proofs.pyld_util import run_sync
 from ......vc.vc_ld import VerifiableCredential, VerifiableCredentialSchema
 from ......vc.vc_ld.manager import VcLdpManager, VcLdpManagerError
 from ......vc.vc_ld.models.options import LDProofVCOptions
@@ -177,7 +178,7 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
             raise V20CredFormatError("Failed to prepare credential") from err
 
         document_loader = self.profile.inject(DocumentLoader)
-        missing_properties = get_properties_without_context(
+        missing_properties = await get_properties_without_context(
             detail.credential.serialize(), document_loader
         )
 
@@ -398,7 +399,9 @@ class LDProofCredFormatHandler(V20CredFormatHandler):
 
         # Saving expanded type as a cred_tag
         document_loader = self.profile.inject(DocumentLoader)
-        expanded = jsonld.expand(cred_dict, options={"documentLoader": document_loader})
+        expanded = await run_sync(
+            jsonld.expand, cred_dict, options={"documentLoader": document_loader}
+        )
         types = JsonLdProcessor.get_values(
             expanded[0],
             "@type",

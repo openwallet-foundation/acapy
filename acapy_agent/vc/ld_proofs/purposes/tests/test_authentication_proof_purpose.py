@@ -44,7 +44,7 @@ class TestAuthenticationProofPurpose(IsolatedAsyncioTestCase):
             verification_method = {"controller": "controller"}
             document_loader = mock.MagicMock()
 
-            result = proof_purpose.validate(
+            result = await proof_purpose.validate(
                 proof=proof,
                 document=document,
                 suite=suite,
@@ -68,7 +68,7 @@ class TestAuthenticationProofPurpose(IsolatedAsyncioTestCase):
         with mock.patch.object(ControllerProofPurpose, "validate") as validate_mock:
             validate_mock.return_value = PurposeResult(valid=True)
 
-            result = proof_purpose.validate(
+            result = await proof_purpose.validate(
                 proof={
                     "challenge": "another8378c56e-4926-4a54-9587-0f2ef564619a",
                     "domain": "example.com",
@@ -89,7 +89,7 @@ class TestAuthenticationProofPurpose(IsolatedAsyncioTestCase):
         with mock.patch.object(ControllerProofPurpose, "validate") as validate_mock:
             validate_mock.return_value = PurposeResult(valid=True)
 
-            result = proof_purpose.validate(
+            result = await proof_purpose.validate(
                 proof={
                     "challenge": "8378c56e-4926-4a54-9587-0f2ef564619a",
                     "domain": "anotherexample.com",
