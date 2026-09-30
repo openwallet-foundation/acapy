@@ -1910,18 +1910,6 @@ multiformats = "*"
 dev = ["mypy", "pylint", "pytest", "pytest-cov"]
 
 [[package]]
-name = "nest-asyncio"
-version = "1.6.0"
-description = "Patch asyncio to allow nested event loops"
-optional = false
-python-versions = ">=3.5"
-groups = ["main"]
-files = [
-    {file = "nest_asyncio-1.6.0-py3-none-any.whl", hash = "sha256:87af6efd6b5e897c81050477ef65c62e2b2f35d51703cae01aff2905b1852e1c"},
-    {file = "nest_asyncio-1.6.0.tar.gz", hash = "sha256:6f172d5449aca15afd6c646851f4e31e02c598d553a667e38cafa997cfec55fe"},
-]
-
-[[package]]
 name = "nodeenv"
 version = "1.9.1"
 description = "Node.js virtual environment builder"
@@ -3476,4 +3464,4 @@ sqlcipher = ["sqlcipher3-binary"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.13"
-content-hash = "847a3eb75e042fc3b6d38b9f33d8d2a2e5c5f3fa468b88eac6abe67e3b13dfea"
+content-hash = "2a6f5ed82eebb3b37ad13024e5d4c4d94dedd5011910dde4c830c9c1fd552f9c"

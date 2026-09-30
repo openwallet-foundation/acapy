@@ -44,7 +44,6 @@ autodoc_mock_imports = [
     "multicodec",
     "multiformats",
     "nacl",
-    "nest_asyncio",
     "packaging",
     "portalocker",
     "prompt_toolkit",

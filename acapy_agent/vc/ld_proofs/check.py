@@ -5,9 +5,10 @@ from typing import Optional, Sequence, Tuple, Union
 from pyld import jsonld
 
 from .document_loader import DocumentLoaderMethod
+from .pyld_util import run_sync
 
 
-def diff_dict_keys(
+async def diff_dict_keys(
     full: dict,
     with_missing: dict,
     prefix: Optional[str] = None,
@@ -65,7 +66,8 @@ def diff_dict_keys(
             elif full.get("@type"):
                 doc["@type"] = full.get("@type")
 
-            expanded = jsonld.expand(
+            expanded = await run_sync(
+                jsonld.expand,
                 doc,
                 {"documentLoader": document_loader},
             )
@@ -87,7 +89,7 @@ def diff_dict_keys(
         # If the key is present, but is a dict itself, recursively check nested keys
         if isinstance(value, dict):
             missing.extend(
-                diff_dict_keys(
+                await diff_dict_keys(
                     value,
                     with_missing.get(key_in_with_missing),
                     prefix=_prefix,
@@ -113,7 +115,7 @@ def diff_dict_keys(
                         nested_value, value_with_missing[i]
                     )
                     missing.extend(
-                        diff_dict_keys(
+                        await diff_dict_keys(
                             nested_value,
                             nested_with_missing,
                             prefix=__prefix,
@@ -125,7 +127,7 @@ def diff_dict_keys(
     return missing
 
 
-def get_properties_without_context(
+async def get_properties_without_context(
     document: dict, document_loader: DocumentLoaderMethod
 ) -> Sequence[str]:
     """Get the properties from document that don't have an context definition."""
@@ -136,13 +138,14 @@ def get_properties_without_context(
     document = document.copy()
 
     # Removes unknown keys from object
-    compact = jsonld.compact(
+    compact = await run_sync(
+        jsonld.compact,
         document,
         document["@context"],
         {"documentLoader": document_loader},
     )
 
-    missing = diff_dict_keys(
+    missing = await diff_dict_keys(
         document, compact, document_loader=document_loader, context=document["@context"]
     )
 

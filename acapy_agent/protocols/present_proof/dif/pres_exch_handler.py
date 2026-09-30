@@ -38,6 +38,7 @@ from ....vc.ld_proofs.constants import (
     EXPANDED_TYPE_CREDENTIALS_CONTEXT_V1_VC_TYPE,
     SECURITY_CONTEXT_BBS_URL,
 )
+from ....vc.ld_proofs.pyld_util import run_sync
 from ....vc.vc_di.prove import create_signed_anoncreds_presentation
 from ....vc.vc_ld.prove import create_presentation, derive_credential, sign_presentation
 from ....wallet.base import BaseWallet, DIDInfo
@@ -416,7 +417,7 @@ class DIFPresExchHandler:
                 )
                 if credential_dict["proof"]["type"] == "DataIntegrityProof":
                     # TODO - don't sign
-                    credential = self.create_vcrecord(credential_dict)
+                    credential = await self.create_vcrecord(credential_dict)
                 else:
                     derive_suite = await self._get_derive_suite()
                     signed_new_credential_dict = await derive_credential(
@@ -425,7 +426,7 @@ class DIFPresExchHandler:
                         suite=derive_suite,
                         document_loader=document_loader,
                     )
-                    credential = self.create_vcrecord(signed_new_credential_dict)
+                    credential = await self.create_vcrecord(signed_new_credential_dict)
             result.append(credential)
         return result
 
@@ -455,7 +456,7 @@ class DIFPresExchHandler:
             except (WalletError, WalletNotFoundError):
                 return False
 
-    def create_vcrecord(self, cred_dict: dict) -> VCRecord:
+    async def create_vcrecord(self, cred_dict: dict) -> VCRecord:
         """Return VCRecord from a credential dict."""
         proofs = cred_dict.get("proof") or []
         proof_types = None
@@ -497,7 +498,9 @@ class DIFPresExchHandler:
             schemas = [schemas]
         schema_ids = [schema.get("id") for schema in schemas]
         document_loader = self.profile.inject(DocumentLoader)
-        expanded = jsonld.expand(cred_dict, options={"documentLoader": document_loader})
+        expanded = await run_sync(
+            jsonld.expand, cred_dict, options={"documentLoader": document_loader}
+        )
         types = JsonLdProcessor.get_values(
             expanded[0],
             "@type",
@@ -1483,7 +1486,7 @@ class DIFPresExchHandler:
                     not len(
                         await self.filter_schema(
                             credentials=[
-                                self.create_vcrecord(cred_dict=match_item.value)
+                                await self.create_vcrecord(cred_dict=match_item.value)
                             ],
                             schemas=schema_filter,
                         )
@@ -1545,7 +1548,7 @@ class DIFPresExchHandler:
         """If successful, returns None, else raises an error with reason for failure"""
         fields = constraint._fields
         field_paths = []
-        credential = self.create_vcrecord(cred_dict)
+        credential = await self.create_vcrecord(cred_dict)
         is_limit_disclosure = constraint.limit_disclosure == "required"
         for field in fields:
             if is_limit_disclosure:
