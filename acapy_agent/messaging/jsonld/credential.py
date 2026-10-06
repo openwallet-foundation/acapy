@@ -83,7 +83,7 @@ async def sign_credential(
 ) -> dict:
     """Sign Credential."""
     document_loader = session.profile.inject_or(DocumentLoader)
-    _, verify_data_hex_string = create_verify_data(
+    _, verify_data_hex_string = await create_verify_data(
         credential,
         signature_options,
         document_loader,
@@ -96,7 +96,7 @@ async def sign_credential(
 async def verify_credential(session: ProfileSession, doc: dict, verkey: str) -> bool:
     """Verify credential."""
     document_loader = session.profile.inject_or(DocumentLoader)
-    framed, verify_data_hex_string = create_verify_data(
+    framed, verify_data_hex_string = await create_verify_data(
         doc,
         doc["proof"],
         document_loader,

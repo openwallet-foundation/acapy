@@ -70,7 +70,7 @@ class BbsBlsSignature2020(BbsBlsSignature2020Base):
         proof = purpose.update(proof)
 
         # Create statements to sign
-        verify_data = self._create_verify_data(
+        verify_data = await self._create_verify_data(
             proof=proof, document=document, document_loader=document_loader
         )
 
@@ -93,7 +93,7 @@ class BbsBlsSignature2020(BbsBlsSignature2020Base):
         """Verify proof against document and proof purpose."""
         try:
             # Create statements to verify
-            verify_data = self._create_verify_data(
+            verify_data = await self._create_verify_data(
                 proof=proof, document=document, document_loader=document_loader
             )
 
@@ -101,7 +101,7 @@ class BbsBlsSignature2020(BbsBlsSignature2020Base):
             verify_data = [item.encode("utf-8") for item in verify_data]
 
             # Fetch verification method
-            verification_method = self._get_verification_method(
+            verification_method = await self._get_verification_method(
                 proof=proof, document_loader=document_loader
             )
 
@@ -119,7 +119,7 @@ class BbsBlsSignature2020(BbsBlsSignature2020Base):
                 )
 
             # Ensure proof was performed for a valid purpose
-            purpose_result = purpose.validate(
+            purpose_result = await purpose.validate(
                 proof=proof,
                 document=document,
                 suite=self,
@@ -138,7 +138,7 @@ class BbsBlsSignature2020(BbsBlsSignature2020Base):
         except Exception as err:
             return ProofResult(verified=False, error=err)
 
-    def _create_verify_data(
+    async def _create_verify_data(
         self, *, proof: dict, document: dict, document_loader: DocumentLoaderMethod
     ) -> List[str]:
         """Create verification data.
@@ -146,16 +146,16 @@ class BbsBlsSignature2020(BbsBlsSignature2020Base):
         Returns a list of canonized statements
 
         """
-        proof_statements = self._create_verify_proof_data(
+        proof_statements = await self._create_verify_proof_data(
             proof=proof, document=document, document_loader=document_loader
         )
-        document_statements = self._create_verify_document_data(
+        document_statements = await self._create_verify_document_data(
             document=document, document_loader=document_loader
         )
 
         return [*proof_statements, *document_statements]
 
-    def _canonize_proof(
+    async def _canonize_proof(
         self, *, proof: dict, document: dict, document_loader: DocumentLoaderMethod
     ):
         """Canonize proof dictionary. Removes value that are not part of signature."""
@@ -164,7 +164,7 @@ class BbsBlsSignature2020(BbsBlsSignature2020Base):
 
         proof.pop("proofValue", None)
 
-        return self._canonize(input=proof, document_loader=document_loader)
+        return await self._canonize(input=proof, document_loader=document_loader)
 
     async def sign(self, *, verify_data: List[bytes], proof: dict) -> dict:
         """Sign the data and add it to the proof.

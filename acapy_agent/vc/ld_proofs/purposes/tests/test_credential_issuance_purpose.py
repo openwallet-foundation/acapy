@@ -34,7 +34,7 @@ class TestCredentialIssuancePurpose(IsolatedAsyncioTestCase):
             suite = mock.MagicMock()
             verification_method = {"controller": "controller"}
 
-            result = proof_purpose.validate(
+            result = await proof_purpose.validate(
                 proof=proof,
                 document=document,
                 suite=suite,
@@ -63,7 +63,7 @@ class TestCredentialIssuancePurpose(IsolatedAsyncioTestCase):
             suite = mock.MagicMock()
             verification_method = {"controller": "controller"}
 
-            result = proof_purpose.validate(
+            result = await proof_purpose.validate(
                 proof=proof,
                 document=document,
                 suite=suite,
@@ -85,7 +85,7 @@ class TestCredentialIssuancePurpose(IsolatedAsyncioTestCase):
             suite = mock.MagicMock()
             verification_method = {"controller": "controller"}
 
-            result = proof_purpose.validate(
+            result = await proof_purpose.validate(
                 proof=proof,
                 document=document,
                 suite=suite,
@@ -103,7 +103,7 @@ class TestCredentialIssuancePurpose(IsolatedAsyncioTestCase):
         with mock.patch.object(AssertionProofPurpose, "validate") as validate_mock:
             validate_mock.return_value = mock.MagicMock(valid=False)
 
-            result = proof_purpose.validate(
+            result = await proof_purpose.validate(
                 proof=mock.MagicMock(),
                 document=mock.MagicMock(),
                 suite=mock.MagicMock(),

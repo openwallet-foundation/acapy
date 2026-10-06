@@ -27,6 +27,7 @@ from ..database_manager.db_errors import DBCode, DBError
 from ..storage.vc_holder.base import VCHolder
 from ..storage.vc_holder.vc_record import VCRecord
 from ..vc.ld_proofs import DocumentLoader
+from ..vc.ld_proofs.pyld_util import run_sync
 from ..vc.vc_ld import VerifiableCredential
 from ..wallet.error import WalletNotFoundError
 from .error_messages import ANONCREDS_PROFILE_REQUIRED_MSG
@@ -344,8 +345,10 @@ class AnonCredsHolder:
 
         # Saving expanded type as a cred_tag
         document_loader = self.profile.inject(DocumentLoader)
-        expanded = jsonld.expand(
-            cred_w3c_recvd_dict, options={"documentLoader": document_loader}
+        expanded = await run_sync(
+            jsonld.expand,
+            cred_w3c_recvd_dict,
+            options={"documentLoader": document_loader},
         )
         types = JsonLdProcessor.get_values(
             expanded[0],
