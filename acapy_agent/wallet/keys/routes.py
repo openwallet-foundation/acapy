@@ -48,6 +48,17 @@ class CreateKeyRequestSchema(OpenAPISchema):
         },
     )
 
+    provider = fields.Str(
+        required=False,
+        metadata={
+            "description": (
+                "Optional name of a registered external signer provider that "
+                "creates and holds the private key. Cannot be combined with seed."
+            ),
+            "example": "luna-prod",
+        },
+    )
+
 
 class CreateKeyResponseSchema(OpenAPISchema):
     """Response schema from creating a new key."""
@@ -170,13 +181,16 @@ async def create_key(request: web.BaseRequest):
     seed = body.get("seed") or None
     kid = body.get("kid") or None
     alg = body.get("alg") or DEFAULT_ALG
+    provider = body.get("provider") or None
 
     if seed and not context.settings.get("wallet.allow_insecure_seed"):
         raise MultikeyManagerError("Seed support is not enabled.")
 
     try:
         async with context.session() as session:
-            key_info = await MultikeyManager(session).create(seed=seed, kid=kid, alg=alg)
+            key_info = await MultikeyManager(session).create(
+                seed=seed, kid=kid, alg=alg, provider=provider
+            )
         return web.json_response(
             key_info,
             status=201,
