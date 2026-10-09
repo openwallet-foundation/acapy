@@ -232,6 +232,42 @@ async def test_assign_kid_to_key_keeps_metadata_and_tags(patched_wallet):
 
 
 @pytest.mark.asyncio
+async def test_replace_signing_key_metadata_keeps_external_signer_fields(
+    patched_wallet,
+):
+    module, wallet, _ = patched_wallet
+    metadata = {"provider": "hsm", "key_ref": "k1"}
+    created = await wallet.create_key(module.ED25519, metadata=metadata)
+
+    await wallet.replace_signing_key_metadata(created.verkey, {**metadata, "n": 1})
+    assert (await wallet.get_signing_key(created.verkey)).metadata == {
+        **metadata,
+        "n": 1,
+    }
+
+    with pytest.raises(module.WalletError, match="cannot change"):
+        await wallet.replace_signing_key_metadata(created.verkey, {"n": 2})
+
+
+@pytest.mark.asyncio
+async def test_insert_public_key(patched_wallet, monkeypatch):
+    module, wallet, askar = patched_wallet
+    monkeypatch.setattr(module, "KeyAlg", FakeKeyAlg)
+    verkey = module.bytes_to_b58(b"public-only")
+
+    info = await wallet.insert_public_key(
+        verkey, module.P256, metadata={"provider": "hsm", "key_ref": "k1"}, kid="kid-1"
+    )
+
+    assert info.metadata == {"provider": "hsm", "key_ref": "k1"}
+    entry = askar._keys[verkey]
+    assert entry["key"].get_public_bytes() == b"public-only"
+    assert entry["key"].get_secret_bytes() == b""
+    assert entry["tags"] == {"kid": "kid-1"}
+    assert (await wallet.get_key_by_kid("kid-1")).verkey == verkey
+
+
+@pytest.mark.asyncio
 async def test_get_signing_key_not_found_raises(patched_wallet):
     module, wallet, _ = patched_wallet
     with pytest.raises(module.WalletNotFoundError):
