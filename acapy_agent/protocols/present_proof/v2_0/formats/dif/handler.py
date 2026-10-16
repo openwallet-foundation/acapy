@@ -294,6 +294,15 @@ class DIFPresFormatHandler(V20PresFormatHandler):
                                         break
                                     if (
                                         proof_format
+                                        == Ed25519Signature2020.signature_type
+                                    ):
+                                        proof_type = [Ed25519Signature2020.signature_type]
+                                        dif_handler_proof_type = (
+                                            Ed25519Signature2020.signature_type
+                                        )
+                                        break
+                                    if (
+                                        proof_format
                                         == EcdsaSecp256r1Signature2019.signature_type
                                     ):
                                         proof_type = [
