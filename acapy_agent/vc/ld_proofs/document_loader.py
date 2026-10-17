@@ -109,10 +109,16 @@ class DocumentLoader:
         if not loop.is_running():
             return loop.run_until_complete(coroutine)
 
-        # If we are on the loop's own thread while it is running, blocking
-        # would deadlock.  After the refactor all PyLD calls should be made
-        # from a worker thread via ``run_sync``.
-        if threading.current_thread().ident == getattr(loop, "_thread_id", None):
+        # Safely check if an event loop is running in the current thread.
+        # If called from a worker thread, this will raise RuntimeError,
+        # which we catch safely instead of crashing.
+        try:
+            current_loop = asyncio.get_running_loop()
+        except RuntimeError:
+            current_loop = None
+
+        # If we are on the loop's own thread while it is running, blocking would deadlock.
+        if current_loop is not None and current_loop == loop:
             raise RuntimeError(
                 "DocumentLoader.__call__ was invoked from the event loop thread "
                 "while the loop is running. Run the PyLD operation through "
