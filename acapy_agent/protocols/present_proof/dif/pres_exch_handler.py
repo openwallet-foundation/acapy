@@ -1660,7 +1660,10 @@ class DIFPresExchHandler:
                 return path
             split_by_index = re.split(r"\[(\d+)\]", to_check, maxsplit=1)
             if len(split_by_index) > 1:
-                jsonpath = parse(split_by_index[0])
+                # The wildcard [*] selects all children and cannot be followed by
+                # a property access in jsonpath_ng. Drop it while probing the path.
+                probe_path = re.sub(r"\[\*\]", "", split_by_index[0])
+                jsonpath = parse(probe_path)
                 match = jsonpath.find(cred_dict)
                 if len(match) > 0:
                     if isinstance(match[0].value, dict):
