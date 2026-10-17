@@ -1,7 +1,6 @@
 """JSON-LD document loader methods."""
 
 import asyncio
-import threading
 from typing import Callable
 
 from pydid.did_url import DIDUrl
@@ -99,9 +98,10 @@ class DocumentLoader:
 
         This loader is invoked synchronously by PyLD.  Because it needs async
         ACA-Py services, it schedules ``load_document`` on the event loop that
-        was active when the loader was created.  Callers must run PyLD in a
-        thread executor so that this callback is executing on a worker thread
-        and can safely wait for the main loop to finish the async work.
+        was active when the loader was created.  Callers must run PyLD through
+        ``acapy_agent.vc.ld_proofs.pyld_util.run_sync`` so that this callback is
+        executing on a worker thread and can safely wait for the main loop to
+        finish the async work.
         """
         loop = self._event_loop
         coroutine = self.load_document(url, options)
