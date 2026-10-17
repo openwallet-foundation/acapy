@@ -39,7 +39,7 @@ class TestDidIndyRoutes(IsolatedAsyncioTestCase):
     )
     async def test_create_indy_did(self, mock_register):
         self.profile.context.injector.bind_instance(
-            DIDMethods, mock.MagicMock(DIDMethods, auto_spec=True)
+            DIDMethods, mock.create_autospec(DIDMethods, instance=True)
         )
         self.request.json = mock.CoroutineMock(return_value={})
         response = await create_indy_did(self.request)
@@ -66,7 +66,7 @@ class TestDidIndyRoutes(IsolatedAsyncioTestCase):
     )
     async def test_create_indy_did_wallet_error(self, _):
         self.profile.context.injector.bind_instance(
-            DIDMethods, mock.MagicMock(DIDMethods, auto_spec=True)
+            DIDMethods, mock.create_autospec(DIDMethods, instance=True)
         )
         self.request.json = mock.CoroutineMock(return_value={})
         with self.assertRaises(web.HTTPBadRequest):

@@ -37,7 +37,7 @@ class TestControllerProofPurpose(IsolatedAsyncioTestCase):
             "controller": TEST_VC_DOCUMENT_SIGNED_DID_KEY_ED25519["issuer"],
         }
 
-        result = proof_purpose.validate(
+        result = await proof_purpose.validate(
             proof=proof,
             document=document,
             suite=suite,
@@ -58,7 +58,7 @@ class TestControllerProofPurpose(IsolatedAsyncioTestCase):
             "controller": 10,
         }
 
-        result = proof_purpose.validate(
+        result = await proof_purpose.validate(
             proof=proof,
             document=document,
             suite=suite,
@@ -80,7 +80,7 @@ class TestControllerProofPurpose(IsolatedAsyncioTestCase):
             "controller": "did:example:489398593",
         }
 
-        result = proof_purpose.validate(
+        result = await proof_purpose.validate(
             proof=proof,
             document=document,
             suite=suite,
@@ -94,10 +94,10 @@ class TestControllerProofPurpose(IsolatedAsyncioTestCase):
     async def test_validate_x_super_invalid(self):
         proof_purpose = ControllerProofPurpose(term="assertionMethod")
 
-        with mock.patch.object(ProofPurpose, "validate") as validate_mock:
+        with mock.patch.object(ProofPurpose, "validate", autospec=True) as validate_mock:
             validate_mock.return_value = mock.MagicMock(valid=False)
 
-            result = proof_purpose.validate(
+            result = await proof_purpose.validate(
                 proof=mock.MagicMock(),
                 document=mock.MagicMock(),
                 suite=mock.MagicMock(),
