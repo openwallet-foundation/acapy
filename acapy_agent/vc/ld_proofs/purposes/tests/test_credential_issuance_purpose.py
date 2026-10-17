@@ -25,7 +25,9 @@ class TestCredentialIssuancePurpose(IsolatedAsyncioTestCase):
     async def test_validate(self):
         proof_purpose = CredentialIssuancePurpose()
 
-        with mock.patch.object(AssertionProofPurpose, "validate") as validate_mock:
+        with mock.patch.object(
+            AssertionProofPurpose, "validate", autospec=True
+        ) as validate_mock:
             validate_mock.return_value = PurposeResult(
                 valid=True, controller={"id": TEST_VC_DOCUMENT_SIGNED_ED25519["issuer"]}
             )
@@ -42,6 +44,7 @@ class TestCredentialIssuancePurpose(IsolatedAsyncioTestCase):
                 document_loader=custom_document_loader,
             )
             validate_mock.assert_called_once_with(
+                proof_purpose,
                 proof=proof,
                 document=document,
                 suite=suite,
@@ -53,7 +56,9 @@ class TestCredentialIssuancePurpose(IsolatedAsyncioTestCase):
     async def test_validate_x_no_issuer(self):
         proof_purpose = CredentialIssuancePurpose()
 
-        with mock.patch.object(AssertionProofPurpose, "validate") as validate_mock:
+        with mock.patch.object(
+            AssertionProofPurpose, "validate", autospec=True
+        ) as validate_mock:
             validate_mock.return_value = PurposeResult(
                 valid=True, controller={"id": TEST_VC_DOCUMENT_SIGNED_ED25519["issuer"]}
             )
@@ -76,7 +81,9 @@ class TestCredentialIssuancePurpose(IsolatedAsyncioTestCase):
     async def test_validate_x_no_match_issuer(self):
         proof_purpose = CredentialIssuancePurpose()
 
-        with mock.patch.object(AssertionProofPurpose, "validate") as validate_mock:
+        with mock.patch.object(
+            AssertionProofPurpose, "validate", autospec=True
+        ) as validate_mock:
             validate_mock.return_value = PurposeResult(
                 valid=True, controller={"id": "random_controller_id"}
             )
@@ -100,7 +107,9 @@ class TestCredentialIssuancePurpose(IsolatedAsyncioTestCase):
     async def test_validate_x_super_invalid(self):
         proof_purpose = CredentialIssuancePurpose()
 
-        with mock.patch.object(AssertionProofPurpose, "validate") as validate_mock:
+        with mock.patch.object(
+            AssertionProofPurpose, "validate", autospec=True
+        ) as validate_mock:
             validate_mock.return_value = mock.MagicMock(valid=False)
 
             result = await proof_purpose.validate(

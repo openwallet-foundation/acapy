@@ -94,7 +94,7 @@ class TestControllerProofPurpose(IsolatedAsyncioTestCase):
     async def test_validate_x_super_invalid(self):
         proof_purpose = ControllerProofPurpose(term="assertionMethod")
 
-        with mock.patch.object(ProofPurpose, "validate") as validate_mock:
+        with mock.patch.object(ProofPurpose, "validate", autospec=True) as validate_mock:
             validate_mock.return_value = mock.MagicMock(valid=False)
 
             result = await proof_purpose.validate(
