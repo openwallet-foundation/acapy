@@ -36,7 +36,7 @@ class AuthenticationProofPurpose(ControllerProofPurpose):
         self.challenge = challenge
         self.domain = domain
 
-    def validate(
+    async def validate(
         self,
         *,
         proof: dict,
@@ -59,7 +59,7 @@ class AuthenticationProofPurpose(ControllerProofPurpose):
                     f"domain={proof.get('domain')}, expected={self.domain}"
                 )
 
-            return super().validate(
+            return await super().validate(
                 proof=proof,
                 document=document,
                 suite=suite,
