@@ -11,7 +11,7 @@ from .......storage.vc_holder.base import VCHolder
 from .......storage.vc_holder.vc_record import VCRecord
 from .......tests import mock
 from .......utils.testing import create_test_profile, skip_on_jsonld_url_error
-from .......vc.ld_proofs import DocumentLoader
+from .......vc.ld_proofs import DocumentLoader, Ed25519Signature2020
 from .......vc.ld_proofs.validation_result import (
     DocumentVerificationResult,
     ProofResult,
@@ -1056,6 +1056,63 @@ class TestDIFFormatHandler(IsolatedAsyncioTestCase):
                 output[1], AttachDecorator
             )
             assert output[1].data.json_ == DIF_PRES
+
+    async def test_create_pres_pd_claim_format_ed25519_2020(self):
+        test_pd = deepcopy(DIF_PRES_REQUEST_B)
+        test_pd["presentation_definition"]["format"] = {
+            "ldp_vp": {"proof_type": ["Ed25519Signature2020"]}
+        }
+        del test_pd["presentation_definition"]["input_descriptors"][0]["constraints"][
+            "limit_disclosure"
+        ]
+        dif_pres_request = V20PresRequest(
+            formats=[
+                V20PresFormat(
+                    attach_id="dif",
+                    format_=ATTACHMENT_FORMAT[PRES_20_REQUEST][
+                        V20PresFormat.Format.DIF.api
+                    ],
+                )
+            ],
+            request_presentations_attach=[
+                AttachDecorator.data_json(test_pd, ident="dif")
+            ],
+        )
+        record = V20PresExRecord(
+            pres_ex_id="pxid",
+            thread_id="thid",
+            connection_id="conn_id",
+            initiator="init",
+            role="role",
+            state="state",
+            pres_request=dif_pres_request,
+            verified="false",
+            auto_present=True,
+            error_msg="error",
+        )
+
+        original_init = DIFPresExchHandler.__init__
+        captured = {}
+
+        def capturing_init(self, *args, **kwargs):
+            captured["proof_type"] = kwargs.get("proof_type")
+            return original_init(self, *args, **kwargs)
+
+        with (
+            mock.patch.object(DIFPresExchHandler, "__init__", capturing_init),
+            mock.patch.object(
+                DIFPresExchHandler,
+                "create_vp",
+                mock.CoroutineMock(),
+            ) as mock_create_vp,
+        ):
+            mock_create_vp.return_value = DIF_PRES
+            output = await self.handler.create_pres(record, {})
+            assert isinstance(output[0], V20PresFormat) and isinstance(
+                output[1], AttachDecorator
+            )
+            assert output[1].data.json_ == DIF_PRES
+        assert captured["proof_type"] == Ed25519Signature2020.signature_type
 
     async def test_create_pres_pd_claim_format_secp256r1(self):
         test_pd = deepcopy(DIF_PRES_REQUEST_B)
