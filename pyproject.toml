@@ -40,7 +40,6 @@ python-dateutil = "^2.9.0"
 python-json-logger = "^3.2.1"
 pyyaml = "~6.0.2"
 qrcode = { version = "^8.1", extras = ["pil"] }
-requests = ">=2.32.3,<2.35.0"
 rlp = ">=4.1,<6.0"
 sd-jwt = "^0.10.3"
 unflatten = "~0.2"
@@ -58,7 +57,7 @@ indy-credx = "~1.1.1"
 # askar
 aries-askar = ">=0.4.3"
 
-# indy 
+# indy
 indy-vdr = "~0.4.0"
 
 # bbs
@@ -134,6 +133,7 @@ line-length = 90
 "**/{tests}/*" = ["B006", "D", "E501", "F841"]
 
 [tool.pytest.ini_options]
+asyncio_default_fixture_loop_scope = "function"
 testpaths = "acapy_agent"
 addopts = """
     -n auto

@@ -4,7 +4,6 @@ import asyncio
 from typing import Callable
 
 from pydid.did_url import DIDUrl
-from pyld.documentloader import requests
 
 from ...cache.base import BaseCache
 from ...core.profile import Profile
@@ -27,10 +26,21 @@ class DocumentLoader:
         self.profile = profile
         self.resolver = profile.inject(DIDResolver)
         self.cache = profile.inject_or(BaseCache)
-        self.online_request_loader = requests.requests_document_loader()
         self.requests_loader = StaticCacheJsonLdDownloader().load
         self.cache_ttl = cache_ttl
         self._event_loop = asyncio.get_event_loop()
+
+    def _cache_key(self, url: str) -> str:
+        return f"json_ld_document_resolver::{url}"
+
+    async def _get_cached_document(self, url: str):
+        if self.cache:
+            return await self.cache.get(self._cache_key(url))
+        return None
+
+    async def _set_cached_document(self, url: str, document: dict):
+        if self.cache:
+            await self.cache.set(self._cache_key(url), document, self.cache_ttl)
 
     async def _load_did_document(self, did: str, options: dict):
         # Resolver expects plain did without path, query, etc...
@@ -49,8 +59,8 @@ class DocumentLoader:
 
         return document
 
-    def _load_http_document(self, url: str, options: dict):
-        document = self.requests_loader(url, options)
+    async def _load_http_document(self, url: str, options: dict):
+        document = await self.requests_loader(url, options)
 
         return document
 
@@ -61,7 +71,7 @@ class DocumentLoader:
         if url.startswith("did:"):
             document = await self._load_did_document(url, options)
         elif url.startswith("http://") or url.startswith("https://"):
-            document = self._load_http_document(url, options)
+            document = await self._load_http_document(url, options)
         else:
             raise LinkedDataProofException(
                 "Unrecognized url format. Must start with 'did:', 'http://' or 'https://'"
@@ -77,19 +87,13 @@ class DocumentLoader:
         Document loading is processed in separate thread to deal with
         async to sync transformation.
         """
-        cache_key = f"json_ld_document_resolver::{url}"
-
-        # Try to get from cache
-        if self.cache:
-            document = await self.cache.get(cache_key)
-            if document:
-                return document
+        document = await self._get_cached_document(url)
+        if document:
+            return document
 
         document = await self._load_async(url, options)
 
-        # Cache document, if cache is available
-        if self.cache:
-            await self.cache.set(cache_key, document, self.cache_ttl)
+        await self._set_cached_document(url, document)
 
         return document
 
@@ -97,11 +101,12 @@ class DocumentLoader:
         """Load JSON-LD Document.
 
         This loader is invoked synchronously by PyLD.  Because it needs async
-        ACA-Py services, it schedules ``load_document`` on the event loop that
-        was active when the loader was created.  Callers must run PyLD through
-        ``acapy_agent.vc.ld_proofs.pyld_util.run_sync`` so that this callback is
-        executing on a worker thread and can safely wait for the main loop to
-        finish the async work.
+        ACA-Py services (DID resolution, cache, and now aiohttp document
+        fetching), it schedules ``load_document`` on the event loop that was
+        active when the loader was created.  Callers must run PyLD through
+        ``acapy_agent.vc.ld_proofs.pyld_util.run_sync`` so that this callback
+        is executing on a worker thread and can safely wait for the main loop
+        to finish the async work.
         """
         loop = self._event_loop
         coroutine = self.load_document(url, options)

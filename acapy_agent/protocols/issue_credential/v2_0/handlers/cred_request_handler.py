@@ -70,7 +70,7 @@ class V20CredRequestHandler(BaseHandler):
                 )
             )
 
-        r_time = trace_event(
+        r_time = await trace_event(
             context.settings,
             context.message,
             outcome="V20CredRequestHandler.handle.END",
@@ -110,7 +110,7 @@ class V20CredRequestHandler(BaseHandler):
                     )
                 )
 
-            trace_event(
+            await trace_event(
                 context.settings,
                 cred_issue_message,
                 outcome="V20CredRequestHandler.issue.END",

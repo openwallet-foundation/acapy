@@ -47,7 +47,7 @@ class V20PresAckHandler(BaseHandler):
         pres_manager = V20PresManager(context.profile)
         await pres_manager.receive_pres_ack(context.message, context.connection_record)
 
-        trace_event(
+        await trace_event(
             context.settings,
             context.message,
             outcome="V20PresAckHandler.handle.END",

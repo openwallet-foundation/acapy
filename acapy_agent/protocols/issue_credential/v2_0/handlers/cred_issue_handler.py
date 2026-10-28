@@ -59,7 +59,7 @@ class V20CredIssueHandler(BaseHandler):
             ),
         )  # mgr only finds, saves record: on exception, saving null state is hopeless
 
-        r_time = trace_event(
+        r_time = await trace_event(
             context.settings,
             context.message,
             outcome="V20CredIssueHandler.handle.END",
@@ -109,7 +109,7 @@ class V20CredIssueHandler(BaseHandler):
 
             if cred_store_succeeded:
                 cred_ack_message = await cred_manager.send_cred_ack(cred_ex_record)
-                trace_event(
+                await trace_event(
                     context.settings,
                     cred_ack_message,
                     outcome="V20CredIssueHandler.handle.STORE",

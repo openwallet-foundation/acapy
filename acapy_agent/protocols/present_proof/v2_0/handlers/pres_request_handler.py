@@ -93,7 +93,7 @@ class V20PresRequestHandler(BaseHandler):
             pres_ex_record
         )  # mgr only saves record: on exception, saving state err is hopeless
 
-        r_time = trace_event(
+        r_time = await trace_event(
             context.settings,
             context.message,
             outcome="V20PresRequestHandler.handle.END",
@@ -134,7 +134,7 @@ class V20PresRequestHandler(BaseHandler):
                             ProblemReportReason.ABANDONED.value,  # them: be vague
                         )
                     )
-            trace_event(
+            await trace_event(
                 context.settings,
                 pres_message,
                 outcome="V20PresRequestHandler.handle.PRESENT",
