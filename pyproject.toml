@@ -36,14 +36,14 @@ pydid = "^0.5.1"
 pyjwt = ">=2.10.1,<2.16.0"
 pyld = ">=2.0.4,<4.0.0"
 pynacl = ">=1.5,<1.7"
-python-dateutil = "^2.9.0"
+python-dateutil = ">=2.9,<4.0"
 python-json-logger = "^3.2.1"
 pyyaml = "~6.0.2"
 qrcode = { version = "^8.1", extras = ["pil"] }
 rlp = ">=4.1,<6.0"
 sd-jwt = "^0.10.3"
 unflatten = "~0.2"
-uuid_utils = ">=0.10,<1.1"
+uuid_utils = ">=0.10,<1.2"
 
 # did libraries
 did-peer-2 = "^0.1.2"
