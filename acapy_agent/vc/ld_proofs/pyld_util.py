@@ -10,7 +10,6 @@ many PyLD calls are in flight.
 """
 
 import asyncio
-import atexit
 import functools
 import os
 from concurrent.futures import ThreadPoolExecutor
@@ -20,11 +19,13 @@ from typing import Any, Callable
 # default executor avoids starving the default pool, which aiohttp uses for
 # blocking DNS lookups while PyLD worker threads are themselves blocked
 # waiting on DID resolution from the event loop.
+# No explicit atexit shutdown is needed: since Python 3.9,
+# ThreadPoolExecutor joins its worker threads automatically at interpreter
+# exit (see bpo-39812), and this project requires Python 3.13+.
 _PYLD_EXECUTOR = ThreadPoolExecutor(
     max_workers=min(32, (os.cpu_count() or 1) + 4),
     thread_name_prefix="pyld",
 )
-atexit.register(_PYLD_EXECUTOR.shutdown, wait=True)
 
 
 async def run_sync(func: Callable[..., Any], *args, **kwargs) -> Any:
