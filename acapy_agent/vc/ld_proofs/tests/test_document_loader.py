@@ -1,12 +1,14 @@
 import asyncio
-from unittest.mock import AsyncMock, patch
+import concurrent.futures
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
 from ....resolver.default.key import KeyDIDResolver
 from ....resolver.did_resolver import DIDResolver
 from ....utils.testing import create_test_profile
-from ..document_loader import DocumentLoader
+from ..document_loader import DEFAULT_DOCUMENT_LOADER_TIMEOUT, DocumentLoader
+from ..error import LinkedDataProofException
 
 
 @pytest.fixture
@@ -80,3 +82,35 @@ class TestDocumentLoader:
 
         mock_resolve.assert_awaited_once()
         assert result["documentUrl"] == "did:key:z6MkqRY"
+
+    async def test_timeout_setting_is_read_from_profile(self, profile):
+        profile.settings["document_loader.timeout"] = 5
+        loader = DocumentLoader(profile)
+        assert loader._timeout == 5
+
+    async def test_default_timeout_is_used_when_not_configured(self, profile):
+        loader = DocumentLoader(profile)
+        assert loader._timeout == DEFAULT_DOCUMENT_LOADER_TIMEOUT
+
+    async def test_call_passes_timeout_to_run_coroutine_threadsafe_result(
+        self, profile
+    ):
+        profile.settings["document_loader.timeout"] = 0.01
+        loader = DocumentLoader(profile)
+        loader._event_loop = MagicMock()
+        loader._event_loop.is_running.return_value = True
+        loader.load_document = MagicMock(return_value=MagicMock())
+
+        mock_future = MagicMock()
+        mock_future.result.side_effect = concurrent.futures.TimeoutError
+
+        with patch(
+            "acapy_agent.vc.ld_proofs.document_loader.asyncio.run_coroutine_threadsafe",
+            return_value=mock_future,
+        ):
+            with pytest.raises(LinkedDataProofException):
+                loader("did:key:z6MkqRY", {})
+
+        mock_future.result.assert_called_once_with(timeout=0.01)
+
+

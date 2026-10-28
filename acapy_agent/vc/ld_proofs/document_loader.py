@@ -1,6 +1,7 @@
 """JSON-LD document loader methods."""
 
 import asyncio
+import concurrent.futures
 from typing import Callable
 
 from pydid.did_url import DIDUrl
@@ -10,6 +11,8 @@ from ...core.profile import Profile
 from ...resolver.did_resolver import DIDResolver
 from .document_downloader import StaticCacheJsonLdDownloader
 from .error import LinkedDataProofException
+
+DEFAULT_DOCUMENT_LOADER_TIMEOUT = 30
 
 
 class DocumentLoader:
@@ -28,6 +31,9 @@ class DocumentLoader:
         self.cache = profile.inject_or(BaseCache)
         self.requests_loader = StaticCacheJsonLdDownloader().load
         self.cache_ttl = cache_ttl
+        self._timeout = profile.settings.get(
+            "document_loader.timeout", DEFAULT_DOCUMENT_LOADER_TIMEOUT
+        )
         self._event_loop = asyncio.get_event_loop()
 
     def _cache_key(self, url: str) -> str:
@@ -110,9 +116,15 @@ class DocumentLoader:
         """
         loop = self._event_loop
         coroutine = self.load_document(url, options)
+        timeout = self._timeout
 
         if not loop.is_running():
-            return loop.run_until_complete(coroutine)
+            try:
+                return loop.run_until_complete(asyncio.wait_for(coroutine, timeout))
+            except asyncio.TimeoutError as e:
+                raise LinkedDataProofException(
+                    f"Document loading timed out after {timeout} seconds: {url}"
+                ) from e
 
         # Safely check if an event loop is running in the current thread.
         # If called from a worker thread, this will raise RuntimeError,
@@ -130,7 +142,14 @@ class DocumentLoader:
                 "acapy_agent.vc.ld_proofs.pyld_util.run_sync instead."
             )
 
-        return asyncio.run_coroutine_threadsafe(coroutine, loop).result()
+        try:
+            return asyncio.run_coroutine_threadsafe(coroutine, loop).result(
+                timeout=timeout
+            )
+        except concurrent.futures.TimeoutError as e:
+            raise LinkedDataProofException(
+                f"Document loading timed out after {timeout} seconds: {url}"
+            ) from e
 
 
 DocumentLoaderMethod = Callable[[str, dict], dict]
