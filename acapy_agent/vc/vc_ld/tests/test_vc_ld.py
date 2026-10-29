@@ -13,6 +13,10 @@ from ...ld_proofs import (
     Ed25519Signature2020,
     WalletKeyPair,
 )
+from ...ld_proofs.constants import (
+    CREDENTIALS_CONTEXT_V2_URL,
+    SECURITY_CONTEXT_ED25519_2020_URL,
+)
 from ...ld_proofs.error import LinkedDataProofException
 from ...tests.document_loader import custom_document_loader
 from ...vc_ld import (
@@ -35,6 +39,7 @@ from .test_credential import (
     PRESENTATION_SIGNED,
     PRESENTATION_UNSIGNED,
 )
+from .test_credential_v2 import CREDENTIAL_V2_ISSUED
 
 
 class TestLinkedDataVerifiableCredential(IsolatedAsyncioTestCase):
@@ -248,6 +253,78 @@ class TestLinkedDataVerifiableCredential(IsolatedAsyncioTestCase):
             credentials=[CREDENTIAL_ISSUED],
             presentation_id="https://presentation_id.com",
         )
+
+    async def test_create_presentation_vcdm2(self):
+        # A presentation wrapping only VCDM 2.0 credentials must itself use the VCDM
+        # 2.0 base context, carrying over any additional (e.g. suite-specific security)
+        # context already present on the credential — VCDM 1.1 (the previous
+        # unconditional default) cannot resolve the Data Integrity proof terms that
+        # `sign_presentation` will later add to the presentation's own `proof`.
+        unsigned_presentation = await create_presentation(
+            credentials=[CREDENTIAL_V2_ISSUED]
+        )
+
+        assert unsigned_presentation["@context"] == [
+            CREDENTIALS_CONTEXT_V2_URL,
+            SECURITY_CONTEXT_ED25519_2020_URL,
+        ]
+        assert unsigned_presentation["verifiableCredential"] == [CREDENTIAL_V2_ISSUED]
+
+    async def test_create_presentation_vcdm1_vcdm2_mixed_falls_back_to_vcdm1(self):
+        # Mixed VCDM 1.1 / 2.0 credentials in one presentation are not well-defined by
+        # the spec. Falling back to the original VCDM 1.1 default (rather than guessing)
+        # keeps this case's behaviour unchanged from before VCDM 2.0 support existed.
+        unsigned_presentation = await create_presentation(
+            credentials=[CREDENTIAL_ISSUED, CREDENTIAL_V2_ISSUED]
+        )
+
+        assert unsigned_presentation["@context"] == PRESENTATION_UNSIGNED["@context"]
+
+    async def test_sign_and_verify_presentation_vcdm2_ed25519_2020(self):
+        # End-to-end regression test for the actual failure this fix addresses: signing
+        # a presentation wrapping a VCDM 2.0 / Ed25519Signature2020 credential used to
+        # raise `LinkedDataProofException: 4 attributes dropped` while building the
+        # presentation's own proof (verificationMethod/created/proofPurpose/challenge
+        # unresolved against a VCDM-1.1-only presentation context). With the fix, the
+        # whole create -> sign -> verify round trip succeeds.
+        unsigned_presentation = await create_presentation(
+            credentials=[CREDENTIAL_V2_ISSUED]
+        )
+
+        suite = Ed25519Signature2020(
+            verification_method=self.ed25519_verification_method,
+            key_pair=WalletKeyPair(
+                profile=self.profile,
+                key_type=ED25519,
+                public_key_base58=self.ed25519_key_info.verkey,
+            ),
+            date=datetime.strptime("2020-12-11T03:50:55Z", "%Y-%m-%dT%H:%M:%SZ"),
+        )
+
+        presentation = await sign_presentation(
+            presentation=unsigned_presentation,
+            suite=suite,
+            document_loader=custom_document_loader,
+            challenge=self.presentation_challenge,
+        )
+
+        assert presentation["@context"] == [
+            CREDENTIALS_CONTEXT_V2_URL,
+            SECURITY_CONTEXT_ED25519_2020_URL,
+        ]
+        assert presentation["proof"]["type"] == Ed25519Signature2020.signature_type
+
+        verify_suite = Ed25519Signature2020(
+            key_pair=WalletKeyPair(profile=self.profile, key_type=ED25519),
+        )
+        result = await verify_presentation(
+            presentation=presentation,
+            suites=[verify_suite],
+            document_loader=custom_document_loader,
+            challenge=self.presentation_challenge,
+        )
+
+        assert result.verified
 
     @pytest.mark.ursa_bbs_signatures
     async def test_sign_presentation_bbsbls(self):

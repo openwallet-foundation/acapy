@@ -11,8 +11,56 @@ from ..ld_proofs import (
     derive,
     sign,
 )
-from ..ld_proofs.constants import CREDENTIALS_CONTEXT_V1_URL
+from ..ld_proofs.constants import CREDENTIALS_CONTEXT_V1_URL, CREDENTIALS_CONTEXT_V2_URL
 from .models.credential import VerifiableCredentialSchema
+
+
+def _context_urls(credential: dict) -> List[str]:
+    """Return a raw credential dict's `@context` entries that are string URLs.
+
+    `create_presentation` receives credentials as plain dicts (not `VerifiableCredential`
+    model instances), so this mirrors `VerifiableCredential.context_urls` for that shape
+    without requiring a full model parse.
+    """
+    context = credential.get("@context") or []
+    if isinstance(context, str):
+        context = [context]
+    return [url for url in context if isinstance(url, str)]
+
+
+def _presentation_context(credentials: List[dict]) -> List[str]:
+    """Choose the `@context` for a presentation wrapping the given credentials.
+
+    A Verifiable Presentation's own `@context` must be able to resolve the proof object
+    that will later be added to the *presentation itself* by `sign_presentation` — not
+    just whatever the embedded credentials already declare. Defaulting to VCDM 1.1
+    unconditionally (the previous behaviour) produces a structurally invalid document
+    when every embedded credential is VCDM 2.0: VCDM 1.1's base context does not define
+    Data Integrity proof terms (`verificationMethod`, `created`, `proofPurpose`,
+    `challenge`), VCDM 2.0's base context alone does not either (confirmed directly —
+    only `proof`/`type` survive JSON-LD expansion), and those terms are only resolved
+    once the relevant suite-specific security context (e.g. the Ed25519-2020 or BBS+
+    context `prepare_credential` already attaches to a credential at issuance time) is
+    also present. If every credential is VCDM 2.0, use VCDM 2.0 for the presentation
+    too, and carry over any additional context entries already present on the
+    credentials (ignoring the base context itself) so that a suite-specific context
+    used by the credential(s) is also available to the presentation's own proof. Mixed
+    VCDM 1.1/2.0 credentials are not well-defined by the spec; this conservatively
+    falls back to VCDM 1.1 (the original behaviour) in that case, same as when there
+    are no credentials at all.
+    """
+    if credentials and all(
+        _context_urls(credential)[:1] == [CREDENTIALS_CONTEXT_V2_URL]
+        for credential in credentials
+    ):
+        context = [CREDENTIALS_CONTEXT_V2_URL]
+        for credential in credentials:
+            for url in _context_urls(credential)[1:]:
+                if url not in context:
+                    context.append(url)
+        return context
+
+    return [CREDENTIALS_CONTEXT_V1_URL]
 
 
 async def create_presentation(
@@ -35,7 +83,7 @@ async def create_presentation(
 
     """
     presentation = {
-        "@context": [CREDENTIALS_CONTEXT_V1_URL],
+        "@context": _presentation_context(credentials),
         "type": ["VerifiablePresentation"],
     }
 
