@@ -4,6 +4,8 @@ import logging
 import os
 import sys
 
+from .utils.threadsafelrucache import apply_pyld_monkeypatch
+
 LOGGER = logging.getLogger(__name__)
 
 
@@ -75,6 +77,7 @@ def script_main():
 
 def main(args):
     """Execute default entry point."""
+    apply_pyld_monkeypatch()
     init_debug(args)
     run(args)
 

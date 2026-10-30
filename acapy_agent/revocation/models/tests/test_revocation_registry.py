@@ -1,14 +1,56 @@
 from copy import deepcopy
+from http import HTTPStatus
 from pathlib import Path
 from shutil import rmtree
 from unittest import IsolatedAsyncioTestCase, mock
 
+import aiohttp
 import base58
 
 from ....indy.util import indy_client_dir
 from ...error import RevocationError
 from .. import revocation_registry as test_module
 from ..revocation_registry import RevocationRegistry
+
+
+class _MockResponse:
+    def __init__(self, status, chunks):
+        self.status = status
+        self.content = _MockContent(chunks)
+
+
+class _MockContent:
+    def __init__(self, chunks):
+        self._chunks = chunks
+
+    def iter_chunked(self, chunk_size):
+        async def _iter():
+            for chunk in self._chunks:
+                yield chunk
+
+        return _iter()
+
+
+def _mock_aiohttp_session(chunks=None, response_status=HTTPStatus.OK, get_side_effect=None):
+    chunks = chunks or [b"abcd1234", b""]
+
+    mock_response = _MockResponse(response_status, chunks)
+
+    mock_get = mock.AsyncMock()
+    mock_get.__aenter__ = mock.AsyncMock(return_value=mock_response)
+    mock_get.__aexit__ = mock.AsyncMock(return_value=False)
+
+    mock_session_instance = mock.AsyncMock()
+    mock_session_instance.get = mock.Mock(
+        side_effect=get_side_effect,
+        return_value=mock_get,
+    )
+    mock_session_instance.__aenter__ = mock.AsyncMock(return_value=mock_session_instance)
+    mock_session_instance.__aexit__ = mock.AsyncMock(return_value=False)
+
+    mock_session_class = mock.Mock(return_value=mock_session_instance)
+
+    return mock.patch.object(test_module.aiohttp, "ClientSession", mock_session_class)
 
 TEST_DID = "FkjWznKwA4N1JEp2iPiKPG"
 CRED_DEF_ID = f"{TEST_DID}:3:CL:12:tag1"
@@ -97,28 +139,16 @@ class TestRevocationRegistry(IsolatedAsyncioTestCase):
         rr_def_public["value"]["tailsLocation"] = "http://sample.ca:8088/path"
         rev_reg = RevocationRegistry.from_definition(rr_def_public, public_def=True)
 
-        more_magic = mock.MagicMock()
-        with mock.patch.object(test_module, "Session", autospec=True) as mock_session:
-            mock_session.return_value.__enter__ = mock.MagicMock(return_value=more_magic)
-            more_magic.get = mock.MagicMock(
-                side_effect=test_module.RequestException("Not this time")
-            )
-
+        with _mock_aiohttp_session(
+            get_side_effect=aiohttp.ClientError("Not this time")
+        ):
             with self.assertRaises(RevocationError) as x_retrieve:
                 await rev_reg.retrieve_tails()
                 assert x_retrieve.message.contains("Error retrieving tails file")
 
             rmtree(TAILS_DIR, ignore_errors=True)
 
-        more_magic = mock.MagicMock()
-        with mock.patch.object(test_module, "Session", autospec=True) as mock_session:
-            mock_session.return_value.__enter__ = mock.MagicMock(return_value=more_magic)
-            more_magic.get = mock.MagicMock(
-                return_value=mock.MagicMock(
-                    iter_content=mock.MagicMock(side_effect=[(b"abcd1234",), (b"",)])
-                )
-            )
-
+        with _mock_aiohttp_session(chunks=[b"abcd1234", b""]):
             with self.assertRaises(RevocationError) as x_retrieve:
                 await rev_reg.retrieve_tails()
                 assert x_retrieve.message.contains(
@@ -127,18 +157,11 @@ class TestRevocationRegistry(IsolatedAsyncioTestCase):
 
             rmtree(TAILS_DIR, ignore_errors=True)
 
-        more_magic = mock.MagicMock()
         with (
-            mock.patch.object(test_module, "Session", autospec=True) as mock_session,
+            _mock_aiohttp_session(chunks=[b"abcd1234", b""]),
             mock.patch.object(base58, "b58encode", mock.MagicMock()) as mock_b58enc,
             mock.patch.object(Path, "is_file", autospec=True) as mock_is_file,
         ):
-            mock_session.return_value.__enter__ = mock.MagicMock(return_value=more_magic)
-            more_magic.get = mock.MagicMock(
-                return_value=mock.MagicMock(
-                    iter_content=mock.MagicMock(side_effect=[(b"abcd1234",), (b"",)])
-                )
-            )
             mock_is_file.return_value = False
 
             mock_b58enc.return_value = mock.MagicMock(

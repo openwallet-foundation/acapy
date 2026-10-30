@@ -1,6 +1,7 @@
 """Command line option parsing."""
 
 import abc
+import asyncio
 import json
 import logging
 import os
@@ -9,10 +10,11 @@ from functools import reduce
 from itertools import chain
 from os import environ
 from typing import Optional, Type
+from urllib.error import HTTPError, URLError
 from urllib.parse import urlparse
+from urllib.request import Request, urlopen
 
 import deepmerge
-import requests
 import yaml
 from configargparse import ArgumentParser, Namespace, YAMLConfigFileParser
 
@@ -57,10 +59,10 @@ def fetch_remote_config(url: str, timeout: int = 30) -> str:
     try:
         # Fetch the remote config
         LOGGER.info(f"Fetching remote configuration from: {url}")
-        response = requests.get(url, timeout=timeout)
-        response.raise_for_status()
-        text = response.text
-    except requests.RequestException as e:
+        request = Request(url, method="GET")
+        with urlopen(request, timeout=timeout) as response:
+            text = response.read().decode("utf-8")
+    except (HTTPError, URLError) as e:
         raise ArgsParseError(
             f"Failed to fetch remote configuration from {url}: {e}"
         ) from e
@@ -1567,13 +1569,15 @@ class ProtocolGroup(ArgumentGroup):
             # make sure we can trace to the configured target
             # (target can be set even if tracing is off)
             try:
-                trace_event(
-                    settings,
-                    None,
-                    handler="ArgParse",
-                    outcome="Successfully_configured_aca-py",
-                    raise_errors=True,
-                    force_trace=True,
+                asyncio.run(
+                    trace_event(
+                        settings,
+                        None,
+                        handler="ArgParse",
+                        outcome="Successfully_configured_aca-py",
+                        raise_errors=True,
+                        force_trace=True,
+                    )
                 )
             except Exception as e:
                 raise ArgsParseError("Error writing trace event " + str(e))

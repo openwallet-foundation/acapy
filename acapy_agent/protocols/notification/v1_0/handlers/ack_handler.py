@@ -31,7 +31,7 @@ class V10AckHandler(BaseHandler):
             context.message.serialize(as_string=True),
         )
 
-        trace_event(
+        await trace_event(
             context.settings,
             context.message,
             outcome="V10AckHandler.handle.END",

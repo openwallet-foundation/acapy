@@ -27,7 +27,7 @@ class ProofPurpose:
         self.date = date or datetime.now()
         self.max_timestamp_delta = max_timestamp_delta
 
-    def validate(
+    async def validate(
         self,
         *,
         proof: dict,

@@ -11,6 +11,7 @@ from ..constants import SECURITY_CONTEXT_URL
 from ..document_loader import DocumentLoaderMethod
 from ..error import LinkedDataProofException
 from ..purposes import _ProofPurpose as ProofPurpose
+from ..pyld_util import run_sync
 from ..validation_result import ProofResult
 
 
@@ -108,10 +109,10 @@ class LinkedDataProof(ABC):
             f"{self.signature_type} signature suite does not support deriving proofs"
         )
 
-    def _canonize(self, *, input, document_loader: DocumentLoaderMethod) -> str:
+    async def _canonize(self, *, input, document_loader: DocumentLoaderMethod) -> str:
         """Canonize input document using URDNA2015 algorithm."""
         # application/n-quads format always returns str
-        missing_properties = get_properties_without_context(input, document_loader)
+        missing_properties = await get_properties_without_context(input, document_loader)
 
         if len(missing_properties) > 0:
             raise LinkedDataProofException(
@@ -119,7 +120,8 @@ class LinkedDataProof(ABC):
                 f"Provide definitions in context to correct. {missing_properties}"
             )
 
-        return jsonld.normalize(
+        return await run_sync(
+            jsonld.normalize,
             input,
             {
                 "algorithm": "URDNA2015",
@@ -128,7 +130,7 @@ class LinkedDataProof(ABC):
             },
         )
 
-    def _get_verification_method(
+    async def _get_verification_method(
         self, *, proof: dict, document_loader: DocumentLoaderMethod
     ) -> dict:
         """Get verification method for proof."""
@@ -141,7 +143,8 @@ class LinkedDataProof(ABC):
             raise LinkedDataProofException('No "verificationMethod" found in proof')
 
         # TODO: This should optionally use the context of the document?
-        framed = jsonld.frame(
+        framed = await run_sync(
+            jsonld.frame,
             verification_method,
             frame={
                 "@context": SECURITY_CONTEXT_URL,

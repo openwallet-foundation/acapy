@@ -977,7 +977,7 @@ async def present_proof_send_proposal(request: web.BaseRequest):
 
     await outbound_handler(pres_proposal_message, connection_id=connection_id)
 
-    trace_event(
+    await trace_event(
         context.settings,
         pres_proposal_message,
         outcome="presentation_exchange_propose.END",
@@ -1059,7 +1059,7 @@ async def present_proof_create_request(request: web.BaseRequest):
 
     await outbound_handler(pres_request_message, connection_id=None)
 
-    trace_event(
+    await trace_event(
         context.settings,
         pres_request_message,
         outcome="presentation_exchange_create_request.END",
@@ -1145,7 +1145,7 @@ async def present_proof_send_free_request(request: web.BaseRequest):
 
     await outbound_handler(pres_request_message, connection_id=connection_id)
 
-    trace_event(
+    await trace_event(
         context.settings,
         pres_request_message,
         outcome="presentation_exchange_send_request.END",
@@ -1244,7 +1244,7 @@ async def present_proof_send_bound_request(request: web.BaseRequest):
     )
     await outbound_handler(pres_request_message, connection_id=connection_id)
 
-    trace_event(
+    await trace_event(
         context.settings,
         pres_request_message,
         outcome="presentation_exchange_send_request.END",
@@ -1364,7 +1364,7 @@ async def present_proof_send_presentation(request: web.BaseRequest):
     )
     await outbound_handler(pres_message, connection_id=pres_ex_record.connection_id)
 
-    trace_event(
+    await trace_event(
         context.settings,
         pres_message,
         outcome="presentation_exchange_send_request.END",
@@ -1429,7 +1429,7 @@ async def present_proof_verify_presentation(request: web.BaseRequest):
             outbound_handler,
         )
 
-    trace_event(
+    await trace_event(
         context.settings,
         pres_ex_record,
         outcome="presentation_exchange_verify.END",
