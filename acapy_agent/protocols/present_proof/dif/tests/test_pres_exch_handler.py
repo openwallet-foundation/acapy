@@ -3743,20 +3743,20 @@ class TestPresExchangeHandler(IsolatedAsyncioTestCase):
                 "city": "Рума",
             },
         ]
-        original_path = "$.credentialSubject.Patient[*].address[0].city"
+        original_path = "$.credentialSubject.Patient.address[0].city"
         updated_path = await dif_pres_exch_handler.get_updated_path(
             cred_dict, original_path
         )
-        assert updated_path == "$.credentialSubject.Patient[*].address[0].city"
+        assert updated_path == "$.credentialSubject.Patient.address[0].city"
         cred_dict["credentialSubject"]["Patient"]["address"] = {
             "@id": "urn:bnid:_:c14n1",
             "city": "Рума",
         }
-        original_path = "$.credentialSubject.Patient[*].address[0].city"
+        original_path = "$.credentialSubject.Patient.address[0].city"
         updated_path = await dif_pres_exch_handler.get_updated_path(
             cred_dict, original_path
         )
-        assert updated_path == "$.credentialSubject.Patient[*].address.city"
+        assert updated_path == "$.credentialSubject.Patient.address.city"
 
     def test_get_dict_keys_from_path(self):
         dif_pres_exch_handler = DIFPresExchHandler(
