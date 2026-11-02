@@ -56,7 +56,7 @@ jobs:
 
           git checkout -B temp-branch-for-scanning upstream/${{ fromJson(steps.get_pr_data.outputs.data).head.ref }}
       - name: SonarCloud Scan
-        uses: SonarSource/sonarqube-scan-action@d209202bc7d53ff1cc128f7f907dac145c9d6ae9 # master
+        uses: SonarSource/sonarqube-scan-action@4d1dc0c91ee400dcf8a6dddf2f705ac36542e304 # master
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} 
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
