@@ -8,12 +8,13 @@ nested event loops. A dedicated pool also keeps the asyncio default executor
 free for other work such as aiohttp DNS resolution, preventing deadlock when
 many PyLD calls are in flight.
 """
-
 import asyncio
 import functools
 import os
 from concurrent.futures import ThreadPoolExecutor
 from typing import Any, Callable
+
+from acapy_agent.utils.threadsafelrucache import apply_pyld_monkeypatch
 
 # Dedicated executor for PyLD work. Keeping this separate from the asyncio
 # default executor avoids starving the default pool, which aiohttp uses for
@@ -26,7 +27,7 @@ _PYLD_EXECUTOR = ThreadPoolExecutor(
     max_workers=min(32, (os.cpu_count() or 1) + 4),
     thread_name_prefix="pyld",
 )
-
+apply_pyld_monkeypatch()
 
 async def run_sync(func: Callable[..., Any], *args, **kwargs) -> Any:
     """Run *func* in the PyLD thread executor and await its return value.
