@@ -601,14 +601,14 @@ files = [
 
 [[package]]
 name = "configargparse"
-version = "1.8.0"
+version = "1.9.0"
 description = "A drop-in replacement for argparse that allows options to also be set via config files and/or environment variables."
 optional = false
 python-versions = ">=3.6"
 groups = ["main"]
 files = [
-    {file = "configargparse-1.8.0-py3-none-any.whl", hash = "sha256:bb25b307c3cd46a3e868e7f7aa51487eb8003a9f01cac3ae129b66ec26eb794c"},
-    {file = "configargparse-1.8.0.tar.gz", hash = "sha256:22a417f4d7b00149f0af82ef7c491f8ecc4b1d5454633fd319b386f5eb806f92"},
+    {file = "configargparse-1.9.0-py3-none-any.whl", hash = "sha256:e4ecc54d821ca97c43e6152403f40e158aff79d809c3447746fa92b136dc1e31"},
+    {file = "configargparse-1.9.0.tar.gz", hash = "sha256:48d9c22affe4ac419b4dd0691fa929d759e1f99574be41826785f2dbf3da63a5"},
 ]
 
 [package.extras]
@@ -3520,4 +3520,4 @@ sqlcipher = ["sqlcipher3-binary"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.13"
-content-hash = "ef9d27eb7e692019ae93ad13062cb6e78efe839a0aff6eca6bfcfbeb110a0f20"
+content-hash = "b59782cefcdadbdf45aac75e520f746fa4367e743ddd8a42e2fb2cfec9a01b76"
