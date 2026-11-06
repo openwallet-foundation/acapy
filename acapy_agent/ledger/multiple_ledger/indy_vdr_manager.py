@@ -1,7 +1,6 @@
 """Multiple IndyVdrLedger Manager."""
 
 import asyncio
-import concurrent.futures
 import json
 import logging
 from collections import OrderedDict
@@ -18,6 +17,8 @@ from ..merkel_validation.trie import SubTrie
 from .base_manager import BaseMultipleLedgerManager, MultipleLedgerManagerError
 
 LOGGER = logging.getLogger(__name__)
+
+DEFAULT_DID_RESOLUTION_TIMEOUT = 30
 
 
 class MultiIndyVDRLedgerManager(BaseMultipleLedgerManager):
@@ -50,8 +51,10 @@ class MultiIndyVDRLedgerManager(BaseMultipleLedgerManager):
         self.non_production_ledgers = non_production_ledgers or OrderedDict()
         self.writable_ledgers = writable_ledgers or set()
         self.endorser_map = endorser_map or {}
-        self.executor = concurrent.futures.ThreadPoolExecutor(max_workers=5)
         self.cache_ttl = cache_ttl
+        self._timeout = profile.settings.get(
+            "ledger.did_resolution_timeout", DEFAULT_DID_RESOLUTION_TIMEOUT
+        )
 
     async def get_write_ledgers(self) -> List[str]:
         """Return the write IndyVdrLedger instance."""
@@ -184,42 +187,60 @@ class MultiIndyVDRLedgerManager(BaseMultipleLedgerManager):
         ledger_ids = list(self.production_ledgers.keys()) + list(
             self.non_production_ledgers.keys()
         )
-        coro_futures = {
-            self.executor.submit(self._get_ledger_by_did, ledger_id, did): ledger_id
+        timeout = self._timeout
+        tasks = {
+            asyncio.create_task(
+                asyncio.wait_for(self._get_ledger_by_did(ledger_id, did), timeout=timeout)
+            ): ledger_id
             for ledger_id in ledger_ids
         }
-        for coro_future in concurrent.futures.as_completed(coro_futures):
-            result = await coro_future.result()
-            if result:
-                applicable_ledger_id = result[0]
-                applicable_ledger_inst = result[1]
-                is_self_certified = result[2]
-                if applicable_ledger_id in self.production_ledgers:
-                    insert_key = list(self.production_ledgers).index(applicable_ledger_id)
-                    if is_self_certified:
-                        applicable_prod_ledgers["self_certified"][insert_key] = (
-                            applicable_ledger_id,
-                            applicable_ledger_inst,
-                        )
-                    else:
-                        applicable_prod_ledgers["non_self_certified"][insert_key] = (
-                            applicable_ledger_id,
-                            applicable_ledger_inst,
-                        )
-                else:
-                    insert_key = list(self.non_production_ledgers).index(
-                        applicable_ledger_id
+        try:
+            for completed in asyncio.as_completed(tasks, timeout=timeout):
+                try:
+                    result = await completed
+                except asyncio.TimeoutError:
+                    LOGGER.warning(
+                        "DID %s ledger lookup timed out after %s seconds.", did, timeout
                     )
-                    if is_self_certified:
-                        applicable_non_prod_ledgers["self_certified"][insert_key] = (
-                            applicable_ledger_id,
-                            applicable_ledger_inst,
+                    continue
+                if result:
+                    applicable_ledger_id = result[0]
+                    applicable_ledger_inst = result[1]
+                    is_self_certified = result[2]
+                    if applicable_ledger_id in self.production_ledgers:
+                        insert_key = list(self.production_ledgers).index(
+                            applicable_ledger_id
                         )
+                        if is_self_certified:
+                            applicable_prod_ledgers["self_certified"][insert_key] = (
+                                applicable_ledger_id,
+                                applicable_ledger_inst,
+                            )
+                        else:
+                            applicable_prod_ledgers["non_self_certified"][insert_key] = (
+                                applicable_ledger_id,
+                                applicable_ledger_inst,
+                            )
                     else:
-                        applicable_non_prod_ledgers["non_self_certified"][insert_key] = (
-                            applicable_ledger_id,
-                            applicable_ledger_inst,
+                        insert_key = list(self.non_production_ledgers).index(
+                            applicable_ledger_id
                         )
+                        if is_self_certified:
+                            applicable_non_prod_ledgers["self_certified"][insert_key] = (
+                                applicable_ledger_id,
+                                applicable_ledger_inst,
+                            )
+                        else:
+                            applicable_non_prod_ledgers["non_self_certified"][
+                                insert_key
+                            ] = (
+                                applicable_ledger_id,
+                                applicable_ledger_inst,
+                            )
+        finally:
+            for task in tasks:
+                if not task.done():
+                    task.cancel()
         applicable_prod_ledgers["self_certified"] = OrderedDict(
             sorted(applicable_prod_ledgers.get("self_certified").items())
         )

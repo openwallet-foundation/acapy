@@ -66,8 +66,8 @@ class TestStoreOpen(IsolatedAsyncioTestCase):
         with self.assertRaises(ProfileError):
             await AskarStoreConfig(config).open_store()
 
-    @mock.patch.object(Store, "open")
     @mock.patch.object(Store, "rekey")
+    @mock.patch.object(Store, "open")
     async def test_open_store_fail_retry_with_rekey(self, mock_store_open, mock_rekey):
         config = {
             "key_derivation_method": self.key_derivation_method,
@@ -78,7 +78,7 @@ class TestStoreOpen(IsolatedAsyncioTestCase):
 
         mock_store_open.side_effect = [
             AskarError(AskarErrorCode.ENCRYPTION, message="testing"),
-            mock.AsyncMock(auto_spec=True),
+            mock.create_autospec(AskarOpenStore, instance=True),
         ]
 
         store = await AskarStoreConfig(config).open_store()
@@ -86,8 +86,8 @@ class TestStoreOpen(IsolatedAsyncioTestCase):
         assert isinstance(store, AskarOpenStore)
         assert mock_rekey.called
 
-    @mock.patch.object(Store, "open")
     @mock.patch.object(Store, "rekey")
+    @mock.patch.object(Store, "open")
     async def test_open_store_fail_retry_with_rekey_fails(
         self, mock_store_open, mock_rekey
     ):
@@ -100,7 +100,7 @@ class TestStoreOpen(IsolatedAsyncioTestCase):
 
         mock_store_open.side_effect = [
             AskarError(AskarErrorCode.ENCRYPTION, message="testing"),
-            mock.AsyncMock(auto_spec=True),
+            mock.create_autospec(AskarOpenStore, instance=True),
         ]
 
         store = await AskarStoreConfig(config).open_store()

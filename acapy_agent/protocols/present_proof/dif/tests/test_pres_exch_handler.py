@@ -1752,7 +1752,7 @@ class TestPresExchangeHandler(IsolatedAsyncioTestCase):
                 "type": "JsonSchemaValidator2018",
             },
         }
-        test_vcrecord = dif_pres_exch_handler.create_vcrecord(test_cred_dict)
+        test_vcrecord = await dif_pres_exch_handler.create_vcrecord(test_cred_dict)
         assert isinstance(test_vcrecord, VCRecord)
 
     async def test_reveal_doc_d(self):
@@ -1871,7 +1871,7 @@ class TestPresExchangeHandler(IsolatedAsyncioTestCase):
         assert len(tmp_vp.get("verifiableCredential")) == 6
 
     @skip_on_jsonld_url_error
-    def test_create_vc_record_with_graph_struct(self):
+    async def test_create_vc_record_with_graph_struct(self):
         dif_pres_exch_handler = DIFPresExchHandler(self.profile)
         test_credential_dict_a = {
             "@context": [
@@ -1940,10 +1940,10 @@ class TestPresExchangeHandler(IsolatedAsyncioTestCase):
             },
         }
         assert isinstance(
-            dif_pres_exch_handler.create_vcrecord(test_credential_dict_a), VCRecord
+            await dif_pres_exch_handler.create_vcrecord(test_credential_dict_a), VCRecord
         )
         assert isinstance(
-            dif_pres_exch_handler.create_vcrecord(test_credential_dict_b), VCRecord
+            await dif_pres_exch_handler.create_vcrecord(test_credential_dict_b), VCRecord
         )
 
     async def test_get_did_info_for_did(self):
@@ -3809,7 +3809,7 @@ class TestPresExchangeHandler(IsolatedAsyncioTestCase):
             test_module.jsonld, "expand", mock.MagicMock()
         ) as mock_jsonld_expand:
             mock_jsonld_expand.return_value = EXPANDED_CRED_FHIR_TYPE_1
-            vc_record_cred = dif_pres_exch_handler.create_vcrecord(cred_dict)
+            vc_record_cred = await dif_pres_exch_handler.create_vcrecord(cred_dict)
             field = DIFField.deserialize(
                 {
                     "path": ["$.credentialSubject.Patient[0].address[0].city"],
@@ -3831,7 +3831,7 @@ class TestPresExchangeHandler(IsolatedAsyncioTestCase):
             test_module.jsonld, "expand", mock.MagicMock()
         ) as mock_jsonld_expand:
             mock_jsonld_expand.return_value = EXPANDED_CRED_FHIR_TYPE_2
-            vc_record_cred = dif_pres_exch_handler.create_vcrecord(cred_dict)
+            vc_record_cred = await dif_pres_exch_handler.create_vcrecord(cred_dict)
             field = DIFField.deserialize(
                 {
                     "path": ["$.credentialSubject.lprNumber"],
@@ -3852,7 +3852,7 @@ class TestPresExchangeHandler(IsolatedAsyncioTestCase):
             test_module.jsonld, "expand", mock.MagicMock()
         ) as mock_jsonld_expand:
             mock_jsonld_expand.return_value = EXPANDED_CRED_FHIR_TYPE_2
-            vc_record_cred = dif_pres_exch_handler.create_vcrecord(cred_dict)
+            vc_record_cred = await dif_pres_exch_handler.create_vcrecord(cred_dict)
             field = DIFField.deserialize(
                 {
                     "path": ["$.credentialSubject.testDate"],
@@ -3874,7 +3874,7 @@ class TestPresExchangeHandler(IsolatedAsyncioTestCase):
             test_module.jsonld, "expand", mock.MagicMock()
         ) as mock_jsonld_expand:
             mock_jsonld_expand.return_value = EXPANDED_CRED_FHIR_TYPE_2
-            vc_record_cred = dif_pres_exch_handler.create_vcrecord(cred_dict)
+            vc_record_cred = await dif_pres_exch_handler.create_vcrecord(cred_dict)
             field = DIFField.deserialize(
                 {
                     "path": ["$.credentialSubject.testFlag"],
@@ -3891,7 +3891,7 @@ class TestPresExchangeHandler(IsolatedAsyncioTestCase):
             test_module.jsonld, "expand", mock.MagicMock()
         ) as mock_jsonld_expand:
             mock_jsonld_expand.return_value = EXPANDED_CRED_FHIR_TYPE_2
-            vc_record_cred = dif_pres_exch_handler.create_vcrecord(cred_dict)
+            vc_record_cred = await dif_pres_exch_handler.create_vcrecord(cred_dict)
             field = DIFField.deserialize(
                 {"path": ["$.credentialSubject.testDouble"], "filter": {"const": 10.2}}
             )
@@ -3907,7 +3907,7 @@ class TestPresExchangeHandler(IsolatedAsyncioTestCase):
             test_module.jsonld, "expand", mock.MagicMock()
         ) as mock_jsonld_expand:
             mock_jsonld_expand.return_value = EXPANDED_CRED_FHIR_TYPE_2
-            vc_record_cred = dif_pres_exch_handler.create_vcrecord(cred_dict)
+            vc_record_cred = await dif_pres_exch_handler.create_vcrecord(cred_dict)
             field = DIFField.deserialize({"path": ["$.credentialSubject.test"]})
             assert await dif_pres_exch_handler.filter_by_field(field, vc_record_cred)
 

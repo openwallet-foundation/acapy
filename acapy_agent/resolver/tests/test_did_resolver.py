@@ -106,7 +106,7 @@ def test_create_resolver(resolver):
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("did, method", zip(TEST_DIDS, TEST_DID_METHODS))
+@pytest.mark.parametrize("did, method", list(zip(TEST_DIDS, TEST_DID_METHODS)))
 async def test_match_did_to_resolver(profile, resolver, did, method):
     base_resolver, *_ = await resolver._match_did_to_resolver(profile, did)
     assert await base_resolver.supports(profile, did)

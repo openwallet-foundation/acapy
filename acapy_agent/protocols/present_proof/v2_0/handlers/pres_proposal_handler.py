@@ -47,7 +47,7 @@ class V20PresProposalHandler(BaseHandler):
             context.message, context.connection_record
         )  # mgr only creates, saves record: on exception, saving state err is hopeless
 
-        r_time = trace_event(
+        r_time = await trace_event(
             context.settings,
             context.message,
             outcome="V20PresProposalHandler.handle.END",
@@ -81,7 +81,7 @@ class V20PresProposalHandler(BaseHandler):
                         )
                     )
 
-            trace_event(
+            await trace_event(
                 context.settings,
                 pres_request_message,
                 outcome="V20PresProposalHandler.handle.PRESENT",

@@ -23,7 +23,7 @@ class TestProofPurpose(IsolatedAsyncioTestCase):
     async def test_validate(self):
         proof_purpose = ProofPurpose(term="ProofTerm", date=datetime.now())
 
-        result = proof_purpose.validate(
+        result = await proof_purpose.validate(
             proof=mock.MagicMock(),
             document=mock.MagicMock(),
             suite=mock.MagicMock(),
@@ -38,7 +38,7 @@ class TestProofPurpose(IsolatedAsyncioTestCase):
             term="ProofTerm", date=date, max_timestamp_delta=timedelta(10)
         )
 
-        result = proof_purpose.validate(
+        result = await proof_purpose.validate(
             proof={"created": datetime_to_str(date + timedelta(5))},
             document=mock.MagicMock(),
             suite=mock.MagicMock(),
@@ -53,7 +53,7 @@ class TestProofPurpose(IsolatedAsyncioTestCase):
             term="ProofTerm", date=date, max_timestamp_delta=timedelta(10)
         )
 
-        result = proof_purpose.validate(
+        result = await proof_purpose.validate(
             proof={"created": datetime_to_str(date + timedelta(15))},
             document=mock.MagicMock(),
             suite=mock.MagicMock(),

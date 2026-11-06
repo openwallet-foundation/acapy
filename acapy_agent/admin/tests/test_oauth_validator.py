@@ -228,7 +228,7 @@ class TestIntrospection(IsolatedAsyncioTestCase):
         session.post.assert_called_once_with(
             INTROSPECTION_ENDPOINT,
             data={"token": "opaque-token", "token_type_hint": "access_token"},
-            auth=None,
+            headers=None,
         )
 
     async def test_client_credentials_sent_as_basic_auth(self):
@@ -241,8 +241,8 @@ class TestIntrospection(IsolatedAsyncioTestCase):
         session = mock_session(make_response(body={"active": True}))
         validator._get_session = mock.MagicMock(return_value=session)
         await validator.validate("opaque-token")
-        auth = session.post.call_args.kwargs["auth"]
-        assert auth == aiohttp.BasicAuth("acapy-rs", "s3cret")
+        auth_header = session.post.call_args.kwargs["headers"]["Authorization"]
+        assert auth_header == aiohttp.encode_basic_auth("acapy-rs", "s3cret")
 
     async def test_inactive_token_rejected(self):
         validator = self.make_introspection_validator()

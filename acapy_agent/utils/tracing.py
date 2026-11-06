@@ -6,7 +6,7 @@ import logging
 import time
 from typing import Optional
 
-import requests
+import aiohttp
 from marshmallow import fields
 
 from ..messaging.agent_message import AgentMessage
@@ -108,7 +108,7 @@ def decode_inbound_message(message):
     return message
 
 
-def trace_event(
+async def trace_event(
     context,
     message,
     handler: Optional[str] = None,
@@ -239,12 +239,13 @@ def trace_event(
                 LOGGER.info(" %s %s", context["trace.tag"], event_str)
             else:
                 # should be an http endpoint
-                _ = requests.post(
-                    context["trace.target"]
-                    + (context["trace.tag"] if context["trace.tag"] else ""),
-                    data=event_str,
-                    headers={"Content-Type": "application/json"},
-                )
+                async with aiohttp.ClientSession() as session:
+                    await session.post(
+                        context["trace.target"]
+                        + (context["trace.tag"] if context["trace.tag"] else ""),
+                        data=event_str,
+                        headers={"Content-Type": "application/json"},
+                    )
         except Exception as e:
             if raise_errors:
                 raise
