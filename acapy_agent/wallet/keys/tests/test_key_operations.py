@@ -8,7 +8,8 @@ from aries_askar import Key, KeyAlg
 from pydid.verification_method import JsonWebKey2020, VerificationMethod
 
 from acapy_agent.utils.testing import create_test_profile
-from acapy_agent.wallet.key_type import KeyTypes
+from acapy_agent.wallet.base import BaseWallet
+from acapy_agent.wallet.key_type import ED25519, KeyTypes
 from acapy_agent.wallet.keys.manager import (
     MultikeyManager,
     MultikeyManagerError,
@@ -88,6 +89,21 @@ class TestKeyOperations(IsolatedAsyncioTestCase):
             assert (await manager.from_kid(key_id_01)) is None
             assert (await manager.from_kid(key_id_02))["multikey"] == test_multikey
             assert (await manager.from_kid(key_id_03))["multikey"] == test_multikey
+
+    async def test_key_id_binding_keeps_key_metadata(self):
+        metadata = {"note": "kept"}
+        kid = "did:web:example.com#key-01"
+        async with self.profile.session() as session:
+            wallet = session.inject(BaseWallet)
+            key = await wallet.create_key(ED25519, metadata=metadata)
+            multikey = verkey_to_multikey(key.verkey, alg=self.ed25519_alg)
+            manager = MultikeyManager(session=session)
+
+            await manager.bind_key_id(multikey, kid)
+            assert (await wallet.get_signing_key(key.verkey)).metadata == metadata
+
+            await manager.unbind_key_id(multikey, kid)
+            assert (await wallet.get_signing_key(key.verkey)).metadata == metadata
 
     async def test_key_transformations(self):
         for alg, multikey, verkey in [

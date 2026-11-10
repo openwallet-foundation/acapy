@@ -150,7 +150,10 @@ class AskarWallet(BaseWallet):
         key_ids.append(kid)
         tags["kid"] = key_ids
 
-        await self._session.handle.update_key(name=verkey, tags=tags)
+        # update_key clears metadata that is not passed back in.
+        await self._session.handle.update_key(
+            name=verkey, metadata=key_entry.metadata, tags=tags
+        )
         return KeyInfo(verkey=verkey, metadata=metadata, key_type=key_type, kid=kid)
 
     async def unassign_kid_from_key(self, verkey: str, kid: str) -> KeyInfo:
@@ -194,7 +197,10 @@ class AskarWallet(BaseWallet):
 
         key_tags["kid"] = key_kids
 
-        await self._session.handle.update_key(name=verkey, tags=key_tags)
+        # update_key clears metadata that is not passed back in.
+        await self._session.handle.update_key(
+            name=verkey, metadata=key_entry.metadata, tags=key_tags
+        )
         return KeyInfo(verkey=verkey, metadata=metadata, key_type=key_type, kid=kid)
 
     async def get_key_by_kid(self, kid: str) -> KeyInfo:
