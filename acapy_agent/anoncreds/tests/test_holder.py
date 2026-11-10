@@ -77,10 +77,9 @@ class MockCredReceivedW3C:
 
 class MockCredential:
     def __init__(self):
+        self.cred = mock.create_autospec(Credential, instance=True)
         self.rev_reg_id = "rev-reg-id"
         self.rev_reg_index = 0
-
-    cred = mock.AsyncMock(auto_spec=Credential)
 
     def to_dict(self):
         return MOCK_CRED
@@ -90,7 +89,8 @@ class MockCredential:
 
 
 class MockW3Credential:
-    cred = mock.AsyncMock(auto_spec=W3cCredential)
+    def __init__(self):
+        self.cred = mock.create_autospec(W3cCredential, instance=True)
 
     def to_dict(self):
         return MOCK_W3C_CRED

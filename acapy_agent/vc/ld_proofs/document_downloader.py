@@ -10,7 +10,7 @@ import urllib.parse as urllib_parse
 from importlib import resources
 from typing import Dict, Optional
 
-import requests
+import aiohttp
 from pyld import jsonld
 from pyld.jsonld import LINK_HEADER_REL, JsonLdError, parse_link_header
 
@@ -55,11 +55,13 @@ class StaticCacheJsonLdDownloader:
 
     def __init__(
         self,
-        document_downloader: Optional["JsonLdDocumentDownloader"] = None,
+        document_downloader: Optional["AsyncJsonLdDocumentDownloader"] = None,
         document_parser: Optional["JsonLdDocumentParser"] = None,
     ):
         """Load static document on initialization."""
-        self.documents_downloader = document_downloader or JsonLdDocumentDownloader()
+        self.documents_downloader = (
+            document_downloader or AsyncJsonLdDocumentDownloader()
+        )
         self.document_parser = document_parser or JsonLdDocumentParser()
 
         self.cache = {
@@ -67,7 +69,7 @@ class StaticCacheJsonLdDownloader:
             for url, filename in StaticCacheJsonLdDownloader.CONTEXT_FILE_MAPPING.items()
         }
 
-    def load(self, url: str, options: Optional[Dict] = None):
+    async def load(self, url: str, options: Optional[Dict] = None):
         """Load a jsonld document from URL.
 
         Prioritize local static cache before attempting to download from the URL.
@@ -79,23 +81,29 @@ class StaticCacheJsonLdDownloader:
             return cached
 
         logger.debug("Context %s not in static cache, resolving from URL.", url)
-        return self._live_load(url, options)
+        return await self._live_load(url, options)
 
-    def _live_load(self, url: str, options: Optional[Dict] = None):
-        doc, link_header = self.documents_downloader.download(url, options)
+    async def _live_load(self, url: str, options: Optional[Dict] = None):
+        async with aiohttp.ClientSession() as session:
+            doc, link_header = await self.documents_downloader.download(
+                url, options, session
+            )
         return self.document_parser.parse(doc, link_header)
 
 
-class JsonLdDocumentDownloader:
-    """JsonLd documents downloader."""
+class AsyncJsonLdDocumentDownloader:
+    """Async JsonLd documents downloader."""
 
-    def download(self, url: str, options: Optional[Dict], **kwargs):
-        """Retrieves JSON-LD at the given URL.
+    async def download(
+        self, url: str, options: Optional[Dict], session: aiohttp.ClientSession
+    ):
+        """Retrieve JSON-LD at the given URL.
 
-        This was lifted from pyld.documentloader.requests.
+        Async port of pyld.documentloader.requests.
 
         :param url: the URL to retrieve.
-        :param options:
+        :param options: request options.
+        :param session: aiohttp client session.
 
         :return: the RemoteDocument.
 
@@ -129,19 +137,19 @@ class JsonLdDocumentDownloader:
             if headers is None:
                 headers = {"Accept": "application/ld+json, application/json"}
             headers["User-Agent"] = f"AriesCloudAgent/{__version__}"
-            response = requests.get(url, headers=headers, **kwargs)
 
-            content_type = response.headers.get("content-type")
-            if not content_type:
-                content_type = "application/octet-stream"
-            doc = {
-                "contentType": content_type,
-                "contextUrl": None,
-                "documentUrl": response.url,
-                "document": response.json(),
-            }
+            async with session.get(url, headers=headers) as response:
+                content_type = response.headers.get("content-type")
+                if not content_type:
+                    content_type = "application/octet-stream"
+                doc = {
+                    "contentType": content_type,
+                    "contextUrl": None,
+                    "documentUrl": str(response.url),
+                    "document": await response.json(),
+                }
 
-            return doc, response.headers.get("link")
+                return doc, response.headers.get("link")
         except Exception as cause:
             raise JsonLdError(
                 "Could not retrieve a JSON-LD document from the URL.",

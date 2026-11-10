@@ -54,7 +54,7 @@ class V20CredAckHandler(BaseHandler):
             ),
         )
 
-        trace_event(
+        await trace_event(
             context.settings,
             context.message,
             outcome="V20CredAckHandler.handle.END",

@@ -8,6 +8,7 @@ from pyld.jsonld import JsonLdProcessor
 from ..constants import SECURITY_CONTEXT_URL
 from ..document_loader import DocumentLoaderMethod
 from ..error import LinkedDataProofException
+from ..pyld_util import run_sync
 from ..validation_result import PurposeResult
 from .proof_purpose import ProofPurpose
 
@@ -19,7 +20,7 @@ if TYPE_CHECKING:
 class ControllerProofPurpose(ProofPurpose):
     """Controller proof purpose class."""
 
-    def validate(
+    async def validate(
         self,
         *,
         proof: dict,
@@ -30,7 +31,7 @@ class ControllerProofPurpose(ProofPurpose):
     ) -> PurposeResult:
         """Validate whether verification method of proof is authorized by controller."""
         try:
-            result = super().validate(
+            result = await super().validate(
                 proof=proof,
                 document=document,
                 suite=suite,
@@ -53,7 +54,8 @@ class ControllerProofPurpose(ProofPurpose):
                 raise LinkedDataProofException('"controller" must be a string or dict')
 
             # Get the controller
-            result.controller = jsonld.frame(
+            result.controller = await run_sync(
+                jsonld.frame,
                 controller_id,
                 frame={
                     "@context": SECURITY_CONTEXT_URL,

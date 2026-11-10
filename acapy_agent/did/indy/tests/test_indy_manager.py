@@ -15,7 +15,7 @@ class TestIndyManager(IsolatedAsyncioTestCase):
     async def asyncSetUp(self) -> None:
         self.profile = await create_test_profile()
         self.profile.context.injector.bind_instance(
-            DIDMethods, mock.MagicMock(DIDMethods, auto_spec=True)
+            DIDMethods, mock.create_autospec(DIDMethods, instance=True)
         )
         self.profile.context.injector.bind_instance(KeyTypes, KeyTypes())
 

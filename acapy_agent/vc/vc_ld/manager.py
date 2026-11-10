@@ -29,6 +29,7 @@ from ..ld_proofs.document_loader import DocumentLoader
 from ..ld_proofs.purposes.authentication_proof_purpose import AuthenticationProofPurpose
 from ..ld_proofs.purposes.credential_issuance_purpose import CredentialIssuancePurpose
 from ..ld_proofs.purposes.proof_purpose import ProofPurpose
+from ..ld_proofs.pyld_util import run_sync
 from ..ld_proofs.suites.bbs_bls_signature_2020 import BbsBlsSignature2020
 from ..ld_proofs.suites.bbs_bls_signature_proof_2020 import BbsBlsSignatureProof2020
 from ..ld_proofs.suites.ed25519_signature_2018 import Ed25519Signature2018
@@ -391,8 +392,10 @@ class VcLdpManager:
         """Store a verifiable credential."""
         # Saving expanded type as a cred_tag
         document_loader = self.profile.inject(DocumentLoader)
-        expanded = jsonld.expand(
-            vc.serialize(), options={"documentLoader": document_loader}
+        expanded = await run_sync(
+            jsonld.expand,
+            vc.serialize(),
+            options={"documentLoader": document_loader},
         )
         types = JsonLdProcessor.get_values(
             expanded[0],

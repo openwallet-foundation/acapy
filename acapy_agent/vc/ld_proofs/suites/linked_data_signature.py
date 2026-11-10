@@ -108,7 +108,7 @@ class LinkedDataSignature(LinkedDataProof, metaclass=ABCMeta):
         proof = purpose.update(proof)
 
         # Create data to sign
-        verify_data = self._create_verify_data(
+        verify_data = await self._create_verify_data(
             proof=proof, document=document, document_loader=document_loader
         )
 
@@ -128,12 +128,12 @@ class LinkedDataSignature(LinkedDataProof, metaclass=ABCMeta):
         """Verify proof against document and proof purpose."""
         try:
             # Create data to verify
-            verify_data = self._create_verify_data(
+            verify_data = await self._create_verify_data(
                 proof=proof, document=document, document_loader=document_loader
             )
 
             # Fetch verification method
-            verification_method = self._get_verification_method(
+            verification_method = await self._get_verification_method(
                 proof=proof, document_loader=document_loader
             )
 
@@ -151,7 +151,7 @@ class LinkedDataSignature(LinkedDataProof, metaclass=ABCMeta):
                 )
 
             # Ensure proof was performed for a valid purpose
-            purpose_result = purpose.validate(
+            purpose_result = await purpose.validate(
                 proof=proof,
                 document=document,
                 suite=self,
@@ -170,14 +170,14 @@ class LinkedDataSignature(LinkedDataProof, metaclass=ABCMeta):
         except Exception as err:
             return ProofResult(verified=False, error=err)
 
-    def _create_verify_data(
+    async def _create_verify_data(
         self, *, proof: dict, document: dict, document_loader: DocumentLoaderMethod
     ) -> bytes:
         """Create signing or verification data."""
-        c14n_proof_options = self._canonize_proof(
+        c14n_proof_options = await self._canonize_proof(
             proof=proof, document=document, document_loader=document_loader
         )
-        c14n_doc = self._canonize(input=document, document_loader=document_loader)
+        c14n_doc = await self._canonize(input=document, document_loader=document_loader)
 
         # TODO: detect any dropped properties using expand/contract step
 
@@ -186,7 +186,7 @@ class LinkedDataSignature(LinkedDataProof, metaclass=ABCMeta):
             + sha256(c14n_doc.encode("utf-8")).digest()
         )
 
-    def _canonize_proof(
+    async def _canonize_proof(
         self, *, proof: dict, document: dict, document_loader: DocumentLoaderMethod
     ):
         """Canonize proof dictionary. Removes jws, signature, etc..."""
@@ -200,4 +200,4 @@ class LinkedDataSignature(LinkedDataProof, metaclass=ABCMeta):
         proof.pop("signatureValue", None)
         proof.pop("proofValue", None)
 
-        return self._canonize(input=proof, document_loader=document_loader)
+        return await self._canonize(input=proof, document_loader=document_loader)

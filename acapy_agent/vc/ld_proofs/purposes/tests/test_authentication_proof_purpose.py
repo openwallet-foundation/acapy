@@ -33,7 +33,9 @@ class TestAuthenticationProofPurpose(IsolatedAsyncioTestCase):
             challenge="8378c56e-4926-4a54-9587-0f2ef564619a", domain="example.com"
         )
 
-        with mock.patch.object(ControllerProofPurpose, "validate") as validate_mock:
+        with mock.patch.object(
+            ControllerProofPurpose, "validate", autospec=True
+        ) as validate_mock:
             validate_mock.return_value = PurposeResult(valid=True)
             proof = {
                 "challenge": "8378c56e-4926-4a54-9587-0f2ef564619a",
@@ -44,7 +46,7 @@ class TestAuthenticationProofPurpose(IsolatedAsyncioTestCase):
             verification_method = {"controller": "controller"}
             document_loader = mock.MagicMock()
 
-            result = proof_purpose.validate(
+            result = await proof_purpose.validate(
                 proof=proof,
                 document=document,
                 suite=suite,
@@ -52,6 +54,7 @@ class TestAuthenticationProofPurpose(IsolatedAsyncioTestCase):
                 document_loader=document_loader,
             )
             validate_mock.assert_called_once_with(
+                proof_purpose,
                 proof=proof,
                 document=document,
                 suite=suite,
@@ -65,10 +68,12 @@ class TestAuthenticationProofPurpose(IsolatedAsyncioTestCase):
             challenge="8378c56e-4926-4a54-9587-0f2ef564619a", domain="example.com"
         )
 
-        with mock.patch.object(ControllerProofPurpose, "validate") as validate_mock:
+        with mock.patch.object(
+            ControllerProofPurpose, "validate", autospec=True
+        ) as validate_mock:
             validate_mock.return_value = PurposeResult(valid=True)
 
-            result = proof_purpose.validate(
+            result = await proof_purpose.validate(
                 proof={
                     "challenge": "another8378c56e-4926-4a54-9587-0f2ef564619a",
                     "domain": "example.com",
@@ -86,10 +91,12 @@ class TestAuthenticationProofPurpose(IsolatedAsyncioTestCase):
             challenge="8378c56e-4926-4a54-9587-0f2ef564619a", domain="example.com"
         )
 
-        with mock.patch.object(ControllerProofPurpose, "validate") as validate_mock:
+        with mock.patch.object(
+            ControllerProofPurpose, "validate", autospec=True
+        ) as validate_mock:
             validate_mock.return_value = PurposeResult(valid=True)
 
-            result = proof_purpose.validate(
+            result = await proof_purpose.validate(
                 proof={
                     "challenge": "8378c56e-4926-4a54-9587-0f2ef564619a",
                     "domain": "anotherexample.com",
