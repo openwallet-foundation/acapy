@@ -211,6 +211,27 @@ async def test_assign_kid_to_key_and_get_by_kid(patched_wallet):
 
 
 @pytest.mark.asyncio
+async def test_assign_kid_to_key_keeps_metadata_and_tags(patched_wallet):
+    module, wallet, askar = patched_wallet
+    created = await wallet.create_key(module.ED25519, metadata={"note": "kept"})
+    askar._keys[created.verkey]["tags"]["other"] = "kept"
+
+    calls = []
+    original_update_key = askar.update_key
+
+    def spy_update_key(*args, **kwargs):
+        calls.append(kwargs)
+        return original_update_key(*args, **kwargs)
+
+    askar.update_key = spy_update_key
+    await wallet.assign_kid_to_key(created.verkey, "kid-xyz")
+
+    # Real Askar clears metadata and tags that update_key does not receive.
+    assert calls[0]["metadata"] == '{"note": "kept"}'
+    assert calls[0]["tags"] == {"other": "kept", "kid": "kid-xyz"}
+
+
+@pytest.mark.asyncio
 async def test_get_signing_key_not_found_raises(patched_wallet):
     module, wallet, _ = patched_wallet
     with pytest.raises(module.WalletNotFoundError):

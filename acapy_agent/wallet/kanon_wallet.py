@@ -157,8 +157,13 @@ class KanonWallet(BaseWallet):
                 raise WalletError(ERR_UNKNOWN_KEY_TYPE.format(key.algorithm.value))
 
             LOGGER.debug("Updating key with kid: %s", kid)
+            # update_key clears metadata and tags that are not passed back in.
             await _call_askar(
-                self._session.askar_handle, "update_key", name=verkey, tags={"kid": kid}
+                self._session.askar_handle,
+                "update_key",
+                name=verkey,
+                metadata=key_entry.metadata,
+                tags={**(key_entry.tags or {}), "kid": kid},
             )
             LOGGER.debug("Key updated successfully")
         except AskarError as err:
