@@ -16,7 +16,7 @@ from ..ledger.endpoint_type import EndpointType
 from ..ledger.error import LedgerConfigError
 from ..storage.base import StorageDuplicateError, StorageNotFoundError, StorageRecord
 from ..storage.kanon_storage import KanonStorage
-from .base import BaseWallet, DIDInfo, KeyInfo
+from .base import BaseWallet, DIDInfo, KeyInfo, check_external_signer_fields
 from .crypto import sign_message, validate_seed, verify_signed_message
 from .did_info import INVITATION_REUSE_KEY
 from .did_method import INDY, SOV, DIDMethod, DIDMethods
@@ -135,6 +135,40 @@ class KanonWallet(BaseWallet):
         LOGGER.debug("create_key completed with result: %s", result)
         return result
 
+    async def insert_public_key(
+        self,
+        verkey: str,
+        key_type: KeyType,
+        metadata: Optional[dict] = None,
+        kid: Optional[str] = None,
+    ) -> KeyInfo:
+        """Store a public-only key whose private key is held by an external signer."""
+        if metadata is None:
+            metadata = {}
+
+        try:
+            key = Key.from_public_bytes(KeyAlg(key_type.key_type), b58_to_bytes(verkey))
+        except (AskarError, ValueError) as err:
+            raise WalletError(f"Invalid {key_type.key_type} verkey") from err
+
+        try:
+            await _call_askar(
+                self._session.askar_handle,
+                "insert_key",
+                verkey,
+                key,
+                metadata=json.dumps(metadata),
+                tags={"kid": kid} if kid else None,
+            )
+        except AskarError as err:
+            LOGGER.error("AskarError in insert_public_key: %s", err)
+            if err.code == AskarErrorCode.DUPLICATE:
+                raise WalletDuplicateError(
+                    "Verification key already present in wallet"
+                ) from None
+            raise WalletError("Error inserting public key") from err
+        return KeyInfo(verkey=verkey, metadata=metadata, key_type=key_type, kid=kid)
+
     async def assign_kid_to_key(self, verkey: str, kid: str) -> KeyInfo:
         """Assign a KID to a key."""
         LOGGER.debug("Entering assign_kid_to_key with verkey: %s, kid: %s", verkey, kid)
@@ -157,8 +191,13 @@ class KanonWallet(BaseWallet):
                 raise WalletError(ERR_UNKNOWN_KEY_TYPE.format(key.algorithm.value))
 
             LOGGER.debug("Updating key with kid: %s", kid)
+            # update_key clears metadata and tags that are not passed back in.
             await _call_askar(
-                self._session.askar_handle, "update_key", name=verkey, tags={"kid": kid}
+                self._session.askar_handle,
+                "update_key",
+                name=verkey,
+                metadata=key_entry.metadata,
+                tags={**(key_entry.tags or {}), "kid": kid},
             )
             LOGGER.debug("Key updated successfully")
         except AskarError as err:
@@ -257,6 +296,7 @@ class KanonWallet(BaseWallet):
             if not key_entry:
                 LOGGER.error("Keypair not found for verkey: %s", verkey)
                 raise WalletNotFoundError("Keypair not found")
+            check_external_signer_fields(json.loads(key_entry.metadata or "{}"), metadata)
             LOGGER.debug("Updating key metadata")
             await _call_askar(
                 self._session.askar_handle,
@@ -1081,6 +1121,11 @@ class KanonWallet(BaseWallet):
         if not from_verkey:
             LOGGER.error(ERR_VERKEY_NOT_PROVIDED)
             raise WalletError(ERR_VERKEY_NOT_PROVIDED)
+        # Delegate externally managed keys before looking for a local private key.
+        if (
+            sig := await self._get_external_signature(message, from_verkey, self.session)
+        ) is not None:
+            return sig
         try:
             LOGGER.debug("Fetching key for verkey: %s", from_verkey)
             keypair = await _call_askar(

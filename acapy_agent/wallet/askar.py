@@ -14,7 +14,7 @@ from ..ledger.endpoint_type import EndpointType
 from ..ledger.error import LedgerConfigError
 from ..storage.askar import AskarStorage
 from ..storage.base import StorageDuplicateError, StorageNotFoundError, StorageRecord
-from .base import BaseWallet, DIDInfo, KeyInfo
+from .base import BaseWallet, DIDInfo, KeyInfo, check_external_signer_fields
 from .crypto import sign_message, validate_seed, verify_signed_message
 from .did_info import INVITATION_REUSE_KEY
 from .did_method import INDY, SOV, DIDMethod, DIDMethods
@@ -119,6 +119,38 @@ class AskarWallet(BaseWallet):
             raise WalletError("Error creating signing key") from err
         return KeyInfo(verkey=verkey, metadata=metadata, key_type=key_type, kid=kid)
 
+    async def insert_public_key(
+        self,
+        verkey: str,
+        key_type: KeyType,
+        metadata: Optional[dict] = None,
+        kid: Optional[str] = None,
+    ) -> KeyInfo:
+        """Store a public-only key whose private key is held by an external signer."""
+        if metadata is None:
+            metadata = {}
+
+        try:
+            key = Key.from_public_bytes(KeyAlg(key_type.key_type), b58_to_bytes(verkey))
+        except (AskarError, ValueError) as err:
+            raise WalletError(f"Invalid {key_type.key_type} verkey") from err
+
+        tags = {
+            "multikey": verkey_to_multikey(verkey, key_type.key_type),
+            "kid": [kid] if kid else [],
+        }
+        try:
+            await self._session.handle.insert_key(
+                verkey, key, metadata=json.dumps(metadata), tags=tags
+            )
+        except AskarError as err:
+            if err.code == AskarErrorCode.DUPLICATE:
+                raise WalletDuplicateError(
+                    "Verification key already present in wallet"
+                ) from None
+            raise WalletError("Error inserting public key") from err
+        return KeyInfo(verkey=verkey, metadata=metadata, key_type=key_type, kid=kid)
+
     async def assign_kid_to_key(self, verkey: str, kid: str) -> KeyInfo:
         """Assign a KID to a key.
 
@@ -150,7 +182,10 @@ class AskarWallet(BaseWallet):
         key_ids.append(kid)
         tags["kid"] = key_ids
 
-        await self._session.handle.update_key(name=verkey, tags=tags)
+        # update_key clears metadata that is not passed back in.
+        await self._session.handle.update_key(
+            name=verkey, metadata=key_entry.metadata, tags=tags
+        )
         return KeyInfo(verkey=verkey, metadata=metadata, key_type=key_type, kid=kid)
 
     async def unassign_kid_from_key(self, verkey: str, kid: str) -> KeyInfo:
@@ -194,7 +229,10 @@ class AskarWallet(BaseWallet):
 
         key_tags["kid"] = key_kids
 
-        await self._session.handle.update_key(name=verkey, tags=key_tags)
+        # update_key clears metadata that is not passed back in.
+        await self._session.handle.update_key(
+            name=verkey, metadata=key_entry.metadata, tags=key_tags
+        )
         return KeyInfo(verkey=verkey, metadata=metadata, key_type=key_type, kid=kid)
 
     async def get_key_by_kid(self, kid: str) -> KeyInfo:
@@ -275,6 +313,7 @@ class AskarWallet(BaseWallet):
         key = await self._session.handle.fetch_key(verkey, for_update=True)
         if not key:
             raise WalletNotFoundError("Keypair not found")
+        check_external_signer_fields(json.loads(key.metadata or "{}"), metadata)
         await self._session.handle.update_key(
             verkey, metadata=json.dumps(metadata or {}), tags=key.tags
         )
@@ -804,6 +843,11 @@ class AskarWallet(BaseWallet):
             raise WalletError("Message not provided")
         if not from_verkey:
             raise WalletError("Verkey not provided")
+        # Delegate externally managed keys before looking for a local private key.
+        if (
+            sig := await self._get_external_signature(message, from_verkey, self.session)
+        ) is not None:
+            return sig
         try:
             keypair = await self._session.handle.fetch_key(from_verkey)
             if not keypair:

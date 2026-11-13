@@ -1,7 +1,8 @@
 """Multikey class."""
 
 import logging
-from typing import Mapping
+from typing import Mapping, Optional
+from uuid import uuid4
 
 from aries_askar import Key
 from pydid import VerificationMethod
@@ -12,6 +13,7 @@ from ...utils.multiformats import multibase
 from ...wallet.error import WalletError, WalletNotFoundError
 from ..base import BaseWallet
 from ..key_type import BLS12381G2, ED25519, P256, KeyType
+from ..signer_registry import SignerRegistry
 from ..util import b58_to_bytes, bytes_to_b58
 
 LOGGER = logging.getLogger(__name__)
@@ -245,8 +247,14 @@ class MultikeyManager:
             ),
         }
 
-    async def create(self, seed: str = None, kid: str = None, alg: str = DEFAULT_ALG):
-        """Create a new key pair."""
+    async def create(
+        self,
+        seed: str = None,
+        kid: str = None,
+        alg: str = DEFAULT_ALG,
+        provider: Optional[str] = None,
+    ):
+        """Create a new key pair, in the wallet or with an external signer provider."""
         if alg not in ALG_MAPPINGS:
             raise MultikeyManagerError(
                 f"Unknown key algorithm, use one of {list(ALG_MAPPINGS.keys())}."
@@ -256,12 +264,50 @@ class MultikeyManager:
             raise MultikeyManagerError(f"kid '{kid}' already exists in wallet.")
 
         key_type = ALG_MAPPINGS[alg]["key_type"]
-        key_info = await self.wallet.create_key(key_type=key_type, seed=seed, kid=kid)
+        if provider:
+            key_info = await self._create_with_provider(provider, key_type, seed, kid)
+        else:
+            key_info = await self.wallet.create_key(key_type=key_type, seed=seed, kid=kid)
 
         return {
             "kid": key_info.kid,
             "multikey": verkey_to_multikey(key_info.verkey, alg=alg),
         }
+
+    async def _create_with_provider(
+        self, provider: str, key_type: KeyType, seed: Optional[str], kid: Optional[str]
+    ):
+        """Generate a key with an external signer and store its public key."""
+        if seed:
+            raise MultikeyManagerError("A seed cannot be used with a provider.")
+
+        registry = self.session.inject_or(SignerRegistry)
+        signer = registry.get(provider) if registry else None
+        if signer is None:
+            raise MultikeyManagerError(f"Unknown provider '{provider}'.")
+
+        key_ref = str(uuid4())
+        try:
+            verkey = await signer.generate_keypair(key_ref, key_type)
+        except WalletError as err:
+            raise MultikeyManagerError(
+                f"Provider '{provider}' could not create the key: {err}"
+            ) from err
+
+        try:
+            return await self.wallet.insert_public_key(
+                verkey,
+                key_type,
+                metadata={"provider": provider, "key_ref": key_ref},
+                kid=kid,
+            )
+        except WalletError:
+            LOGGER.error(
+                "Provider '%s' created key_ref %s but storing it failed",
+                provider,
+                key_ref,
+            )
+            raise
 
     async def update(self, multikey: str, kid: str, unbind=False):
         """Bind or unbind a kid with a key pair."""
