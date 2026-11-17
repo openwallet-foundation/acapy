@@ -6,6 +6,7 @@ from ....protocols.out_of_band.v1_0.messages.invitation import InvitationMessage
 from ....protocols.out_of_band.v1_0.messages.service import Service
 from ....storage.base import BaseStorage
 from ....storage.error import StorageNotFoundError
+from ....tests import mock
 from ....utils.testing import create_test_profile
 from ....wallet.key_type import ED25519
 from ..conn_record import ConnRecord
@@ -312,6 +313,53 @@ class TestConnRecord(IsolatedAsyncioTestCase):
                 session=session, request_id="abc123"
             )
             assert result == record
+
+    async def test_retrieve_by_alias(self):
+        async with self.profile.session() as session:
+            record = ConnRecord(
+                my_did=self.test_did,
+                their_did=self.test_target_did,
+                their_role=ConnRecord.Role.RESPONDER.rfc23,
+                state=ConnRecord.State.COMPLETED.rfc23,
+                alias="test-alias",
+            )
+            await record.save(session)
+            result = await ConnRecord.retrieve_by_alias(
+                session=session, alias="test-alias"
+            )
+            assert result == [record]
+
+    async def test_retrieve_by_alias_uses_tag_filter_when_tagged(self):
+        async with self.profile.session() as session:
+            record = ConnRecord(alias="test-alias")
+            with mock.patch.object(
+                ConnRecord, "query", mock.CoroutineMock(return_value=[record])
+            ) as mock_query:
+                result = await ConnRecord.retrieve_by_alias(
+                    session=session, alias="test-alias"
+                )
+                mock_query.assert_called_once_with(
+                    session, tag_filter={"alias": "test-alias"}
+                )
+                assert result == [record]
+
+    async def test_retrieve_by_alias_falls_back_to_post_filter_when_untagged(self):
+        async with self.profile.session() as session:
+            record = ConnRecord(alias="test-alias")
+            with mock.patch.object(
+                ConnRecord,
+                "query",
+                mock.CoroutineMock(side_effect=[[], [record]]),
+            ) as mock_query:
+                result = await ConnRecord.retrieve_by_alias(
+                    session=session, alias="test-alias"
+                )
+                assert [c.kwargs for c in mock_query.call_args_list] == [
+                    {"tag_filter": {"alias": "test-alias"}},
+                    {"post_filter_positive": {"alias": "test-alias"}},
+                ]
+                assert all(c.args == (session,) for c in mock_query.call_args_list)
+                assert result == [record]
 
     async def test_completed_is_ready(self):
         async with self.profile.session() as session:

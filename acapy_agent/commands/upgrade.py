@@ -491,7 +491,6 @@ async def upgrade_per_profile(
                 raise UpgradeError(
                     f"Only BaseRecord can be resaved, found: {str(rec_type)}"
                 )
-            all_records = []
             if settings:
                 batch_size = settings.get("upgrade.page_size", BATCH_SIZE)
             else:
@@ -500,24 +499,29 @@ async def upgrade_per_profile(
             search_session = base_storage_search_inst.search_records(
                 type_filter=rec_type.RECORD_TYPE, page_size=batch_size
             )
+            resaved_count = 0
             while search_session._done is False:
                 storage_records = await search_session.fetch()
-                for storage_record in storage_records:
-                    _record = rec_type.from_storage(
-                        storage_record.id,
-                        json.loads(storage_record.value),
-                    )
-                    all_records.append(_record)
-            async with profile.session() as session:
-                for record in all_records:
-                    await record.save(
-                        session,
-                        reason="re-saving record during the upgrade process",
-                    )
-                if len(all_records) == 0:
-                    LOGGER.info(f"No records of {str(rec_type)} found")
-                else:
-                    LOGGER.info(f"All recs of {str(rec_type)} successfully re-saved")
+                if not storage_records:
+                    continue
+                # Save each fetched page before requesting the next one, so
+                # memory usage stays bounded by the page size instead of
+                # growing with the total number of records of this type.
+                async with profile.session() as session:
+                    for storage_record in storage_records:
+                        _record = rec_type.from_storage(
+                            storage_record.id,
+                            json.loads(storage_record.value),
+                        )
+                        await _record.save(
+                            session,
+                            reason="re-saving record during the upgrade process",
+                        )
+                        resaved_count += 1
+            if resaved_count == 0:
+                LOGGER.info(f"No records of {str(rec_type)} found")
+            else:
+                LOGGER.info(f"All recs of {str(rec_type)} successfully re-saved")
         for callable_name in executables_call_set:
             _callable = version_upgrade_config_inst.get_callable(callable_name)
             if not _callable:
