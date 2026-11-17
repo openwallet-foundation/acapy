@@ -3,12 +3,29 @@
 from abc import ABC, abstractmethod
 from typing import List, Optional, Sequence, Tuple, Union
 
+from ..core.profile import ProfileSession
 from ..ledger.base import BaseLedger
 from ..ledger.endpoint_type import EndpointType
 from .did_info import DIDInfo, KeyInfo
 from .did_method import SOV, DIDMethod
 from .error import WalletError
 from .key_type import KeyType
+from .signer_registry import SignerRegistry
+
+EXTERNAL_SIGNER_FIELDS = ("provider", "key_ref")
+
+
+def check_external_signer_fields(current: Optional[dict], new: Optional[dict]):
+    """Reject a metadata replacement that adds, drops, or changes provider/key_ref.
+
+    These fields route signing to an external signer and are fixed at key creation.
+    """
+    current, new = current or {}, new or {}
+    changed = [f for f in EXTERNAL_SIGNER_FIELDS if new.get(f) != current.get(f)]
+    if changed:
+        raise WalletError(
+            f"Key metadata fields {changed} are set at key creation and cannot change"
+        )
 
 
 class BaseWallet(ABC):
@@ -98,13 +115,45 @@ class BaseWallet(ABC):
 
         """
 
+    async def insert_public_key(
+        self,
+        verkey: str,
+        key_type: KeyType,
+        metadata: Optional[dict] = None,
+        kid: Optional[str] = None,
+    ) -> KeyInfo:
+        """Store a public-only key whose private key is held by an external signer.
+
+        Args:
+            verkey: The base58 verification key
+            key_type: Key type of the verification key
+            metadata: Optional metadata to store with the key
+            kid: Optional key identifier
+
+        Returns:
+            A `KeyInfo` representing the new record
+
+        Raises:
+            WalletDuplicateError: If the verkey already exists in the wallet
+            WalletError: If the wallet does not support public-only keys
+
+        """
+        raise WalletError(f"{type(self).__name__} does not support public-only keys")
+
     @abstractmethod
     async def replace_signing_key_metadata(self, verkey: str, metadata: dict):
         """Replace the metadata associated with a signing keypair.
 
+        The new metadata must keep `provider` and `key_ref` as stored; pass the
+        existing metadata back with your changes.
+
         Args:
             verkey: The verification key of the keypair
             metadata: The new metadata to store
+
+        Raises:
+            WalletError: If the new metadata adds, drops, or changes
+                `provider` or `key_ref`
 
         """
 
@@ -336,6 +385,9 @@ class BaseWallet(ABC):
     ) -> bytes:
         """Sign message(s) using the private key associated with a given verkey.
 
+        Implementations should try `_get_external_signature(message, from_verkey,
+        self.session)` first.
+
         Args:
             message: The message(s) to sign
             from_verkey: Sign using the private key related to this verkey
@@ -344,6 +396,57 @@ class BaseWallet(ABC):
             The signature
 
         """
+
+    async def _get_external_signature(
+        self,
+        message: Union[List[bytes], bytes],
+        from_verkey: str,
+        session: Optional[ProfileSession],
+    ) -> Optional[bytes]:
+        """Sign via a registered `Signer` when the key record names a provider.
+
+        Args:
+            message: The message(s) to sign
+            from_verkey: Sign using the key related to this verkey
+            session: The caller's profile session, used to reach the
+                `SignerRegistry`; pass `None` if the wallet has none
+
+        Returns:
+            The external signature, if any; `None` to sign in-wallet instead.
+
+        Raises:
+            WalletError: If the provider is unregistered or `key_ref` is missing.
+
+        """
+        try:
+            key_info = await self.get_signing_key(from_verkey)
+        except Exception:
+            # External signer discovery must not break in-wallet signing.
+            return None
+
+        metadata = key_info.metadata or {}
+        provider = metadata.get("provider")
+        if not provider:
+            return None
+
+        registry: Optional[SignerRegistry] = (
+            session.inject_or(SignerRegistry) if session else None
+        )
+        signer = registry.get(provider) if registry else None
+        if signer is None:
+            raise WalletError(
+                f"Key {from_verkey} requires provider {provider}; "
+                f"registered providers: {registry.names() if registry else []}"
+            )
+
+        key_ref = metadata.get("key_ref")
+        if not key_ref:
+            raise WalletError(
+                f"Key {from_verkey} requires provider {provider} "
+                "but metadata is missing key_ref"
+            )
+
+        return await signer.sign(key_ref, message, key_info.key_type)
 
     @abstractmethod
     async def verify_message(
