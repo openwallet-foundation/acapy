@@ -1057,8 +1057,8 @@ async def _create_free_offer(
     except ValueError as err:
         LOGGER.exception(f"Error creating credential offer: {err}")
         async with profile.session() as session:
-            await cred_ex_record.save_error_state(session, reason=err)
-        raise web.HTTPBadRequest(reason=err)
+            await cred_ex_record.save_error_state(session, reason=str(err))
+        raise web.HTTPBadRequest(reason=str(err))
 
     return (cred_ex_record, cred_offer_message)
 
