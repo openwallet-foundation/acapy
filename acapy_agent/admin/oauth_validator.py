@@ -139,18 +139,20 @@ class OAuthTokenValidator:
 
     async def _introspect(self, token: str) -> dict:
         """Validate an opaque token via RFC 7662 introspection."""
-        auth = None
+        headers = None
         if self.introspection_client_id:
-            auth = aiohttp.BasicAuth(
-                self.introspection_client_id,
-                self.introspection_client_secret or "",
-            )
+            headers = {
+                "Authorization": aiohttp.encode_basic_auth(
+                    self.introspection_client_id,
+                    self.introspection_client_secret or "",
+                )
+            }
 
         try:
             async with self._get_session().post(
                 self.introspection_endpoint,
                 data={"token": token, "token_type_hint": "access_token"},
-                auth=auth,
+                headers=headers,
             ) as resp:
                 if resp.status != 200:
                     raise web.HTTPUnauthorized(

@@ -187,7 +187,7 @@ class TestOutboundTransportManager(IsolatedAsyncioTestCase):
         mgr.outbound_buffer.append(mock_queued)
 
         with mock.patch.object(
-            test_module, "trace_event", mock.MagicMock()
+            test_module, "trace_event", mock.AsyncMock()
         ) as mock_trace:
             mock_trace.side_effect = KeyError()
             with self.assertRaises(KeyError):  # cover retry logic and bail
@@ -229,7 +229,7 @@ class TestOutboundTransportManager(IsolatedAsyncioTestCase):
             mock.patch.object(
                 mgr.outbound_event, "wait", mock.CoroutineMock()
             ) as mock_wait,
-            mock.patch.object(test_module, "trace_event", mock.MagicMock()),
+            mock.patch.object(test_module, "trace_event", mock.AsyncMock()),
         ):
             mock_wait.side_effect = KeyError()  # cover state=NEW logic and bail
 
@@ -252,7 +252,7 @@ class TestOutboundTransportManager(IsolatedAsyncioTestCase):
             mock.patch.object(
                 mgr.outbound_event, "wait", mock.CoroutineMock()
             ) as mock_wait,
-            mock.patch.object(test_module, "trace_event", mock.MagicMock()),
+            mock.patch.object(test_module, "trace_event", mock.AsyncMock()),
         ):
             mock_wait.side_effect = KeyError()  # cover state=DELIVER logic and bail
 

@@ -10,6 +10,7 @@ import hashlib
 from pyld import jsonld
 
 from ...vc.ld_proofs import DocumentLoader
+from ...vc.ld_proofs.pyld_util import run_sync
 from .error import (
     DroppedAttributeError,
     MissingVerificationMethodError,
@@ -17,8 +18,9 @@ from .error import (
 )
 
 
-def _canonize(data: dict, document_loader: DocumentLoader | None = None) -> dict:
-    return jsonld.normalize(
+async def _canonize(data: dict, document_loader: DocumentLoader | None = None) -> dict:
+    return await run_sync(
+        jsonld.normalize,
         data,
         {
             "algorithm": "URDNA2015",
@@ -32,20 +34,22 @@ def _sha256(data: str) -> str:
     return hashlib.sha256(data.encode("utf-8")).hexdigest()
 
 
-def _canonize_signature_options(
+async def _canonize_signature_options(
     signature_options: dict, document_loader: DocumentLoader | None = None
 ) -> dict:
     _signature_options = {**signature_options, "@context": "https://w3id.org/security/v2"}
     _signature_options.pop("jws", None)
     _signature_options.pop("signatureValue", None)
     _signature_options.pop("proofValue", None)
-    return _canonize(_signature_options, document_loader)
+    return await _canonize(_signature_options, document_loader)
 
 
-def _canonize_document(doc: dict, document_loader: DocumentLoader | None = None) -> dict:
+async def _canonize_document(
+    doc: dict, document_loader: DocumentLoader | None = None
+) -> dict:
     _doc = {**doc}
     _doc.pop("proof", None)
-    return _canonize(_doc, document_loader)
+    return await _canonize(_doc, document_loader)
 
 
 def _created_at() -> str:
@@ -54,7 +58,7 @@ def _created_at() -> str:
     return stamp.strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
-def create_verify_data(
+async def create_verify_data(
     data: dict, signature_options: dict, document_loader: DocumentLoader | None = None
 ) -> tuple[dict, str]:
     """Encapsulate process of constructing string used during sign and verify."""
@@ -69,13 +73,15 @@ def create_verify_data(
         )
 
     signature_options["created"] = signature_options.get("created", _created_at())
-    [expanded] = jsonld.expand(
+    [expanded] = await run_sync(
+        jsonld.expand,
         data,
         options={
             **{opt: document_loader for opt in ["documentLoader"] if document_loader}
         },
     )
-    framed = jsonld.compact(
+    framed = await run_sync(
+        jsonld.compact,
         expanded,
         "https://w3id.org/security/v2",
         options={
@@ -88,7 +94,8 @@ def create_verify_data(
     if len(data) > len(framed):
         # > check indicates dropped attrs < is a different error
         # attempt to collect error report data
-        for_diff = jsonld.compact(
+        for_diff = await run_sync(
+            jsonld.compact,
             expanded,
             data.get("@context"),
             options={
@@ -109,7 +116,8 @@ def create_verify_data(
         data_attribute = data.get(mapping[0], {})
         frame_attribute = framed.get(mapping[1], {})
         if len(data_attribute) > len(frame_attribute):
-            for_diff = jsonld.compact(
+            for_diff = await run_sync(
+                jsonld.compact,
                 expanded,
                 data_context,
                 options={
@@ -127,11 +135,11 @@ def create_verify_data(
                 "Provide definitions in context to correct."
             )
 
-    canonized_signature_options = _canonize_signature_options(
+    canonized_signature_options = await _canonize_signature_options(
         signature_options, document_loader
     )
     hash_of_canonized_signature_options = _sha256(canonized_signature_options)
-    canonized_document = _canonize_document(framed, document_loader)
+    canonized_document = await _canonize_document(framed, document_loader)
     hash_of_canonized_document = _sha256(canonized_document)
 
     return (framed, hash_of_canonized_signature_options + hash_of_canonized_document)

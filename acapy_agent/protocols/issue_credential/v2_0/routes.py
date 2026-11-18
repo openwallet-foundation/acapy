@@ -787,7 +787,7 @@ async def credential_exchange_create(request: web.BaseRequest):
             trace_msg,
         )
 
-        trace_event(
+        await trace_event(
             context.settings,
             cred_proposal,
             outcome="credential_exchange_create.START",
@@ -803,7 +803,7 @@ async def credential_exchange_create(request: web.BaseRequest):
     except (StorageError, BaseModelError) as err:
         raise web.HTTPBadRequest(reason=err.roll_up) from err
 
-    trace_event(
+    await trace_event(
         context.settings,
         cred_offer_message,
         outcome="credential_exchange_create.END",
@@ -878,7 +878,7 @@ async def credential_exchange_send(request: web.BaseRequest):
             trace_msg,
         )
 
-        trace_event(
+        await trace_event(
             context.settings,
             cred_proposal,
             outcome="credential_exchange_send.START",
@@ -923,7 +923,7 @@ async def credential_exchange_send(request: web.BaseRequest):
         connection_id=cred_ex_record.connection_id,
     )
 
-    trace_event(
+    await trace_event(
         context.settings,
         cred_offer_message,
         outcome="credential_exchange_send.END",
@@ -1004,7 +1004,7 @@ async def credential_exchange_send_proposal(request: web.BaseRequest):
 
     await outbound_handler(cred_proposal_message, connection_id=connection_id)
 
-    trace_event(
+    await trace_event(
         context.settings,
         cred_proposal_message,
         outcome="credential_exchange_send_proposal.END",
@@ -1127,7 +1127,7 @@ async def credential_exchange_create_free_offer(request: web.BaseRequest):
             async with profile.session() as session:
                 await cred_ex_record.save_error_state(session, reason=err.roll_up)
         raise web.HTTPBadRequest(reason=err.roll_up)
-    trace_event(
+    await trace_event(
         context.settings,
         cred_offer_message,
         outcome="credential_exchange_create_free_offer.END",
@@ -1218,7 +1218,7 @@ async def credential_exchange_send_free_offer(request: web.BaseRequest):
 
     await outbound_handler(cred_offer_message, connection_id=connection_id)
 
-    trace_event(
+    await trace_event(
         context.settings,
         cred_offer_message,
         outcome="credential_exchange_send_free_offer.END",
@@ -1328,7 +1328,7 @@ async def credential_exchange_send_bound_offer(request: web.BaseRequest):
 
     await outbound_handler(cred_offer_message, connection_id=connection_id)
 
-    trace_event(
+    await trace_event(
         context.settings,
         cred_offer_message,
         outcome="credential_exchange_send_bound_offer.END",
@@ -1434,7 +1434,7 @@ async def credential_exchange_send_free_request(request: web.BaseRequest):
 
     await outbound_handler(cred_request_message, connection_id=connection_id)
 
-    trace_event(
+    await trace_event(
         context.settings,
         cred_request_message,
         outcome="credential_exchange_send_free_request.END",
@@ -1562,7 +1562,7 @@ async def credential_exchange_send_bound_request(request: web.BaseRequest):
         cred_request_message, connection_id=cred_ex_record.connection_id
     )
 
-    trace_event(
+    await trace_event(
         context.settings,
         cred_request_message,
         outcome="credential_exchange_send_bound_request.END",
@@ -1656,7 +1656,7 @@ async def credential_exchange_issue(request: web.BaseRequest):
 
     await outbound_handler(cred_issue_message, connection_id=cred_ex_record.connection_id)
 
-    trace_event(
+    await trace_event(
         context.settings,
         cred_issue_message,
         outcome="credential_exchange_issue.END",
@@ -1761,7 +1761,7 @@ async def credential_exchange_store(request: web.BaseRequest):
         # protocol finished OK: do not send problem report nor set record state error
         raise web.HTTPBadRequest(reason=err.roll_up) from err
 
-    trace_event(
+    await trace_event(
         context.settings,
         cred_ack_message,
         outcome="credential_exchange_store.END",

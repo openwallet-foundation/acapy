@@ -2,6 +2,7 @@ import http
 import os
 from unittest import IsolatedAsyncioTestCase
 
+import aiohttp
 import pytest
 from anoncreds import (
     AnoncredsError,
@@ -14,7 +15,6 @@ from anoncreds import (
     Schema,
 )
 from aries_askar import AskarError, AskarErrorCode
-from requests import RequestException, Session
 
 from ....askar.profile_anon import AskarAnonCredsProfileSession
 from ....core.event_bus import Event, EventBus, MockEventBus
@@ -130,6 +130,40 @@ class MockRevListEntry:
             "timestamp": 1669640864487,
         }
     }
+
+
+class _MockResponse:
+    def __init__(self, status):
+        self.status = status
+        self.content = _MockContent()
+
+
+class _MockContent:
+    def iter_chunked(self, chunk_size):
+        async def _iter():
+            yield b"tails-hash"
+
+        return _iter()
+
+
+def _mock_aiohttp_session(get_side_effect=None, response_status=http.HTTPStatus.OK):
+    mock_response = _MockResponse(response_status)
+
+    mock_get = mock.AsyncMock()
+    mock_get.__aenter__ = mock.AsyncMock(return_value=mock_response)
+    mock_get.__aexit__ = mock.AsyncMock(return_value=False)
+
+    mock_session_instance = mock.AsyncMock()
+    mock_session_instance.get = mock.Mock(
+        side_effect=get_side_effect,
+        return_value=mock_get,
+    )
+    mock_session_instance.__aenter__ = mock.AsyncMock(return_value=mock_session_instance)
+    mock_session_instance.__aexit__ = mock.AsyncMock(return_value=False)
+
+    mock_session_class = mock.Mock(return_value=mock_session_instance)
+
+    return mock.patch.object(test_module.aiohttp, "ClientSession", mock_session_class)
 
 
 @pytest.mark.anoncreds
@@ -722,54 +756,44 @@ class TestAnonCredsRevocation(IsolatedAsyncioTestCase):
         with self.assertRaises(test_module.AnonCredsRevocationError):
             await self.revocation.get_revocation_lists_with_pending_revocations()
 
-    @mock.patch.object(Session, "get")
     @mock.patch.object(os, "remove")
-    async def test_retrieve_tails(self, mock_remove, mock_get):
-        class MockResponse:
-            def __init__(self, status=http.HTTPStatus.OK):
-                self.status_code = status
-
-            def iter_content(self, chunk_size: int = 1):
-                yield b"tails-hash"
-
-        mock_get.side_effect = [
-            MockResponse(),
-            MockResponse(),
-            RequestException(request=mock.AsyncMock(), response=mock.AsyncMock()),
-            MockResponse(status=http.HTTPStatus.BAD_REQUEST),
-        ]
-
-        result = await self.revocation.retrieve_tails(rev_reg_def)
+    async def test_retrieve_tails(self, mock_remove):
+        with _mock_aiohttp_session():
+            result = await self.revocation.retrieve_tails(rev_reg_def)
 
         assert isinstance(result, str)
-        assert mock_get.call_count == 1
 
         # tails hash does not match
-        with self.assertRaises(test_module.AnonCredsRevocationError):
-            await self.revocation.retrieve_tails(
-                RevRegDef(
-                    tag="tag",
-                    cred_def_id="CsQY9MGeD3CQP4EyuVFo5m:3:CL:14951:MYCO_Biomarker",
-                    value=RevRegDefValue(
-                        max_cred_num=100,
-                        public_keys={
-                            "accum_key": {"z": "1 0BB...386"},
-                        },
-                        tails_hash="not-correct-hash",
-                        tails_location="http://tails-server.com",
-                    ),
-                    issuer_id="CsQY9MGeD3CQP4EyuVFo5m",
-                    type="CL_ACCUM",
+        with _mock_aiohttp_session():
+            with self.assertRaises(test_module.AnonCredsRevocationError):
+                await self.revocation.retrieve_tails(
+                    RevRegDef(
+                        tag="tag",
+                        cred_def_id="CsQY9MGeD3CQP4EyuVFo5m:3:CL:14951:MYCO_Biomarker",
+                        value=RevRegDefValue(
+                            max_cred_num=100,
+                            public_keys={
+                                "accum_key": {"z": "1 0BB...386"},
+                            },
+                            tails_hash="not-correct-hash",
+                            tails_location="http://tails-server.com",
+                        ),
+                        issuer_id="CsQY9MGeD3CQP4EyuVFo5m",
+                        type="CL_ACCUM",
+                    )
                 )
-            )
         assert mock_remove.call_count == 1
 
         # http request fails
-        with self.assertRaises(test_module.AnonCredsRevocationError):
-            await self.revocation.retrieve_tails(rev_reg_def)
+        with _mock_aiohttp_session(
+            get_side_effect=aiohttp.ClientError("network error")
+        ):
+            with self.assertRaises(test_module.AnonCredsRevocationError):
+                await self.revocation.retrieve_tails(rev_reg_def)
 
         # doesn't crash on non 200 response
-        await self.revocation.retrieve_tails(rev_reg_def)
+        with _mock_aiohttp_session(response_status=http.HTTPStatus.BAD_REQUEST):
+            await self.revocation.retrieve_tails(rev_reg_def)
 
     def test_generate_public_tails_uri(self):
         self.revocation.generate_public_tails_uri(rev_reg_def)
