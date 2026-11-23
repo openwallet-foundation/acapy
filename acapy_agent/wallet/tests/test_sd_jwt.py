@@ -1,19 +1,26 @@
 import json
 from base64 import urlsafe_b64decode
+from hashlib import sha256
 from unittest import IsolatedAsyncioTestCase
+
+from aries_askar import Key, KeyAlg
 
 from ...resolver.did_resolver import DIDResolver
 from ...resolver.tests.test_did_resolver import MockResolver
 from ...utils.testing import create_test_profile
 from ...wallet.did_method import KEY, DIDMethods
-from ...wallet.key_type import ED25519, KeyTypes
+from ...wallet.key_type import ED25519, P256, KeyTypes
 from ..base import BaseWallet
 from ..default_verification_key_strategy import (
     BaseVerificationKeyStrategy,
     DefaultVerificationKeyStrategy,
 )
-from ..jwt import jwt_sign
-from ..sd_jwt import SDJWTVerifyResult, sd_jwt_sign, sd_jwt_verify
+from ..jwt import dict_to_b64, jwt_sign
+from ..sd_jwt import SDJWTVerifyResult, create_sd_list, sd_jwt_sign, sd_jwt_verify
+from ..util import b58_to_bytes, b64_to_bytes, bytes_to_b64
+
+KB_AUD = "https://example.com/verifier"
+KB_NONCE = "1234567890"
 
 
 class TestSDJWT(IsolatedAsyncioTestCase):
@@ -290,210 +297,310 @@ class TestSDJWT(IsolatedAsyncioTestCase):
         assert verified.payload["_sd_alg"]
         assert verified.disclosures[0][1] == "US"
 
-    async def test_sd_jwt_key_binding(self):
+    def test_adjacent_list_splices(self):
+        payload = {"a": ["x", "y"], "b": ["x", "y"]}
+        assert sorted(create_sd_list(payload, ["a[0:2]", "b[0:2]"])) == ["a", "b"]
+
+    async def _holder(self, key_type=ED25519):
+        """Create a holder key and return its verkey, key type and public JWK."""
+        async with self.profile.session() as session:
+            wallet = session.inject(BaseWallet)
+            key_info = await wallet.create_key(key_type)
+        jwk = json.loads(
+            Key.from_public_bytes(
+                KeyAlg.ED25519 if key_type == ED25519 else KeyAlg.P256,
+                b58_to_bytes(key_info.verkey),
+            ).get_jwk_public()
+        )
+        return key_info.verkey, key_type, jwk
+
+    async def _sign_kb(self, verkey, key_type, headers=None, payload=None):
+        """Sign a key binding JWT directly with a wallet key."""
+        headers = {"alg": key_type.jws_algorithm, "typ": "kb+jwt", **(headers or {})}
+        payload = payload or {"nonce": KB_NONCE, "aud": KB_AUD, "iat": 1688160483}
+        encoded = f"{dict_to_b64(headers)}.{dict_to_b64(payload)}"
+        async with self.profile.session() as session:
+            wallet = session.inject(BaseWallet)
+            sig = await wallet.sign_message(encoded.encode(), verkey)
+        return f"{encoded}.{bytes_to_b64(sig, urlsafe=True, pad=False)}"
+
+    async def _issue_bound(self, holder_jwk, cnf=None):
+        """Issue an SD-JWT bound to the given holder JWK."""
         async with self.profile.session() as session:
             wallet = session.inject(BaseWallet)
             did_info = await wallet.create_local_did(KEY, ED25519, self.seed)
-        verification_method = None
-
         payload = {
             "given_name": "John",
             "family_name": "Doe",
             "iss": "https://example.com/issuer",
             "iat": 1683000000,
             "exp": 1883000000,
-            "cnf": {
-                "jwk": {
-                    "kty": "EC",
-                    "crv": "P-256",
-                    "x": "TCAER19Zvu3OHF4j4W4vfSVoHIP1ILilDls7vCeGemc",
-                    "y": "ZxjiWWbZMQGHVWKVQ4hbSIirsVfuecCE6t4jT9F2HZQ",
-                }
-            },
+            "cnf": cnf if cnf is not None else {"jwk": holder_jwk},
         }
-        signed = await sd_jwt_sign(
-            self.profile,
-            self.headers,
-            payload,
-            did=did_info.did,
-            verification_method=verification_method,
-        )
-        assert signed
+        return await sd_jwt_sign(self.profile, self.headers, payload, did=did_info.did)
 
-        # Key binding
-        headers_kb = {"alg": "ES256", "typ": "kb+jwt"}
-        payload_kb = {
-            "nonce": "1234567890",
-            "aud": "https://example.com/verifier",
-            "iat": 1688160483,
-        }
-        signed_kb = await jwt_sign(
-            self.profile,
-            headers_kb,
-            payload_kb,
-            did_info.did,
-            verification_method,
-        )
-        assert signed_kb
+    async def test_sd_jwt_key_binding(self):
+        verkey, key_type, jwk = await self._holder()
+        signed = await self._issue_bound(jwk)
+        kb = await self._sign_kb(verkey, key_type)
 
         assert await sd_jwt_verify(
-            self.profile,
-            f"{signed}{signed_kb}",
-            expected_aud=payload_kb["aud"],
-            expected_nonce=payload_kb["nonce"],
+            self.profile, f"{signed}{kb}", expected_aud=KB_AUD, expected_nonce=KB_NONCE
         )
 
-    test_input = [
-        (
-            "Either both expected_aud and expected_nonce must be provided or both must be None",
-            {
-                "given_name": "John",
-                "family_name": "Doe",
-                "iss": "https://example.com/issuer",
-                "iat": 1683000000,
-                "exp": 1883000000,
-                "cnf": {
-                    "jwk": {
-                        "kty": "EC",
-                        "crv": "P-256",
-                        "x": "TCAER19Zvu3OHF4j4W4vfSVoHIP1ILilDls7vCeGemc",
-                        "y": "ZxjiWWbZMQGHVWKVQ4hbSIirsVfuecCE6t4jT9F2HZQ",
-                    }
-                },
-            },
-            {"alg": "ES256", "typ": "kb+jwt"},
-            "https://example.com/verifier",
-            None,
-        ),
-        (
-            "No holder public key in SD-JWT",
-            {
-                "given_name": "John",
-                "family_name": "Doe",
-                "iss": "https://example.com/issuer",
-                "iat": 1683000000,
-                "exp": 1883000000,
-            },
-            {"alg": "ES256", "typ": "kb+jwt"},
-            "https://example.com/verifier",
-            "1234567890",
-        ),
-        (
-            "The holder_public_key_payload is malformed. It doesn't contain the claim jwk: ",
-            {
-                "given_name": "John",
-                "family_name": "Doe",
-                "iss": "https://example.com/issuer",
-                "iat": 1683000000,
-                "exp": 1883000000,
-                "cnf": {"y": "ZxjiWWbZMQGHVWKVQ4hbSIirsVfuecCE6t4jT9F2HZQ"},
-            },
-            {"alg": "ES256", "typ": "kb+jwt"},
-            "https://example.com/verifier",
-            "1234567890",
-        ),
-        (
-            "Invalid header typ",
-            {
-                "given_name": "John",
-                "family_name": "Doe",
-                "iss": "https://example.com/issuer",
-                "iat": 1683000000,
-                "exp": 1883000000,
-                "cnf": {
-                    "jwk": {
-                        "kty": "EC",
-                        "crv": "P-256",
-                        "x": "TCAER19Zvu3OHF4j4W4vfSVoHIP1ILilDls7vCeGemc",
-                        "y": "ZxjiWWbZMQGHVWKVQ4hbSIirsVfuecCE6t4jT9F2HZQ",
-                    }
-                },
-            },
-            {"alg": "ES256", "typ": "JWT"},
-            "https://example.com/verifier",
-            "1234567890",
-        ),
-        (
-            "Invalid audience",
-            {
-                "given_name": "John",
-                "family_name": "Doe",
-                "iss": "https://example.com/issuer",
-                "iat": 1683000000,
-                "exp": 1883000000,
-                "cnf": {
-                    "jwk": {
-                        "kty": "EC",
-                        "crv": "P-256",
-                        "x": "TCAER19Zvu3OHF4j4W4vfSVoHIP1ILilDls7vCeGemc",
-                        "y": "ZxjiWWbZMQGHVWKVQ4hbSIirsVfuecCE6t4jT9F2HZQ",
-                    }
-                },
-            },
-            {"alg": "ES256", "typ": "kb+jwt"},
-            "invalid_aud",
-            "1234567890",
-        ),
-        (
-            "Invalid nonce",
-            {
-                "given_name": "John",
-                "family_name": "Doe",
-                "iss": "https://example.com/issuer",
-                "iat": 1683000000,
-                "exp": 1883000000,
-                "cnf": {
-                    "jwk": {
-                        "kty": "EC",
-                        "crv": "P-256",
-                        "x": "TCAER19Zvu3OHF4j4W4vfSVoHIP1ILilDls7vCeGemc",
-                        "y": "ZxjiWWbZMQGHVWKVQ4hbSIirsVfuecCE6t4jT9F2HZQ",
-                    }
-                },
-            },
-            {"alg": "ES256", "typ": "kb+jwt"},
-            "https://example.com/verifier",
-            "invalid_nonce",
-        ),
-    ]
+    async def test_sd_jwt_key_binding_with_kid(self):
+        async with self.profile.session() as session:
+            wallet = session.inject(BaseWallet)
+            did_info = await wallet.create_local_did(KEY, ED25519, self.seed)
+        jwk = json.loads(
+            Key.from_public_bytes(
+                KeyAlg.ED25519, b58_to_bytes(did_info.verkey)
+            ).get_jwk_public()
+        )
+        signed = await self._issue_bound(jwk)
+        kb = await jwt_sign(
+            self.profile,
+            {"alg": "EdDSA", "typ": "kb+jwt"},
+            {"nonce": KB_NONCE, "aud": KB_AUD, "iat": 1688160483},
+            did_info.did,
+        )
 
-    async def test_sd_jwt_key_binding_errors(self):
-        for error, payload, headers_kb, expected_aud, expected_nonce in self.test_input:
-            async with self.profile.session() as session:
-                wallet = session.inject(BaseWallet)
-                did_info = await wallet.create_local_did(KEY, ED25519, self.seed)
-            verification_method = None
+        assert await sd_jwt_verify(
+            self.profile, f"{signed}{kb}", expected_aud=KB_AUD, expected_nonce=KB_NONCE
+        )
 
-            signed = await sd_jwt_sign(
-                self.profile,
-                self.headers,
-                payload,
-                did=did_info.did,
-                verification_method=verification_method,
-            )
-            assert signed
+    async def test_sd_jwt_key_binding_p256(self):
+        verkey, key_type, jwk = await self._holder(P256)
+        signed = await self._issue_bound(jwk)
+        kb = await self._sign_kb(verkey, key_type)
 
-            # Key binding
-            payload_kb = {
-                "nonce": "1234567890",
-                "aud": "https://example.com/verifier",
-                "iat": 1688160483,
-            }
-            signed_kb = await jwt_sign(
-                self.profile,
-                headers_kb,
-                payload_kb,
-                did_info.did,
-                verification_method,
-            )
-            assert signed_kb
+        assert await sd_jwt_verify(
+            self.profile, f"{signed}{kb}", expected_aud=KB_AUD, expected_nonce=KB_NONCE
+        )
 
-        with self.assertRaises(
-            ValueError,
-        ):
+    async def test_sd_jwt_key_binding_x_other_key(self):
+        _, _, holder_jwk = await self._holder()
+        other_verkey, other_type, _ = await self._holder()
+        signed = await self._issue_bound(holder_jwk)
+        kb = await self._sign_kb(other_verkey, other_type)
+
+        with self.assertRaisesRegex(ValueError, "not signed by the holder key"):
             await sd_jwt_verify(
                 self.profile,
-                f"{signed}{signed_kb}",
-                expected_aud=expected_aud,
-                expected_nonce=expected_nonce,
+                f"{signed}{kb}",
+                expected_aud=KB_AUD,
+                expected_nonce=KB_NONCE,
             )
+
+    async def test_sd_jwt_key_binding_x_other_key_with_kid(self):
+        _, _, holder_jwk = await self._holder()
+        async with self.profile.session() as session:
+            wallet = session.inject(BaseWallet)
+            other = await wallet.create_local_did(KEY, ED25519, self.seed)
+        signed = await self._issue_bound(holder_jwk)
+        kb = await jwt_sign(
+            self.profile,
+            {"alg": "EdDSA", "typ": "kb+jwt"},
+            {"nonce": KB_NONCE, "aud": KB_AUD, "iat": 1688160483},
+            other.did,
+        )
+
+        with self.assertRaisesRegex(ValueError, "not signed by the holder key"):
+            await sd_jwt_verify(
+                self.profile,
+                f"{signed}{kb}",
+                expected_aud=KB_AUD,
+                expected_nonce=KB_NONCE,
+            )
+
+    async def test_sd_jwt_key_binding_x_bad_signature(self):
+        verkey, key_type, jwk = await self._holder()
+        signed = await self._issue_bound(jwk)
+        kb = await self._sign_kb(verkey, key_type)
+        header, payload, sig = kb.split(".")
+        raw = bytearray(b64_to_bytes(sig, urlsafe=True))
+        raw[0] ^= 0x01
+        kb = f"{header}.{payload}.{bytes_to_b64(bytes(raw), urlsafe=True, pad=False)}"
+
+        with self.assertRaisesRegex(ValueError, "not signed by the holder key"):
+            await sd_jwt_verify(
+                self.profile,
+                f"{signed}{kb}",
+                expected_aud=KB_AUD,
+                expected_nonce=KB_NONCE,
+            )
+
+    async def test_sd_jwt_key_binding_x_alg_mismatch(self):
+        verkey, key_type, jwk = await self._holder()
+        signed = await self._issue_bound(jwk)
+        kb = await self._sign_kb(verkey, key_type, headers={"alg": "ES256"})
+
+        with self.assertRaisesRegex(ValueError, "alg does not match"):
+            await sd_jwt_verify(
+                self.profile,
+                f"{signed}{kb}",
+                expected_aud=KB_AUD,
+                expected_nonce=KB_NONCE,
+            )
+
+    async def test_sd_jwt_key_binding_x_unsupported_holder_key(self):
+        verkey, key_type, jwk = await self._holder()
+        signed = await self._issue_bound(jwk, cnf={"jwk": {**jwk, "crv": "X25519"}})
+        kb = await self._sign_kb(verkey, key_type)
+
+        with self.assertRaisesRegex(ValueError, "Unsupported holder key"):
+            await sd_jwt_verify(
+                self.profile,
+                f"{signed}{kb}",
+                expected_aud=KB_AUD,
+                expected_nonce=KB_NONCE,
+            )
+
+    async def test_sd_jwt_key_binding_x_missing_kb_jwt(self):
+        _, _, jwk = await self._holder()
+        signed = await self._issue_bound(jwk)
+
+        with self.assertRaisesRegex(ValueError, "Malformed key binding JWT"):
+            await sd_jwt_verify(
+                self.profile, signed, expected_aud=KB_AUD, expected_nonce=KB_NONCE
+            )
+
+    async def test_sd_jwt_key_binding_errors(self):
+        verkey, key_type, jwk = await self._holder()
+        cases = [
+            (
+                "Either both expected_aud and expected_nonce",
+                {"jwk": jwk},
+                {},
+                KB_AUD,
+                None,
+            ),
+            ("No holder public key in SD-JWT", {}, {}, KB_AUD, KB_NONCE),
+            (
+                "doesn't contain the claim jwk",
+                {"y": jwk["x"]},
+                {},
+                KB_AUD,
+                KB_NONCE,
+            ),
+            ("Invalid header typ", {"jwk": jwk}, {"typ": "JWT"}, KB_AUD, KB_NONCE),
+            ("Invalid audience", {"jwk": jwk}, {}, "invalid_aud", KB_NONCE),
+            ("Invalid nonce", {"jwk": jwk}, {}, KB_AUD, "invalid_nonce"),
+        ]
+        for error, cnf, headers_kb, expected_aud, expected_nonce in cases:
+            with self.subTest(error=error):
+                signed = await self._issue_bound(jwk, cnf=cnf or None)
+                if not cnf:
+                    # Issue without any cnf claim
+                    async with self.profile.session() as session:
+                        wallet = session.inject(BaseWallet)
+                        did_info = await wallet.create_local_did(KEY, ED25519, self.seed)
+                    signed = await sd_jwt_sign(
+                        self.profile,
+                        self.headers,
+                        {"given_name": "John", "iss": "https://example.com/issuer"},
+                        did=did_info.did,
+                    )
+                kb = await self._sign_kb(verkey, key_type, headers=headers_kb)
+
+                with self.assertRaisesRegex(ValueError, error):
+                    await sd_jwt_verify(
+                        self.profile,
+                        f"{signed}{kb}",
+                        expected_aud=expected_aud,
+                        expected_nonce=expected_nonce,
+                    )
+
+    @staticmethod
+    def _disclosure(*values):
+        """Encode a disclosure and return it with its digest."""
+        encoded = bytes_to_b64(json.dumps(list(values)).encode(), urlsafe=True, pad=False)
+        digest = bytes_to_b64(
+            sha256(encoded.encode("ascii")).digest(), urlsafe=True, pad=False
+        )
+        return encoded, digest
+
+    @staticmethod
+    def _decoded(disclosure):
+        return json.loads(b64_to_bytes(disclosure, urlsafe=True))
+
+    async def _sign_nested(self):
+        async with self.profile.session() as session:
+            wallet = session.inject(BaseWallet)
+            did_info = await wallet.create_local_did(KEY, ED25519, self.seed)
+        payload = {
+            "given_name": "John",
+            "address": {"street_address": "123 Main St", "country": "US"},
+            "nationalities": ["US", "CA"],
+            "iss": "https://example.com/issuer",
+            "iat": 1683000000,
+            "exp": 1883000000,
+        }
+        signed = await sd_jwt_sign(
+            self.profile, self.headers, payload, ["given_name"], did=did_info.did
+        )
+        jwt_part, *disclosures, _ = signed.split("~")
+        return did_info, jwt_part, disclosures
+
+    async def test_verify_nested_disclosures(self):
+        _, jwt_part, disclosures = await self._sign_nested()
+
+        verified = await sd_jwt_verify(
+            self.profile, "~".join([jwt_part, *disclosures, ""])
+        )
+        assert verified.valid
+        assert len(verified.disclosures) == len(disclosures)
+
+    async def test_verify_x_injected_disclosure(self):
+        _, jwt_part, disclosures = await self._sign_nested()
+        injected, _ = self._disclosure("c2FsdA", "role", "admin")
+
+        with self.assertRaisesRegex(ValueError, "not referenced"):
+            await sd_jwt_verify(
+                self.profile, "~".join([jwt_part, *disclosures, injected, ""])
+            )
+
+    async def test_verify_x_injected_array_disclosure(self):
+        _, jwt_part, disclosures = await self._sign_nested()
+        injected, _ = self._disclosure("c2FsdA", "FR")
+
+        with self.assertRaisesRegex(ValueError, "not referenced"):
+            await sd_jwt_verify(
+                self.profile, "~".join([jwt_part, *disclosures, injected, ""])
+            )
+
+    async def test_verify_x_nested_disclosure_without_parent(self):
+        _, jwt_part, disclosures = await self._sign_nested()
+        presented = [d for d in disclosures if self._decoded(d)[1:2] != ["address"]]
+        assert len(presented) == len(disclosures) - 1
+
+        with self.assertRaisesRegex(ValueError, "not referenced"):
+            await sd_jwt_verify(self.profile, "~".join([jwt_part, *presented, ""]))
+
+    async def test_verify_x_disclosure_digests(self):
+        async with self.profile.session() as session:
+            wallet = session.inject(BaseWallet)
+            did_info = await wallet.create_local_did(KEY, ED25519, self.seed)
+        claim, claim_digest = self._disclosure("c2FsdA", "role", "user")
+        element, element_digest = self._disclosure("c2FsdA", "US")
+        base = {"iss": "https://example.com/issuer", "_sd_alg": "sha-256"}
+        cases = [
+            (
+                "Duplicate digest",
+                {**base, "_sd": [claim_digest], "a": {"_sd": [claim_digest]}},
+                [claim],
+            ),
+            ("Unsupported _sd_alg", {**base, "_sd_alg": "sha-512"}, []),
+            ("Invalid _sd", {**base, "_sd": claim_digest}, [claim]),
+            ("Malformed disclosure", {**base, "_sd": [element_digest]}, [element]),
+            ("Malformed disclosure", {**base, "a": [{"...": claim_digest}]}, [claim]),
+        ]
+        for error, payload, presented in cases:
+            with self.subTest(error=error):
+                jwt_part = await jwt_sign(
+                    self.profile, {"typ": "JWT"}, payload, did_info.did
+                )
+                with self.assertRaisesRegex(ValueError, error):
+                    await sd_jwt_verify(
+                        self.profile, "~".join([jwt_part, *presented, ""])
+                    )
