@@ -59,9 +59,7 @@ class StaticCacheJsonLdDownloader:
         document_parser: Optional["JsonLdDocumentParser"] = None,
     ):
         """Load static document on initialization."""
-        self.documents_downloader = (
-            document_downloader or AsyncJsonLdDocumentDownloader()
-        )
+        self.documents_downloader = document_downloader or AsyncJsonLdDocumentDownloader()
         self.document_parser = document_parser or JsonLdDocumentParser()
 
         self.cache = {

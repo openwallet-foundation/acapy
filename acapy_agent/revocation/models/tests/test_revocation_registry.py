@@ -31,7 +31,9 @@ class _MockContent:
         return _iter()
 
 
-def _mock_aiohttp_session(chunks=None, response_status=HTTPStatus.OK, get_side_effect=None):
+def _mock_aiohttp_session(
+    chunks=None, response_status=HTTPStatus.OK, get_side_effect=None
+):
     chunks = chunks or [b"abcd1234", b""]
 
     mock_response = _MockResponse(response_status, chunks)
@@ -51,6 +53,7 @@ def _mock_aiohttp_session(chunks=None, response_status=HTTPStatus.OK, get_side_e
     mock_session_class = mock.Mock(return_value=mock_session_instance)
 
     return mock.patch.object(test_module.aiohttp, "ClientSession", mock_session_class)
+
 
 TEST_DID = "FkjWznKwA4N1JEp2iPiKPG"
 CRED_DEF_ID = f"{TEST_DID}:3:CL:12:tag1"
@@ -139,9 +142,7 @@ class TestRevocationRegistry(IsolatedAsyncioTestCase):
         rr_def_public["value"]["tailsLocation"] = "http://sample.ca:8088/path"
         rev_reg = RevocationRegistry.from_definition(rr_def_public, public_def=True)
 
-        with _mock_aiohttp_session(
-            get_side_effect=aiohttp.ClientError("Not this time")
-        ):
+        with _mock_aiohttp_session(get_side_effect=aiohttp.ClientError("Not this time")):
             with self.assertRaises(RevocationError) as x_retrieve:
                 await rev_reg.retrieve_tails()
                 assert x_retrieve.message.contains("Error retrieving tails file")

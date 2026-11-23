@@ -785,9 +785,7 @@ class TestAnonCredsRevocation(IsolatedAsyncioTestCase):
         assert mock_remove.call_count == 1
 
         # http request fails
-        with _mock_aiohttp_session(
-            get_side_effect=aiohttp.ClientError("network error")
-        ):
+        with _mock_aiohttp_session(get_side_effect=aiohttp.ClientError("network error")):
             with self.assertRaises(test_module.AnonCredsRevocationError):
                 await self.revocation.retrieve_tails(rev_reg_def)
 

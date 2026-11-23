@@ -796,9 +796,7 @@ class TestArgParse(TestCase):
         with mock.patch.object(
             argparse,
             "urlopen",
-            return_value=_mock_urlopen_response(
-                b"admin:\n  - 0.0.0.0\n  - 8000\n"
-            ),
+            return_value=_mock_urlopen_response(b"admin:\n  - 0.0.0.0\n  - 8000\n"),
         ):
             temp_file = argparse.fetch_remote_config("https://example.com/config.yml")
             assert temp_file
@@ -842,9 +840,7 @@ class TestArgParse(TestCase):
         with mock.patch.object(
             argparse,
             "urlopen",
-            return_value=_mock_urlopen_response(
-                b"admin:\n  - 0.0.0.0\n  - 8000\n"
-            ),
+            return_value=_mock_urlopen_response(b"admin:\n  - 0.0.0.0\n  - 8000\n"),
         ):
             with mock.patch("tempfile.mkstemp", side_effect=OSError("Disk full")):
                 with self.assertRaises(argparse.ArgsParseError) as context:
@@ -856,9 +852,7 @@ class TestArgParse(TestCase):
         with mock.patch.object(
             argparse,
             "urlopen",
-            return_value=_mock_urlopen_response(
-                b"admin:\n  - 0.0.0.0\n  - 8000\n"
-            ),
+            return_value=_mock_urlopen_response(b"admin:\n  - 0.0.0.0\n  - 8000\n"),
         ):
             argv = [
                 "start",
@@ -880,9 +874,7 @@ class TestArgParse(TestCase):
         with mock.patch.object(
             argparse,
             "urlopen",
-            return_value=_mock_urlopen_response(
-                b"admin:\n  - 0.0.0.0\n  - 8000\n"
-            ),
+            return_value=_mock_urlopen_response(b"admin:\n  - 0.0.0.0\n  - 8000\n"),
         ):
             argv = ["start", "--arg-file=https://example.com/config.yml"]
             result = argparse.preprocess_args_for_remote_config(argv)

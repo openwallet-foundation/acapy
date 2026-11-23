@@ -92,9 +92,7 @@ class TestDocumentLoader:
         loader = DocumentLoader(profile)
         assert loader._timeout == DEFAULT_DOCUMENT_LOADER_TIMEOUT
 
-    async def test_call_passes_timeout_to_run_coroutine_threadsafe_result(
-        self, profile
-    ):
+    async def test_call_passes_timeout_to_run_coroutine_threadsafe_result(self, profile):
         profile.settings["document_loader.timeout"] = 0.01
         loader = DocumentLoader(profile)
         loader._event_loop = MagicMock()
@@ -112,5 +110,3 @@ class TestDocumentLoader:
                 loader("did:key:z6MkqRY", {})
 
         mock_future.result.assert_called_once_with(timeout=0.01)
-
-

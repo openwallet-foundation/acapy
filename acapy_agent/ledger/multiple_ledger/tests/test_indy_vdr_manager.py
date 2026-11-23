@@ -547,7 +547,9 @@ class TestMultiIndyVDRLedgerManager(IsolatedAsyncioTestCase):
         async def _hang(*args, **kwargs):
             await asyncio.sleep(1)
 
-        with mock.patch.object(manager, "_get_ledger_by_did", mock.CoroutineMock(side_effect=_hang)):
+        with mock.patch.object(
+            manager, "_get_ledger_by_did", mock.CoroutineMock(side_effect=_hang)
+        ):
             with self.assertRaises(MultipleLedgerManagerError):
                 await manager.lookup_did_in_configured_ledgers(
                     "Av63wJYM7xYR4AiygYq4c3", cache_did=False
