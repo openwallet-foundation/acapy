@@ -6,10 +6,11 @@ import json
 import logging
 import os
 import tempfile
+from concurrent.futures import ThreadPoolExecutor
 from functools import reduce
 from itertools import chain
 from os import environ
-from typing import Optional, Type
+from typing import Any, Coroutine, Optional, Type
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlparse
 from urllib.request import Request, urlopen
@@ -32,6 +33,21 @@ CAT_UPGRADE = "upgrade"
 ENDORSER_AUTHOR = "author"
 ENDORSER_ENDORSER = "endorser"
 ENDORSER_NONE = "none"
+
+
+def _run_coroutine_blocking(coro: Coroutine[Any, Any, Any]) -> Any:
+    """Run a coroutine to completion from synchronous code.
+
+    Argument parsing is synchronous but can be invoked while an event loop is
+    already running (as `aca-py start` does), where `asyncio.run()` is not
+    allowed. In that case the coroutine runs on its own loop in a worker thread.
+    """
+    try:
+        asyncio.get_running_loop()
+    except RuntimeError:
+        return asyncio.run(coro)
+    with ThreadPoolExecutor(max_workers=1) as executor:
+        return executor.submit(asyncio.run, coro).result()
 
 
 def fetch_remote_config(url: str, timeout: int = 30) -> str:
@@ -1569,7 +1585,7 @@ class ProtocolGroup(ArgumentGroup):
             # make sure we can trace to the configured target
             # (target can be set even if tracing is off)
             try:
-                asyncio.run(
+                _run_coroutine_blocking(
                     trace_event(
                         settings,
                         None,

@@ -1,3 +1,4 @@
+import asyncio
 import os
 from unittest import TestCase, mock
 from urllib.error import URLError
@@ -790,6 +791,50 @@ class TestArgParse(TestCase):
         result = parser.parse_args(["-e", "test", "--universal-resolver-regex", "regex"])
         with self.assertRaises(argparse.ArgsParseError):
             group.get_settings(result)
+
+    def _protocol_settings(self, *argv: str) -> dict:
+        parser = argparse.create_argument_parser()
+        argparse.TransportGroup().add_arguments(parser)
+        group = argparse.ProtocolGroup()
+        group.add_arguments(parser)
+        return group.get_settings(
+            parser.parse_args(
+                ["--inbound-transport", "http", "0.0.0.0", "80"]
+                + ["--outbound-transport", "http", *argv]
+            )
+        )
+
+    def test_protocol_settings_trace_check(self):
+        """Test the trace target check outside and inside a running event loop."""
+
+        async def in_running_loop():
+            return self._protocol_settings("--trace-tag", "tag")
+
+        for get_settings in (
+            lambda: self._protocol_settings("--trace-tag", "tag"),
+            lambda: asyncio.run(in_running_loop()),
+        ):
+            with mock.patch.object(
+                argparse, "trace_event", mock.AsyncMock()
+            ) as mock_trace_event:
+                settings = get_settings()
+
+            mock_trace_event.assert_awaited_once()
+            assert settings["trace.target"] == "log"
+            assert settings["trace.tag"] == "tag"
+
+    def test_protocol_settings_trace_check_error_in_running_loop(self):
+        """Test a failing trace target is reported from a running event loop."""
+
+        async def in_running_loop():
+            return self._protocol_settings("--trace-target", "http://example.com/")
+
+        with mock.patch.object(
+            argparse, "trace_event", mock.AsyncMock(side_effect=OSError("unreachable"))
+        ):
+            with self.assertRaises(argparse.ArgsParseError) as context:
+                asyncio.run(in_running_loop())
+        assert "Error writing trace event unreachable" in str(context.exception)
 
     def test_fetch_remote_config_success(self):
         """Test successful remote config fetching."""
