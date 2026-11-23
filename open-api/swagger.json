@@ -6647,6 +6647,11 @@
           "example" : "did:web:example.com#key-01",
           "description" : "Optional kid to bind to the keypair, such as a verificationMethod."
         },
+        "provider" : {
+          "type" : "string",
+          "example" : "luna-prod",
+          "description" : "Optional name of a registered external signer provider that creates and holds the private key. Cannot be combined with seed."
+        },
         "seed" : {
           "type" : "string",
           "example" : "00000000000000000000000000000000",
