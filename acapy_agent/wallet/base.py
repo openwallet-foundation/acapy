@@ -399,7 +399,7 @@ class BaseWallet(ABC):
 
     async def _get_external_signature(
         self,
-        message: Union[List[bytes], bytes],
+        message: List[bytes] | bytes,
         from_verkey: str,
         session: Optional[ProfileSession],
     ) -> Optional[bytes]:

@@ -5,7 +5,7 @@ that provider record it in their key metadata, and
 `BaseWallet._get_external_signature` dispatches signing to it.
 """
 
-from typing import Dict, List, Optional, Protocol, Union, runtime_checkable
+from typing import Dict, List, Optional, Protocol, runtime_checkable
 
 from .key_type import KeyType
 
@@ -15,7 +15,7 @@ class Signer(Protocol):
     """Signer protocol implemented by external-signer plugins."""
 
     async def sign(
-        self, key_ref: str, message: Union[List[bytes], bytes], key_type: KeyType
+        self, key_ref: str, message: List[bytes] | bytes, key_type: KeyType
     ) -> bytes:
         """Sign `message` with the key identified by `key_ref`.
 

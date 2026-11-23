@@ -181,8 +181,9 @@ async def test_raises_when_key_ref_missing():
 
 @pytest.mark.asyncio
 async def test_insert_public_key_unsupported_by_default():
+    wallet = _StubWallet()
     with pytest.raises(WalletError, match="does not support public-only keys"):
-        await _StubWallet().insert_public_key("verkey", P256)
+        await wallet.insert_public_key("verkey", P256)
 
 
 # --- Real wallet delegation ---
@@ -272,8 +273,10 @@ async def test_askar_insert_public_key_is_findable_by_multikey_and_kid():
 async def test_askar_insert_public_key_rejects_invalid_verkey():
     profile = await _askar_profile()
     async with profile.session() as session:
+        wallet = AskarWallet(session)
+        verkey = bytes_to_b58(b"bad")
         with pytest.raises(WalletError, match="Invalid p256 verkey"):
-            await AskarWallet(session).insert_public_key(bytes_to_b58(b"bad"), P256)
+            await wallet.insert_public_key(verkey, P256)
 
 
 @pytest.mark.asyncio

@@ -161,7 +161,7 @@ class KanonWallet(BaseWallet):
                 tags={"kid": kid} if kid else None,
             )
         except AskarError as err:
-            LOGGER.error("AskarError in insert_public_key: %s", err)
+            LOGGER.exception("AskarError in insert_public_key: %s", err)
             if err.code == AskarErrorCode.DUPLICATE:
                 raise WalletDuplicateError(
                     "Verification key already present in wallet"
