@@ -30,6 +30,7 @@ from ..crypto import _KeyPair as KeyPair
 from ..document_loader import DocumentLoaderMethod
 from ..error import LinkedDataProofException
 from ..purposes import _ProofPurpose as ProofPurpose
+from ..pyld_util import run_sync
 from ..validation_result import ProofResult
 from .bbs_bls_signature_2020 import BbsBlsSignature2020
 from .linked_data_proof import DeriveProofResult
@@ -94,10 +95,10 @@ class BbsBlsSignatureProof2020(BbsBlsSignature2020Base):
         derived_proof["type"] = self.signature_type
 
         # Get the input document and proof statements
-        document_statements = suite._create_verify_document_data(
+        document_statements = await suite._create_verify_document_data(
             document=document, document_loader=document_loader
         )
-        proof_statements = suite._create_verify_proof_data(
+        proof_statements = await suite._create_verify_proof_data(
             proof=proof, document=document, document_loader=document_loader
         )
 
@@ -109,19 +110,21 @@ class BbsBlsSignatureProof2020(BbsBlsSignature2020Base):
         )
 
         # Transform the resulting RDF statements back into JSON-LD
-        compact_input_proof_document = jsonld.from_rdf(
-            "\n".join(transformed_input_document_statements)
+        compact_input_proof_document = await run_sync(
+            jsonld.from_rdf,
+            "\n".join(transformed_input_document_statements),
         )
 
         # Frame the result to create the reveal document result
-        reveal_document_result = jsonld.frame(
+        reveal_document_result = await run_sync(
+            jsonld.frame,
             compact_input_proof_document,
             reveal_document,
             {"documentLoader": document_loader},
         )
 
         # Canonicalize the resulting reveal document
-        reveal_document_statements = suite._create_verify_document_data(
+        reveal_document_statements = await suite._create_verify_document_data(
             document=reveal_document_result, document_loader=document_loader
         )
 
@@ -163,7 +166,7 @@ class BbsBlsSignatureProof2020(BbsBlsSignature2020Base):
         all_input_statements = [*proof_statements, *document_statements]
 
         # Fetch the verification method
-        verification_method = self._get_verification_method(
+        verification_method = await self._get_verification_method(
             proof=proof, document_loader=document_loader
         )
 
@@ -228,10 +231,10 @@ class BbsBlsSignatureProof2020(BbsBlsSignature2020Base):
             proof["type"] = self.mapped_derived_proof_type
 
             # Get the proof and document statements
-            proof_statements = self._create_verify_proof_data(
+            proof_statements = await self._create_verify_proof_data(
                 proof=proof, document=document, document_loader=document_loader
             )
-            document_statements = self._create_verify_document_data(
+            document_statements = await self._create_verify_document_data(
                 document=document, document_loader=document_loader
             )
 
@@ -250,7 +253,7 @@ class BbsBlsSignatureProof2020(BbsBlsSignature2020Base):
             statements_to_verify = [*proof_statements, *transformed_document_statements]
 
             # Fetch the verification method
-            verification_method = self._get_verification_method(
+            verification_method = await self._get_verification_method(
                 proof=proof, document_loader=document_loader
             )
 
@@ -279,7 +282,7 @@ class BbsBlsSignatureProof2020(BbsBlsSignature2020Base):
                     f"Invalid signature on document {document}"
                 )
 
-            purpose_result = purpose.validate(
+            purpose_result = await purpose.validate(
                 proof=proof,
                 document=document,
                 suite=self,
@@ -298,7 +301,7 @@ class BbsBlsSignatureProof2020(BbsBlsSignature2020Base):
         except Exception as err:
             return ProofResult(verified=False, error=err)
 
-    def _canonize_proof(
+    async def _canonize_proof(
         self, *, proof: dict, document: dict, document_loader: DocumentLoaderMethod
     ):
         """Canonize proof dictionary. Removes proofValue."""
@@ -307,7 +310,7 @@ class BbsBlsSignatureProof2020(BbsBlsSignature2020Base):
         proof.pop("proofValue", None)
         proof.pop("nonce", None)
 
-        return self._canonize(input=proof, document_loader=document_loader)
+        return await self._canonize(input=proof, document_loader=document_loader)
 
     def _transform_blank_node_ids_into_placeholder_node_ids(
         self,

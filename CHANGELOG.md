@@ -1,5 +1,14 @@
 # ACA-Py Changelog
 
+## 1.8.0
+
+### UNRELEASED
+
+PyLD is no longer limited to a single worker thread. Across the code base, HTTP
+requests are now performed asynchronously, except for the simple one-off CLI
+procedure to fetch a remote configuration.
+`requests` was removed as dependency.
+
 ## 1.7.0
 
 ### September 10, 2026
@@ -151,7 +160,7 @@ AIP 1.0 protocols that were [previously announced as deprecated](#140-deprecatio
 
 ### February 27, 2026
 
-ACA-Py 1.5.1 is a clean up release primarily to address some follow-on issues related to the [1.5.0] release -- notably with the handling of AnonCreds revocation. There are some  convenience additions and a GitHub Actions pipeline fix.
+ACA-Py 1.5.1 is a clean up release primarily to address some follow-on issues related to the [1.5.0] release -- notably with the handling of AnonCreds revocation. There are some convenience additions and a GitHub Actions pipeline fix.
 
 [1.5.0]: https://github.com/openwallet-foundation/acapy/releases/tag/1.5.0
 
@@ -233,12 +242,12 @@ AIP 1.0 protocols that were [previously announced as deprecated](#140-deprecatio
   - Feature: Add plugin installer [#3955](https://github.com/openwallet-foundation/acapy/pull/3955) [PatStLouis](https://github.com/PatStLouis)
   - Upgrade python to 3.13 [#3911](https://github.com/openwallet-foundation/acapy/pull/3911) [jamshale](https://github.com/jamshale)
 - **Protocol Changes and Credential Exchange**
-  - Issue #3845 fix :  auto-store failure going to done state [\#3999](https://github.com/openwallet-foundation/acapy/pull/3999) [sonivijayk](https://github.com/sonivijayk)
+  - Issue #3845 fix : auto-store failure going to done state [\#3999](https://github.com/openwallet-foundation/acapy/pull/3999) [sonivijayk](https://github.com/sonivijayk)
   - Remove present proof v1 [#3981](https://github.com/openwallet-foundation/acapy/pull/3981) [jamshale](https://github.com/jamshale)
   - feat: Add option to remove credex on failure [#3947](https://github.com/openwallet-foundation/acapy/pull/3947) [TheTechmage](https://github.com/TheTechmage)
   - feat: Remove issuance v1 protocols [#3923](https://github.com/openwallet-foundation/acapy/pull/3923) [jamshale](https://github.com/jamshale)
 - **AnonCreds, Revocation, and Wallet Migration**
-  - Synchronously store the revocation registry  [\#4028](https://github.com/openwallet-foundation/acapy/pull/4028) [PatStLouis](https://github.com/PatStLouis)
+  - Synchronously store the revocation registry [\#4028](https://github.com/openwallet-foundation/acapy/pull/4028) [PatStLouis](https://github.com/PatStLouis)
   - Sonivijayk/fix/issue 3990 revoke indy cred post askar anoncres upgrade [\#4017](https://github.com/openwallet-foundation/acapy/pull/4017) [sonivijayk](https://github.com/sonivijayk)
   - Update AnonCreds events [\#4016](https://github.com/openwallet-foundation/acapy/pull/4016) [PatStLouis](https://github.com/PatStLouis)
   - chore: Remove some more indy refs from anoncreds module [#4004](https://github.com/openwallet-foundation/acapy/pull/4004) [jamshale](https://github.com/jamshale)
@@ -365,11 +374,10 @@ There are no breaking changes in this release.
   - 1.3.lts fix: prefer JWS header kid over jwk.kid in attach decorator verify [\#4095](https://github.com/openwallet-foundation/acapy/pull/4095) [PatStLouis](https://github.com/PatStLouis)
 - Dependency Update to pick up security fix
   - chore: bump jsonpath-ng to 1.8.0 and fix full_path format [\#4083](https://github.com/openwallet-foundation/acapy/pull/4083) [jamshale](https://github.com/jamshale)
-
 - Release management pull requests:
   - 1.3.4 [\#4108](https://github.com/openwallet-foundation/acapy/pull/4108) [swcurran](https://github.com/swcurran)
   - 1.3.4rc0 [\#4100](https://github.com/openwallet-foundation/acapy/pull/4100) [swcurran](https://github.com/swcurran)
-  
+
 ## 1.3.3
 
 ### Mar 2, 2026
@@ -507,7 +515,7 @@ There are no breaking changes in this release.
 
 - **Security and Performance Improvements**
   - :zap: Skip upgrade check for status checks [\#3761](https://github.com/openwallet-foundation/acapy/pull/3761) [ff137](https://github.com/ff137)
-  - Remove  header from http/ws responses [\#3753](https://github.com/openwallet-foundation/acapy/pull/3753) [jamshale](https://github.com/jamshale)
+  - Remove header from http/ws responses [\#3753](https://github.com/openwallet-foundation/acapy/pull/3753) [jamshale](https://github.com/jamshale)
 - **Logging and Observability Improvements**
   - Add websocket outbound debug log [#3736](https://github.com/openwallet-foundation/acapy/pull/3736) [jamshale](https://github.com/jamshale)
   - :loud_sound: Improve logging in Handlers [#3722](https://github.com/openwallet-foundation/acapy/pull/3722) [ff137](https://github.com/ff137)
@@ -616,7 +624,7 @@ Specifics of the majority of the changes can be found by looking at the diffs fo
   - Add did:indy transaction version 2 support [\#3253](https://github.com/openwallet-foundation/acapy/pull/3253) [jamshale](https://github.com/jamshale)
   - :art: Deprecate count/start query params and implement limit/offset [\#3208](https://github.com/openwallet-foundation/acapy/pull/3208) [ff137](https://github.com/ff137)
   - :sparkles: Add ordering options to askar scan and fetch_all methods [\#3173](https://github.com/openwallet-foundation/acapy/pull/3173) [ff137](https://github.com/ff137)
--  Updates/fixes to AnonCreds Processing
+- Updates/fixes to AnonCreds Processing
   - :art: Fix swagger tag names for AnonCreds endpoints [\#3661](https://github.com/openwallet-foundation/acapy/pull/3661) [ff137](https://github.com/ff137)
   - :art: Add type hints to anoncreds module [\#3652](https://github.com/openwallet-foundation/acapy/pull/3652) [ff137](https://github.com/ff137)
   - :bug: Fix publishing all pending AnonCreds revocations [\#3626](https://github.com/openwallet-foundation/acapy/pull/3626) [ff137](https://github.com/ff137)
@@ -741,7 +749,6 @@ There are no breaking changes in this release.
   - 1.2.lts fix: prefer JWS header kid over jwk.kid in attach decorator verify [\#4094](https://github.com/openwallet-foundation/acapy/pull/4094) [PatStLouis](https://github.com/PatStLouis)
 - Dependency Update to pick up security fix
   - chore: bump jsonpath-ng to 1.8.0 and fix full_path format [\#4082](https://github.com/openwallet-foundation/acapy/pull/4082) [jamshale](https://github.com/jamshale)
-
 - Release management pull requests:
   - 1.2.7 [\#4107](https://github.com/openwallet-foundation/acapy/pull/4107) [swcurran](https://github.com/swcurran)
   - 1.2.7rc0 [\#4101](https://github.com/openwallet-foundation/acapy/pull/4101) [swcurran](https://github.com/swcurran)
@@ -758,7 +765,7 @@ The release includes the following PRs from the `main` branch cherry-picked into
 - Update AnonCreds events [\#4016](https://github.com/openwallet-foundation/acapy/pull/4016)
 - Fix issues with anoncreds upgrade [\#3991](https://github.com/openwallet-foundation/acapy/pull/3991)
 
-As well, a dependency update was applied, updating the `poetry.lock` file to use the latest minor versions of the dependencies and eliminating the one "High" or "Critical" vulnerability in the dependencies. 
+As well, a dependency update was applied, updating the `poetry.lock` file to use the latest minor versions of the dependencies and eliminating the one "High" or "Critical" vulnerability in the dependencies.
 
 ### 1.2.6 Breaking Changes
 
@@ -832,7 +839,6 @@ There are no breaking changes in this release.
   - 1.2.LTS Repair anoncreds holder revocation list request [\#3580](https://github.com/openwallet-foundation/acapy/pull/3580) [jamshale](https://github.com/jamshale)
 - Multitenant Fixes
   - fix: cherry-pick fixes from main to 1.2.lts [\#3577](https://github.com/openwallet-foundation/acapy/pull/3577) [thiagoromanos](https://github.com/thiagoromanos)
-
 - Release management pull requests:
   - 1.2.4 [\#3582](https://github.com/openwallet-foundation/acapy/pull/3582) [swcurran](https://github.com/swcurran)
 
@@ -942,7 +948,9 @@ There are no breaking changes in this release, just fixes, new tests and minor u
 
 !!! warning "Multi-tenant, Single Database Deployments"
 
-    A bug in Release 1.2.0 prevents using the release with existing multi-tenant, single wallet deployments. Those requiring such support **MUST** skip Release 1.2.0 and move to [Release 1.2.1](https://github.com/openwallet-foundation/acapy/releases/tag/1.2.1) or higher.
+```text
+A bug in Release 1.2.0 prevents using the release with existing multi-tenant, single wallet deployments. Those requiring such support **MUST** skip Release 1.2.0 and move to [Release 1.2.1](https://github.com/openwallet-foundation/acapy/releases/tag/1.2.1) or higher.
+```
 
 Release 1.2.0 is a minor update to ACA-Py that contains an update to the AnonCreds implementation to make it easier to deploy on other than Hyperledger Indy, and a lengthy list of adjustments, improvements and fixes, with a focus on removing technical debt. In addition to the AnonCreds updates, the most visible change is the removal of the "in-memory wallet" implementation in favour of using the SQLite in-memory wallet (`sqlite://:memory:`), including removing the logic for handling that extra wallet type. In removing the in-memory wallet, all of the unit and integration tests that used the in-memory wallet have been updated to use SQLite's in-memory wallet.
 
@@ -1159,7 +1167,7 @@ There are no breaking changes in ACA-Py Release 1.0.1.
   - Only change interop testing fork on pull requests [\#3218](https://github.com/hyperledger/aries-cloudagent-python/pull/3218) [jamshale](https://github.com/jamshale)
   - Remove the RC from the versions table [\#3213](https://github.com/hyperledger/aries-cloudagent-python/pull/3213) [swcurran](https://github.com/swcurran)
   - Document the documentation site generation process [\#3212](https://github.com/hyperledger/aries-cloudagent-python/pull/3212) [swcurran](https://github.com/swcurran)
-  - Remove 1.0.0rc6 documentation from gh-pages [\#3211](https://github.com/hyperledger/aries-cloudagent-python/pull/3211) [swcurran](https://github.com/swcurran)  - Adjust nightly and release workflows [\#3210](https://github.com/hyperledger/aries-cloudagent-python/pull/3210) [jamshale](https://github.com/jamshale)
+  - Remove 1.0.0rc6 documentation from gh-pages [\#3211](https://github.com/hyperledger/aries-cloudagent-python/pull/3211) [swcurran](https://github.com/swcurran) - Adjust nightly and release workflows [\#3210](https://github.com/hyperledger/aries-cloudagent-python/pull/3210) [jamshale](https://github.com/jamshale)
   - Change interop tests to critical on PRs [\#3209](https://github.com/hyperledger/aries-cloudagent-python/pull/3209) [jamshale](https://github.com/jamshale)
   - Change integration testing [\#3194](https://github.com/hyperledger/aries-cloudagent-python/pull/3194) [jamshale](https://github.com/jamshale)
 
@@ -1171,7 +1179,7 @@ There are no breaking changes in ACA-Py Release 1.0.1.
   - Fix logic to send verbose webhooks [\#3193](https://github.com/hyperledger/aries-cloudagent-python/pull/3193) [ianco](https://github.com/ianco)
   - fixes #3186: handler_timed_file_handler [\#3187](https://github.com/hyperledger/aries-cloudagent-python/pull/3187) [rngadam](https://github.com/rngadam)
   - issue #3182: replace deprecated ptvsd debugger by debugpy [\#3183](https://github.com/hyperledger/aries-cloudagent-python/pull/3183) [rngadam](https://github.com/rngadam)
-  - 👷Publish `aries-cloudagent-bbs`  Docker image [\#3175](https://github.com/hyperledger/aries-cloudagent-python/pull/3175) [rblaine95](https://github.com/rblaine95)
+  - 👷Publish `aries-cloudagent-bbs` Docker image [\#3175](https://github.com/hyperledger/aries-cloudagent-python/pull/3175) [rblaine95](https://github.com/rblaine95)
   - [ POST v1.0.0 ] Adjust message queue error handling [\#3170](https://github.com/hyperledger/aries-cloudagent-python/pull/3170) [jamshale](https://github.com/jamshale)
 
 - Release management pull requests:
@@ -1330,50 +1338,50 @@ With the focus of the pull requests for this release on stabilizing the implemen
   - Upgrade codegen tools in scripts/generate-open-api-spec and publish Swagger 2.0 and OpenAPI 3.0 specs [\#2246](https://github.com/hyperledger/aries-cloudagent-python/pull/2246) [ff137](https://github.com/ff137)
 
 - Dependabot PRs:
-  - chore(deps): Bump ossf/scorecard-action from 2.3.3 to 2.4.0 in the all-actions group [\#3134](https://github.com/hyperledger/aries-cloudagent-python/pull/3134) [dependabot bot](https://github.com/dependabot bot)
-  - chore(deps-dev): Bump pre-commit from 3.7.1 to 3.8.0 [\#3129](https://github.com/hyperledger/aries-cloudagent-python/pull/3129) [dependabot bot](https://github.com/dependabot bot)
-  - chore(deps-dev): Bump ruff from 0.5.4 to 0.5.5 [\#3131](https://github.com/hyperledger/aries-cloudagent-python/pull/3131) [dependabot bot](https://github.com/dependabot bot)
-  - chore(deps): Bump mkdocs-material from 9.5.29 to 9.5.30 [\#3130](https://github.com/hyperledger/aries-cloudagent-python/pull/3130) [dependabot bot](https://github.com/dependabot bot)
-  - chore(deps-dev): Bump pytest from 8.3.1 to 8.3.2 [\#3132](https://github.com/hyperledger/aries-cloudagent-python/pull/3132) [dependabot bot](https://github.com/dependabot bot)
-  - chore(deps-dev): Bump ruff from 0.5.2 to 0.5.4 [\#3114](https://github.com/hyperledger/aries-cloudagent-python/pull/3114) [dependabot bot](https://github.com/dependabot bot)
-  - chore(deps): Bump pytest-asyncio from 0.23.7 to 0.23.8 in /demo/playground/examples [\#3117](https://github.com/hyperledger/aries-cloudagent-python/pull/3117) [dependabot bot](https://github.com/dependabot bot)
-  - chore(deps-dev): Bump pytest-ruff from 0.4.0 to 0.4.1 [\#3113](https://github.com/hyperledger/aries-cloudagent-python/pull/3113) [dependabot bot](https://github.com/dependabot bot)
-  - chore(deps-dev): Bump pytest from 8.2.2 to 8.3.1 [\#3115](https://github.com/hyperledger/aries-cloudagent-python/pull/3115) [dependabot bot](https://github.com/dependabot bot)
+  - chore(deps): Bump ossf/scorecard-action from 2.3.3 to 2.4.0 in the all-actions group [\#3134](https://github.com/hyperledger/aries-cloudagent-python/pull/3134) [dependabot bot](<https://github.com/dependabot> bot)
+  - chore(deps-dev): Bump pre-commit from 3.7.1 to 3.8.0 [\#3129](https://github.com/hyperledger/aries-cloudagent-python/pull/3129) [dependabot bot](<https://github.com/dependabot> bot)
+  - chore(deps-dev): Bump ruff from 0.5.4 to 0.5.5 [\#3131](https://github.com/hyperledger/aries-cloudagent-python/pull/3131) [dependabot bot](<https://github.com/dependabot> bot)
+  - chore(deps): Bump mkdocs-material from 9.5.29 to 9.5.30 [\#3130](https://github.com/hyperledger/aries-cloudagent-python/pull/3130) [dependabot bot](<https://github.com/dependabot> bot)
+  - chore(deps-dev): Bump pytest from 8.3.1 to 8.3.2 [\#3132](https://github.com/hyperledger/aries-cloudagent-python/pull/3132) [dependabot bot](<https://github.com/dependabot> bot)
+  - chore(deps-dev): Bump ruff from 0.5.2 to 0.5.4 [\#3114](https://github.com/hyperledger/aries-cloudagent-python/pull/3114) [dependabot bot](<https://github.com/dependabot> bot)
+  - chore(deps): Bump pytest-asyncio from 0.23.7 to 0.23.8 in /demo/playground/examples [\#3117](https://github.com/hyperledger/aries-cloudagent-python/pull/3117) [dependabot bot](<https://github.com/dependabot> bot)
+  - chore(deps-dev): Bump pytest-ruff from 0.4.0 to 0.4.1 [\#3113](https://github.com/hyperledger/aries-cloudagent-python/pull/3113) [dependabot bot](<https://github.com/dependabot> bot)
+  - chore(deps-dev): Bump pytest from 8.2.2 to 8.3.1 [\#3115](https://github.com/hyperledger/aries-cloudagent-python/pull/3115) [dependabot bot](<https://github.com/dependabot> bot)
   - Library update 15/07/24 / Fix unit test typing [\#3103](https://github.com/hyperledger/aries-cloudagent-python/pull/3103) [jamshale](https://github.com/jamshale)
-  - chore(deps): Bump certifi from 2024.6.2 to 2024.7.4 in /demo/playground/examples in the pip group [\#3084](https://github.com/hyperledger/aries-cloudagent-python/pull/3084) [dependabot bot](https://github.com/dependabot bot)
-  - chore(deps): Bump aries-askar from 0.3.1 to 0.3.2 [\#3088](https://github.com/hyperledger/aries-cloudagent-python/pull/3088) [dependabot bot](https://github.com/dependabot bot)
-  - chore(deps-dev): Bump ruff from 0.5.0 to 0.5.1 [\#3087](https://github.com/hyperledger/aries-cloudagent-python/pull/3087) [dependabot bot](https://github.com/dependabot bot)
-  - chore(deps): Bump mkdocs-material from 9.5.27 to 9.5.28 [\#3089](https://github.com/hyperledger/aries-cloudagent-python/pull/3089) [dependabot bot](https://github.com/dependabot bot)
-  - chore(deps): Bump certifi from 2024.6.2 to 2024.7.4 in the pip group [\#3085](https://github.com/hyperledger/aries-cloudagent-python/pull/3085) [dependabot bot](https://github.com/dependabot bot)
-  - chore(deps): Bump requests from 2.32.2 to 2.32.3 [\#3076](https://github.com/hyperledger/aries-cloudagent-python/pull/3076) [dependabot bot](https://github.com/dependabot bot)
-  - chore(deps): Bump uuid-utils from 0.8.0 to 0.9.0 [\#3075](https://github.com/hyperledger/aries-cloudagent-python/pull/3075) [dependabot bot](https://github.com/dependabot bot)
-  - chore(deps): Bump mike from 2.0.0 to 2.1.2 [\#3074](https://github.com/hyperledger/aries-cloudagent-python/pull/3074) [dependabot bot](https://github.com/dependabot bot)
-  - chore(deps-dev): Bump ruff from 0.4.10 to 0.5.0 [\#3073](https://github.com/hyperledger/aries-cloudagent-python/pull/3073) [dependabot bot](https://github.com/dependabot bot)
-  - chore(deps): Bump dawidd6/action-download-artifact from 5 to 6 in the all-actions group [\#3064](https://github.com/hyperledger/aries-cloudagent-python/pull/3064) [dependabot bot](https://github.com/dependabot bot)
-  - chore(deps): Bump markupsafe from 2.0.1 to 2.1.5 [\#3062](https://github.com/hyperledger/aries-cloudagent-python/pull/3062) [dependabot bot](https://github.com/dependabot bot)
-  - chore(deps-dev): Bump pydevd-pycharm from 193.6015.41 to 193.7288.30 [\#3060](https://github.com/hyperledger/aries-cloudagent-python/pull/3060) [dependabot bot](https://github.com/dependabot bot)
-  - chore(deps-dev): Bump ruff from 0.4.4 to 0.4.10 [\#3058](https://github.com/hyperledger/aries-cloudagent-python/pull/3058) [dependabot bot](https://github.com/dependabot bot)
-  - chore(deps): Bump the pip group with 2 updates [\#3046](https://github.com/hyperledger/aries-cloudagent-python/pull/3046) [dependabot bot](https://github.com/dependabot bot)
-  - chore(deps): Bump urllib3 from 2.2.1 to 2.2.2 in /demo/playground/examples in the pip group [\#3045](https://github.com/hyperledger/aries-cloudagent-python/pull/3045) [dependabot bot](https://github.com/dependabot bot)
-  - chore(deps): Bump marshmallow from 3.20.2 to 3.21.3 [\#3038](https://github.com/hyperledger/aries-cloudagent-python/pull/3038) [dependabot bot](https://github.com/dependabot bot)
-  - chore(deps): Bump packaging from 23.1 to 23.2 [\#3037](https://github.com/hyperledger/aries-cloudagent-python/pull/3037) [dependabot bot](https://github.com/dependabot bot)
-  - chore(deps): Bump mkdocs-material from 9.5.10 to 9.5.27 [\#3036](https://github.com/hyperledger/aries-cloudagent-python/pull/3036) [dependabot bot](https://github.com/dependabot bot)
-  - chore(deps): Bump configargparse from 1.5.5 to 1.7 [\#3035](https://github.com/hyperledger/aries-cloudagent-python/pull/3035) [dependabot bot](https://github.com/dependabot bot)
-  - chore(deps): Bump uuid-utils from 0.7.0 to 0.8.0 [\#3034](https://github.com/hyperledger/aries-cloudagent-python/pull/3034) [dependabot bot](https://github.com/dependabot bot)
-  - chore(deps): Bump dawidd6/action-download-artifact from 3 to 5 in the all-actions group [\#3027](https://github.com/hyperledger/aries-cloudagent-python/pull/3027) [dependabot bot](https://github.com/dependabot bot)
-  - chore(deps): Update prompt-toolkit requirement from ~=2.0.9 to ~=2.0.10 in /demo [\#3026](https://github.com/hyperledger/aries-cloudagent-python/pull/3026) [dependabot bot](https://github.com/dependabot bot)
-  - chore(deps-dev): Bump pytest from 8.2.1 to 8.2.2 [\#3025](https://github.com/hyperledger/aries-cloudagent-python/pull/3025) [dependabot bot](https://github.com/dependabot bot)
-  - chore(deps): Bump pydid from 0.5.0 to 0.5.1 [\#3024](https://github.com/hyperledger/aries-cloudagent-python/pull/3024) [dependabot bot](https://github.com/dependabot bot)
-  - chore(deps): Bump sphinx from 1.8.4 to 1.8.6 [\#3021](https://github.com/hyperledger/aries-cloudagent-python/pull/3021) [dependabot bot](https://github.com/dependabot bot)
-  - chore(deps): Bump actions/checkout from 3 to 4 in the all-actions group [\#3011](https://github.com/hyperledger/aries-cloudagent-python/pull/3011) [dependabot bot](https://github.com/dependabot bot)
+  - chore(deps): Bump certifi from 2024.6.2 to 2024.7.4 in /demo/playground/examples in the pip group [\#3084](https://github.com/hyperledger/aries-cloudagent-python/pull/3084) [dependabot bot](<https://github.com/dependabot> bot)
+  - chore(deps): Bump aries-askar from 0.3.1 to 0.3.2 [\#3088](https://github.com/hyperledger/aries-cloudagent-python/pull/3088) [dependabot bot](<https://github.com/dependabot> bot)
+  - chore(deps-dev): Bump ruff from 0.5.0 to 0.5.1 [\#3087](https://github.com/hyperledger/aries-cloudagent-python/pull/3087) [dependabot bot](<https://github.com/dependabot> bot)
+  - chore(deps): Bump mkdocs-material from 9.5.27 to 9.5.28 [\#3089](https://github.com/hyperledger/aries-cloudagent-python/pull/3089) [dependabot bot](<https://github.com/dependabot> bot)
+  - chore(deps): Bump certifi from 2024.6.2 to 2024.7.4 in the pip group [\#3085](https://github.com/hyperledger/aries-cloudagent-python/pull/3085) [dependabot bot](<https://github.com/dependabot> bot)
+  - chore(deps): Bump requests from 2.32.2 to 2.32.3 [\#3076](https://github.com/hyperledger/aries-cloudagent-python/pull/3076) [dependabot bot](<https://github.com/dependabot> bot)
+  - chore(deps): Bump uuid-utils from 0.8.0 to 0.9.0 [\#3075](https://github.com/hyperledger/aries-cloudagent-python/pull/3075) [dependabot bot](<https://github.com/dependabot> bot)
+  - chore(deps): Bump mike from 2.0.0 to 2.1.2 [\#3074](https://github.com/hyperledger/aries-cloudagent-python/pull/3074) [dependabot bot](<https://github.com/dependabot> bot)
+  - chore(deps-dev): Bump ruff from 0.4.10 to 0.5.0 [\#3073](https://github.com/hyperledger/aries-cloudagent-python/pull/3073) [dependabot bot](<https://github.com/dependabot> bot)
+  - chore(deps): Bump dawidd6/action-download-artifact from 5 to 6 in the all-actions group [\#3064](https://github.com/hyperledger/aries-cloudagent-python/pull/3064) [dependabot bot](<https://github.com/dependabot> bot)
+  - chore(deps): Bump markupsafe from 2.0.1 to 2.1.5 [\#3062](https://github.com/hyperledger/aries-cloudagent-python/pull/3062) [dependabot bot](<https://github.com/dependabot> bot)
+  - chore(deps-dev): Bump pydevd-pycharm from 193.6015.41 to 193.7288.30 [\#3060](https://github.com/hyperledger/aries-cloudagent-python/pull/3060) [dependabot bot](<https://github.com/dependabot> bot)
+  - chore(deps-dev): Bump ruff from 0.4.4 to 0.4.10 [\#3058](https://github.com/hyperledger/aries-cloudagent-python/pull/3058) [dependabot bot](<https://github.com/dependabot> bot)
+  - chore(deps): Bump the pip group with 2 updates [\#3046](https://github.com/hyperledger/aries-cloudagent-python/pull/3046) [dependabot bot](<https://github.com/dependabot> bot)
+  - chore(deps): Bump urllib3 from 2.2.1 to 2.2.2 in /demo/playground/examples in the pip group [\#3045](https://github.com/hyperledger/aries-cloudagent-python/pull/3045) [dependabot bot](<https://github.com/dependabot> bot)
+  - chore(deps): Bump marshmallow from 3.20.2 to 3.21.3 [\#3038](https://github.com/hyperledger/aries-cloudagent-python/pull/3038) [dependabot bot](<https://github.com/dependabot> bot)
+  - chore(deps): Bump packaging from 23.1 to 23.2 [\#3037](https://github.com/hyperledger/aries-cloudagent-python/pull/3037) [dependabot bot](<https://github.com/dependabot> bot)
+  - chore(deps): Bump mkdocs-material from 9.5.10 to 9.5.27 [\#3036](https://github.com/hyperledger/aries-cloudagent-python/pull/3036) [dependabot bot](<https://github.com/dependabot> bot)
+  - chore(deps): Bump configargparse from 1.5.5 to 1.7 [\#3035](https://github.com/hyperledger/aries-cloudagent-python/pull/3035) [dependabot bot](<https://github.com/dependabot> bot)
+  - chore(deps): Bump uuid-utils from 0.7.0 to 0.8.0 [\#3034](https://github.com/hyperledger/aries-cloudagent-python/pull/3034) [dependabot bot](<https://github.com/dependabot> bot)
+  - chore(deps): Bump dawidd6/action-download-artifact from 3 to 5 in the all-actions group [\#3027](https://github.com/hyperledger/aries-cloudagent-python/pull/3027) [dependabot bot](<https://github.com/dependabot> bot)
+  - chore(deps): Update prompt-toolkit requirement from ~=2.0.9 to ~=2.0.10 in /demo [\#3026](https://github.com/hyperledger/aries-cloudagent-python/pull/3026) [dependabot bot](<https://github.com/dependabot> bot)
+  - chore(deps-dev): Bump pytest from 8.2.1 to 8.2.2 [\#3025](https://github.com/hyperledger/aries-cloudagent-python/pull/3025) [dependabot bot](<https://github.com/dependabot> bot)
+  - chore(deps): Bump pydid from 0.5.0 to 0.5.1 [\#3024](https://github.com/hyperledger/aries-cloudagent-python/pull/3024) [dependabot bot](<https://github.com/dependabot> bot)
+  - chore(deps): Bump sphinx from 1.8.4 to 1.8.6 [\#3021](https://github.com/hyperledger/aries-cloudagent-python/pull/3021) [dependabot bot](<https://github.com/dependabot> bot)
+  - chore(deps): Bump actions/checkout from 3 to 4 in the all-actions group [\#3011](https://github.com/hyperledger/aries-cloudagent-python/pull/3011) [dependabot bot](<https://github.com/dependabot> bot)
   - Merge all demo dependabot PRs [\#3008](https://github.com/hyperledger/aries-cloudagent-python/pull/3008) [PatStLouis](https://github.com/PatStLouis)
   - Merge all poetry dependabot PRs [\#3007](https://github.com/hyperledger/aries-cloudagent-python/pull/3007) [PatStLouis](https://github.com/PatStLouis)
-  - chore(deps): Bump hyperledger/aries-cloudagent-python from py3.9-0.9.0 to py3.9-0.12.1 in /demo/multi-demo [\#2976](https://github.com/hyperledger/aries-cloudagent-python/pull/2976) [dependabot bot](https://github.com/dependabot bot)
-  - chore(deps): Bump hyperledger/aries-cloudagent-python from py3.9-0.10.4 to py3.9-0.12.1 in /demo/playground [\#2975](https://github.com/hyperledger/aries-cloudagent-python/pull/2975) [dependabot bot](https://github.com/dependabot bot)
-  - chore(deps): Bump hyperledger/aries-cloudagent-python from py3.9-0.9.0 to py3.9-0.12.1 in /demo/docker-agent [\#2973](https://github.com/hyperledger/aries-cloudagent-python/pull/2973) [dependabot bot](https://github.com/dependabot bot)
-  - chore(deps): Bump sphinx-rtd-theme from 1.1.1 to 1.3.0 in /docs [\#2970](https://github.com/hyperledger/aries-cloudagent-python/pull/2970) [dependabot bot](https://github.com/dependabot bot)
-  - chore(deps): Bump untergeek/curator from 8.0.2 to 8.0.15 in /demo/elk-stack/extensions/curator [\#2969](https://github.com/hyperledger/aries-cloudagent-python/pull/2969) [dependabot bot](https://github.com/dependabot bot)
-  - chore(deps): Bump ecdsa from 0.16.1 to 0.19.0 in the pip group across 1 directory [\#2933](https://github.com/hyperledger/aries-cloudagent-python/pull/2933) [dependabot bot](https://github.com/dependabot bot)
+  - chore(deps): Bump hyperledger/aries-cloudagent-python from py3.9-0.9.0 to py3.9-0.12.1 in /demo/multi-demo [\#2976](https://github.com/hyperledger/aries-cloudagent-python/pull/2976) [dependabot bot](<https://github.com/dependabot> bot)
+  - chore(deps): Bump hyperledger/aries-cloudagent-python from py3.9-0.10.4 to py3.9-0.12.1 in /demo/playground [\#2975](https://github.com/hyperledger/aries-cloudagent-python/pull/2975) [dependabot bot](<https://github.com/dependabot> bot)
+  - chore(deps): Bump hyperledger/aries-cloudagent-python from py3.9-0.9.0 to py3.9-0.12.1 in /demo/docker-agent [\#2973](https://github.com/hyperledger/aries-cloudagent-python/pull/2973) [dependabot bot](<https://github.com/dependabot> bot)
+  - chore(deps): Bump sphinx-rtd-theme from 1.1.1 to 1.3.0 in /docs [\#2970](https://github.com/hyperledger/aries-cloudagent-python/pull/2970) [dependabot bot](<https://github.com/dependabot> bot)
+  - chore(deps): Bump untergeek/curator from 8.0.2 to 8.0.15 in /demo/elk-stack/extensions/curator [\#2969](https://github.com/hyperledger/aries-cloudagent-python/pull/2969) [dependabot bot](<https://github.com/dependabot> bot)
+  - chore(deps): Bump ecdsa from 0.16.1 to 0.19.0 in the pip group across 1 directory [\#2933](https://github.com/hyperledger/aries-cloudagent-python/pull/2933) [dependabot bot](<https://github.com/dependabot> bot)
 
 ## 0.12.6
 
@@ -1521,13 +1529,13 @@ There are no breaking changes in this release.
   - Update GHA so that broken image links work on docs site - without breaking them on GitHub [\#2852](https://github.com/hyperledger/aries-cloudagent-python/pull/2852) [swcurran](https://github.com/swcurran)
 
 - Dependencies and Internal Updates:
-  - chore(deps): Bump psf/black from 24.4.0 to 24.4.2 in the all-actions group [\#2924](https://github.com/hyperledger/aries-cloudagent-python/pull/2924) [dependabot bot](https://github.com/dependabot bot)
+  - chore(deps): Bump psf/black from 24.4.0 to 24.4.2 in the all-actions group [\#2924](https://github.com/hyperledger/aries-cloudagent-python/pull/2924) [dependabot bot](<https://github.com/dependabot> bot)
   - fix: fixes a regression that requires a log file in multi-tenant mode [\#2918](https://github.com/hyperledger/aries-cloudagent-python/pull/2918) [amanji](https://github.com/amanji)
   - Update AnonCreds to 0.2.2 [\#2917](https://github.com/hyperledger/aries-cloudagent-python/pull/2917) [swcurran](https://github.com/swcurran)
-  - chore(deps): Bump aiohttp from 3.9.3 to 3.9.4  dependencies python [\#2902](https://github.com/hyperledger/aries-cloudagent-python/pull/2902) [dependabot bot](https://github.com/dependabot bot)
-  - chore(deps): Bump idna from 3.4 to 3.7 in /demo/playground/examples  dependencies python [\#2886](https://github.com/hyperledger/aries-cloudagent-python/pull/2886) [dependabot bot](https://github.com/dependabot bot)
-  - chore(deps): Bump psf/black from 24.3.0 to 24.4.0 in the all-actions group  dependencies github_actions [\#2893](https://github.com/hyperledger/aries-cloudagent-python/pull/2893) [dependabot bot](https://github.com/dependabot bot)
-  - chore(deps): Bump idna from 3.6 to 3.7  dependencies python [\#2887](https://github.com/hyperledger/aries-cloudagent-python/pull/2887) [dependabot bot](https://github.com/dependabot bot)
+  - chore(deps): Bump aiohttp from 3.9.3 to 3.9.4 dependencies python [\#2902](https://github.com/hyperledger/aries-cloudagent-python/pull/2902) [dependabot bot](<https://github.com/dependabot> bot)
+  - chore(deps): Bump idna from 3.4 to 3.7 in /demo/playground/examples dependencies python [\#2886](https://github.com/hyperledger/aries-cloudagent-python/pull/2886) [dependabot bot](<https://github.com/dependabot> bot)
+  - chore(deps): Bump psf/black from 24.3.0 to 24.4.0 in the all-actions group dependencies github_actions [\#2893](https://github.com/hyperledger/aries-cloudagent-python/pull/2893) [dependabot bot](<https://github.com/dependabot> bot)
+  - chore(deps): Bump idna from 3.6 to 3.7 dependencies python [\#2887](https://github.com/hyperledger/aries-cloudagent-python/pull/2887) [dependabot bot](<https://github.com/dependabot> bot)
   - refactor: logging configs setup [\#2870](https://github.com/hyperledger/aries-cloudagent-python/pull/2870) [amanji](https://github.com/amanji)
 
 - Release management pull requests:
@@ -1553,7 +1561,7 @@ Attention was given in the release to simplifying the handling of JSON-LD [Data 
 
 An important change in this release is the re-organization of the ACA-Py documentation, moving the vast majority of the documents to the folders within the `docs` folder -- a long overdue change that will allow us to soon publish the documents on [https://aca-py.org](https://aca-py.org) directly from the ACA-Py repository, rather than from the separate [aries-acapy-docs](https://github.com/hyperledger/aries-acapy-docs) currently being used.
 
-A big developer improvement is a revamping of the test handling to eliminate ~2500 warnings that were previously generated in the test suite.  Nice job [@ff137](https://github.com/ff137)!
+A big developer improvement is a revamping of the test handling to eliminate ~2500 warnings that were previously generated in the test suite. Nice job [@ff137](https://github.com/ff137)!
 
 [DID Peer]: https://identity.foundation/peer-did-method-spec/
 [AnonCreds]: https://www.hyperledger.org/projects/anoncreds
@@ -1585,7 +1593,7 @@ New deprecation notices were added to ACA-Py on startup and in the OpenAPI/Swagg
   - fix: conn proto in invite webhook if known [\#2880](https://github.com/hyperledger/aries-cloudagent-python/pull/2880) [dbluhm](https://github.com/dbluhm)
   - Emit the OOB done event even for multi-use invites [\#2872](https://github.com/hyperledger/aries-cloudagent-python/pull/2872) [ianco](https://github.com/ianco)
   - refactor: introduce use_did and use_did_method [\#2862](https://github.com/hyperledger/aries-cloudagent-python/pull/2862) [dbluhm](https://github.com/dbluhm)
-  - fix(credo-interop): various didexchange and did:peer related fixes  1.0.0 [\#2748](https://github.com/hyperledger/aries-cloudagent-python/pull/2748) [dbluhm](https://github.com/dbluhm)
+  - fix(credo-interop): various didexchange and did:peer related fixes 1.0.0 [\#2748](https://github.com/hyperledger/aries-cloudagent-python/pull/2748) [dbluhm](https://github.com/dbluhm)
   - Change did <--> verkey logging on connections [\#2853](https://github.com/hyperledger/aries-cloudagent-python/pull/2853) [jamshale](https://github.com/jamshale)
   - fix: did exchange multiuse invites respond in kind [\#2850](https://github.com/hyperledger/aries-cloudagent-python/pull/2850) [dbluhm](https://github.com/dbluhm)
   - Support connection re-use for did:peer:2/4 [\#2823](https://github.com/hyperledger/aries-cloudagent-python/pull/2823) [ianco](https://github.com/ianco)
@@ -1621,18 +1629,18 @@ New deprecation notices were added to ACA-Py on startup and in the OpenAPI/Swagg
   - Add unit tests for anoncreds revocation [\#2688](https://github.com/hyperledger/aries-cloudagent-python/pull/2688) [jamshale](https://github.com/jamshale)
   - Return 404 when schema not found [\#2683](https://github.com/hyperledger/aries-cloudagent-python/pull/2683) [jamshale](https://github.com/jamshale)
   - Anoncreds - Add unit testing [\#2672](https://github.com/hyperledger/aries-cloudagent-python/pull/2672) [jamshale](https://github.com/jamshale)
-  - Additional anoncreds integration tests  AnonCreds [\#2660](https://github.com/hyperledger/aries-cloudagent-python/pull/2660) [ianco](https://github.com/ianco)
-  - Update integration tests for anoncreds-rs  AnonCreds [\#2651](https://github.com/hyperledger/aries-cloudagent-python/pull/2651) [ianco](https://github.com/ianco)
-  - Initial migration of anoncreds revocation code  AnonCreds [\#2643](https://github.com/hyperledger/aries-cloudagent-python/pull/2643) [ianco](https://github.com/ianco)
-  - Integrate Anoncreds rs into credential and presentation endpoints  AnonCreds [\#2632](https://github.com/hyperledger/aries-cloudagent-python/pull/2632) [ianco](https://github.com/ianco)
-  - Initial code migration from anoncreds-rs branch  AnonCreds [\#2596](https://github.com/hyperledger/aries-cloudagent-python/pull/2596) [ianco](https://github.com/ianco)
+  - Additional anoncreds integration tests AnonCreds [\#2660](https://github.com/hyperledger/aries-cloudagent-python/pull/2660) [ianco](https://github.com/ianco)
+  - Update integration tests for anoncreds-rs AnonCreds [\#2651](https://github.com/hyperledger/aries-cloudagent-python/pull/2651) [ianco](https://github.com/ianco)
+  - Initial migration of anoncreds revocation code AnonCreds [\#2643](https://github.com/hyperledger/aries-cloudagent-python/pull/2643) [ianco](https://github.com/ianco)
+  - Integrate Anoncreds rs into credential and presentation endpoints AnonCreds [\#2632](https://github.com/hyperledger/aries-cloudagent-python/pull/2632) [ianco](https://github.com/ianco)
+  - Initial code migration from anoncreds-rs branch AnonCreds [\#2596](https://github.com/hyperledger/aries-cloudagent-python/pull/2596) [ianco](https://github.com/ianco)
 
 - Hyperledger Indy ledger related updates and fixes
   - Remove requirement for write ledger in read-only mode. [\#2836](https://github.com/hyperledger/aries-cloudagent-python/pull/2836) [esune](https://github.com/esune)
   - Add known issues section to Multiledger.md documentation [\#2788](https://github.com/hyperledger/aries-cloudagent-python/pull/2788) [esune](https://github.com/esune)
   - fix: update constants in TransactionRecord [\#2698](https://github.com/hyperledger/aries-cloudagent-python/pull/2698) [amanji](https://github.com/amanji)
   - Cache TAA by wallet name [\#2676](https://github.com/hyperledger/aries-cloudagent-python/pull/2676) [jamshale](https://github.com/jamshale)
-  - Fix: RevRegEntry Transaction Endorsement  0.11.0 [\#2558](https://github.com/hyperledger/aries-cloudagent-python/pull/2558) [shaangill025](https://github.com/shaangill025)
+  - Fix: RevRegEntry Transaction Endorsement 0.11.0 [\#2558](https://github.com/hyperledger/aries-cloudagent-python/pull/2558) [shaangill025](https://github.com/shaangill025)
 
 - JSON-LD Verifiable Credential/DIF Presentation Exchange updates
   - Add missing VC-DI/LD-Proof verification method option [\#2867](https://github.com/hyperledger/aries-cloudagent-python/pull/2867) [PatStLouis](https://github.com/PatStLouis)
@@ -1686,37 +1694,37 @@ New deprecation notices were added to ACA-Py on startup and in the OpenAPI/Swagg
 
 - Dependencies and Internal Updates
   - Add wallet.type config to /settings endpoint [\#2877](https://github.com/hyperledger/aries-cloudagent-python/pull/2877) [jamshale](https://github.com/jamshale)
-  - chore(deps): Bump pillow from 10.2.0 to 10.3.0  dependencies python [\#2869](https://github.com/hyperledger/aries-cloudagent-python/pull/2869) [dependabot bot](https://github.com/dependabot bot)
+  - chore(deps): Bump pillow from 10.2.0 to 10.3.0 dependencies python [\#2869](https://github.com/hyperledger/aries-cloudagent-python/pull/2869) [dependabot bot](<https://github.com/dependabot> bot)
   - Fix run_tests script [\#2866](https://github.com/hyperledger/aries-cloudagent-python/pull/2866) [ianco](https://github.com/ianco)
   - fix: states for discovery record to emit webhook [\#2858](https://github.com/hyperledger/aries-cloudagent-python/pull/2858) [dbluhm](https://github.com/dbluhm)
   - Increase promote did retries [\#2854](https://github.com/hyperledger/aries-cloudagent-python/pull/2854) [jamshale](https://github.com/jamshale)
-  - chore(deps-dev): Bump black from 24.1.1 to 24.3.0  dependencies python [\#2847](https://github.com/hyperledger/aries-cloudagent-python/pull/2847) [dependabot bot](https://github.com/dependabot bot)
-  - chore(deps): Bump the all-actions group with 1 update  dependencies github_actions [\#2844](https://github.com/hyperledger/aries-cloudagent-python/pull/2844) [dependabot bot](https://github.com/dependabot bot)
+  - chore(deps-dev): Bump black from 24.1.1 to 24.3.0 dependencies python [\#2847](https://github.com/hyperledger/aries-cloudagent-python/pull/2847) [dependabot bot](<https://github.com/dependabot> bot)
+  - chore(deps): Bump the all-actions group with 1 update dependencies github_actions [\#2844](https://github.com/hyperledger/aries-cloudagent-python/pull/2844) [dependabot bot](<https://github.com/dependabot> bot)
   - patch for #2781: User Agent header in doc loader [\#2824](https://github.com/hyperledger/aries-cloudagent-python/pull/2824) [gmulhearn-anonyome](https://github.com/gmulhearn-anonyome)
-  - chore(deps): Bump jwcrypto from 1.5.4 to 1.5.6  dependencies python [\#2833](https://github.com/hyperledger/aries-cloudagent-python/pull/2833) [dependabot bot](https://github.com/dependabot bot)
-  - bot    chore(deps): Bump cryptography from 42.0.3 to 42.0.4  dependencies python [\#2805](https://github.com/hyperledger/aries-cloudagent-python/pull/2805) [dependabot](https://github.com/dependabot)
-  - bot    chore(deps): Bump the all-actions group with 3 updates  dependencies github_actions [\#2815](https://github.com/hyperledger/aries-cloudagent-python/pull/2815) [dependabot](https://github.com/dependabot)
+  - chore(deps): Bump jwcrypto from 1.5.4 to 1.5.6 dependencies python [\#2833](https://github.com/hyperledger/aries-cloudagent-python/pull/2833) [dependabot bot](<https://github.com/dependabot> bot)
+  - bot    chore(deps): Bump cryptography from 42.0.3 to 42.0.4 dependencies python [\#2805](https://github.com/hyperledger/aries-cloudagent-python/pull/2805) [dependabot](https://github.com/dependabot)
+  - bot    chore(deps): Bump the all-actions group with 3 updates dependencies github_actions [\#2815](https://github.com/hyperledger/aries-cloudagent-python/pull/2815) [dependabot](https://github.com/dependabot)
   - Change middleware registration order [\#2796](https://github.com/hyperledger/aries-cloudagent-python/pull/2796) [PatStLouis](https://github.com/PatStLouis)
   - Bump pyld version to 2.0.4 [\#2795](https://github.com/hyperledger/aries-cloudagent-python/pull/2795) [PatStLouis](https://github.com/PatStLouis)
   - Revert profile inject [\#2789](https://github.com/hyperledger/aries-cloudagent-python/pull/2789) [jamshale](https://github.com/jamshale)
   - Move emit events to profile and delay sending until after commit [\#2760](https://github.com/hyperledger/aries-cloudagent-python/pull/2760) [ianco](https://github.com/ianco)
-  - fix: partial revert of ConnRecord schema change  1.0.0 [\#2746](https://github.com/hyperledger/aries-cloudagent-python/pull/2746) [dbluhm](https://github.com/dbluhm)
-  - chore(deps): Bump aiohttp from 3.9.1 to 3.9.2  dependencies [\#2745](https://github.com/hyperledger/aries-cloudagent-python/pull/2745) [dependabot bot](https://github.com/dependabot)
+  - fix: partial revert of ConnRecord schema change 1.0.0 [\#2746](https://github.com/hyperledger/aries-cloudagent-python/pull/2746) [dbluhm](https://github.com/dbluhm)
+  - chore(deps): Bump aiohttp from 3.9.1 to 3.9.2 dependencies [\#2745](https://github.com/hyperledger/aries-cloudagent-python/pull/2745) [dependabot bot](https://github.com/dependabot)
   - bump pydid to v 0.4.3 [\#2737](https://github.com/hyperledger/aries-cloudagent-python/pull/2737) [PatStLouis](https://github.com/PatStLouis)
   - Fix subwallet record removal [\#2721](https://github.com/hyperledger/aries-cloudagent-python/pull/2721) [andrewwhitehead](https://github.com/andrewwhitehead)
-  - chore(deps): Bump jinja2 from 3.1.2 to 3.1.3  dependencies [\#2707](https://github.com/hyperledger/aries-cloudagent-python/pull/2707) [dependabot bot](https://github.com/dependabot)
+  - chore(deps): Bump jinja2 from 3.1.2 to 3.1.3 dependencies [\#2707](https://github.com/hyperledger/aries-cloudagent-python/pull/2707) [dependabot bot](https://github.com/dependabot)
   - feat: inject profile [\#2705](https://github.com/hyperledger/aries-cloudagent-python/pull/2705) [dbluhm](https://github.com/dbluhm)
   - Remove tiny-vim from being added to the container image to reduce reported vulnerabilities from scanning [\#2699](https://github.com/hyperledger/aries-cloudagent-python/pull/2699) [swcurran](https://github.com/swcurran)
-  - chore(deps): Bump jwcrypto from 1.5.0 to 1.5.1  dependencies [\#2689](https://github.com/hyperledger/aries-cloudagent-python/pull/2689) [dependabot bot](https://github.com/dependabot)
+  - chore(deps): Bump jwcrypto from 1.5.0 to 1.5.1 dependencies [\#2689](https://github.com/hyperledger/aries-cloudagent-python/pull/2689) [dependabot bot](https://github.com/dependabot)
   - Update dependencies [\#2686](https://github.com/hyperledger/aries-cloudagent-python/pull/2686) [andrewwhitehead](https://github.com/andrewwhitehead)
   - Fix: Change To Use Timezone Aware UTC datetime [\#2679](https://github.com/hyperledger/aries-cloudagent-python/pull/2679) [Ennovate-com](https://github.com/Ennovate-com)
   - fix: update broken demo dependency [\#2638](https://github.com/hyperledger/aries-cloudagent-python/pull/2638) [mrkaurelius](https://github.com/mrkaurelius)
-  - Bump cryptography from 41.0.5 to 41.0.6  dependencies [\#2636](https://github.com/hyperledger/aries-cloudagent-python/pull/2636) [dependabot bot](https://github.com/dependabot)
-  - Bump aiohttp from 3.8.6 to 3.9.0  dependencies [\#2635](https://github.com/hyperledger/aries-cloudagent-python/pull/2635) [dependabot bot](https://github.com/dependabot)
+  - Bump cryptography from 41.0.5 to 41.0.6 dependencies [\#2636](https://github.com/hyperledger/aries-cloudagent-python/pull/2636) [dependabot bot](https://github.com/dependabot)
+  - Bump aiohttp from 3.8.6 to 3.9.0 dependencies [\#2635](https://github.com/hyperledger/aries-cloudagent-python/pull/2635) [dependabot bot](https://github.com/dependabot)
 
 - CI/CD, Testing, and Developer Tools/Productivity Updates
   - Fix deprecation warnings [\#2756](https://github.com/hyperledger/aries-cloudagent-python/pull/2756) [ff137](https://github.com/ff137)
-  - chore(deps): Bump the all-actions group with 10 updates  dependencies [\#2784](https://github.com/hyperledger/aries-cloudagent-python/pull/2784) [dependabot bot](https://github.com/dependabot)
+  - chore(deps): Bump the all-actions group with 10 updates dependencies [\#2784](https://github.com/hyperledger/aries-cloudagent-python/pull/2784) [dependabot bot](https://github.com/dependabot)
   - Add Dependabot configuration [\#2783](https://github.com/hyperledger/aries-cloudagent-python/pull/2783) [WadeBarnes](https://github.com/WadeBarnes)
   - Implement B006 rule [\#2775](https://github.com/hyperledger/aries-cloudagent-python/pull/2775) [jamshale](https://github.com/jamshale)
   - ⬆️ Upgrade pytest to 8.0 [\#2773](https://github.com/hyperledger/aries-cloudagent-python/pull/2773) [ff137](https://github.com/ff137)
@@ -1877,7 +1885,7 @@ not be answered for a long time, and the holder responds after the delete. See
   - fix: issue #2434: Change DIDExchange States to Match rfc160 [\#2461](https://github.com/hyperledger/aries-cloudagent-python/pull/2461) [anwalker293](https://github.com/anwalker293)
 - DID Peer and DID Resolver Updates and Fixes
   - fix: unique ids for services in legacy peer [\#2476](https://github.com/hyperledger/aries-cloudagent-python/pull/2476) [dbluhm](https://github.com/dbluhm)
-  - peer did 2/3 resolution  enhancement [\#2472](https://github.com/hyperledger/aries-cloudagent-python/pull/2472) [Jsyro](https://github.com/Jsyro)
+  - peer did 2/3 resolution enhancement [\#2472](https://github.com/hyperledger/aries-cloudagent-python/pull/2472) [Jsyro](https://github.com/Jsyro)
   - feat: add timeout to did resolver resolve method [\#2464](https://github.com/hyperledger/aries-cloudagent-python/pull/2464) [dbluhm](https://github.com/dbluhm)
 - ACA-Py as a DIDComm Mediator Updates and Fixes
   - fix: routing behind mediator [\#2536](https://github.com/hyperledger/aries-cloudagent-python/pull/2536) [dbluhm](https://github.com/dbluhm)
@@ -1922,11 +1930,11 @@ not be answered for a long time, and the holder responds after the delete. See
 - Dependencies and Internal Updates
   - chore: bump pydid version [\#2626](https://github.com/hyperledger/aries-cloudagent-python/pull/2626) [dbluhm](https://github.com/dbluhm)
   - chore: dependency updates [\#2565](https://github.com/hyperledger/aries-cloudagent-python/pull/2565) [dbluhm](https://github.com/dbluhm)
-  - chore(deps): Bump urllib3 from 2.0.6 to 2.0.7  dependencies [\#2552](https://github.com/hyperledger/aries-cloudagent-python/pull/2552) [dependabot bot](https://github.com/dependabot)
-  - chore(deps): Bump urllib3 from 2.0.6 to 2.0.7 in /demo/playground/scripts  dependencies [\#2551](https://github.com/hyperledger/aries-cloudagent-python/pull/2551) [dependabot bot](https://github.com/dependabot)
+  - chore(deps): Bump urllib3 from 2.0.6 to 2.0.7 dependencies [\#2552](https://github.com/hyperledger/aries-cloudagent-python/pull/2552) [dependabot bot](https://github.com/dependabot)
+  - chore(deps): Bump urllib3 from 2.0.6 to 2.0.7 in /demo/playground/scripts dependencies [\#2551](https://github.com/hyperledger/aries-cloudagent-python/pull/2551) [dependabot bot](https://github.com/dependabot)
   - chore: update pydid [\#2527](https://github.com/hyperledger/aries-cloudagent-python/pull/2527) [dbluhm](https://github.com/dbluhm)
-  - chore(deps): Bump urllib3 from 2.0.5 to 2.0.6  dependencies [\#2525](https://github.com/hyperledger/aries-cloudagent-python/pull/2525) [dependabot bot](https://github.com/dependabot)
-  - chore(deps): Bump urllib3 from 2.0.2 to 2.0.6 in /demo/playground/scripts  dependencies [\#2524](https://github.com/hyperledger/aries-cloudagent-python/pull/2524) [dependabot bot](https://github.com/dependabot)
+  - chore(deps): Bump urllib3 from 2.0.5 to 2.0.6 dependencies [\#2525](https://github.com/hyperledger/aries-cloudagent-python/pull/2525) [dependabot bot](https://github.com/dependabot)
+  - chore(deps): Bump urllib3 from 2.0.2 to 2.0.6 in /demo/playground/scripts dependencies [\#2524](https://github.com/hyperledger/aries-cloudagent-python/pull/2524) [dependabot bot](https://github.com/dependabot)
   - Avoid multiple open wallet connections [\#2521](https://github.com/hyperledger/aries-cloudagent-python/pull/2521) [andrewwhitehead](https://github.com/andrewwhitehead)
   - Remove unused dependencies [\#2510](https://github.com/hyperledger/aries-cloudagent-python/pull/2510) [andrewwhitehead](https://github.com/andrewwhitehead)
   - Use correct rust log level in dockerfiles [\#2499](https://github.com/hyperledger/aries-cloudagent-python/pull/2499) [loneil](https://github.com/loneil)
@@ -1935,7 +1943,7 @@ not be answered for a long time, and the holder responds after the delete. See
   - Update Python image version to 3.9.18 [\#2456](https://github.com/hyperledger/aries-cloudagent-python/pull/2456) [WadeBarnes](https://github.com/WadeBarnes)
   - Remove old routing protocol code [\#2466](https://github.com/hyperledger/aries-cloudagent-python/pull/2466) [dbluhm](https://github.com/dbluhm)
 - CI/CD, Testing, and Developer Tools/Productivity Updates
-  - fix: drop asynctest  0.11.0 [\#2566](https://github.com/hyperledger/aries-cloudagent-python/pull/2566) [dbluhm](https://github.com/dbluhm)
+  - fix: drop asynctest 0.11.0 [\#2566](https://github.com/hyperledger/aries-cloudagent-python/pull/2566) [dbluhm](https://github.com/dbluhm)
   - Dockerfile.indy - Include aries_cloudagent code into build [\#2584](https://github.com/hyperledger/aries-cloudagent-python/pull/2584) [usingtechnology](https://github.com/usingtechnology)
   - fix: version should be set by pyproject.toml [\#2471](https://github.com/hyperledger/aries-cloudagent-python/pull/2471) [dbluhm](https://github.com/dbluhm)
   - chore: add black back in as a dev dep [\#2465](https://github.com/hyperledger/aries-cloudagent-python/pull/2465) [dbluhm](https://github.com/dbluhm)
@@ -2238,7 +2246,7 @@ about changes you might need to make to your deployment.
   - Allow any did to be public [\#2295](https://github.com/hyperledger/aries-cloudagent-python/pull/2295) [mkempa](https://github.com/mkempa)
   - Feat: Added support for Ed25519Signature2020 signature type and Ed25519VerificationKey2020 [\#2241](https://github.com/hyperledger/aries-cloudagent-python/pull/2241) [dkulic](https://github.com/dkulic)
   - Add Goal and Goal Code to OOB and DIDex Request [\#2294](https://github.com/hyperledger/aries-cloudagent-python/pull/2294) [usingtechnology](https://github.com/usingtechnology)
-  - Fix routing in set public did [\#2288](https://github.com/hyperledger/aries-cloudagent-python/pull/2288) [mkempa](https://github.com/mkempa)  - Fix: Do not replace public verkey on mediator [\#2269](https://github.com/hyperledger/aries-cloudagent-python/pull/2269) [mkempa](https://github.com/mkempa)  - BREAKING: Allow multi-use public invites and public invites with metadata [\#2034](https://github.com/hyperledger/aries-cloudagent-python/pull/2034) [mepeltier](https://github.com/mepeltier)
+  - Fix routing in set public did [\#2288](https://github.com/hyperledger/aries-cloudagent-python/pull/2288) [mkempa](https://github.com/mkempa) - Fix: Do not replace public verkey on mediator [\#2269](https://github.com/hyperledger/aries-cloudagent-python/pull/2269) [mkempa](https://github.com/mkempa) - BREAKING: Allow multi-use public invites and public invites with metadata [\#2034](https://github.com/hyperledger/aries-cloudagent-python/pull/2034) [mepeltier](https://github.com/mepeltier)
   - fix: public did mediator routing keys as did keys [\#1977](https://github.com/hyperledger/aries-cloudagent-python/pull/1977) [dbluhm](https://github.com/dbluhm)
 - Credential Exchange (Issue, Present) Updates
   - Add revocation registry rotate to faber demo [\#2333](https://github.com/hyperledger/aries-cloudagent-python/pull/2333) [usingtechnology](https://github.com/usingtechnology)
@@ -2262,7 +2270,7 @@ about changes you might need to make to your deployment.
 - ACA-Py Deployment Upgrade Changes
   - Add Explicit/Offline marking mechanism for Upgrade [\#2204](https://github.com/hyperledger/aries-cloudagent-python/pull/2204) [shaangill025](https://github.com/shaangill025)
 - Plugin Handling Updates
-  - Feature: Add the ability to deny specific plugins from loading  0.7.4 [\#1737](https://github.com/hyperledger/aries-cloudagent-python/pull/1737) [frostyfrog](https://github.com/frostyfrog)
+  - Feature: Add the ability to deny specific plugins from loading 0.7.4 [\#1737](https://github.com/hyperledger/aries-cloudagent-python/pull/1737) [frostyfrog](https://github.com/frostyfrog)
 - Dependencies and Internal Updates
   - upgrade pyjwt to latest; introduce leeway to jwt.decodet [\#2335](https://github.com/hyperledger/aries-cloudagent-python/pull/2335) [ff137](https://github.com/ff137)
   - upgrade requests to latest [\#2336](https://github.com/hyperledger/aries-cloudagent-python/pull/2336) [ff137](https://github.com/ff137)
@@ -2279,7 +2287,7 @@ about changes you might need to make to your deployment.
   - Cancel in-progress workflows when PR is updated [\#2303](https://github.com/hyperledger/aries-cloudagent-python/pull/2303) [andrewwhitehead](https://github.com/andrewwhitehead)
   - ci: add gha for pr-tests [\#2058](https://github.com/hyperledger/aries-cloudagent-python/pull/2058) [dbluhm](https://github.com/dbluhm)
   - Add devcontainer for ACA-Py [\#2267](https://github.com/hyperledger/aries-cloudagent-python/pull/2267) [usingtechnology](https://github.com/usingtechnology)
-  - Docker images and GHA for publishing images  help wanted [\#2076](https://github.com/hyperledger/aries-cloudagent-python/pull/2076) [dbluhm](https://github.com/dbluhm)
+  - Docker images and GHA for publishing images help wanted [\#2076](https://github.com/hyperledger/aries-cloudagent-python/pull/2076) [dbluhm](https://github.com/dbluhm)
   - ci: test additional versions of python nightly [\#2059](https://github.com/hyperledger/aries-cloudagent-python/pull/2059) [dbluhm](https://github.com/dbluhm)
 - Release management pull requests
   - 0.9.0 [\#2344](https://github.com/hyperledger/aries-cloudagent-python/pull/2344) [swcurran](https://github.com/swcurran)
@@ -2560,7 +2568,7 @@ ACA-Py, adding you wallet settings:
   - Do not reject OOB invitation with unknown handshake protocol\(s\) [\#2060](https://github.com/hyperledger/aries-cloudagent-python/pull/2060) ([andrewwhitehead](https://github.com/andrewwhitehead))
   - fix: fix connection timing bug [\#2099](https://github.com/hyperledger/aries-cloudagent-python/pull/2099) ([reflectivedevelopment](https://github.com/reflectivedevelopment))
   - Previously flagged in release 1.0.0-rc1
-    - Fix: `--mediator-invitation` with OOB invitation + cleanup  [\#1970](https://github.com/hyperledger/aries-cloudagent-python/pull/1970) ([shaangill025](https://github.com/shaangill025))
+    - Fix: `--mediator-invitation` with OOB invitation + cleanup [\#1970](https://github.com/hyperledger/aries-cloudagent-python/pull/1970) ([shaangill025](https://github.com/shaangill025))
     - include image\_url in oob invitation [\#1966](https://github.com/hyperledger/aries-cloudagent-python/pull/1966) ([Zzocker](https://github.com/Zzocker))
     - feat: 00B v1.1 support [\#1962](https://github.com/hyperledger/aries-cloudagent-python/pull/1962) ([shaangill025](https://github.com/shaangill025))
     - Fix: OOB - Handling of minor versions [\#1940](https://github.com/hyperledger/aries-cloudagent-python/pull/1940) ([shaangill025](https://github.com/shaangill025))
@@ -2588,7 +2596,7 @@ ACA-Py, adding you wallet settings:
   - Special handling for the write ledger [\#2030](https://github.com/hyperledger/aries-cloudagent-python/pull/2030) ([ianco](https://github.com/ianco))
   - Previously flagged in release 1.0.0-rc1
     - Fix/txn job setting [\#1994](https://github.com/hyperledger/aries-cloudagent-python/pull/1994) ([ianco](https://github.com/ianco))
-    - chore: fix ACAPY\_PROMOTE-AUTHOR-DID flag  [\#1978](https://github.com/hyperledger/aries-cloudagent-python/pull/1978) ([morrieinmaas](https://github.com/morrieinmaas))
+    - chore: fix ACAPY\_PROMOTE-AUTHOR-DID flag [\#1978](https://github.com/hyperledger/aries-cloudagent-python/pull/1978) ([morrieinmaas](https://github.com/morrieinmaas))
     - Endorser write DID transaction [\#1938](https://github.com/hyperledger/aries-cloudagent-python/pull/1938) ([ianco](https://github.com/ianco))
     - Endorser doc updates and some bug fixes [\#1926](https://github.com/hyperledger/aries-cloudagent-python/pull/1926) ([ianco](https://github.com/ianco))
 
@@ -2714,7 +2722,7 @@ for more details.
 
 0.7.4 is a significant release focused on stability and production deployments.
 As the "patch" release number indicates, there were no breaking changes in the
-Admin API, but a huge volume of updates and improvements.  Highlights of this
+Admin API, but a huge volume of updates and improvements. Highlights of this
 release include:
 
 - A major performance and stability improvement resulting from the now
@@ -2868,7 +2876,7 @@ stuff needed for a healthy, growing codebase.
   - Update pyjwt to 2.4 [\#1829](https://github.com/hyperledger/aries-cloudagent-python/pull/1829) ([andrewwhitehead](https://github.com/andrewwhitehead))
   - Fix external Outbound Transport loading code [\#1812](https://github.com/hyperledger/aries-cloudagent-python/pull/1812) ([frostyfrog](https://github.com/frostyfrog))
   - Fix iteration over key list, update Askar to 0.2.5 [\#1740](https://github.com/hyperledger/aries-cloudagent-python/pull/1740) ([andrewwhitehead](https://github.com/andrewwhitehead))
-  - Fix: update IndyLedgerRequestsExecutor logic - multitenancy and basic base wallet type  [\#1700](https://github.com/hyperledger/aries-cloudagent-python/pull/1700) ([shaangill025](https://github.com/shaangill025))
+  - Fix: update IndyLedgerRequestsExecutor logic - multitenancy and basic base wallet type [\#1700](https://github.com/hyperledger/aries-cloudagent-python/pull/1700) ([shaangill025](https://github.com/shaangill025))
   - Move database operations inside the session context [\#1633](https://github.com/hyperledger/aries-cloudagent-python/pull/1633) ([acuderman](https://github.com/acuderman))
   - Upgrade ConfigArgParse to version 1.5.3 [\#1627](https://github.com/hyperledger/aries-cloudagent-python/pull/1627) ([WadeBarnes](https://github.com/WadeBarnes))
   - Update aiohttp dependency [\#1606](https://github.com/hyperledger/aries-cloudagent-python/pull/1606) ([acuderman](https://github.com/acuderman))
@@ -3089,7 +3097,7 @@ and ACA-Py takes care of the rest. Documentation of that feature is [here](docs/
 A relatively minor maintenance release to address issues found since the 0.7.0 Release.
 Includes some cleanups of JSON-LD Verifiable Credentials and Verifiable Presentations
 
-- W3C  Verifiable Credential cleanups
+- W3C Verifiable Credential cleanups
   - Timezone inclusion [ISO 8601] for W3C VC and Proofs ([#1373](https://github.com/hyperledger/aries-cloudagent-python/pull/1373))
   - W3C VC handling where attachment is JSON and not Base64 encoded ([#1352](https://github.com/hyperledger/aries-cloudagent-python/pull/1352))
 - Refactor outbound queue interface ([#1348](https://github.com/hyperledger/aries-cloudagent-python/pull/1348))

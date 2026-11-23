@@ -535,6 +535,24 @@ class TestMultiIndyVDRLedgerManager(IsolatedAsyncioTestCase):
                 "Av63wJYM7xYR4AiygYq4c3", cache_did=True
             )
 
+    async def test_lookup_did_in_configured_ledgers_timeout(self):
+        self.profile.settings["ledger.did_resolution_timeout"] = 0.01
+        manager = MultiIndyVDRLedgerManager(
+            self.profile,
+            production_ledgers=self.production_ledger,
+            non_production_ledgers=self.non_production_ledger,
+        )
+        assert manager._timeout == 0.01
+
+        async def _hang(*args, **kwargs):
+            await asyncio.sleep(1)
+
+        with mock.patch.object(manager, "_get_ledger_by_did", mock.CoroutineMock(side_effect=_hang)):
+            with self.assertRaises(MultipleLedgerManagerError):
+                await manager.lookup_did_in_configured_ledgers(
+                    "Av63wJYM7xYR4AiygYq4c3", cache_did=False
+                )
+
     async def test_get_production_ledgers(self):
         assert len(await self.manager.get_prod_ledgers()) == 2
 

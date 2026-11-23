@@ -192,7 +192,11 @@ class TestV20LDProofCredFormatHandler(IsolatedAsyncioTestCase):
 
     async def test_create_offer(self):
         with (
-            patch.object(test_module, "get_properties_without_context", return_value=[]),
+            patch.object(
+                test_module,
+                "get_properties_without_context",
+                new=mock.AsyncMock(return_value=[]),
+            ),
         ):
             (cred_format, attachment) = await self.handler.create_offer(
                 self.cred_proposal
@@ -223,7 +227,11 @@ class TestV20LDProofCredFormatHandler(IsolatedAsyncioTestCase):
         )
 
         with (
-            patch.object(test_module, "get_properties_without_context", return_value=[]),
+            patch.object(
+                test_module,
+                "get_properties_without_context",
+                new=mock.AsyncMock(return_value=[]),
+            ),
         ):
             (cred_format, attachment) = await self.handler.create_offer(cred_proposal)
 
@@ -246,7 +254,11 @@ class TestV20LDProofCredFormatHandler(IsolatedAsyncioTestCase):
         )
 
         with (
-            patch.object(test_module, "get_properties_without_context", return_value=[]),
+            patch.object(
+                test_module,
+                "get_properties_without_context",
+                new=mock.AsyncMock(return_value=[]),
+            ),
         ):
             (cred_format, attachment) = await self.handler.create_offer(cred_proposal)
 
@@ -269,7 +281,7 @@ class TestV20LDProofCredFormatHandler(IsolatedAsyncioTestCase):
             patch.object(
                 test_module,
                 "get_properties_without_context",
-                return_value=missing_properties,
+                new=mock.AsyncMock(return_value=missing_properties),
             ),
             self.assertRaises(LinkedDataProofException) as context,
         ):

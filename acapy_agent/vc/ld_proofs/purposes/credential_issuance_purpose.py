@@ -8,6 +8,7 @@ from pyld.jsonld import JsonLdProcessor
 from ..constants import CREDENTIALS_ISSUER_URL
 from ..document_loader import DocumentLoaderMethod
 from ..error import LinkedDataProofException
+from ..pyld_util import run_sync
 from ..validation_result import PurposeResult
 from .assertion_proof_purpose import AssertionProofPurpose
 
@@ -19,7 +20,7 @@ if TYPE_CHECKING:
 class CredentialIssuancePurpose(AssertionProofPurpose):
     """Credential Issuance proof purpose."""
 
-    def validate(
+    async def validate(
         self,
         *,
         proof: dict,
@@ -30,7 +31,7 @@ class CredentialIssuancePurpose(AssertionProofPurpose):
     ) -> PurposeResult:
         """Validate if the issuer matches the controller of the verification method."""
         try:
-            result = super().validate(
+            result = await super().validate(
                 proof=proof,
                 document=document,
                 suite=suite,
@@ -45,7 +46,8 @@ class CredentialIssuancePurpose(AssertionProofPurpose):
             # FIXME: Other implementations don't expand, but
             # if we don't expand we can't get the property using
             # the full CREDENTIALS_ISSUER_URL.
-            [expanded] = jsonld.expand(
+            [expanded] = await run_sync(
+                jsonld.expand,
                 document,
                 {
                     "documentLoader": document_loader,
