@@ -504,7 +504,7 @@ class DIFPresFormatHandler(V20PresFormatHandler):
                 await responder.send_reply(
                     report, connection_id=pres_ex_record.connection_id
                 )
-                return False
+            return False
 
     async def verify_pres(self, pres_ex_record: V20PresExRecord) -> V20PresExRecord:
         """Verify a presentation.

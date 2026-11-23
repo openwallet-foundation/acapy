@@ -31,6 +31,9 @@ MALICIOUS_OR_UNSUPPORTED_PATHS = [
     "." * (MAX_PATH_LENGTH * 2),
     "",
     None,
+    ["$.credentialSubject.name"],
+    {"path": "$.credentialSubject.name"},
+    42,
 ]
 
 
