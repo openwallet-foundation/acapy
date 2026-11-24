@@ -601,18 +601,18 @@ files = [
 
 [[package]]
 name = "configargparse"
-version = "1.9.0"
+version = "1.10.2"
 description = "A drop-in replacement for argparse that allows options to also be set via config files and/or environment variables."
 optional = false
 python-versions = ">=3.6"
 groups = ["main"]
 files = [
-    {file = "configargparse-1.9.0-py3-none-any.whl", hash = "sha256:e4ecc54d821ca97c43e6152403f40e158aff79d809c3447746fa92b136dc1e31"},
-    {file = "configargparse-1.9.0.tar.gz", hash = "sha256:48d9c22affe4ac419b4dd0691fa929d759e1f99574be41826785f2dbf3da63a5"},
+    {file = "configargparse-1.10.2-py3-none-any.whl", hash = "sha256:926e28ca8262f066dfeb6585e227a78f01bd3d7f3fb63fad1c8045c5da1401ac"},
+    {file = "configargparse-1.10.2.tar.gz", hash = "sha256:2deb0b3d6d46ff6e3218fcd350127507c5e3c11e21c8072a9fb24531dfc9bd4a"},
 ]
 
 [package.extras]
-test = ["PyYAML", "black", "mock", "pytest", "pytest-cov", "pytest-subtests", "toml"]
+test = ["PyYAML", "black", "pytest", "pytest-cov", "pytest-subtests", "toml"]
 toml = ["toml"]
 yaml = ["PyYAML"]
 
@@ -3507,4 +3507,4 @@ sqlcipher = ["sqlcipher3-binary"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.13"
-content-hash = "f98fdcdb32d565df423825699d23be522394881b5b3f232679e9e7a64183a8e5"
+content-hash = "62fe453e13c70a22f8fb484cdbaff17faee6a8227af99f65946909adf10d1206"

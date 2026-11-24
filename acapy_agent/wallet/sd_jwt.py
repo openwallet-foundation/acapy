@@ -115,7 +115,7 @@ def separate_list_splices(non_sd_list) -> List:
     the claims which should not be selectively disclosable in the case
     of list splices.
     """
-    for item in non_sd_list:
+    for item in list(non_sd_list):
         if ":" in item:
             split = re.split(r"\[|\]|:", item)
             for i in range(int(split[1]), int(split[2])):
