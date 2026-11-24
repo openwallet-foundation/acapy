@@ -703,6 +703,44 @@ class TestV20CredRoutes(IsolatedAsyncioTestCase):
             with self.assertRaises(test_module.web.HTTPBadRequest):
                 await test_module.credential_exchange_create_free_offer(self.request)
 
+    async def test_credential_exchange_create_free_offer_value_error_str_reason(self):
+        """ValueError from create_offer must become HTTP 400 with a string reason."""
+        self.request.json = mock.CoroutineMock(
+            return_value={
+                "auto_issue": False,
+                "credential_preview": {
+                    "attributes": [{"name": "hello", "value": "world"}]
+                },
+                "filter": {"anoncreds": {"cred_def_id": "cred-def-id"}},
+            }
+        )
+
+        err_msg = "AnonCreds interface requires AskarAnonCreds or KanonAnonCreds profile"
+        with (
+            mock.patch.object(test_module, "ConnRecord", autospec=True),
+            mock.patch.object(
+                test_module, "V20CredManager", autospec=True
+            ) as mock_cred_mgr,
+        ):
+            mock_cx_rec = mock.MagicMock(save_error_state=mock.CoroutineMock())
+            mock_cred_mgr.return_value = mock.MagicMock(
+                create_offer=mock.CoroutineMock(side_effect=ValueError(err_msg))
+            )
+            # Force _create_free_offer to use our mock record path via create_offer raise
+            with mock.patch.object(
+                test_module,
+                "V20CredExRecord",
+                return_value=mock_cx_rec,
+            ):
+                with self.assertRaises(test_module.web.HTTPBadRequest) as context:
+                    await test_module.credential_exchange_create_free_offer(self.request)
+
+            assert context.exception.reason == err_msg
+            mock_cx_rec.save_error_state.assert_awaited()
+            reason_kw = mock_cx_rec.save_error_state.await_args.kwargs.get("reason")
+            assert reason_kw == err_msg
+            assert isinstance(reason_kw, str)
+
     async def test_credential_exchange_send_free_offer(self):
         self.request.json = mock.CoroutineMock(
             return_value={
