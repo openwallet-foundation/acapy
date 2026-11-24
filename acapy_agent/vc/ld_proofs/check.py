@@ -128,22 +128,47 @@ def diff_dict_keys(
 def get_properties_without_context(
     document: dict, document_loader: DocumentLoaderMethod
 ) -> Sequence[str]:
-    """Get the properties from document that don't have an context definition."""
-    # FIXME: this doesn't work with nested @context structures...
-    if "verifiableCredential" in document:
-        return []
+    """Get the properties from document that don't have an context definition.
 
+    Credentials embedded under ``verifiableCredential`` carry their own
+    ``@context`` and are checked when their own proofs are verified, so they are
+    excluded here. The ``verifiableCredential`` term itself must still be
+    defined by the document context.
+    """
     document = document.copy()
+    context = document["@context"]
+    has_embedded_credentials = "verifiableCredential" in document
+    document.pop("verifiableCredential", None)
 
     # Removes unknown keys from object
     compact = jsonld.compact(
         document,
-        document["@context"],
+        context,
         {"documentLoader": document_loader},
     )
 
     missing = diff_dict_keys(
-        document, compact, document_loader=document_loader, context=document["@context"]
+        document, compact, document_loader=document_loader, context=context
     )
 
+    if has_embedded_credentials and not _is_term_defined(
+        "verifiableCredential", document, context, document_loader
+    ):
+        missing.append("verifiableCredential")
+
     return missing
+
+
+def _is_term_defined(
+    term: str, document: dict, context, document_loader: DocumentLoaderMethod
+) -> bool:
+    """Check whether a term is defined by the context, given the document type."""
+    probe = {"@context": context, term: {"id": "urn:uuid:probe"}}
+    if document.get("type"):
+        probe["type"] = document["type"]
+    elif document.get("@type"):
+        probe["@type"] = document["@type"]
+    expanded = jsonld.expand(probe, {"documentLoader": document_loader})
+    return bool(expanded) and any(
+        not jsonld._is_keyword(key) for key in expanded[0].keys()
+    )
