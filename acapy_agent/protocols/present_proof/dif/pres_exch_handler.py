@@ -47,6 +47,7 @@ from ....wallet.default_verification_key_strategy import (
 )
 from ....wallet.error import WalletError, WalletNotFoundError
 from ....wallet.key_type import BLS12381G2, ED25519, P256
+from .jsonpath_guard import is_safe_jsonpath
 from .pres_exch import (
     Constraints,
     DIFField,
@@ -968,7 +969,7 @@ class DIFPresExchHandler:
             bool
 
         """
-        subject_ids = credential.subject_ids
+        subject_ids = credential.subject_ids or []
         for subject_id in subject_ids:
             issuer_id = credential.issuer_id
             if subject_id != "" and subject_id == issuer_id:
@@ -1428,6 +1429,10 @@ class DIFPresExchHandler:
         inp_desc_id_schema_one_of_filter = set()
         inp_desc_id_schemas_map = {}
         submitted_descriptors = set()
+        holder_dids = self.presentation_signer_dids(pres)
+        presented_creds = pres.get("verifiableCredential") or []
+        if isinstance(presented_creds, dict):
+            presented_creds = [presented_creds]
         for input_descriptor in input_descriptors:
             inp_desc_id_constraint_map[input_descriptor.id] = input_descriptor.constraint
             inp_desc_id_schemas_map[input_descriptor.id] = input_descriptor.schemas
@@ -1443,16 +1448,30 @@ class DIFPresExchHandler:
             constraint = inp_desc_id_constraint_map.get(desc_map_item_id)
             schema_filter = inp_desc_id_schemas_map.get(desc_map_item_id)
             desc_map_item_path = desc_map_item.get("path")
+            if not is_safe_jsonpath(desc_map_item_path):
+                raise DIFPresExchError(
+                    "Unsupported or unsafe JSONPath expression in descriptor_map: "
+                    f"{desc_map_item_path!r}"
+                )
             jsonpath = parse(desc_map_item_path)
             match = jsonpath.find(pres)
             if len(match) == 0:
                 raise DIFPresExchError(
                     f"{desc_map_item_path} path in descriptor_map not applicable"
                 )
+            # Each path must resolve to a credential entry of the presentation
+            if not all(
+                any(match_item.value is cred for cred in presented_creds)
+                for match_item in match
+            ):
+                raise DIFPresExchError(
+                    f"{desc_map_item_path} path in descriptor_map does not resolve "
+                    "to a credential in verifiableCredential"
+                )
             for match_item in match:
                 try:
                     await self.apply_constraint_received_cred(
-                        constraint, match_item.value
+                        constraint, match_item.value, holder_dids=holder_dids
                     )
                 except BaseError as err:
                     raise DIFPresExchError(
@@ -1519,14 +1538,65 @@ class DIFPresExchHandler:
                 applied_field_paths.append(path)
         return applied_field_paths
 
+    @staticmethod
+    def presentation_signer_dids(pres: dict) -> Sequence[str]:
+        """Return the DIDs of the verification methods in a presentation's proofs."""
+        proofs = pres.get("proof") if isinstance(pres, dict) else None
+        if isinstance(proofs, dict):
+            proofs = [proofs]
+        if not isinstance(proofs, list):
+            return []
+        signer_dids = []
+        for proof in proofs:
+            verification_method = (
+                proof.get("verificationMethod") if isinstance(proof, dict) else None
+            )
+            if isinstance(verification_method, dict):
+                verification_method = verification_method.get("id")
+            if not isinstance(verification_method, str):
+                continue
+            did = verification_method.split("#", 1)[0]
+            if did:
+                signer_dids.append(did)
+        return signer_dids
+
     async def apply_constraint_received_cred(
-        self, constraint: Constraints, cred_dict: dict
+        self,
+        constraint: Constraints,
+        cred_dict: dict,
+        holder_dids: Optional[Sequence[str]] = None,
     ) -> None:
-        """Evaluate constraint from the request against received credential."""
-        """If successful, returns None, else raises an error with reason for failure"""
+        """Evaluate constraint from the request against received credential.
+
+        If successful, returns None, else raises an error with reason for failure.
+
+        Args:
+            constraint: Constraints from the presentation definition
+            cred_dict: Received credential
+            holder_dids: DIDs of the verification methods used to sign the
+                enclosing presentation
+
+        """
         fields = constraint._fields
         field_paths = []
         credential = self.create_vcrecord(cred_dict)
+        if constraint.subject_issuer == "required" and not self.subject_is_issuer(
+            credential=credential
+        ):
+            raise DIFPresExchError(
+                "Credential subject is not the credential issuer, "
+                "subject_is_issuer is required"
+            )
+        if any(holder.directive == "required" for holder in constraint.holders or []):
+            # Every presentation signer must be a subject of the credential
+            subject_ids = credential.subject_ids or []
+            if not holder_dids or not all(
+                holder_did in subject_ids for holder_did in holder_dids
+            ):
+                raise DIFPresExchError(
+                    "Credential subject is not the presentation holder, "
+                    "is_holder is required"
+                )
         is_limit_disclosure = constraint.limit_disclosure == "required"
         for field in fields:
             if is_limit_disclosure:
