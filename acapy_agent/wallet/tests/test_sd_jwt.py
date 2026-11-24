@@ -577,6 +577,15 @@ class TestSDJWT(IsolatedAsyncioTestCase):
         with self.assertRaisesRegex(ValueError, "not referenced"):
             await sd_jwt_verify(self.profile, "~".join([jwt_part, *presented, ""]))
 
+    async def test_verify_x_repeated_disclosure(self):
+        _, jwt_part, disclosures = await self._sign_nested()
+
+        with self.assertRaisesRegex(ValueError, "Duplicate disclosure"):
+            await sd_jwt_verify(
+                self.profile,
+                "~".join([jwt_part, *disclosures, disclosures[0], ""]),
+            )
+
     async def test_verify_x_disclosure_digests(self):
         async with self.profile.session() as session:
             wallet = session.inject(BaseWallet)
