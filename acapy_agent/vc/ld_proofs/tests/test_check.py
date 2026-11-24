@@ -1,3 +1,4 @@
+from copy import deepcopy
 from unittest import TestCase
 
 from ...tests.document_loader import custom_document_loader
@@ -144,6 +145,27 @@ INVALID_VACCINATION_DOC = {
     },
 }
 
+VALID_PRESENTATION_DOC = {
+    "@context": [
+        "https://www.w3.org/2018/credentials/v1",
+        "https://identity.foundation/presentation-exchange/submission/v1",
+    ],
+    "type": ["VerifiablePresentation", "PresentationSubmission"],
+    "holder": "did:example:b34ca6cd37bbf23",
+    "presentation_submission": {
+        "id": "a5fcfe44-2c30-497d-af02-98e539da9a0f",
+        "definition_id": "32f54163-7166-48f1-93d8-ff217bdb0653",
+        "descriptor_map": [
+            {
+                "id": "citizenship_input_1",
+                "format": "ldp_vc",
+                "path": "$.verifiableCredential[0]",
+            }
+        ],
+    },
+    "verifiableCredential": [VALID_INPUT_DOC],
+}
+
 
 class TestCheck(TestCase):
     def test_get_properties_without_context_valid(self):
@@ -177,4 +199,34 @@ class TestCheck(TestCase):
         ) == [
             "credentialSubject.recipient.nonExistent",
             "credentialSubject.vaccine.nonExistent",
+        ]
+
+    def test_get_properties_without_context_presentation_valid(self):
+        assert (
+            get_properties_without_context(VALID_PRESENTATION_DOC, custom_document_loader)
+            == []
+        )
+
+    def test_get_properties_without_context_presentation_invalid(self):
+        presentation = deepcopy(VALID_PRESENTATION_DOC)
+        presentation["extraData"] = {"issuer": "did:example:489398593"}
+        assert get_properties_without_context(presentation, custom_document_loader) == [
+            "extraData"
+        ]
+
+    def test_get_properties_without_context_presentation_no_credentials(self):
+        presentation = deepcopy(VALID_PRESENTATION_DOC)
+        presentation["verifiableCredential"] = []
+        presentation["extraData"] = {"issuer": "did:example:489398593"}
+        assert get_properties_without_context(presentation, custom_document_loader) == [
+            "extraData"
+        ]
+
+    def test_get_properties_without_context_credential_with_vc_term(self):
+        credential = deepcopy(VALID_INPUT_DOC)
+        credential["verifiableCredential"] = []
+        credential["extraData"] = "value"
+        assert get_properties_without_context(credential, custom_document_loader) == [
+            "extraData",
+            "verifiableCredential",
         ]
