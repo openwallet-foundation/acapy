@@ -785,11 +785,28 @@ class V20CredManager:
         """
         # FIXME use transaction, fetch for_update
         async with self._profile.session() as session:
-            cred_ex_record = await V20CredExRecord.retrieve_by_conn_and_thread(
-                session,
-                connection_id,
-                message._thread_id,
-            )
+            try:
+                cred_ex_record = await V20CredExRecord.retrieve_by_conn_and_thread(
+                    session,
+                    connection_id,
+                    message._thread_id,
+                )
+            except StorageNotFoundError:
+                # An offer attached to an OOB invitation is stored without a
+                # connection_id. If the holder declines it over the connection
+                # created by the OOB handshake, the lookup above misses, so
+                # retry by thread only and accept the match just when the
+                # record is not bound to any connection yet.
+                cred_ex_record = await V20CredExRecord.retrieve_by_conn_and_thread(
+                    session,
+                    None,
+                    message._thread_id,
+                )
+                if cred_ex_record.connection_id:
+                    raise StorageNotFoundError(
+                        "No credential exchange record found for thread "
+                        f"{message._thread_id} on connection {connection_id}"
+                    )
 
             cred_ex_record.state = V20CredExRecord.STATE_ABANDONED
             code = message.description.get(
