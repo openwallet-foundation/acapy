@@ -47,7 +47,7 @@ class V20CredProposalHandler(BaseHandler):
             context.message, context.connection_record.connection_id
         )  # mgr only finds, saves record: on exception, saving state null is hopeless
 
-        r_time = trace_event(
+        r_time = await trace_event(
             context.settings,
             context.message,
             outcome="CredentialProposalHandler.handle.END",
@@ -85,7 +85,7 @@ class V20CredProposalHandler(BaseHandler):
                     )
                 )
 
-            trace_event(
+            await trace_event(
                 context.settings,
                 cred_offer_message,
                 outcome="V20CredProposalHandler.handle.OFFER",

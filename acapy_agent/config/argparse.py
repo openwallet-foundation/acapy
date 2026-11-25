@@ -1,18 +1,21 @@
 """Command line option parsing."""
 
 import abc
+import asyncio
 import json
 import logging
 import os
 import tempfile
+from concurrent.futures import ThreadPoolExecutor
 from functools import reduce
 from itertools import chain
 from os import environ
-from typing import Optional, Type
+from typing import Any, Coroutine, Optional, Type
+from urllib.error import HTTPError, URLError
 from urllib.parse import urlparse
+from urllib.request import Request, urlopen
 
 import deepmerge
-import requests
 import yaml
 from configargparse import ArgumentParser, Namespace, YAMLConfigFileParser
 
@@ -30,6 +33,21 @@ CAT_UPGRADE = "upgrade"
 ENDORSER_AUTHOR = "author"
 ENDORSER_ENDORSER = "endorser"
 ENDORSER_NONE = "none"
+
+
+def _run_coroutine_blocking(coro: Coroutine[Any, Any, Any]) -> Any:
+    """Run a coroutine to completion from synchronous code.
+
+    Argument parsing is synchronous but can be invoked while an event loop is
+    already running (as `aca-py start` does), where `asyncio.run()` is not
+    allowed. In that case the coroutine runs on its own loop in a worker thread.
+    """
+    try:
+        asyncio.get_running_loop()
+    except RuntimeError:
+        return asyncio.run(coro)
+    with ThreadPoolExecutor(max_workers=1) as executor:
+        return executor.submit(asyncio.run, coro).result()
 
 
 def fetch_remote_config(url: str, timeout: int = 30) -> str:
@@ -57,10 +75,10 @@ def fetch_remote_config(url: str, timeout: int = 30) -> str:
     try:
         # Fetch the remote config
         LOGGER.info(f"Fetching remote configuration from: {url}")
-        response = requests.get(url, timeout=timeout)
-        response.raise_for_status()
-        text = response.text
-    except requests.RequestException as e:
+        request = Request(url, method="GET")
+        with urlopen(request, timeout=timeout) as response:
+            text = response.read().decode("utf-8")
+    except (HTTPError, URLError) as e:
         raise ArgsParseError(
             f"Failed to fetch remote configuration from {url}: {e}"
         ) from e
@@ -1567,13 +1585,15 @@ class ProtocolGroup(ArgumentGroup):
             # make sure we can trace to the configured target
             # (target can be set even if tracing is off)
             try:
-                trace_event(
-                    settings,
-                    None,
-                    handler="ArgParse",
-                    outcome="Successfully_configured_aca-py",
-                    raise_errors=True,
-                    force_trace=True,
+                _run_coroutine_blocking(
+                    trace_event(
+                        settings,
+                        None,
+                        handler="ArgParse",
+                        outcome="Successfully_configured_aca-py",
+                        raise_errors=True,
+                        force_trace=True,
+                    )
                 )
             except Exception as e:
                 raise ArgsParseError("Error writing trace event " + str(e))

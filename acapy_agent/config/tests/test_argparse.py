@@ -1,11 +1,21 @@
+import asyncio
 import os
 from unittest import TestCase, mock
+from urllib.error import URLError
 
-import requests
 from configargparse import ArgumentTypeError
 
 from .. import argparse
 from ..util import BoundedInt, ByteSize
+
+
+def _mock_urlopen_response(body: bytes):
+    mock_response = mock.Mock()
+    mock_response.read.return_value = body
+    mock_cm = mock.Mock()
+    mock_cm.__enter__ = mock.Mock(return_value=mock_response)
+    mock_cm.__exit__ = mock.Mock(return_value=False)
+    return mock_cm
 
 
 class TestArgParse(TestCase):
@@ -782,13 +792,57 @@ class TestArgParse(TestCase):
         with self.assertRaises(argparse.ArgsParseError):
             group.get_settings(result)
 
+    def _protocol_settings(self, *argv: str) -> dict:
+        parser = argparse.create_argument_parser()
+        argparse.TransportGroup().add_arguments(parser)
+        group = argparse.ProtocolGroup()
+        group.add_arguments(parser)
+        return group.get_settings(
+            parser.parse_args(
+                ["--inbound-transport", "http", "0.0.0.0", "80"]
+                + ["--outbound-transport", "http", *argv]
+            )
+        )
+
+    def test_protocol_settings_trace_check(self):
+        """Test the trace target check outside and inside a running event loop."""
+
+        async def in_running_loop():
+            return self._protocol_settings("--trace-tag", "tag")
+
+        for get_settings in (
+            lambda: self._protocol_settings("--trace-tag", "tag"),
+            lambda: asyncio.run(in_running_loop()),
+        ):
+            with mock.patch.object(
+                argparse, "trace_event", mock.AsyncMock()
+            ) as mock_trace_event:
+                settings = get_settings()
+
+            mock_trace_event.assert_awaited_once()
+            assert settings["trace.target"] == "log"
+            assert settings["trace.tag"] == "tag"
+
+    def test_protocol_settings_trace_check_error_in_running_loop(self):
+        """Test a failing trace target is reported from a running event loop."""
+
+        async def in_running_loop():
+            return self._protocol_settings("--trace-target", "http://example.com/")
+
+        with mock.patch.object(
+            argparse, "trace_event", mock.AsyncMock(side_effect=OSError("unreachable"))
+        ):
+            with self.assertRaises(argparse.ArgsParseError) as context:
+                asyncio.run(in_running_loop())
+        assert "Error writing trace event unreachable" in str(context.exception)
+
     def test_fetch_remote_config_success(self):
         """Test successful remote config fetching."""
-        mock_response = mock.Mock()
-        mock_response.text = "admin:\n  - 0.0.0.0\n  - 8000\n"
-        mock_response.raise_for_status = mock.Mock()
-
-        with mock.patch("requests.get", return_value=mock_response):
+        with mock.patch.object(
+            argparse,
+            "urlopen",
+            return_value=_mock_urlopen_response(b"admin:\n  - 0.0.0.0\n  - 8000\n"),
+        ):
             temp_file = argparse.fetch_remote_config("https://example.com/config.yml")
             assert temp_file
 
@@ -808,19 +862,19 @@ class TestArgParse(TestCase):
 
     def test_fetch_remote_config_invalid_yaml(self):
         """Test remote config with invalid YAML."""
-        mock_response = mock.Mock()
-        mock_response.text = "invalid: yaml: content: ["
-        mock_response.raise_for_status = mock.Mock()
-
-        with mock.patch("requests.get", return_value=mock_response):
+        with mock.patch.object(
+            argparse,
+            "urlopen",
+            return_value=_mock_urlopen_response(b"invalid: yaml: content: ["),
+        ):
             with self.assertRaises(argparse.ArgsParseError) as context:
                 argparse.fetch_remote_config("https://example.com/config.yml")
             assert "not valid YAML" in str(context.exception)
 
     def test_fetch_remote_config_request_error(self):
         """Test remote config with request failure."""
-        with mock.patch(
-            "requests.get", side_effect=requests.RequestException("Network error")
+        with mock.patch.object(
+            argparse, "urlopen", side_effect=URLError("Network error")
         ):
             with self.assertRaises(argparse.ArgsParseError) as context:
                 argparse.fetch_remote_config("https://example.com/config.yml")
@@ -828,11 +882,11 @@ class TestArgParse(TestCase):
 
     def test_fetch_remote_config_file_write_error(self):
         """Test remote config with file write failure."""
-        mock_response = mock.Mock()
-        mock_response.text = "admin:\n  - 0.0.0.0\n  - 8000\n"
-        mock_response.raise_for_status = mock.Mock()
-
-        with mock.patch("requests.get", return_value=mock_response):
+        with mock.patch.object(
+            argparse,
+            "urlopen",
+            return_value=_mock_urlopen_response(b"admin:\n  - 0.0.0.0\n  - 8000\n"),
+        ):
             with mock.patch("tempfile.mkstemp", side_effect=OSError("Disk full")):
                 with self.assertRaises(argparse.ArgsParseError) as context:
                     argparse.fetch_remote_config("https://example.com/config.yml")
@@ -840,11 +894,11 @@ class TestArgParse(TestCase):
 
     def test_preprocess_args_for_remote_config_space_separated(self):
         """Test preprocessing with space-separated --arg-file with URL."""
-        mock_response = mock.Mock()
-        mock_response.text = "admin:\n  - 0.0.0.0\n  - 8000\n"
-        mock_response.raise_for_status = mock.Mock()
-
-        with mock.patch("requests.get", return_value=mock_response):
+        with mock.patch.object(
+            argparse,
+            "urlopen",
+            return_value=_mock_urlopen_response(b"admin:\n  - 0.0.0.0\n  - 8000\n"),
+        ):
             argv = [
                 "start",
                 "--arg-file",
@@ -862,11 +916,11 @@ class TestArgParse(TestCase):
 
     def test_preprocess_args_for_remote_config_equals_format(self):
         """Test preprocessing with --arg-file=<url> format."""
-        mock_response = mock.Mock()
-        mock_response.text = "admin:\n  - 0.0.0.0\n  - 8000\n"
-        mock_response.raise_for_status = mock.Mock()
-
-        with mock.patch("requests.get", return_value=mock_response):
+        with mock.patch.object(
+            argparse,
+            "urlopen",
+            return_value=_mock_urlopen_response(b"admin:\n  - 0.0.0.0\n  - 8000\n"),
+        ):
             argv = ["start", "--arg-file=https://example.com/config.yml"]
             result = argparse.preprocess_args_for_remote_config(argv)
 

@@ -1,3 +1,4 @@
+import asyncio
 from copy import deepcopy
 from unittest import TestCase
 
@@ -170,14 +171,17 @@ VALID_PRESENTATION_DOC = {
 class TestCheck(TestCase):
     def test_get_properties_without_context_valid(self):
         assert (
-            get_properties_without_context(VALID_INPUT_DOC, custom_document_loader) == []
+            asyncio.run(
+                get_properties_without_context(VALID_INPUT_DOC, custom_document_loader)
+            )
+            == []
         )
 
     def test_get_properties_without_context_invalid(self):
         # document has extra property some_random and
         # is missing the bbs context
-        assert get_properties_without_context(
-            INVALID_INPUT_DOC, custom_document_loader
+        assert asyncio.run(
+            get_properties_without_context(INVALID_INPUT_DOC, custom_document_loader)
         ) == [
             "credentialSubject[1].some_random",
             "proof.nonce",
@@ -189,13 +193,19 @@ class TestCheck(TestCase):
 
     def test_get_properties_without_context_vaccination_valid(self):
         assert (
-            get_properties_without_context(VALID_VACCINATION_DOC, custom_document_loader)
+            asyncio.run(
+                get_properties_without_context(
+                    VALID_VACCINATION_DOC, custom_document_loader
+                )
+            )
             == []
         )
 
     def test_get_properties_without_context_vaccination_invalid(self):
-        assert get_properties_without_context(
-            INVALID_VACCINATION_DOC, custom_document_loader
+        assert asyncio.run(
+            get_properties_without_context(
+                INVALID_VACCINATION_DOC, custom_document_loader
+            )
         ) == [
             "credentialSubject.recipient.nonExistent",
             "credentialSubject.vaccine.nonExistent",
@@ -203,30 +213,36 @@ class TestCheck(TestCase):
 
     def test_get_properties_without_context_presentation_valid(self):
         assert (
-            get_properties_without_context(VALID_PRESENTATION_DOC, custom_document_loader)
+            asyncio.run(
+                get_properties_without_context(
+                    VALID_PRESENTATION_DOC, custom_document_loader
+                )
+            )
             == []
         )
 
     def test_get_properties_without_context_presentation_invalid(self):
         presentation = deepcopy(VALID_PRESENTATION_DOC)
         presentation["extraData"] = {"issuer": "did:example:489398593"}
-        assert get_properties_without_context(presentation, custom_document_loader) == [
-            "extraData"
-        ]
+        assert asyncio.run(
+            get_properties_without_context(presentation, custom_document_loader)
+        ) == ["extraData"]
 
     def test_get_properties_without_context_presentation_no_credentials(self):
         presentation = deepcopy(VALID_PRESENTATION_DOC)
         presentation["verifiableCredential"] = []
         presentation["extraData"] = {"issuer": "did:example:489398593"}
-        assert get_properties_without_context(presentation, custom_document_loader) == [
-            "extraData"
-        ]
+        assert asyncio.run(
+            get_properties_without_context(presentation, custom_document_loader)
+        ) == ["extraData"]
 
     def test_get_properties_without_context_credential_with_vc_term(self):
         credential = deepcopy(VALID_INPUT_DOC)
         credential["verifiableCredential"] = []
         credential["extraData"] = "value"
-        assert get_properties_without_context(credential, custom_document_loader) == [
+        assert asyncio.run(
+            get_properties_without_context(credential, custom_document_loader)
+        ) == [
             "extraData",
             "verifiableCredential",
         ]

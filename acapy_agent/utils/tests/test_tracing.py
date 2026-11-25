@@ -1,7 +1,7 @@
 import json
 from unittest import IsolatedAsyncioTestCase
 
-import requests
+import aiohttp
 
 from ...messaging.decorators.trace_decorator import TRACE_MESSAGE_TARGET, TraceDecorator
 from ...protocols.issue_credential.v2_0.models.cred_ex_record import V20CredExRecord
@@ -84,7 +84,7 @@ class TestTracing(IsolatedAsyncioTestCase):
         assert message == test_module.decode_inbound_message(message)
         assert x_message == test_module.decode_inbound_message(x_message)
 
-    def test_log_event(self):
+    async def test_log_event(self):
         ping = Ping()
         ping._thread = {"thid": "dummy_thread_id_12345"}
         context = {
@@ -92,38 +92,38 @@ class TestTracing(IsolatedAsyncioTestCase):
             "trace.target": "log",
             "trace.tag": "acapy.trace",
         }
-        ret = test_module.trace_event(
+        ret = await test_module.trace_event(
             context,
             ping,
             handler="message_handler",
             perf_counter=None,
             outcome="processed Start",
         )
-        test_module.trace_event(
+        await test_module.trace_event(
             context,
             ping,
             perf_counter=ret,
             outcome="processed OK",
         )
         context["trace.label"] = "trace-label"
-        test_module.trace_event(context, ping)
+        await test_module.trace_event(context, ping)
         ping = Ping()
-        test_module.trace_event(context, ping)
-        test_module.trace_event(
+        await test_module.trace_event(context, ping)
+        await test_module.trace_event(
             context,
             InboundMessage(session_id="1234", payload="Hello world", receipt=None),
         )
-        test_module.trace_event(
+        await test_module.trace_event(
             context, OutboundMessage(reply_thread_id="5678", payload="Hello world")
         )
-        test_module.trace_event(
+        await test_module.trace_event(
             context, {"@type": "sample-type", "~thread": {"thid": "abcd"}}
         )
-        test_module.trace_event(context, {"~thread": {"thid": "1234"}})
-        test_module.trace_event(context, {"thread_id": "1234"})
-        test_module.trace_event(context, {"@id": "12345"})
-        test_module.trace_event(context, V20CredExRecord())
-        test_module.trace_event(context, [])
+        await test_module.trace_event(context, {"~thread": {"thid": "1234"}})
+        await test_module.trace_event(context, {"thread_id": "1234"})
+        await test_module.trace_event(context, {"@id": "12345"})
+        await test_module.trace_event(context, V20CredExRecord())
+        await test_module.trace_event(context, [])
 
     async def test_post_event(self):
         message = Ping()
@@ -133,7 +133,7 @@ class TestTracing(IsolatedAsyncioTestCase):
             "trace.target": "http://fluentd:8080/",
             "trace.tag": "acapy.trace",
         }
-        test_module.trace_event(
+        await test_module.trace_event(
             context,
             message,
             handler="message_handler",
@@ -150,7 +150,7 @@ class TestTracing(IsolatedAsyncioTestCase):
             "trace.tag": "acapy.trace",
         }
         try:
-            test_module.trace_event(
+            await test_module.trace_event(
                 context,
                 message,
                 handler="message_handler",
@@ -159,10 +159,10 @@ class TestTracing(IsolatedAsyncioTestCase):
                 raise_errors=True,
             )
             assert False
-        except requests.exceptions.ConnectionError as e:
+        except aiohttp.ClientError as e:
             pass
 
-    def test_post_msg_decorator_event(self):
+    async def test_post_msg_decorator_event(self):
         message = Ping()
         message._thread = {"thid": "dummy_thread_id_12345"}
         assert message._trace is None
@@ -171,7 +171,7 @@ class TestTracing(IsolatedAsyncioTestCase):
             "trace.target": TRACE_MESSAGE_TARGET,
             "trace.tag": "acapy.trace",
         }
-        test_module.trace_event(
+        await test_module.trace_event(
             context,
             message,
             handler="message_handler",

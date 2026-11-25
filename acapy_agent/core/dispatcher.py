@@ -200,7 +200,7 @@ class Dispatcher:
             if inbound_message.receipt.thread_id:
                 error_result.assign_thread_id(inbound_message.receipt.thread_id)
 
-        trace_event(
+        await trace_event(
             self.profile.settings,
             message,
             outcome="Dispatcher.handle_message.START",
@@ -256,7 +256,7 @@ class Dispatcher:
                 handler = self.collector.wrap_coro(handler, [handler.__qualname__])
             await handler(context, responder)
 
-        trace_event(
+        await trace_event(
             self.profile.settings,
             context.message,
             outcome="Dispatcher.handle_message.END",

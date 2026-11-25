@@ -53,7 +53,7 @@ class V20PresHandler(BaseHandler):
             context.message, context.connection_record, oob_record
         )
 
-        r_time = trace_event(
+        r_time = await trace_event(
             context.settings,
             context.message,
             outcome="V20PresHandler.handle.END",
@@ -83,7 +83,7 @@ class V20PresHandler(BaseHandler):
                         )
                     )
 
-            trace_event(
+            await trace_event(
                 context.settings,
                 pres_ex_record,
                 outcome="V20PresHandler.handle.VERIFY",
