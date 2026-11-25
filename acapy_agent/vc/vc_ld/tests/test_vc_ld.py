@@ -1,3 +1,4 @@
+from copy import deepcopy
 from datetime import datetime
 from unittest import IsolatedAsyncioTestCase, mock
 
@@ -361,6 +362,24 @@ class TestLinkedDataVerifiableCredential(IsolatedAsyncioTestCase):
         )
 
         assert verification_result.verified
+
+    async def test_verify_presentation_x_extra_member(self):
+        suite = Ed25519Signature2018(
+            key_pair=WalletKeyPair(profile=self.profile, key_type=ED25519),
+        )
+        presentation = deepcopy(PRESENTATION_SIGNED)
+        presentation["extraData"] = {
+            "issuer": "did:example:489398593",
+            "credentialSubject": {"degree": "PhD"},
+        }
+        verification_result = await verify_presentation(
+            presentation=presentation,
+            challenge=self.presentation_challenge,
+            suites=[suite],
+            document_loader=custom_document_loader,
+        )
+
+        assert not verification_result.verified
 
     async def test_verify_presentation_x_no_purpose_challenge(self):
         verification_result = await verify_presentation(

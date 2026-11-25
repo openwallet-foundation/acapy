@@ -34,6 +34,30 @@ from ..validation_result import ProofResult
 from .bbs_bls_signature_2020 import BbsBlsSignature2020
 from .linked_data_proof import DeriveProofResult
 
+# Matches one N-Quads term: a literal, an IRI or a canonical blank node label.
+# Literals and IRIs are matched as whole terms so that text inside them is never
+# treated as a blank node label or placeholder.
+NQUAD_TERM_PATTERN = re.compile(
+    r'(?P<literal>"(?:[^"\\]|\\.)*")'
+    r"|(?P<iri><[^>]*>)"
+    r"|(?P<blank_node>_:c14n[0-9]+)"
+)
+PLACEHOLDER_PATTERN = re.compile(r"<urn:bnid:(_:c14n[0-9]+)>")
+
+
+def _blank_node_to_placeholder(match: re.Match) -> str:
+    blank_node = match.group("blank_node")
+    return f"<urn:bnid:{blank_node}>" if blank_node else match.group(0)
+
+
+def _placeholder_to_blank_node(match: re.Match) -> str:
+    iri = match.group("iri")
+    if iri:
+        placeholder = PLACEHOLDER_PATTERN.fullmatch(iri)
+        if placeholder:
+            return placeholder.group(1)
+    return match.group(0)
+
 
 class BbsBlsSignatureProof2020(BbsBlsSignature2020Base):
     """BbsBlsSignatureProof2020 class."""
@@ -324,9 +348,9 @@ class BbsBlsSignatureProof2020(BbsBlsSignature2020Base):
             List[str]: List of transformed output statements
 
         """
-        # replace all occurrences of _:c14nX with <urn:bnid:_:c14nX>
+        # replace blank node terms _:c14nX with <urn:bnid:_:c14nX>
         transformed_statements = [
-            re.sub(r"(_:c14n[0-9]+)", r"<urn:bnid:\1>", statement)
+            NQUAD_TERM_PATTERN.sub(_blank_node_to_placeholder, statement)
             for statement in statements
         ]
 
@@ -347,9 +371,9 @@ class BbsBlsSignatureProof2020(BbsBlsSignature2020Base):
             List[str]: List of transformed output statements
 
         """
-        # replace all occurrences of <urn:bnid:_:c14nX> with _:c14nX
+        # replace placeholder IRI terms <urn:bnid:_:c14nX> with _:c14nX
         transformed_statements = [
-            re.sub(r"<urn:bnid:(_:c14n[0-9]+)>", r"\1", statement)
+            NQUAD_TERM_PATTERN.sub(_placeholder_to_blank_node, statement)
             for statement in statements
         ]
 

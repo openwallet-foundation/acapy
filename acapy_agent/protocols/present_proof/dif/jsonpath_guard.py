@@ -50,7 +50,7 @@ def is_safe_jsonpath(path: str) -> bool:
     ``&&``, and anything else outside this grammar — including expressions
     that are merely unsupported rather than actively malicious.
     """
-    if not path or len(path) > MAX_PATH_LENGTH:
+    if not isinstance(path, str) or not path or len(path) > MAX_PATH_LENGTH:
         return False
     if path.count(".") + path.count("[") > MAX_SEGMENTS * 2:
         return False

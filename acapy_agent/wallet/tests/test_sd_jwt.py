@@ -13,7 +13,7 @@ from ..default_verification_key_strategy import (
     DefaultVerificationKeyStrategy,
 )
 from ..jwt import jwt_sign
-from ..sd_jwt import SDJWTVerifyResult, sd_jwt_sign, sd_jwt_verify
+from ..sd_jwt import SDJWTVerifyResult, create_sd_list, sd_jwt_sign, sd_jwt_verify
 
 
 class TestSDJWT(IsolatedAsyncioTestCase):
@@ -289,6 +289,10 @@ class TestSDJWT(IsolatedAsyncioTestCase):
                 assert nationality in payload["nationalities"]
         assert verified.payload["_sd_alg"]
         assert verified.disclosures[0][1] == "US"
+
+    def test_adjacent_list_splices(self):
+        payload = {"a": ["x", "y"], "b": ["x", "y"]}
+        assert sorted(create_sd_list(payload, ["a[0:2]", "b[0:2]"])) == ["a", "b"]
 
     async def test_sd_jwt_key_binding(self):
         async with self.profile.session() as session:

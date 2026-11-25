@@ -112,11 +112,11 @@ Ongoing alignment with emerging standards (see OPM19) and continued expansion of
 
 ## OPM10: How Do I Build ACA-Py on Linux?
 
-See the [Developer README](https://github.com/openwallet-foundation/acapy/blob/main/./features/DevReadMe.md) and the [Getting Started Guide](https://github.com/openwallet-foundation/acapy/blob/main/./gettingStarted/README.md) on [aca-py.org](https://aca-py.org) for full build and installation instructions on Linux, including prerequisites (Python 3.12, pip, optional Docker). The recommended approach for most developers is to use Docker, which abstracts away platform-specific differences and provides a consistent environment. For those who prefer to build from source, the Developer README includes detailed instructions for setting up a Python virtual environment and installing dependencies. AFAWK, most production deployments are also on container orchestrated Linux environments for horizontal scaling, so Docker is also the most common path to production.
+See the [Developer README](https://github.com/openwallet-foundation/acapy/blob/main/docs/features/DevReadMe.md) and the [Getting Started Guide](https://github.com/openwallet-foundation/acapy/blob/main/docs/gettingStarted/README.md) on [aca-py.org](https://aca-py.org) for full build and installation instructions on Linux, including prerequisites (Python 3.12, pip, optional Docker). The recommended approach for most developers is to use Docker, which abstracts away platform-specific differences and provides a consistent environment. For those who prefer to build from source, the Developer README includes detailed instructions for setting up a Python virtual environment and installing dependencies. AFAWK, most production deployments are also on container orchestrated Linux environments for horizontal scaling, so Docker is also the most common path to production.
 
 ## OPM11: How Do I Build ACA-Py on macOS?
 
-The same instructions as Linux apply. See the [Developer README](https://github.com/openwallet-foundation/acapy/blob/main/./features/DevReadMe.md) and [Getting Started Guide](https://github.com/openwallet-foundation/acapy/blob/main/./gettingStarted/README.md). macOS users should be aware of platform-specific differences in Python environment management (e.g. using `brew` or `pyenv`).
+The same instructions as Linux apply. See the [Developer README](https://github.com/openwallet-foundation/acapy/blob/main/docs/features/DevReadMe.md) and [Getting Started Guide](https://github.com/openwallet-foundation/acapy/blob/main/docs/gettingStarted/README.md). macOS users should be aware of platform-specific differences in Python environment management (e.g. using `brew` or `pyenv`).
 
 ## OPM12: How Do I Build ACA-Py for iOS?
 
@@ -128,13 +128,13 @@ Not Applicable: ACA-Py is a server-side (non-mobile) framework and is not intend
 
 ## OPM14: How Do I Build ACA-Py on Windows?
 
-The [Developer README](https://github.com/openwallet-foundation/acapy/blob/main/./features/DevReadMe.md) covers Windows. The recommended approach for Windows users is to use Docker or WSL2 (Windows Subsystem for Linux), as the primary development platform, and the production target is typically Linux.
+The [Developer README](https://github.com/openwallet-foundation/acapy/blob/main/docs/features/DevReadMe.md) covers Windows. The recommended approach for Windows users is to use Docker or WSL2 (Windows Subsystem for Linux), as the primary development platform, and the production target is typically Linux.
 
 ## OPM15: How Do I Run ACA-Py?
 
-ACA-Py can be run as a Python package (`pip install acapy-agent`) or via Docker. Published Docker images are available on the [GitHub Container Registry](https://github.com/openwallet-foundation/acapy/pkgs/container/acapy-agent), including LTS-tagged images. Configuration options are plentiful (set by environment variables or command-line arguments) and are documented in the [Developer README](https://github.com/openwallet-foundation/acapy/blob/main/./features/DevReadMe.md). Further, a given environment is likely to use several ACA-Py plugins, each with their own configuration options — these are documented in the [acapy-plugins](https://github.com/openwallet-foundation/acapy-plugins) repository.
+ACA-Py can be run as a Python package (`pip install acapy-agent`) or via Docker. Published Docker images are available on the [GitHub Container Registry](https://github.com/openwallet-foundation/acapy/pkgs/container/acapy-agent), including LTS-tagged images. Configuration options are plentiful (set by environment variables or command-line arguments) and are documented in the [Developer README](https://github.com/openwallet-foundation/acapy/blob/main/docs/features/DevReadMe.md). Further, a given environment is likely to use several ACA-Py plugins, each with their own configuration options — these are documented in the [acapy-plugins](https://github.com/openwallet-foundation/acapy-plugins) repository.
 
-Full runtime documentation — configuration options, startup arguments, multi-tenant operation, and more — is available at [aca-py.org](https://aca-py.org) and in the [Developer README](https://github.com/openwallet-foundation/acapy/blob/main/./features/DevReadMe.md).
+Full runtime documentation — configuration options, startup arguments, multi-tenant operation, and more — is available at [aca-py.org](https://aca-py.org) and in the [Developer README](https://github.com/openwallet-foundation/acapy/blob/main/docs/features/DevReadMe.md).
 
 ACA-Py has been deployed on hardware ranging from Raspberry Pi devices to large-scale data-centre servers.
 
@@ -167,7 +167,7 @@ No formal benchmarks or sizing guidelines have been published at this time. ACA-
 | [ISO/IEC 18013-5 mDL / mdoc](https://www.iso.org/standard/69084.html) | ACA-Py supports issuance and verification of ISO mdoc/mDL credentials via the `mso_mdoc` module in the `oid4vc` plugin — see [plugins.aca-py.org](https://plugins.aca-py.org). |
 | [Traction](https://github.com/bcgov/traction) | A multi-tenant ACA-Py implementation with an admin UI built by the BC Government, enabling multiple controllers (e.g., business areas) to share a common ACA-Py instance. |
 | [Hyperledger Indy](https://www.lfdecentralizedtrust.org/projects/hyperledger-indy) | ACA-Py currently includes native support for Indy ledgers and AnonCreds credentials. This is being progressively moved into a plugin to reduce core coupling. |
-| [DIDComm AIP 2.0](https://github.com/openwallet-foundation/acapy/blob/main/./features/SupportedRFCs.md) | ACA-Py implements the Aries Interop Profile 2.0 suite of DIDComm protocols. Full details in [SupportedRFCs.md](https://github.com/openwallet-foundation/acapy/blob/main/./features/SupportedRFCs.md). |
+| [DIDComm AIP 2.0](https://github.com/openwallet-foundation/acapy/blob/main/docs/features/SupportedRFCs.md) | ACA-Py implements the Aries Interop Profile 2.0 suite of DIDComm protocols. Full details in [SupportedRFCs.md](https://github.com/openwallet-foundation/acapy/blob/main/docs/features/SupportedRFCs.md). |
 | [Hedera / Hiero](https://plugins.aca-py.org/latest/hedera/) | ACA-Py supports the Hedera network as a Verifiable Data Registry via the `hedera` plugin in the OWF acapy-plugins repo. The plugin implements `did:hedera` resolution and registration, and AnonCreds object storage on the Hedera Consensus Service (HCS), providing an enterprise-grade alternative VDR to Hyperledger Indy. |
 | [cheqd](https://docs.cheqd.io/product/sdk/aca-py) | ACA-Py supports `did:cheqd` and DID-Linked Resources via a cheqd plugin. The plugin integrates with the cheqd network for DID registration (via the Universal Registrar), AnonCreds object methods, and W3C credential workflows, enabling ACA-Py deployments to use cheqd as a VDR alongside or instead of Indy. |
 
@@ -182,11 +182,11 @@ No formal benchmarks or sizing guidelines have been published at this time. ACA-
 
 ## OPM19: Standards
 
-The following table summarises key standards relevant to ACA-Py. The [SupportedRFCs.md](https://github.com/openwallet-foundation/acapy/blob/main/./features/SupportedRFCs.md) document is the authoritative reference for DIDComm protocol support. Additional standard support is delivered via the [acapy-plugins](https://github.com/openwallet-foundation/acapy-plugins) repository.
+The following table summarises key standards relevant to ACA-Py. The [SupportedRFCs.md](https://github.com/openwallet-foundation/acapy/blob/main/docs/features/SupportedRFCs.md) document is the authoritative reference for DIDComm protocol support. Additional standard support is delivered via the [acapy-plugins](https://github.com/openwallet-foundation/acapy-plugins) repository.
 
 | Standard | Status |
 | :--- | :--- |
-| [Aries Interop Profile (AIP) 2.0](https://github.com/openwallet-foundation/acapy/blob/main/./features/SupportedRFCs.md) | Compliant — see SupportedRFCs.md for detail |
+| [Aries Interop Profile (AIP) 2.0](https://github.com/openwallet-foundation/acapy/blob/main/docs/features/SupportedRFCs.md) | Compliant — see SupportedRFCs.md for detail |
 | [W3C Verifiable Credentials Data Model v2.0](https://www.w3.org/TR/vc-data-model-2.0/) | Supported (via core and plugins) |
 | [W3C Decentralized Identifiers (DIDs) v1.0](https://www.w3.org/TR/did-1.0/) | Supported for multiple DID methods |
 | [DIDComm v1](https://identity.foundation/didcomm-messaging/spec/) | Supported |
@@ -270,9 +270,9 @@ ACA-Py documentation is maintained in the repository as Markdown files and publi
 | Resource | Link |
 | :--- | :--- |
 | Main documentation site | [https://aca-py.org](https://aca-py.org) |
-| Getting Started Guide | [./gettingStarted/README.md](https://github.com/openwallet-foundation/acapy/blob/main/./gettingStarted/README.md) |
-| Developer README | [./features/DevReadMe.md](https://github.com/openwallet-foundation/acapy/blob/main/./features/DevReadMe.md) |
-| Supported RFCs / Protocols | [./features/SupportedRFCs.md](https://github.com/openwallet-foundation/acapy/blob/main/./features/SupportedRFCs.md) |
+| Getting Started Guide | [./gettingStarted/README.md](https://github.com/openwallet-foundation/acapy/blob/main/docs/gettingStarted/README.md) |
+| Developer README | [./features/DevReadMe.md](https://github.com/openwallet-foundation/acapy/blob/main/docs/features/DevReadMe.md) |
+| Supported RFCs / Protocols | [./features/SupportedRFCs.md](https://github.com/openwallet-foundation/acapy/blob/main/docs/features/SupportedRFCs.md) |
 | Plugin documentation | [https://plugins.aca-py.org](https://plugins.aca-py.org) |
 | CHANGELOG | [CHANGELOG.md](https://github.com/openwallet-foundation/acapy/blob/main/CHANGELOG.md) |
 

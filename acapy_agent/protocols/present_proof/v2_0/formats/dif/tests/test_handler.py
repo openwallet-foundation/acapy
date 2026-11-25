@@ -274,6 +274,9 @@ DIF_PRES = {
     },
 }
 
+DIF_PRES_SIGNER = "did:sov:4QxzWk3ajdnEA37NdNU5Kt"
+HOLDER_FIELD_ID = "4ce7aff1-0234-4f35-9d21-251668a60950"
+
 DIF_PRES_SEQUENCE = [
     DIF_PRES,
     {
@@ -1881,6 +1884,229 @@ class TestDIFFormatHandler(IsolatedAsyncioTestCase):
                 pd=presentation_definition,
                 pres=DIF_PRES,
             )
+
+    def _holder_constraint_pd(
+        self, constraint_updates: dict, field_path: str = "$.credentialSubject.givenName"
+    ) -> PresentationDefinition:
+        proof_request = deepcopy(DIF_PRES_REQUEST_B)
+        constraints = proof_request["presentation_definition"]["input_descriptors"][0][
+            "constraints"
+        ]
+        constraints["fields"][0]["id"] = HOLDER_FIELD_ID
+        constraints["fields"][0]["path"] = [field_path]
+        constraints.update(constraint_updates)
+        return PresentationDefinition.deserialize(
+            proof_request["presentation_definition"]
+        )
+
+    async def test_verify_received_pres_is_holder_signer_not_subject(self):
+        pd = self._holder_constraint_pd(
+            {"is_holder": [{"field_id": [HOLDER_FIELD_ID], "directive": "required"}]}
+        )
+        dif_handler = DIFPresExchHandler(self.profile)
+        with self.assertRaises(DIFPresExchError):
+            await dif_handler.verify_received_pres(pd=pd, pres=deepcopy(DIF_PRES))
+
+    async def test_verify_received_pres_is_holder_signer_is_subject(self):
+        pd = self._holder_constraint_pd(
+            {"is_holder": [{"field_id": [HOLDER_FIELD_ID], "directive": "required"}]}
+        )
+        dif_pres = deepcopy(DIF_PRES)
+        dif_pres["verifiableCredential"][0]["credentialSubject"]["id"] = DIF_PRES_SIGNER
+        dif_handler = DIFPresExchHandler(self.profile)
+        await dif_handler.verify_received_pres(pd=pd, pres=dif_pres)
+
+    async def test_verify_received_pres_is_holder_subject_list(self):
+        pd = self._holder_constraint_pd(
+            {
+                "is_holder": [{"field_id": [HOLDER_FIELD_ID], "directive": "required"}],
+                "limit_disclosure": "preferred",
+            },
+            field_path="$.credentialSubject[0].givenName",
+        )
+        dif_pres = deepcopy(DIF_PRES)
+        subject = dif_pres["verifiableCredential"][0]["credentialSubject"]
+        subject["id"] = DIF_PRES_SIGNER
+        dif_pres["verifiableCredential"][0]["credentialSubject"] = [subject]
+        dif_handler = DIFPresExchHandler(self.profile)
+        await dif_handler.verify_received_pres(pd=pd, pres=dif_pres)
+
+    async def test_verify_received_pres_is_holder_every_signer_must_be_subject(self):
+        pd = self._holder_constraint_pd(
+            {"is_holder": [{"field_id": [HOLDER_FIELD_ID], "directive": "required"}]}
+        )
+        dif_pres = deepcopy(DIF_PRES)
+        subject_id = dif_pres["verifiableCredential"][0]["credentialSubject"]["id"]
+        subject_proof = deepcopy(dif_pres["proof"])
+        subject_proof["verificationMethod"] = f"{subject_id}#key-1"
+        dif_pres["proof"] = [subject_proof, dif_pres["proof"]]
+        dif_handler = DIFPresExchHandler(self.profile)
+        with self.assertRaises(DIFPresExchError):
+            await dif_handler.verify_received_pres(pd=pd, pres=dif_pres)
+
+    async def test_verify_received_pres_is_holder_no_proof(self):
+        pd = self._holder_constraint_pd(
+            {"is_holder": [{"field_id": [HOLDER_FIELD_ID], "directive": "required"}]}
+        )
+        dif_pres = deepcopy(DIF_PRES)
+        dif_pres["verifiableCredential"][0]["credentialSubject"]["id"] = DIF_PRES_SIGNER
+        dif_pres.pop("proof")
+        dif_handler = DIFPresExchHandler(self.profile)
+        with self.assertRaises(DIFPresExchError):
+            await dif_handler.verify_received_pres(pd=pd, pres=dif_pres)
+
+    async def test_verify_received_pres_is_holder_preferred_not_enforced(self):
+        pd = self._holder_constraint_pd(
+            {"is_holder": [{"field_id": [HOLDER_FIELD_ID], "directive": "preferred"}]}
+        )
+        dif_handler = DIFPresExchHandler(self.profile)
+        await dif_handler.verify_received_pres(pd=pd, pres=deepcopy(DIF_PRES))
+
+    async def test_verify_received_pres_subject_is_issuer_mismatch(self):
+        pd = self._holder_constraint_pd({"subject_is_issuer": "required"})
+        dif_handler = DIFPresExchHandler(self.profile)
+        with self.assertRaises(DIFPresExchError):
+            await dif_handler.verify_received_pres(pd=pd, pres=deepcopy(DIF_PRES))
+
+    async def test_verify_received_pres_subject_is_issuer_match(self):
+        pd = self._holder_constraint_pd({"subject_is_issuer": "required"})
+        dif_pres = deepcopy(DIF_PRES)
+        cred = dif_pres["verifiableCredential"][0]
+        cred["credentialSubject"]["id"] = cred["issuer"]
+        dif_handler = DIFPresExchHandler(self.profile)
+        await dif_handler.verify_received_pres(pd=pd, pres=dif_pres)
+
+    def _desc_map_path_pres(self, path: str) -> dict:
+        dif_pres = deepcopy(DIF_PRES)
+        dif_pres["presentation_submission"]["descriptor_map"][0]["path"] = path
+        return dif_pres
+
+    async def test_verify_received_pres_path_outside_credentials(self):
+        pd = PresentationDefinition.deserialize(
+            DIF_PRES_REQUEST_B["presentation_definition"]
+        )
+        dif_pres = self._desc_map_path_pres("$.extraData")
+        dif_pres["extraData"] = deepcopy(dif_pres["verifiableCredential"][0])
+        dif_handler = DIFPresExchHandler(self.profile)
+        with self.assertRaises(DIFPresExchError):
+            await dif_handler.verify_received_pres(pd=pd, pres=dif_pres)
+
+    async def test_verify_received_pres_path_inside_credential(self):
+        pd = PresentationDefinition.deserialize(
+            DIF_PRES_REQUEST_B["presentation_definition"]
+        )
+        dif_pres = self._desc_map_path_pres("$.verifiableCredential[0].evidence")
+        dif_pres["verifiableCredential"][0]["evidence"] = deepcopy(
+            dif_pres["verifiableCredential"][0]
+        )
+        dif_handler = DIFPresExchHandler(self.profile)
+        with self.assertRaises(DIFPresExchError):
+            await dif_handler.verify_received_pres(pd=pd, pres=dif_pres)
+
+    async def test_verify_received_pres_path_partially_outside_credentials(self):
+        pd = PresentationDefinition.deserialize(
+            DIF_PRES_REQUEST_B["presentation_definition"]
+        )
+        dif_pres = self._desc_map_path_pres("$..*")
+        dif_pres["extraData"] = deepcopy(dif_pres["verifiableCredential"][0])
+        dif_handler = DIFPresExchHandler(self.profile)
+        with self.assertRaises(DIFPresExchError):
+            await dif_handler.verify_received_pres(pd=pd, pres=dif_pres)
+
+    async def test_verify_received_pres_path_unsupported_expression(self):
+        pd = PresentationDefinition.deserialize(
+            DIF_PRES_REQUEST_B["presentation_definition"]
+        )
+        for path in (
+            "$.verifiableCredential[?(@.id =~ 'urn.*')]",
+            "$.verifiableCredential[0].`sub(/a/, b)`",
+            ["$.verifiableCredential[0]"],
+            None,
+        ):
+            dif_pres = self._desc_map_path_pres(path)
+            dif_handler = DIFPresExchHandler(self.profile)
+            with self.assertRaises(DIFPresExchError):
+                await dif_handler.verify_received_pres(pd=pd, pres=dif_pres)
+
+    async def test_verify_received_pres_path_wildcard_credentials(self):
+        pd = PresentationDefinition.deserialize(
+            DIF_PRES_REQUEST_B["presentation_definition"]
+        )
+        dif_pres = self._desc_map_path_pres("$.verifiableCredential[*]")
+        dif_handler = DIFPresExchHandler(self.profile)
+        await dif_handler.verify_received_pres(pd=pd, pres=dif_pres)
+
+    async def test_verify_received_pres_single_credential_object(self):
+        pd = PresentationDefinition.deserialize(
+            DIF_PRES_REQUEST_B["presentation_definition"]
+        )
+        dif_pres = self._desc_map_path_pres("$.verifiableCredential")
+        dif_pres["verifiableCredential"] = dif_pres["verifiableCredential"][0]
+        dif_handler = DIFPresExchHandler(self.profile)
+        await dif_handler.verify_received_pres(pd=pd, pres=dif_pres)
+
+    def _pres_and_record(self, dif_pres_dict: dict):
+        dif_pres = V20Pres(
+            formats=[
+                V20PresFormat(
+                    attach_id="dif",
+                    format_=ATTACHMENT_FORMAT[PRES_20][V20PresFormat.Format.DIF.api],
+                )
+            ],
+            presentations_attach=[
+                AttachDecorator.data_json(mapping=dif_pres_dict, ident="dif")
+            ],
+        )
+        dif_pres_request = V20PresRequest(
+            formats=[
+                V20PresFormat(
+                    attach_id="dif",
+                    format_=ATTACHMENT_FORMAT[PRES_20_REQUEST][
+                        V20PresFormat.Format.DIF.api
+                    ],
+                )
+            ],
+            request_presentations_attach=[
+                AttachDecorator.data_json(DIF_PRES_REQUEST_B, ident="dif")
+            ],
+        )
+        record = V20PresExRecord(
+            pres_ex_id="pxid",
+            thread_id="thid",
+            connection_id="conn_id",
+            initiator="init",
+            role="role",
+            state="state",
+            pres_request=dif_pres_request,
+            pres=dif_pres,
+            verified="false",
+            auto_present=True,
+            error_msg="error",
+        )
+        return dif_pres, record
+
+    async def test_receive_pres_rejected_with_responder(self):
+        dif_pres, record = self._pres_and_record(self._desc_map_path_pres("$.extraData"))
+        assert (
+            await self.handler.receive_pres(message=dif_pres, pres_ex_record=record)
+            is False
+        )
+
+    async def test_receive_pres_rejected_without_responder(self):
+        self.profile.context.injector.clear_binding(BaseResponder)
+        dif_pres, record = self._pres_and_record(self._desc_map_path_pres("$.extraData"))
+        assert (
+            await self.handler.receive_pres(message=dif_pres, pres_ex_record=record)
+            is False
+        )
+
+    async def test_receive_pres_accepted_without_responder(self):
+        self.profile.context.injector.clear_binding(BaseResponder)
+        dif_pres, record = self._pres_and_record(deepcopy(DIF_PRES))
+        assert (
+            await self.handler.receive_pres(message=dif_pres, pres_ex_record=record)
+            is True
+        )
 
     async def test_verify_received_limit_disclosure_a(self):
         dif_proof = deepcopy(DIF_PRES)
