@@ -5,6 +5,7 @@ from typing import Any, List, Mapping, Optional, Tuple, Union
 
 from aries_askar import Key
 from jsonpath_ng.ext import parse as jsonpath_parse
+from jsonpath_ng.jsonpath import Index
 from marshmallow import fields
 from sd_jwt.common import SDObj
 from sd_jwt.issuer import SDJWTIssuer
@@ -178,8 +179,14 @@ async def sd_jwt_sign(
         else:
             for match in matches:
                 if isinstance(match.context.value, list):
-                    match.context.value.remove(match.value)
-                    match.context.value.append(SDObj(match.value))
+                    # Replace in place. remove()+append() reversed array order
+                    # because create_sd_list sorts index paths descending
+                    # (issue #3965).
+                    if isinstance(match.path, Index) and len(match.path.indices) == 1:
+                        match.context.value[match.path.indices[0]] = SDObj(match.value)
+                    else:
+                        idx = match.context.value.index(match.value)
+                        match.context.value[idx] = SDObj(match.value)
                 else:
                     match.context.value[SDObj(str(match.path))] = match.context.value.pop(
                         str(match.path)

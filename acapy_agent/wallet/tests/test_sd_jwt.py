@@ -15,6 +15,8 @@ from ..default_verification_key_strategy import (
     BaseVerificationKeyStrategy,
     DefaultVerificationKeyStrategy,
 )
+from sd_jwt.common import SDObj
+
 from ..jwt import dict_to_b64, jwt_sign
 from ..sd_jwt import SDJWTVerifyResult, create_sd_list, sd_jwt_sign, sd_jwt_verify
 from ..util import b58_to_bytes, b64_to_bytes, bytes_to_b64
@@ -266,6 +268,43 @@ class TestSDJWT(IsolatedAsyncioTestCase):
                 assert len(disclosure[2]["_sd"]) >= 4
             else:
                 assert disclosure[1] in sd_claims
+
+    async def test_array_element_order_preserved(self):
+        # Issue #3965: wrapping list items used remove()+append(), which reversed
+        # array order when index paths were processed descending.
+        async with self.profile.session() as session:
+            wallet = session.inject(BaseWallet)
+            did_info = await wallet.create_local_did(KEY, ED25519, self.seed)
+        original = ["1", "2", "3"]
+        payload = {
+            "example": list(original),
+            "iss": "https://example.com/issuer",
+            "iat": 1683000000,
+            "exp": 1883000000,
+        }
+        signed = await sd_jwt_sign(
+            self.profile,
+            self.headers,
+            payload,
+            [],
+            did_info.did,
+            None,
+        )
+        assert signed
+        # Whole claim is wrapped as SDObj key; elements stay SDObj values in order
+        wrapped = payload[SDObj("example")]
+        assert [item.value for item in wrapped] == original
+        assert all(isinstance(item, SDObj) for item in wrapped)
+
+        verified = await sd_jwt_verify(self.profile, signed)
+        assert verified.valid
+        # Array-element disclosures are [salt, value]; order must match input
+        disclosed_values = [d[1] for d in verified.disclosures if len(d) == 2]
+        assert disclosed_values == original
+        # Outer claim disclosure carries the array of digest placeholders in order
+        example_disclosure = next(d for d in verified.disclosures if len(d) == 3)
+        assert example_disclosure[1] == "example"
+        assert len(example_disclosure[2]) == 3
 
     async def test_list_splice(self):
         async with self.profile.session() as session:
