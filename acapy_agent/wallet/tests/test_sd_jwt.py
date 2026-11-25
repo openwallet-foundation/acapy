@@ -4,6 +4,7 @@ from hashlib import sha256
 from unittest import IsolatedAsyncioTestCase
 
 from aries_askar import Key, KeyAlg
+from sd_jwt.common import SDObj
 
 from ...resolver.did_resolver import DIDResolver
 from ...resolver.tests.test_did_resolver import MockResolver
@@ -15,8 +16,6 @@ from ..default_verification_key_strategy import (
     BaseVerificationKeyStrategy,
     DefaultVerificationKeyStrategy,
 )
-from sd_jwt.common import SDObj
-
 from ..jwt import dict_to_b64, jwt_sign
 from ..sd_jwt import SDJWTVerifyResult, create_sd_list, sd_jwt_sign, sd_jwt_verify
 from ..util import b58_to_bytes, b64_to_bytes, bytes_to_b64
