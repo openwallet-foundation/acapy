@@ -1010,10 +1010,12 @@ class DIFPresExchHandler:
         with input_descriptors.schema.uri
 
         Args:
+
             credentials: list of VCRecords to check
             schemas: list of schemas from the input_descriptors; None means
                 schema was omitted (optional per Presentation Exchange) and
                 all credentials pass this filter (issue #4006)
+
         Return:
             Sequence of filtered VCRecord
 
