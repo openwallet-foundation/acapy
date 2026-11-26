@@ -1,6 +1,7 @@
 import json
 from base64 import urlsafe_b64decode
 from hashlib import sha256
+from types import SimpleNamespace
 from unittest import IsolatedAsyncioTestCase
 
 from aries_askar import Key, KeyAlg
@@ -17,7 +18,13 @@ from ..default_verification_key_strategy import (
     DefaultVerificationKeyStrategy,
 )
 from ..jwt import dict_to_b64, jwt_sign
-from ..sd_jwt import SDJWTVerifyResult, create_sd_list, sd_jwt_sign, sd_jwt_verify
+from ..sd_jwt import (
+    SDJWTVerifyResult,
+    create_sd_list,
+    sd_jwt_sign,
+    sd_jwt_verify,
+    wrap_list_item_as_sd,
+)
 from ..util import b58_to_bytes, b64_to_bytes, bytes_to_b64
 
 KB_AUD = "https://example.com/verifier"
@@ -304,6 +311,49 @@ class TestSDJWT(IsolatedAsyncioTestCase):
         example_disclosure = next(d for d in verified.disclosures if len(d) == 3)
         assert example_disclosure[1] == "example"
         assert len(example_disclosure[2]) == 3
+
+
+    def test_wrap_list_item_as_sd_uses_index_path(self):
+        from jsonpath_ng.jsonpath import Index
+
+        items = ["a", "b", "c"]
+        match = SimpleNamespace(
+            path=Index(1),
+            value="b",
+            context=SimpleNamespace(value=items),
+        )
+        wrap_list_item_as_sd(match)
+        assert items[0] == "a"
+        assert isinstance(items[1], SDObj) and items[1].value == "b"
+        assert items[2] == "c"
+
+    def test_wrap_list_item_as_sd_falls_back_without_index(self):
+        items = ["x", "y", "z"]
+        match = SimpleNamespace(
+            path="not-an-index",
+            value="y",
+            context=SimpleNamespace(value=items),
+        )
+        wrap_list_item_as_sd(match)
+        assert items[0] == "x"
+        assert isinstance(items[1], SDObj) and items[1].value == "y"
+        assert items[2] == "z"
+
+    def test_wrap_list_item_as_sd_descending_indices_keep_order(self):
+        # Mirrors create_sd_list descending walk that previously reversed arrays.
+        from jsonpath_ng.jsonpath import Index
+
+        items = ["1", "2", "3"]
+        for i in (2, 1, 0):
+            wrap_list_item_as_sd(
+                SimpleNamespace(
+                    path=Index(i),
+                    value=items[i],
+                    context=SimpleNamespace(value=items),
+                )
+            )
+        assert [item.value for item in items] == ["1", "2", "3"]
+        assert all(isinstance(item, SDObj) for item in items)
 
     async def test_list_splice(self):
         async with self.profile.session() as session:
