@@ -146,6 +146,14 @@ acapy\_agent.wallet.sd\_jwt module
    :undoc-members:
    :show-inheritance:
 
+acapy\_agent.wallet.signer\_registry module
+-------------------------------------------
+
+.. automodule:: acapy_agent.wallet.signer_registry
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 acapy\_agent.wallet.singletons module
 -------------------------------------
 
