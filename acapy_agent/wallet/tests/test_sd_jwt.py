@@ -312,7 +312,6 @@ class TestSDJWT(IsolatedAsyncioTestCase):
         assert example_disclosure[1] == "example"
         assert len(example_disclosure[2]) == 3
 
-
     def test_wrap_list_item_as_sd_uses_index_path(self):
         from jsonpath_ng.jsonpath import Index
 

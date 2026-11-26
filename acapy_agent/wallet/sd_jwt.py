@@ -154,7 +154,6 @@ def create_sd_list(payload, non_sd_list) -> List:
     return sort_sd_list(sd_list)
 
 
-
 def wrap_list_item_as_sd(match) -> None:
     """Wrap a list element match as SDObj without changing sibling order.
 
