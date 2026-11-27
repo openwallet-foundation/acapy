@@ -23,29 +23,29 @@ aiohttp-cors = ">=0.7,<0.9"
 apispec = "^6.6.0"
 base58 = "~2.1.0"
 canonicaljson = "^2.0.0"
-ConfigArgParse = "~1.7"
-deepmerge = "^2.0"
+ConfigArgParse = ">=1.7,<1.11"
+deepmerge = ">=2,<5"
 jsonpath-ng = "^1.8.0"
-Markdown = ">=3.7,<3.11"
+Markdown = ">=3.7,<3.12"
 markupsafe = "^3.0.2"
 marshmallow = "~3.26.1"
 nest_asyncio = "~1.6.0"
 packaging = ">=24.2,<27.0"
-portalocker = "^3.1.1"
+portalocker = ">=3.1.1,<5.0.0"
 prompt_toolkit = ">=3.0,<3.1"
 pydid = "^0.5.1"
-pyjwt = ">=2.10.1,<2.14.0"
+pyjwt = ">=2.10.1,<2.16.0"
 pyld = ">=2.0.4,<4.0.0"
 pynacl = ">=1.5,<1.7"
-python-dateutil = "^2.9.0"
+python-dateutil = ">=2.9,<5.0"
 python-json-logger = "^3.2.1"
 pyyaml = "~6.0.2"
 qrcode = { version = "^8.1", extras = ["pil"] }
 requests = ">=2.32.3,<2.35.0"
-rlp = "^4.1.0"
+rlp = ">=4.1,<6.0"
 sd-jwt = "^0.10.3"
 unflatten = "~0.2"
-uuid_utils = ">=0.10,<0.18"
+uuid_utils = ">=0.10,<1.3"
 
 # did libraries
 did-peer-2 = "^0.1.2"
@@ -73,9 +73,9 @@ sqlcipher3-binary = { version = ">=0.5.4", optional = true }
 
 [tool.poetry.group.dev.dependencies]
 # Sync with version in .pre-commit-config.yaml and .github/workflows/format.yml
-ruff = ">=0.13.3,<0.17.0"
+ruff = ">=0.13.3,<0.18.0"
 
-pre-commit = ">=4.1,<4.7"
+pre-commit = ">=4.1,<4.8"
 
 pydevd = ">=3.3,<3.6"
 
