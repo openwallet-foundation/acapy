@@ -1576,6 +1576,23 @@ class TestPresExchangeHandler(IsolatedAsyncioTestCase):
             == 0
         )
 
+    async def test_filter_schema_omitted_passes_all(self):
+        # Issue #4006: schema is optional on input_descriptors; None must not crash
+        # and must leave credentials unfiltered by schema URI.
+        dif_pres_exch_handler = DIFPresExchHandler(self.profile)
+        cred = VCRecord(
+            contexts=["https://www.w3.org/2018/credentials/v1"],
+            expanded_types=["https://www.w3.org/2018/credentials#VerifiableCredential"],
+            issuer_id="did:example:issuer",
+            subject_ids=["did:example:subject"],
+            schema_ids=[],
+            proof_types=["Ed25519Signature2020"],
+            cred_value={"type": ["VerifiableCredential"]},
+            record_id="cred-1",
+        )
+        filtered = await dif_pres_exch_handler.filter_schema([cred], None)
+        assert filtered == [cred]
+
     @pytest.mark.ursa_bbs_signatures
     async def test_cred_schema_match_a(self):
         cred_list, _ = await self.setup_tuple(self.profile)
