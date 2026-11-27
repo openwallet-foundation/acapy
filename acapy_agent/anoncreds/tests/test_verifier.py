@@ -82,6 +82,18 @@ class TestAnonCredsVerifier(IsolatedAsyncioTestCase):
             self.profile, MOCK_PRES_REQ, MOCK_PRES, MOCK_REV_REG_DEFS
         )
 
+        # unrevealed attribute group ('names') should not raise (issue 2306)
+        mock_pres_unrev = deepcopy(MOCK_PRES)
+        group = mock_pres_unrev["requested_proof"].pop("revealed_attr_groups")
+        mock_pres_unrev["requested_proof"]["unrevealed_attrs"] = {
+            uuid: {"sub_proof_index": spec["sub_proof_index"]}
+            for uuid, spec in group.items()
+        }
+        msgs = await self.verifier.check_timestamps(
+            self.profile, MOCK_PRES_REQ, mock_pres_unrev, MOCK_REV_REG_DEFS
+        )
+        assert any(m.startswith("UNRVL_ATTR::") for m in msgs)
+
         # irrevocable cred-def with timestamp
         mock_pres = deepcopy(MOCK_PRES)
         mock_pres["identifiers"][0]["timestamp"] = 9999999999
