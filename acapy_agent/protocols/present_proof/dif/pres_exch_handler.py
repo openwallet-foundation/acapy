@@ -1002,7 +1002,7 @@ class DIFPresExchHandler:
     async def filter_schema(
         self,
         credentials: Sequence[VCRecord],
-        schemas: SchemasInputDescriptorFilter,
+        schemas: Optional[SchemasInputDescriptorFilter],
     ) -> Sequence[VCRecord]:
         """Filter by schema.
 
@@ -1011,11 +1011,18 @@ class DIFPresExchHandler:
 
         Args:
             credentials: list of VCRecords to check
-            schemas: list of schemas from the input_descriptors
+            schemas: list of schemas from the input_descriptors; None means
+                schema was omitted (optional per Presentation Exchange) and
+                all credentials pass this filter (issue #4006)
+
         Return:
             Sequence of filtered VCRecord
 
         """
+        # schema is optional on input_descriptors; omitting it must not crash
+        if schemas is None:
+            return list(credentials)
+
         result = []
         for credential in credentials:
             applicable = False
@@ -1455,7 +1462,10 @@ class DIFPresExchHandler:
         for input_descriptor in input_descriptors:
             inp_desc_id_constraint_map[input_descriptor.id] = input_descriptor.constraint
             inp_desc_id_schemas_map[input_descriptor.id] = input_descriptor.schemas
-            if input_descriptor.schemas.oneof_filter:
+            if (
+                input_descriptor.schemas is not None
+                and input_descriptor.schemas.oneof_filter
+            ):
                 inp_desc_id_schema_one_of_filter.add(input_descriptor.id)
         for desc_map_item in descriptor_map_list:
             desc_map_item_id = desc_map_item.get("id")
@@ -1498,6 +1508,9 @@ class DIFPresExchHandler:
                         f"apply to the enclosed credential in {desc_map_item_path}"
                         f" Reason: {err.message}"
                     )
+                # Omit schema filter check when input_descriptor.schema was absent
+                if schema_filter is None:
+                    continue
                 if (
                     not len(
                         await self.filter_schema(
