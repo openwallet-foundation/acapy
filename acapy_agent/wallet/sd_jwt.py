@@ -5,6 +5,7 @@ from typing import Any, List, Mapping, Optional, Tuple, Union
 
 from aries_askar import Key
 from jsonpath_ng.ext import parse as jsonpath_parse
+from jsonpath_ng.jsonpath import Index
 from marshmallow import fields
 from sd_jwt.common import SDObj
 from sd_jwt.issuer import SDJWTIssuer
@@ -153,6 +154,19 @@ def create_sd_list(payload, non_sd_list) -> List:
     return sort_sd_list(sd_list)
 
 
+def wrap_list_item_as_sd(match) -> None:
+    """Wrap a list element match as SDObj without changing sibling order.
+
+    create_sd_list sorts index paths descending, so remove()+append() used to
+    reverse array order (issue #3965). Prefer the jsonpath Index when present.
+    """
+    if isinstance(match.path, Index) and len(match.path.indices) == 1:
+        match.context.value[match.path.indices[0]] = SDObj(match.value)
+    else:
+        idx = match.context.value.index(match.value)
+        match.context.value[idx] = SDObj(match.value)
+
+
 async def sd_jwt_sign(
     profile: Profile,
     headers: Mapping[str, Any],
@@ -178,8 +192,7 @@ async def sd_jwt_sign(
         else:
             for match in matches:
                 if isinstance(match.context.value, list):
-                    match.context.value.remove(match.value)
-                    match.context.value.append(SDObj(match.value))
+                    wrap_list_item_as_sd(match)
                 else:
                     match.context.value[SDObj(str(match.path))] = match.context.value.pop(
                         str(match.path)

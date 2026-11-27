@@ -1,9 +1,11 @@
 import json
 from base64 import urlsafe_b64decode
 from hashlib import sha256
+from types import SimpleNamespace
 from unittest import IsolatedAsyncioTestCase
 
 from aries_askar import Key, KeyAlg
+from sd_jwt.common import SDObj
 
 from ...resolver.did_resolver import DIDResolver
 from ...resolver.tests.test_did_resolver import MockResolver
@@ -16,7 +18,13 @@ from ..default_verification_key_strategy import (
     DefaultVerificationKeyStrategy,
 )
 from ..jwt import dict_to_b64, jwt_sign
-from ..sd_jwt import SDJWTVerifyResult, create_sd_list, sd_jwt_sign, sd_jwt_verify
+from ..sd_jwt import (
+    SDJWTVerifyResult,
+    create_sd_list,
+    sd_jwt_sign,
+    sd_jwt_verify,
+    wrap_list_item_as_sd,
+)
 from ..util import b58_to_bytes, b64_to_bytes, bytes_to_b64
 
 KB_AUD = "https://example.com/verifier"
@@ -266,6 +274,85 @@ class TestSDJWT(IsolatedAsyncioTestCase):
                 assert len(disclosure[2]["_sd"]) >= 4
             else:
                 assert disclosure[1] in sd_claims
+
+    async def test_array_element_order_preserved(self):
+        # Issue #3965: wrapping list items used remove()+append(), which reversed
+        # array order when index paths were processed descending.
+        async with self.profile.session() as session:
+            wallet = session.inject(BaseWallet)
+            did_info = await wallet.create_local_did(KEY, ED25519, self.seed)
+        original = ["1", "2", "3"]
+        payload = {
+            "example": list(original),
+            "iss": "https://example.com/issuer",
+            "iat": 1683000000,
+            "exp": 1883000000,
+        }
+        signed = await sd_jwt_sign(
+            self.profile,
+            self.headers,
+            payload,
+            [],
+            did_info.did,
+            None,
+        )
+        assert signed
+        # Whole claim is wrapped as SDObj key; elements stay SDObj values in order
+        wrapped = payload[SDObj("example")]
+        assert [item.value for item in wrapped] == original
+        assert all(isinstance(item, SDObj) for item in wrapped)
+
+        verified = await sd_jwt_verify(self.profile, signed)
+        assert verified.valid
+        # Array-element disclosures are [salt, value]; order must match input
+        disclosed_values = [d[1] for d in verified.disclosures if len(d) == 2]
+        assert disclosed_values == original
+        # Outer claim disclosure carries the array of digest placeholders in order
+        example_disclosure = next(d for d in verified.disclosures if len(d) == 3)
+        assert example_disclosure[1] == "example"
+        assert len(example_disclosure[2]) == 3
+
+    def test_wrap_list_item_as_sd_uses_index_path(self):
+        from jsonpath_ng.jsonpath import Index
+
+        items = ["a", "b", "c"]
+        match = SimpleNamespace(
+            path=Index(1),
+            value="b",
+            context=SimpleNamespace(value=items),
+        )
+        wrap_list_item_as_sd(match)
+        assert items[0] == "a"
+        assert isinstance(items[1], SDObj) and items[1].value == "b"
+        assert items[2] == "c"
+
+    def test_wrap_list_item_as_sd_falls_back_without_index(self):
+        items = ["x", "y", "z"]
+        match = SimpleNamespace(
+            path="not-an-index",
+            value="y",
+            context=SimpleNamespace(value=items),
+        )
+        wrap_list_item_as_sd(match)
+        assert items[0] == "x"
+        assert isinstance(items[1], SDObj) and items[1].value == "y"
+        assert items[2] == "z"
+
+    def test_wrap_list_item_as_sd_descending_indices_keep_order(self):
+        # Mirrors create_sd_list descending walk that previously reversed arrays.
+        from jsonpath_ng.jsonpath import Index
+
+        items = ["1", "2", "3"]
+        for i in (2, 1, 0):
+            wrap_list_item_as_sd(
+                SimpleNamespace(
+                    path=Index(i),
+                    value=items[i],
+                    context=SimpleNamespace(value=items),
+                )
+            )
+        assert [item.value for item in items] == ["1", "2", "3"]
+        assert all(isinstance(item, SDObj) for item in items)
 
     async def test_list_splice(self):
         async with self.profile.session() as session:
