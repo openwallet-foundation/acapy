@@ -1,5 +1,58 @@
 # ACA-Py Changelog
 
+## 1.8.0
+
+### November 27, 2026
+
+ACA-Py Release 1.8.0 adds support for [External Signers], allowing private keys to be held outside of the ACA-Py wallet, for example in a Hardware Security Module (HSM) or a cloud Key Management Service (KMS). A plugin registers a signer under a provider name, and keys created with that provider are signed by the external signer, while all other keys continue to be signed in the wallet. A related fix keeps a key's metadata when a `kid` is assigned to or removed from the key.
+
+[External Signers]: docs/features/ExternalSigners.md
+
+The release also tightens verification across several credential formats, ensuring that the data ACA-Py reports as verified is the data covered by the signatures. The updates apply to DIF Presentation Exchange, JSON-LD (including `BbsBlsSignatureProof2020`), and SD-JWT presentations.
+
+Also included are fixes for DIF Presentation Exchange with `Ed25519Signature2020` and VCDM 2.0 presentations, abandoning an Out-of-Band attached credential offer that is declined after a handshake connection is created, SD-JWT non-selectively-disclosable list handling, and returning an HTTP 400 (rather than a 500) for an invalid free credential offer. The release publishing instructions and changelog script have been updated for LTS releases, and dead links in the OWF Project Mapping document are fixed.
+
+Ongoing dependabot and security updates are also included in the Release.
+
+### 1.8.0 Breaking Changes
+
+There are no API breaking changes in this release. However, because of the stricter verification noted above, some presentations that previously verified will now be rejected. In particular:
+
+- DIF Presentation Exchange verifiers now enforce the `subject_is_issuer` (`required`) and `is_holder` (`required`) constraints in their presentation definitions. AnonCreds W3C (`anoncreds-2023`) presentations cannot satisfy a `required` `is_holder` constraint, as those credentials have no subject DID; presentation requests for such credentials should omit `is_holder`, since the link secret binds the credential to the holder.
+- SD-JWT presentations with disclosures not referenced by the signed payload, duplicate digests, or an unsupported `_sd_alg` are rejected. Key binding JWTs no longer need a `kid` header, as the key is taken from the SD-JWT's `cnf.jwk`.
+
+### 1.8.0 Deprecation Notices
+
+The `acapy_agent.revocation_anoncreds` package has been deprecated and relocated to `acapy_agent.anoncreds.revocation` for improved consistency across the codebase. The change will affect [ACA-Py Plugins] that implement AnonCreds, and developers with their own controllers should also update their implementations.
+
+The wallet-type configuration value `askar` is now deprecated and all deployments still using that wallet type should migrate to either the `askar-anoncreds` or (ideally) `kanon-anoncreds` wallet types.
+
+For REST consistency the `POST /multitenancy/wallet/{wallet_id}/remove` endpoint is deprecated, replaced with the `DELETE /multitenancy/wallet/{wallet_id}` endpoint. Implementers should update plugins and their own code to use the new endpoint. The old endpoint will be removed in a future release.
+
+### 1.8.0 Categorized PR List
+
+- **Credential and Presentation Verification**
+  - Only rewrite blank node terms in BbsBlsSignatureProof2020 [\#4283](https://github.com/openwallet-foundation/acapy/pull/4283) [swcurran](https://github.com/swcurran)
+  - Check SD-JWT key binding and disclosures against the signed SD-JWT [\#4282](https://github.com/openwallet-foundation/acapy/pull/4282) [swcurran](https://github.com/swcurran)
+  - Ensure verified DIF Presentation Exchange and JSON-LD presentation data is covered by signatures [\#4281](https://github.com/openwallet-foundation/acapy/pull/4281) [swcurran](https://github.com/swcurran)
+  - fix: expand adjacent list splices in SD-JWT non-SD list [\#4260](https://github.com/openwallet-foundation/acapy/pull/4260) [shlee1223](https://github.com/shlee1223)
+- **Wallet Key Management and External Signers**
+  - feat: external signer [\#4273](https://github.com/openwallet-foundation/acapy/pull/4273) [weiiv](https://github.com/weiiv)
+  - fix: keep key metadata when assigning or removing a kid [\#4272](https://github.com/openwallet-foundation/acapy/pull/4272) [weiiv](https://github.com/weiiv)
+- **Credential Issuance and Presentation Exchange Fixes**
+  - fix: apply --no-preserve-failed-exchange-records to settings [\#4290](https://github.com/openwallet-foundation/acapy/pull/4290) [Gavinok](https://github.com/Gavinok)
+  - fix(issue-credential): stringify ValueError for free offer 400 [\#4274](https://github.com/openwallet-foundation/acapy/pull/4274) [kutluhaneth46](https://github.com/kutluhaneth46)
+  - fix: DIF-PE Ed25519Signature2020 resolution and VCDM 2.0 presentation context [\#4249](https://github.com/openwallet-foundation/acapy/pull/4249) [nb-vivek-bodar](https://github.com/nb-vivek-bodar)
+  - fix: abandon OOB credential offer declined over handshake connection [\#4233](https://github.com/openwallet-foundation/acapy/pull/4233) [nb-pratik-bhimani](https://github.com/nb-pratik-bhimani)
+- **Documentation and Release Management**
+  - docs: fix dead links in the OWF project mapping [\#4276](https://github.com/openwallet-foundation/acapy/pull/4276) [farisbasha](https://github.com/farisbasha)
+  - Update the release publishing directions and script for LTS releases [\#4226](https://github.com/openwallet-foundation/acapy/pull/4226) [swcurran](https://github.com/swcurran)
+- **Dependabot PRs**
+  - [Link to list of Dependabot PRs in this release](https://github.com/openwallet-foundation/acapy/pulls?q=is%3Apr+is%3Amerged+merged%3A2026-09-10..2026-11-27+author%3Aapp%2Fdependabot+)
+- **Release management pull requests**:
+  - 1.8.0 [\#4291](https://github.com/openwallet-foundation/acapy/pull/4291) [swcurran](https://github.com/swcurran)
+  - 1.7.1rc0 [\#4289](https://github.com/openwallet-foundation/acapy/pull/4289) [swcurran](https://github.com/swcurran)
+
 ## 1.7.0
 
 ### September 10, 2026
