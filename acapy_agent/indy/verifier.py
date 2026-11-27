@@ -235,9 +235,7 @@ class IndyVerifier(ABC, metaclass=ABCMeta):
                     index = group_spec["sub_proof_index"]
                     if cred_defs[index]["value"].get("revocation"):
                         timestamp = pres["identifiers"][index].get("timestamp")
-                        if (timestamp is not None) ^ bool(
-                            non_revoc_intervals.get(uuid)
-                        ):
+                        if (timestamp is not None) ^ bool(non_revoc_intervals.get(uuid)):
                             raise ValueError(
                                 f"Timestamp on sub-proof #{index} "
                                 f"is {'superfluous' if timestamp else 'missing'} "

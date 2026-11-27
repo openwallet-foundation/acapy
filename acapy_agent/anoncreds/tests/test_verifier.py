@@ -442,6 +442,16 @@ class TestAnonCredsVerifier(IsolatedAsyncioTestCase):
         result = await self.verifier.pre_verify(mock_pres_req, mock_pres)
         assert isinstance(result, list)
 
+        # names group in unrevealed attrs (issue 2306)
+        mock_pres_unrev_group = deepcopy(MOCK_PRES)
+        group = mock_pres_unrev_group["requested_proof"].pop("revealed_attr_groups")
+        mock_pres_unrev_group["requested_proof"]["unrevealed_attrs"] = {
+            uuid: {"sub_proof_index": spec["sub_proof_index"]}
+            for uuid, spec in group.items()
+        }
+        msgs = await self.verifier.pre_verify(mock_pres_req, mock_pres_unrev_group)
+        assert any(m.startswith("UNRVL_ATTR::") for m in msgs)
+
         # name in unrevealed attrs
         mock_pres["requested_proof"]["revealed_attrs"] = {}
         mock_pres["requested_proof"]["unrevealed_attrs"] = {
