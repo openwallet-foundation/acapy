@@ -3172,7 +3172,7 @@ should it be a major, minor or patch release, per <a href="https://semver.org/">
 rules?</p>
 <p>Once ready to do a release, follow these steps:</p>
 <ol>
-<li>Create a local PR branch from an updated <code>main</code> or LTS branch, e.g. <code>git checkout -b 1.7.1</code>.</li>
+<li>Create a local PR branch from an updated <code>main</code> or LTS branch, e.g. <code>git checkout -b 1.8.0</code>.</li>
 <li>For a main branch release update your local <code>main</code> branch with the latest changes from the upstream <code>main</code> branch before creating the new release branch - e.g. <code>git fetch upstream;git merge upstream/main main</code></li>
 <li>
 <p>For an LTS release, you have to check out the latest LTS branch locally. For example, run <code>git fetch upstream; git checkout 1.3.lts; git merge upstream/1.3.lts --ff-only</code> for the appropriate LTS branch.</p>
@@ -3300,20 +3300,20 @@ rules?</p>
 <p>Published images are automatically tagged with multiple tags for flexibility:</p>
 <ul>
 <li>
-<p><strong>Regular Releases</strong> (e.g., <code>1.7.1</code>):</p>
+<p><strong>Regular Releases</strong> (e.g., <code>1.8.0</code>):</p>
 <ul>
-<li><code>py3.12-1.7.1</code> - Python version specific tag</li>
-<li><code>1.7.1</code> - Semantic version tag</li>
-<li><code>1.7</code> - Major.minor tag (moves to latest patch release)</li>
+<li><code>py3.12-1.8.0</code> - Python version specific tag</li>
+<li><code>1.8.0</code> - Semantic version tag</li>
+<li><code>1.8</code> - Major.minor tag (moves to latest patch release)</li>
 <li><code>latest</code> - Only assigned if this is the highest semantic version</li>
 </ul>
 </li>
 <li>
-<p><strong>Release Candidates</strong> (e.g., <code>1.7.1rc0</code>):</p>
+<p><strong>Release Candidates</strong> (e.g., <code>1.8.0rc0</code>):</p>
 <ul>
-<li><code>py3.12-1.7.1rc0</code> - Python version specific RC tag</li>
-<li><code>1.7.1rc0</code> - Semantic version RC tag</li>
-<li><strong>Note</strong>: RC releases do NOT receive major.minor (<code>1.7</code>) or <code>latest</code> tags</li>
+<li><code>py3.12-1.8.0rc0</code> - Python version specific RC tag</li>
+<li><code>1.8.0rc0</code> - Semantic version RC tag</li>
+<li><strong>Note</strong>: RC releases do NOT receive major.minor (<code>1.8</code>) or <code>latest</code> tags</li>
 </ul>
 </li>
 </ul>
@@ -3334,7 +3334,7 @@ rules?</p>
 <ol>
 <li>
 <p>When a new release is tagged, create a new branch at the same commit with
-    the branch name in the format <code>docs-v&lt;version&gt;</code>, for example, <code>docs-v1.7.1</code>.
+    the branch name in the format <code>docs-v&lt;version&gt;</code>, for example, <code>docs-v1.8.0</code>.
     The creation of the branch triggers the execution of the <a href="https://github.com/openwallet-foundation/acapy/blob/main/.github/workflows/publish-docs.yml">publish-docs</a>
     GitHub Action which generates the documentation for the new release,
     publishing it at <a href="https://aca-py.org">https://aca-py.org</a>. The GitHub Action also executes when

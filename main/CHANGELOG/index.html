@@ -554,22 +554,22 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#171rc0" class="md-nav__link">
+  <a href="#180" class="md-nav__link">
     <span class="md-ellipsis">
       
-        1.7.1rc0
+        1.8.0
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="1.7.1rc0">
+    <nav class="md-nav" aria-label="1.8.0">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#november-26-2026" class="md-nav__link">
+  <a href="#november-27-2026" class="md-nav__link">
     <span class="md-ellipsis">
       
-        November 26, 2026
+        November 27, 2026
       
     </span>
   </a>
@@ -577,10 +577,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#171-breaking-changes" class="md-nav__link">
+  <a href="#180-breaking-changes" class="md-nav__link">
     <span class="md-ellipsis">
       
-        1.7.1 Breaking Changes
+        1.8.0 Breaking Changes
       
     </span>
   </a>
@@ -588,10 +588,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#171-deprecation-notices" class="md-nav__link">
+  <a href="#180-deprecation-notices" class="md-nav__link">
     <span class="md-ellipsis">
       
-        1.7.1 Deprecation Notices
+        1.8.0 Deprecation Notices
       
     </span>
   </a>
@@ -599,10 +599,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#171-categorized-pr-list" class="md-nav__link">
+  <a href="#180-categorized-pr-list" class="md-nav__link">
     <span class="md-ellipsis">
       
-        1.7.1 Categorized PR List
+        1.8.0 Categorized PR List
       
     </span>
   </a>
@@ -4901,22 +4901,22 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#171rc0" class="md-nav__link">
+  <a href="#180" class="md-nav__link">
     <span class="md-ellipsis">
       
-        1.7.1rc0
+        1.8.0
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="1.7.1rc0">
+    <nav class="md-nav" aria-label="1.8.0">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#november-26-2026" class="md-nav__link">
+  <a href="#november-27-2026" class="md-nav__link">
     <span class="md-ellipsis">
       
-        November 26, 2026
+        November 27, 2026
       
     </span>
   </a>
@@ -4924,10 +4924,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#171-breaking-changes" class="md-nav__link">
+  <a href="#180-breaking-changes" class="md-nav__link">
     <span class="md-ellipsis">
       
-        1.7.1 Breaking Changes
+        1.8.0 Breaking Changes
       
     </span>
   </a>
@@ -4935,10 +4935,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#171-deprecation-notices" class="md-nav__link">
+  <a href="#180-deprecation-notices" class="md-nav__link">
     <span class="md-ellipsis">
       
-        1.7.1 Deprecation Notices
+        1.8.0 Deprecation Notices
       
     </span>
   </a>
@@ -4946,10 +4946,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#171-categorized-pr-list" class="md-nav__link">
+  <a href="#180-categorized-pr-list" class="md-nav__link">
     <span class="md-ellipsis">
       
-        1.7.1 Categorized PR List
+        1.8.0 Categorized PR List
       
     </span>
   </a>
@@ -6632,23 +6632,23 @@
 
 
 <h1 id="aca-py-changelog">ACA-Py Changelog<a class="headerlink" href="#aca-py-changelog" title="Permanent link">&para;</a></h1>
-<h2 id="171rc0">1.7.1rc0<a class="headerlink" href="#171rc0" title="Permanent link">&para;</a></h2>
-<h3 id="november-26-2026">November 26, 2026<a class="headerlink" href="#november-26-2026" title="Permanent link">&para;</a></h3>
-<p>ACA-Py Release 1.7.1 adds support for <a href="https://aca-py.org/latest/features/ExternalSigners/">External Signers</a>, allowing private keys to be held outside of the ACA-Py wallet, for example in a Hardware Security Module (HSM) or a cloud Key Management Service (KMS). A plugin registers a signer under a provider name, and keys created with that provider are signed by the external signer, while all other keys continue to be signed in the wallet. A related fix keeps a key's metadata when a <code>kid</code> is assigned to or removed from the key.</p>
+<h2 id="180">1.8.0<a class="headerlink" href="#180" title="Permanent link">&para;</a></h2>
+<h3 id="november-27-2026">November 27, 2026<a class="headerlink" href="#november-27-2026" title="Permanent link">&para;</a></h3>
+<p>ACA-Py Release 1.8.0 adds support for <a href="../features/ExternalSigners/">External Signers</a>, allowing private keys to be held outside of the ACA-Py wallet, for example in a Hardware Security Module (HSM) or a cloud Key Management Service (KMS). A plugin registers a signer under a provider name, and keys created with that provider are signed by the external signer, while all other keys continue to be signed in the wallet. A related fix keeps a key's metadata when a <code>kid</code> is assigned to or removed from the key.</p>
 <p>The release also tightens verification across several credential formats, ensuring that the data ACA-Py reports as verified is the data covered by the signatures. The updates apply to DIF Presentation Exchange, JSON-LD (including <code>BbsBlsSignatureProof2020</code>), and SD-JWT presentations.</p>
 <p>Also included are fixes for DIF Presentation Exchange with <code>Ed25519Signature2020</code> and VCDM 2.0 presentations, abandoning an Out-of-Band attached credential offer that is declined after a handshake connection is created, SD-JWT non-selectively-disclosable list handling, and returning an HTTP 400 (rather than a 500) for an invalid free credential offer. The release publishing instructions and changelog script have been updated for LTS releases, and dead links in the OWF Project Mapping document are fixed.</p>
 <p>Ongoing dependabot and security updates are also included in the Release.</p>
-<h3 id="171-breaking-changes">1.7.1 Breaking Changes<a class="headerlink" href="#171-breaking-changes" title="Permanent link">&para;</a></h3>
+<h3 id="180-breaking-changes">1.8.0 Breaking Changes<a class="headerlink" href="#180-breaking-changes" title="Permanent link">&para;</a></h3>
 <p>There are no API breaking changes in this release. However, because of the stricter verification noted above, some presentations that previously verified will now be rejected. In particular:</p>
 <ul>
 <li>DIF Presentation Exchange verifiers now enforce the <code>subject_is_issuer</code> (<code>required</code>) and <code>is_holder</code> (<code>required</code>) constraints in their presentation definitions. AnonCreds W3C (<code>anoncreds-2023</code>) presentations cannot satisfy a <code>required</code> <code>is_holder</code> constraint, as those credentials have no subject DID; presentation requests for such credentials should omit <code>is_holder</code>, since the link secret binds the credential to the holder.</li>
 <li>SD-JWT presentations with disclosures not referenced by the signed payload, duplicate digests, or an unsupported <code>_sd_alg</code> are rejected. Key binding JWTs no longer need a <code>kid</code> header, as the key is taken from the SD-JWT's <code>cnf.jwk</code>.</li>
 </ul>
-<h3 id="171-deprecation-notices">1.7.1 Deprecation Notices<a class="headerlink" href="#171-deprecation-notices" title="Permanent link">&para;</a></h3>
+<h3 id="180-deprecation-notices">1.8.0 Deprecation Notices<a class="headerlink" href="#180-deprecation-notices" title="Permanent link">&para;</a></h3>
 <p>The <code>acapy_agent.revocation_anoncreds</code> package has been deprecated and relocated to <code>acapy_agent.anoncreds.revocation</code> for improved consistency across the codebase. The change will affect <a href="https://plugins.aca-py.org">ACA-Py Plugins</a> that implement AnonCreds, and developers with their own controllers should also update their implementations.</p>
 <p>The wallet-type configuration value <code>askar</code> is now deprecated and all deployments still using that wallet type should migrate to either the <code>askar-anoncreds</code> or (ideally) <code>kanon-anoncreds</code> wallet types.</p>
 <p>For REST consistency the <code>POST /multitenancy/wallet/{wallet_id}/remove</code> endpoint is deprecated, replaced with the <code>DELETE /multitenancy/wallet/{wallet_id}</code> endpoint. Implementers should update plugins and their own code to use the new endpoint. The old endpoint will be removed in a future release.</p>
-<h3 id="171-categorized-pr-list">1.7.1 Categorized PR List<a class="headerlink" href="#171-categorized-pr-list" title="Permanent link">&para;</a></h3>
+<h3 id="180-categorized-pr-list">1.8.0 Categorized PR List<a class="headerlink" href="#180-categorized-pr-list" title="Permanent link">&para;</a></h3>
 <ul>
 <li><strong>Credential and Presentation Verification</strong><ul>
 <li>Only rewrite blank node terms in BbsBlsSignatureProof2020 <a href="https://github.com/openwallet-foundation/acapy/pull/4283">#4283</a> <a href="https://github.com/swcurran">swcurran</a></li>
@@ -6663,6 +6663,7 @@
 </ul>
 </li>
 <li><strong>Credential Issuance and Presentation Exchange Fixes</strong><ul>
+<li>fix: apply --no-preserve-failed-exchange-records to settings <a href="https://github.com/openwallet-foundation/acapy/pull/4290">#4290</a> <a href="https://github.com/Gavinok">Gavinok</a></li>
 <li>fix(issue-credential): stringify ValueError for free offer 400 <a href="https://github.com/openwallet-foundation/acapy/pull/4274">#4274</a> <a href="https://github.com/kutluhaneth46">kutluhaneth46</a></li>
 <li>fix: DIF-PE Ed25519Signature2020 resolution and VCDM 2.0 presentation context <a href="https://github.com/openwallet-foundation/acapy/pull/4249">#4249</a> <a href="https://github.com/nb-vivek-bodar">nb-vivek-bodar</a></li>
 <li>fix: abandon OOB credential offer declined over handshake connection <a href="https://github.com/openwallet-foundation/acapy/pull/4233">#4233</a> <a href="https://github.com/nb-pratik-bhimani">nb-pratik-bhimani</a></li>
@@ -6674,10 +6675,11 @@
 </ul>
 </li>
 <li><strong>Dependabot PRs</strong><ul>
-<li><a href="https://github.com/openwallet-foundation/acapy/pulls?q=is%3Apr+is%3Amerged+merged%3A2026-09-10..2026-11-25+author%3Aapp%2Fdependabot+">Link to list of Dependabot PRs in this release</a></li>
+<li><a href="https://github.com/openwallet-foundation/acapy/pulls?q=is%3Apr+is%3Amerged+merged%3A2026-09-10..2026-11-27+author%3Aapp%2Fdependabot+">Link to list of Dependabot PRs in this release</a></li>
 </ul>
 </li>
 <li><strong>Release management pull requests</strong>:<ul>
+<li>1.8.0 <a href="https://github.com/openwallet-foundation/acapy/pull/4291">#4291</a> <a href="https://github.com/swcurran">swcurran</a></li>
 <li>1.7.1rc0 <a href="https://github.com/openwallet-foundation/acapy/pull/4289">#4289</a> <a href="https://github.com/swcurran">swcurran</a></li>
 </ul>
 </li>
