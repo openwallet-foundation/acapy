@@ -1,0 +1,37 @@
+skinparam defaultTextAlignment center
+
+skinparam titleBorderRoundCorner 15
+skinparam titleBorderThickness 2
+skinparam titleBorderColor red
+skinparam titleBackgroundColor White
+
+skinparam monochrome true
+
+skinparam componentStyle uml2
+
+cloud "The Internet" {
+    package "DID Method Network" as SN {
+        component "Distributed\nLedger" as DL
+    }
+    component "Other Agents" as others
+}
+
+package "Aries Cloud Agent" as vx {
+    component "Core Capabilities" as core
+    package "DIDComm Protocols" as prot {
+        component "Protocol 1\nProtocol 2\n.\n.\nProtocol n" as protos
+    }
+    component "Controller\nREST API" as rest
+}
+
+package "Controller" as per {
+    component "Application \nBusiness\nLogic" as bl
+}
+
+others -down-> core
+protos -up-> core
+rest -right-> protos
+protos --> bl
+bl --> rest
+core <--> protos
+core -up-> SN

@@ -1,0 +1,37 @@
+@startuml
+
+participant "Inbound\nMessage\nHandler" as oag
+participant "http\nTransport" as ht
+participant "Internal\nTransport\nManager" as itm
+participant "Inbound\nSession" as is
+participant "Conductor" as con
+participant "Dispatcher" as disp
+participant "Responder" as resp
+participant "Message\nProtocol\nHandler" as mh
+
+
+oag -> ht: "inbound_message_handler()"
+ht->itm: "create_session()"
+itm -> is: "create"
+is --> itm
+itm --> ht
+ht --> is: "receive()"
+is --> is: "parse_inbound()"
+is --> is: "receive_inbound()"
+is --> is: "process_inbound()"
+is --> is: "inbound_handler()"
+is --> con: "inbound_message_router()"
+con --> disp: "queue_message()"
+disp --> disp: "handle_message()"
+disp --> disp: "make_message()"
+disp --> resp: "create()"
+disp --> mh: "handle()"
+mh-->resp: "send_reply()"
+mh --> disp: ""
+disp --> con: ""
+con --> con: "dispatch_complete()"
+con --> is
+is --> ht
+
+
+@enduml
