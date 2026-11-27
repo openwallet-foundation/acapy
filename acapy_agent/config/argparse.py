@@ -1579,6 +1579,8 @@ class ProtocolGroup(ArgumentGroup):
                 raise ArgsParseError("Error writing trace event " + str(e))
         if args.preserve_exchange_records:
             settings["preserve_exchange_records"] = True
+        if args.no_preserve_failed_exchange_records:
+            settings["no_preserve_failed_exchange_records"] = True
         # NOT setting the following two parameters `True` is no longer supported
         # Even if the args are not set, the config setting is True.
         settings["emit_new_didcomm_prefix"] = True

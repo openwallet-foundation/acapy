@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "acapy_agent"
-version = "1.7.0"
-description = "(ACA-Py) A Cloud Agent Python is a foundation for building decentralized identity applications and services running in non-mobile environments. "
+version = "1.8.0"
+description = "(ACA-Py) Adaptive Cloud Agent Python is a foundation for building decentralized identity applications and services running in non-mobile environments. "
 authors = []
 license = "Apache-2.0"
 readme = "README.md"
