@@ -141,21 +141,17 @@ class OobRecord(BaseExchangeRecord):
         }
 
     async def delete_record(self, session: ProfileSession):
-        """Perform connection record deletion actions.
+        """Delete this out-of-band record.
+
+        Connection metadata uses the same storage type keyed by connection_id.
+        Invitation metadata is written onto the ConnRecord, so cleaning up a
+        finished OOB record must not wipe that connection metadata.
 
         Args:
             session (ProfileSession): session
 
         """
         await super().delete_record(session)
-
-        # Delete metadata
-        if self.connection_id:
-            storage = session.inject(BaseStorage)
-            await storage.delete_all_records(
-                self.RECORD_TYPE_METADATA,
-                {"connection_id": self.connection_id},
-            )
 
     async def metadata_get(
         self, session: ProfileSession, key: str, default: Optional[Any] = None
