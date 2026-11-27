@@ -740,6 +740,27 @@ class TestArgParse(TestCase):
             "disclose_goal_code_list"
         )
 
+    def test_exchange_record_preservation_args(self):
+        """Test exchange record preservation flags are copied into settings."""
+        parser = argparse.create_argument_parser()
+        get_settings = argparse.load_argument_groups(
+            parser, argparse.TransportGroup, argparse.ProtocolGroup
+        )
+        transport = ["--inbound-transport", "http", "0.0.0.0", "80"]
+        transport += ["--outbound-transport", "http"]
+
+        settings = get_settings(parser.parse_args(transport))
+        assert not settings.get("preserve_exchange_records")
+        assert not settings.get("no_preserve_failed_exchange_records")
+
+        result = parser.parse_args(
+            transport
+            + ["--preserve-exchange-records", "--no-preserve-failed-exchange-records"]
+        )
+        settings = get_settings(result)
+        assert settings.get("preserve_exchange_records") is True
+        assert settings.get("no_preserve_failed_exchange_records") is True
+
     def test_universal_resolver(self):
         """Test universal resolver flags."""
         parser = argparse.create_argument_parser()
