@@ -221,6 +221,10 @@ class IndyVerifier(ABC, metaclass=ABCMeta):
                     )
 
             elif "names" in req_attr:
+                if uuid in unrevealed_attrs:
+                    # unrevealed attribute group, nothing to do
+                    msgs.append(f"{PresVerifyMsg.CT_UNREVEALED_ATTRIBUTES.value}::{uuid}")
+                    continue
                 group_spec = revealed_groups.get(uuid)
                 if (
                     group_spec is None
