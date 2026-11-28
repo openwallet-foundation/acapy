@@ -499,7 +499,7 @@ class TestIndySdkVerifier(IsolatedAsyncioTestCase):
                 )
             assert "Missing requested attribute group" in str(context.exception)
 
-            # unrevealed attribute group ('names') should not raise
+            # unrevealed attribute group ('names') should not raise (issue 2306)
             proof_x = deepcopy(INDY_PROOF_PRED_NAMES)
             group = proof_x["requested_proof"].pop("revealed_attr_groups")
             proof_x["requested_proof"]["unrevealed_attrs"] = {

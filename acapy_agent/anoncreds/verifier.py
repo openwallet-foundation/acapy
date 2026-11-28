@@ -9,7 +9,7 @@ from typing import List, Mapping, Tuple
 from anoncreds import AnoncredsError, Presentation, W3cPresentation
 
 from ..core.profile import Profile
-from ..messaging.util import canon, encode, note_unrevealed_requested_attr
+from ..messaging.util import canon, encode
 from ..vc.vc_ld.validation_result import PresentationVerificationResult
 from .models.credential_definition import GetCredDefResult
 from .models.utils import extract_non_revocation_intervals_from_proof_request
@@ -216,9 +216,6 @@ class AnonCredsVerifier:
                     )
 
             elif "names" in req_attr:
-                if uuid in unrevealed_attrs:
-                    note_unrevealed_requested_attr(uuid, msgs)
-                    continue
                 group_spec = revealed_groups.get(uuid)
                 if (
                     group_spec is None
@@ -350,9 +347,6 @@ class AnonCredsVerifier:
                 else:
                     raise ValueError(f"Missing requested attribute '{req_attr['name']}'")
             elif "names" in req_attr:
-                if uuid in unrevealed_attrs:
-                    note_unrevealed_requested_attr(uuid, msgs)
-                    continue
                 group_spec = revealed_groups[uuid]
                 pres_req_attr_spec = {
                     attr: {

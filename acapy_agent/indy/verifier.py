@@ -11,7 +11,7 @@ from ..ledger.multiple_ledger.ledger_requests_executor import (
     GET_CRED_DEF,
     IndyLedgerRequestsExecutor,
 )
-from ..messaging.util import canon, encode, note_unrevealed_requested_attr
+from ..messaging.util import canon, encode
 from ..multitenant.base import BaseMultitenantManager
 from .models.xform import indy_proof_req2non_revoc_intervals
 
@@ -222,7 +222,8 @@ class IndyVerifier(ABC, metaclass=ABCMeta):
 
             elif "names" in req_attr:
                 if uuid in unrevealed_attrs:
-                    note_unrevealed_requested_attr(uuid, msgs)
+                    # unrevealed attribute group, nothing to do
+                    msgs.append(f"{PresVerifyMsg.CT_UNREVEALED_ATTRIBUTES.value}::{uuid}")
                     continue
                 group_spec = revealed_groups.get(uuid)
                 if (
@@ -355,9 +356,6 @@ class IndyVerifier(ABC, metaclass=ABCMeta):
                 else:
                     raise ValueError(f"Missing requested attribute '{req_attr['name']}'")
             elif "names" in req_attr:
-                if uuid in unrevealed_attrs:
-                    note_unrevealed_requested_attr(uuid, msgs)
-                    continue
                 group_spec = revealed_groups[uuid]
                 pres_req_attr_spec = {
                     attr: {
