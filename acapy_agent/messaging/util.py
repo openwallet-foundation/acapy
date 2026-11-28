@@ -147,6 +147,17 @@ def canon(raw_attr_name: str) -> str:
     return raw_attr_name
 
 
+def note_unrevealed_requested_attr(uuid: str, msgs: list) -> None:
+    """Record that a requested attribute or attribute group was left unrevealed.
+
+    Args:
+        uuid: presentation request referent
+        msgs: mutable list of presentation verify notes
+
+    """
+    msgs.append(f"UNRVL_ATTR::{uuid}")
+
+
 def get_proto_default_version(
     versions: List[Dict[str, Any]], major_version: int = 1
 ) -> str:

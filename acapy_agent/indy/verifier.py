@@ -11,7 +11,7 @@ from ..ledger.multiple_ledger.ledger_requests_executor import (
     GET_CRED_DEF,
     IndyLedgerRequestsExecutor,
 )
-from ..messaging.util import canon, encode
+from ..messaging.util import canon, encode, note_unrevealed_requested_attr
 from ..multitenant.base import BaseMultitenantManager
 from .models.xform import indy_proof_req2non_revoc_intervals
 
@@ -222,41 +222,39 @@ class IndyVerifier(ABC, metaclass=ABCMeta):
 
             elif "names" in req_attr:
                 if uuid in unrevealed_attrs:
-                    # unrevealed attribute group, nothing to do
-                    msgs.append(f"{PresVerifyMsg.CT_UNREVEALED_ATTRIBUTES.value}::{uuid}")
-                else:
-                    group_spec = revealed_groups.get(uuid)
-                    if (
-                        group_spec is None
-                        or "sub_proof_index" not in group_spec
-                        or "values" not in group_spec
+                    note_unrevealed_requested_attr(uuid, msgs)
+                    continue
+                group_spec = revealed_groups.get(uuid)
+                if (
+                    group_spec is None
+                    or "sub_proof_index" not in group_spec
+                    or "values" not in group_spec
+                ):
+                    raise ValueError(f"Missing requested attribute group {uuid}")
+                index = group_spec["sub_proof_index"]
+                if cred_defs[index]["value"].get("revocation"):
+                    timestamp = pres["identifiers"][index].get("timestamp")
+                    if (timestamp is not None) ^ bool(non_revoc_intervals.get(uuid)):
+                        raise ValueError(
+                            f"Timestamp on sub-proof #{index} "
+                            f"is {'superfluous' if timestamp else 'missing'} "
+                            f"vs. requested attribute group {uuid}"
+                        )
+                    if non_revoc_intervals.get(uuid) and not (
+                        non_revoc_intervals[uuid].get("from", 0)
+                        < timestamp
+                        < non_revoc_intervals[uuid].get("to", now)
                     ):
-                        raise ValueError(f"Missing requested attribute group {uuid}")
-                    index = group_spec["sub_proof_index"]
-                    if cred_defs[index]["value"].get("revocation"):
-                        timestamp = pres["identifiers"][index].get("timestamp")
-                        if (timestamp is not None) ^ bool(non_revoc_intervals.get(uuid)):
-                            raise ValueError(
-                                f"Timestamp on sub-proof #{index} "
-                                f"is {'superfluous' if timestamp else 'missing'} "
-                                f"vs. requested attribute group {uuid}"
-                            )
-                        if non_revoc_intervals.get(uuid) and not (
-                            non_revoc_intervals[uuid].get("from", 0)
-                            < timestamp
-                            < non_revoc_intervals[uuid].get("to", now)
-                        ):
-                            msgs.append(
-                                f"{PresVerifyMsg.TSTMP_OUT_NON_REVOC_INTRVAL.value}::"
-                                f"{uuid}"
-                            )
-                            LOGGER.info(
-                                "Timestamp %s from ledger for item %s falls outside "
-                                "non-revocation interval %s",
-                                timestamp,
-                                uuid,
-                                non_revoc_intervals[uuid],
-                            )
+                        msgs.append(
+                            f"{PresVerifyMsg.TSTMP_OUT_NON_REVOC_INTRVAL.value}::{uuid}"
+                        )
+                        LOGGER.info(
+                            "Timestamp %s from ledger for item %s falls outside "
+                            "non-revocation interval %s",
+                            timestamp,
+                            uuid,
+                            non_revoc_intervals[uuid],
+                        )
 
         for uuid, req_pred in pres_req["requested_predicates"].items():
             pred_spec = preds.get(uuid)
@@ -358,8 +356,7 @@ class IndyVerifier(ABC, metaclass=ABCMeta):
                     raise ValueError(f"Missing requested attribute '{req_attr['name']}'")
             elif "names" in req_attr:
                 if uuid in unrevealed_attrs:
-                    # unrevealed attribute group, nothing to do
-                    msgs.append(f"{PresVerifyMsg.CT_UNREVEALED_ATTRIBUTES.value}::{uuid}")
+                    note_unrevealed_requested_attr(uuid, msgs)
                     continue
                 group_spec = revealed_groups[uuid]
                 pres_req_attr_spec = {
